@@ -29,6 +29,7 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
       spec.description,
       hook_note(spec),
       notes(spec),
+      guidance(spec),
       props_table(spec),
       examples(spec)
     ]
@@ -142,6 +143,27 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
     case Map.get(spec, :notes) do
       nil -> nil
       notes -> String.trim(notes)
+    end
+  end
+
+  defp guidance(spec) do
+    case Map.get(spec, :guidance) do
+      nil ->
+        nil
+
+      g ->
+        bullets = fn items -> Enum.map_join(items, "\n", &"- #{&1}") end
+
+        [
+          "## Usage guidance",
+          g[:use_when] && "Use when:\n\n#{bullets.(g.use_when)}",
+          g[:avoid_when] && "Don't use for:\n\n#{bullets.(g.avoid_when)}",
+          g[:sizing] && "Sizing: #{g.sizing}",
+          g[:responsive] && "Responsive: #{g.responsive}",
+          g[:ios] && "iOS: #{g.ios}"
+        ]
+        |> Enum.reject(&(&1 in [nil, false]))
+        |> Enum.join("\n\n")
     end
   end
 

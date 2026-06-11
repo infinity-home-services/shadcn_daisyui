@@ -72,6 +72,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "button",
         title: "Button",
         description: "Displays a button or a component that looks like a button.",
+        guidance: %{
+          use_when: [
+            "Triggering an action: submit, save, open a dialog, run a command",
+            "The primary action of a view region (one btn-primary per region)"
+          ],
+          avoid_when: [
+            "Navigation to another page — use a link (btn-link or a styled <a>)",
+            "Toggling state — use toggle, switch, or toggle-group"
+          ],
+          sizing:
+            "Default h-9 (36px) for desktop-dense UI; btn-sm (32px) in toolbars and table rows; btn-lg (40px) for compact-screen primary actions.",
+          responsive:
+            "On compact screens the primary action is usually full-width (btn-lg w-full) at the bottom of the content; keep ≥ 8px between adjacent buttons.",
+          ios:
+            "Map emphasis: primary → .borderedProminent, secondary/outline → .bordered, ghost → .borderless. Minimum 44pt hit area."
+        },
         props: [
           %{
             name: "variant",
@@ -158,6 +174,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "card",
         title: "Card",
         description: "A container for grouping related content and actions.",
+        guidance: %{
+          use_when: [
+            "Grouping related content with a clear boundary (summary + actions)",
+            "Dashboard tiles, settings sections, list items with rich content"
+          ],
+          avoid_when: [
+            "Wrapping an entire page — pages are flat, cards are islands",
+            "Nesting cards inside cards — flatten or use a separator"
+          ],
+          sizing:
+            "card-body pads 24px and the card is rounded-xl — don't add extra padding inside or override the radius.",
+          responsive:
+            "Cards stack single-column on compact; grid them (grid gap-4 lg:grid-cols-2/3) from expanded up.",
+          ios:
+            "A grouped List section or a custom rounded container (Radius.xl, 16–24pt padding) — prefer the system grouped list when content is row-like."
+        },
         examples: [
           %{
             title: "With form",
@@ -229,6 +261,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "input",
         title: "Input",
         description: "A form input field for collecting text from the user.",
+        guidance: %{
+          use_when: [
+            "Any free-text or typed value in a form — always via <.input field={...}>",
+            "Email, password, number, date, and other native input types"
+          ],
+          avoid_when: [
+            "Choosing from a known set — use select, radio-group, or combobox",
+            "Raw <input> markup inside a <.form> (the field wiring is lost)"
+          ],
+          sizing:
+            "Fixed h-9 with text-sm; full width of the form column (forms cap at max-w-md–lg). Labels above, 6–8px gap.",
+          responsive:
+            "Stack fields 16px apart (space-y-4) at every width; never two-column forms on compact.",
+          ios:
+            "TextField in a Form section; rely on system styling, set keyboard type and textContentType per field."
+        },
         examples: [
           %{
             title: "Default",
@@ -474,6 +522,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "tabs",
         title: "Tabs",
         description: "Layered sections of content shown one panel at a time.",
+        guidance: %{
+          use_when: [
+            "Peer views of the same object (Details / Activity / Settings)",
+            "2–5 sections the user switches between without losing context"
+          ],
+          avoid_when: [
+            "Primary app navigation — that's the dock/navbar/sidebar's job",
+            "Sequential steps — use steps + explicit next/back actions"
+          ],
+          sizing: "Tab triggers are h-7 text-sm inside the boxed list; don't restyle.",
+          responsive:
+            "Tabs stay horizontal at all widths; if labels crowd on compact, shorten the labels — never wrap to two rows or scroll.",
+          ios:
+            "A segmented Picker (.pickerStyle(.segmented)) for 2–4 peers; never a nested TabView."
+        },
         examples: [
           %{
             title: "Default",
@@ -498,6 +561,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "table",
         title: "Table",
         description: "A responsive table for displaying rows of data.",
+        guidance: %{
+          use_when: [
+            "Scanning and comparing records across a few columns",
+            "Static or lightly interactive row data (use <.table> with <:col> slots)"
+          ],
+          avoid_when: [
+            "Filtering/sorting/paging needs — use data-table",
+            "Compact screens with many columns — restructure as a card list"
+          ],
+          sizing:
+            "text-sm rows; wrap in a card for the border (class recipe) — no extra cell padding.",
+          responsive:
+            "Tables don't shrink gracefully: below medium, show fewer columns or switch to stacked cards/list rows.",
+          ios: "A List with custom row layout; columns become labeled lines within the row."
+        },
         examples: [
           %{
             title: "Default",
@@ -696,6 +774,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "dropdown-menu",
         title: "Dropdown Menu",
         description: "A menu of actions or links triggered by a button.",
+        guidance: %{
+          use_when: [
+            "3–8 secondary actions behind one trigger (row actions, ⋯ menus)",
+            "Account/user menus in the navbar"
+          ],
+          avoid_when: [
+            "A single action — show the button directly",
+            "Choosing a form value — use select or combobox",
+            "More than ~8 items — use a command palette or a dedicated page"
+          ],
+          sizing:
+            "Menu items are text-sm with rounded-sm; destructive item last, styled destructive.",
+          responsive:
+            "Menus are fine on touch (items are full-width rows); ensure the trigger itself meets the 44pt floor.",
+          ios: "Menu attached to a button (or context menu on long-press); destructive role last."
+        },
         examples: [
           %{
             title: "Default",
@@ -730,6 +824,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "dialog",
         title: "Dialog",
         description: "A modal window overlaid on the page.",
+        guidance: %{
+          use_when: [
+            "A focused task that blocks the page until done (confirm, short form)",
+            "Destructive confirmations that name the object"
+          ],
+          avoid_when: [
+            "Long or multi-step flows — navigate to a page instead",
+            "Content the user may want to keep visible alongside the page — use sheet"
+          ],
+          sizing:
+            "The modal box is rounded-lg with shadow-sm and its own padding; forms inside follow the form rules (fields 16px apart).",
+          responsive:
+            "On compact screens prefer a bottom drawer for touch reach; dialogs that stay dialogs should be near-full-width.",
+          ios:
+            ".sheet for tasks (with detents), .alert only for short confirmations — never recreate web-style modals."
+        },
         examples: [
           %{
             title: "Default",
@@ -952,6 +1062,20 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "toast",
         title: "Toast",
         description: "A brief, auto-dismissing notification.",
+        guidance: %{
+          use_when: [
+            "Confirming a completed action the user doesn't need to act on (\"Saved\")",
+            "Background results (export finished, message sent)"
+          ],
+          avoid_when: [
+            "Errors that need action — show inline errors or an alert in place",
+            "Anything the user must read — toasts disappear"
+          ],
+          sizing: "One line, optional action link; status variant matches the event.",
+          responsive: "Bottom-center on compact (thumb zone), bottom-right on expanded.",
+          ios:
+            "No system toast: prefer in-place state change; if needed, a brief overlay with VoiceOver announcement (UIAccessibility.post)."
+        },
         examples: [
           %{
             title: "Default",
@@ -1137,6 +1261,20 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "sheet",
         title: "Sheet",
         description: "A panel that slides in from the edge of the screen.",
+        guidance: %{
+          use_when: [
+            "Detail/edit panels that keep the page visible behind (record preview, filters)",
+            "Secondary settings reachable from a list"
+          ],
+          avoid_when: [
+            "Blocking confirmations — use dialog",
+            "Primary navigation on compact — that's the dock's job"
+          ],
+          sizing: "Right side panel on expanded; content follows form/card rules inside.",
+          responsive: "On compact, side sheets become bottom drawers (more thumb-reachable).",
+          ios:
+            ".sheet with .medium/.large detents; swipe-down to dismiss, confirm if input would be lost."
+        },
         examples: [
           %{
             title: "Default",
@@ -1188,6 +1326,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "sidebar",
         title: "Sidebar",
         description: "An app navigation sidebar layout.",
+        guidance: %{
+          use_when: [
+            "Primary navigation on expanded screens (≥ 1024px) with grouped sections",
+            "Apps with more destinations than a dock can hold"
+          ],
+          avoid_when: [
+            "Compact screens — use the bottom dock; the sidebar hides below lg",
+            "A handful of peer views within one page — use tabs"
+          ],
+          sizing:
+            "15rem (240px) wide; items are text-sm rows with rounded-md and bg-muted when active.",
+          responsive:
+            "Pair with a mobile picker or dock below lg — the same destinations, same order, same labels.",
+          ios:
+            "NavigationSplitView sidebar on iPad regular width; it collapses to a stack on compact."
+        },
         examples: [
           %{
             title: "Default",
@@ -1226,6 +1380,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "field",
         title: "Field",
         description: "A grouped set of related form controls.",
+        guidance: %{
+          use_when: [
+            "A control needs a description line under its label",
+            "Composing custom controls with correct label/aria wiring"
+          ],
+          avoid_when: [
+            "Plain labeled inputs — <.input field={...}> already wires everything",
+            "Visual grouping without form semantics — use a card or fieldset"
+          ],
+          sizing:
+            "Label, control, description, errors stack with 6–8px gaps; field blocks 16px apart.",
+          responsive: "Same stacked layout at every width.",
+          ios:
+            "Form Section with footer text as the description; errors below the row in sdDestructive."
+        },
         examples: [
           %{
             title: "Default",
@@ -1405,6 +1574,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "combobox",
         title: "Combobox",
         description: "An input with a searchable, filterable list of options.",
+        guidance: %{
+          use_when: [
+            "Choosing one option from a long list (> ~10: users, tags, locations)",
+            "Lists where typing-to-filter beats scrolling"
+          ],
+          avoid_when: [
+            "Short lists — native select or radio-group is faster and more accessible",
+            "Free text that merely suggests — use an input with a datalist pattern"
+          ],
+          sizing:
+            "Trigger matches input metrics (h-9, text-sm); listbox is rounded-lg with shadow-sm.",
+          responsive:
+            "On compact, the option list should be generous (full-width, comfortable rows ≥ 44px).",
+          ios: "A searchable list pushed or presented as a sheet — not a tiny inline dropdown."
+        },
         hook: true,
         examples: [
           %{
@@ -1511,6 +1695,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "data-table",
         title: "Data Table",
         description: "A table with filtering, faceted filters, sorting, and paging.",
+        guidance: %{
+          use_when: [
+            "Working datasets: search, facet filters, sortable columns, paging",
+            "Admin/index screens where the table is the page"
+          ],
+          avoid_when: [
+            "A handful of static rows — plain table",
+            "Compact-first experiences — design the card-list view first"
+          ],
+          sizing:
+            "Toolbar controls are btn-sm/h-8; rows text-sm. Keep the table the only wide element on the page.",
+          responsive:
+            "Below medium: collapse to filterable card list or hide secondary columns — horizontal scrolling is a last resort.",
+          ios: "A searchable List with filter chips/toolbar menus; sorting via a toolbar Menu."
+        },
         hook: true,
         examples: [
           %{
@@ -1681,6 +1880,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "drawer",
         title: "Drawer",
         description: "A panel that slides up from the bottom of the screen.",
+        guidance: %{
+          use_when: [
+            "Touch-first tasks and pickers on compact screens",
+            "The compact-screen replacement for side sheets and many dialogs"
+          ],
+          avoid_when: [
+            "Expanded screens — use sheet (side panel) or dialog there",
+            "Long forms — navigate to a page"
+          ],
+          sizing:
+            "Content gets safe-area bottom padding; primary action full-width at the bottom.",
+          responsive:
+            "Drawer on compact ↔ sheet/dialog on expanded — same content, different container.",
+          ios:
+            "This IS the iOS sheet with detents; use the system presentation, not a custom panel."
+        },
         examples: [
           %{
             title: "Default",
@@ -2187,6 +2402,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "navbar",
         title: "Navbar",
         description: "A top application bar.",
+        guidance: %{
+          use_when: [
+            "Primary navigation at medium width; brand + search + account at any width",
+            "Marketing/docs sites where a dock would be overkill"
+          ],
+          avoid_when: [
+            "The only navigation on compact app screens — primary destinations belong in the dock",
+            "Stuffing primary destinations into a hamburger menu"
+          ],
+          sizing:
+            "h-14 bar, sticky, border-b border-base-300 with backdrop blur; contents are text-sm.",
+          responsive:
+            "Links collapse below md — keep brand, search, and account visible; move links to the dock or a drawer of secondary items.",
+          ios:
+            "The navigation bar (large title) — it comes from NavigationStack, never hand-built."
+        },
         examples: [
           %{
             title: "Default",

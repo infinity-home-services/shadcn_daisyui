@@ -386,6 +386,49 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   end
 
   @doc """
+  Usage-guidance panel for a component page: when to use / when not, plus
+  sizing, responsive, and iOS notes. All keys optional.
+  """
+  attr :guidance, :map, required: true
+
+  def guidance_panel(assigns) do
+    ~H"""
+    <div class="space-y-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div :if={@guidance[:use_when]} class="rounded-lg border border-success/40 p-4">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-success">Use when</p>
+          <ul class="list-inside list-disc space-y-1 text-sm">
+            <li :for={item <- @guidance.use_when}>{item}</li>
+          </ul>
+        </div>
+        <div :if={@guidance[:avoid_when]} class="rounded-lg border border-destructive/40 p-4">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">
+            Don't use for
+          </p>
+          <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+            <li :for={item <- @guidance.avoid_when}>{item}</li>
+          </ul>
+        </div>
+      </div>
+      <dl class="space-y-2 text-sm">
+        <div :if={@guidance[:sizing]} class="flex gap-2">
+          <dt class="w-28 shrink-0 font-medium">Sizing</dt>
+          <dd class="text-muted-foreground">{@guidance.sizing}</dd>
+        </div>
+        <div :if={@guidance[:responsive]} class="flex gap-2">
+          <dt class="w-28 shrink-0 font-medium">Responsive</dt>
+          <dd class="text-muted-foreground">{@guidance.responsive}</dd>
+        </div>
+        <div :if={@guidance[:ios]} class="flex gap-2" data-platform="ios">
+          <dt class="w-28 shrink-0 font-medium">iOS</dt>
+          <dd class="text-muted-foreground">{@guidance.ios}</dd>
+        </div>
+      </dl>
+    </div>
+    """
+  end
+
+  @doc """
   API reference table for a component's function-component props.
   """
   attr :props, :list, required: true
