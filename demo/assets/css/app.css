@@ -5,6 +5,8 @@
 @source "../css";
 @source "../js";
 @source "../../lib/shadcn_daisyui_demo_web";
+@source "../../../lib";
+@source "../../../priv/static/shadcn-daisyui.js";
 
 /* A Tailwind plugin that makes "hero-#{ICON}" classes available.
    The heroicons installation itself is managed by your mix.exs */
@@ -17,9 +19,10 @@
   themes: false;
 }
 
-/* shadcn-daisyui theme — now consumed from the package (copied here by
-   `mix shadcn_daisyui.install`). This is the real "use it in a project" path. */
-@import "./shadcn-daisyui.css";
+/* shadcn-daisyui theme — consumed straight from the package source (this is the
+   same import-from-deps mode `mix shadcn_daisyui.install` sets up, just with the
+   in-repo path). NEVER copy the file here: copies drift from the package. */
+@import "../../../priv/static/shadcn-daisyui.css";
 
 /* Add variants based on LiveView classes */
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);

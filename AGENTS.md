@@ -28,6 +28,13 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   `--border-color`. Don't confuse them.
 - **Components are thin.** Styling belongs in the theme CSS, not in long class
   lists inside components. A component exists to encode structure/ARIA/hook markup.
+- **Theme transitions are centralized.** A `data-theme` MutationObserver (in the
+  JS) + the `html.theme-transitioning` rule (in the CSS) force one synchronized
+  transition spec during theme changes. Never give a component its own
+  color-transition for theme purposes; interaction transitions (hover/press/
+  open) are fine and are restored the moment the window ends.
+- **The demo never copies package assets.** `demo/assets` imports
+  `../../../priv/static/shadcn-daisyui.{css,js}` directly — copies drift.
 - **Every interactive component needs `id`** and renders the exact markup its JS
   hook expects (`data-*` attributes). Keep component HEEx and JS in sync.
 - **Public API**: `ShadcnDaisyui.Components`, `ShadcnDaisyui.FormComponents`,
