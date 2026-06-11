@@ -8,30 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- `.theme-snap` utility — opts an element out of the theme transition (instant
-  flip). For elements whose foreground and background fully invert across themes
-  (a `bg-primary text-primary-content` mark, a solid primary/neutral badge in the
-  grayscale neutral theme), which otherwise pass through a low-contrast "crossover"
-  midpoint and briefly lose their content.
-
-### Fixed
-
-- Theme-toggle flicker: colors across components no longer transition at
-  different speeds/curves or snap. The root causes were that the old pin forced
-  only `transition-duration` — leaving daisyUI's per-component *easings*
-  (cubic-bezier vs `ease`) and *property lists* in play, so components animated
-  along different curves and any color a component's `transition-property` omitted
-  (e.g. `.card` transitions only `outline`; card text omits `color`) snapped.
-  The pin now forces the full spec — property list, duration, easing, zero delay —
-  on every non-excluded element, so all colors move in lockstep. Movement props
-  (transform, `left`, grid-template-columns/rows) are in the list so sliders,
-  switches, and accordions still animate; the `:not(...)` exclusion list keeps
-  the dialog/drawer/tooltip/carousel/skeleton/countdown animations untouched.
-
 ### Changed
 
+- **Theme toggle is now instant** (no color fade). Fading between light and dark
+  inherently flickers: a fading background sweeps through the lightness of the
+  text/borders in front of it, so they cross at a gray midpoint and briefly lose
+  contrast (text vanishes, borders trail). No fade — however synchronized —
+  avoids that, so the theme switches instantly instead (flicker-free, like
+  Tailwind's and GitHub's sites). One CSS rule forces `transition-duration: 0` on
+  every element except the components whose own enter/exit animations must stay
+  (dialog, drawer, tooltip, carousel, skeleton, countdown). Replaces the earlier
+  JS transition window and the synchronized-CSS-fade attempts, both of which
+  hit this inherent crossover. Hover/focus color changes are instant too (the
+  cost of doing it without a JS guard).
 - Docs site now imports the theme CSS/JS straight from the package source
   instead of keeping copies that drift.
 

@@ -883,73 +883,23 @@ dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
 html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------
-   THEME TRANSITION — one duration for every themeable colour change, so nothing
-   trails when toggling light/dark. The single source of truth is the
-   `--theme-transition` variable on :root.
+   THEME TOGGLE IS INSTANT — colours do not fade between light and dark.
 
-   daisyUI ships per-component durations (0.2–0.3s) and bare surfaces (html /
-   body / divs) have none — which is why elements used to transition at different
-   speeds. The rules below normalise everything to the shared duration.
-   --------------------------------------------------------------------------- */
-:root {
-  --theme-transition: 150ms;
-  --theme-transition-ease: ease;
-}
+   Cross-fading inverted themes inherently flickers: as a background fades it
+   sweeps through the lightness of the text/border in front of it, so they meet
+   at a gray midpoint and briefly lose contrast (text "vanishes", borders
+   trail). There is no way to fade colours between light and dark without that
+   muddy middle — making the fade MORE synchronised only makes the crossings
+   cleaner. So the theme switches instantly instead, which is flicker-free and
+   what most production sites do (Tailwind, GitHub, …).
 
-/* 1) Give every element a colour transition (covers bare surfaces + text that
-      otherwise change instantly). This goes in the `base` layer so daisyUI's
-      component rules (a higher layer) keep WHICH properties they animate — their
-      transforms/scales for modals, toggles, etc. stay intact. */
-@layer base {
-  *,
-  *::before,
-  *::after {
-    transition-property: background-color, border-color, color, fill, stroke,
-      text-decoration-color, outline-color;
-    transition-duration: var(--theme-transition);
-    transition-timing-function: var(--theme-transition-ease);
-  }
-}
-
-/* 2) Force ONE transition spec — property list, duration, easing, delay — onto
-      every non-excluded element, so all themeable colours move in lockstep.
-
-      Why force the property list too (not just duration): daisyUI/Tailwind give
-      components wildly inconsistent transition-property lists — `.btn` animates
-      colours, `.card` animates only `outline`, card text only
-      `background-color, border-color` (no `color`!), others nothing. Whatever a
-      component omits SNAPS on a theme change while the rest tween — that is the
-      flicker. Restating the full list fixes every component at once instead of
-      patching them one by one.
-
-      The list includes the movement props non-excluded components animate
-      (transform/translate/scale/rotate, left for the theme-toggle slider,
-      grid-template-columns/rows for the switch and accordion) so those keep
-      working — just at the shared duration. The big, deliberate animations
-      (dialog/drawer slide, tooltip, carousel, skeleton, countdown roll) are in
-      the exclusion list and are left completely alone. */
+   This forces `transition-duration: 0` on everything EXCEPT the components whose
+   own enter/exit animations must stay (dialog, drawer, tooltip, carousel,
+   skeleton, countdown, …). Doing it in pure CSS (no JS) means hover/focus colour
+   changes are instant too — which suits the crisp, no-animation feel. To bring
+   back animated interactions while keeping the toggle instant you'd need a tiny
+   JS "disable transitions during the swap" guard; intentionally omitted. */
 :not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
     [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
-  transition-property: color, background-color, border-color, outline-color,
-    text-decoration-color, fill, stroke, box-shadow, opacity, transform,
-    translate, scale, rotate, left, grid-template-columns, grid-template-rows,
-    outline !important;
-  transition-duration: var(--theme-transition) !important;
-  transition-timing-function: var(--theme-transition-ease) !important;
-  transition-delay: 0s !important;
-}
-
-/* 3) Crossover opt-out. An element whose foreground AND background fully invert
-      between themes — a `bg-primary text-primary-content` mark, or a solid
-      primary/neutral badge in the GRAYSCALE neutral theme — can't tween cleanly:
-      near-black ↔ near-white passes through equal lightness at the midpoint, so
-      the content briefly loses contrast (a "flicker") even though it is perfectly
-      in sync. Snapping it (instant flip) keeps the content readable throughout.
-      Add `.theme-snap` to such elements. (A COLOURED brand primary barely crosses,
-      so brand-themed apps usually don't need this.) */
-.theme-snap,
-.theme-snap *,
-.theme-snap::before,
-.theme-snap::after {
   transition-duration: 0s !important;
 }

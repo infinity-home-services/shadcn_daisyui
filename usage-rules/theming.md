@@ -45,33 +45,23 @@ Rules:
 - Never use `.dark` class toggling as the primary mechanism; it exists only so raw
   shadcn `dark:` utilities work.
 
-## Theme-change transitions (synchronized — do not fight this)
+## Theme toggle is instant — do not add a color fade
 
-Pure CSS, no JS. A single rule forces one transition spec — **property list,
-duration, easing, and zero delay** — onto every element, with `!important`:
+The theme switches **instantly** (no color fade). This is deliberate: fading
+between light and dark inherently flickers — as a background fades it sweeps
+through the lightness of the text/borders in front of it, so they meet at a gray
+midpoint and briefly lose contrast (text vanishes, borders trail). There's no
+way to *fade* colors between inverted themes without that muddy middle, so the
+theme switches instantly (flicker-free, like Tailwind's and GitHub's sites).
 
-- It forces the **property list** (not just the duration) because daisyUI/Tailwind
-  give components wildly inconsistent `transition-property` lists (`.btn` animates
-  colors, `.card` only `outline`, card text only `background-color, border-color`
-  with no `color`). Whatever a component omits *snaps* on a theme change while the
-  rest tween — that's the flicker. Restating the full list (colors + the movement
-  props components animate: transform/translate/scale/rotate, `left`,
-  grid-template-columns/rows) fixes every component at once and keeps movement.
-- It **excludes** the components with big deliberate animations (dialog, drawer,
-  tooltip, carousel, skeleton, countdown) via `:not(...)`, so those keep their own
-  timing untouched.
+A single CSS rule forces `transition-duration: 0` on everything except the
+components whose own enter/exit animations must stay (dialog, drawer, tooltip,
+carousel, skeleton, countdown).
 
-- NEVER add `transition-*`/`duration-*` utilities or CSS to make theme changes
-  smooth — it's automatic. Giving a component its own color-transition duration
-  is what causes the out-of-sync flicker.
-- The single knob is `--theme-transition` (default 150ms) on `:root`/your theme
-  block.
-- **Crossover:** an element whose foreground AND background fully invert (a
-  `bg-primary text-primary-content` mark, or a solid primary/neutral badge in the
-  GRAYSCALE neutral theme) can't tween cleanly — near-black ↔ near-white passes
-  through equal lightness at the midpoint, so its content briefly loses contrast
-  even though it's perfectly in sync. Add `.theme-snap` to such an element to flip
-  it instantly instead. A COLORED brand primary barely crosses, so brand-themed
-  apps rarely need it.
+- NEVER add `transition-*`/`duration-*` to color the theme change "smoothly" — a
+  partial fade reintroduces the flicker. Color transitions on theme toggle are
+  intentionally off.
+- Interaction color transitions (hover/focus) are instant too, as a consequence
+  of doing this in pure CSS — it suits the crisp, no-animation feel.
 - Toggle themes only by changing `data-theme` on `<html>` (Phoenix's
   `phx:set-theme` does this) — not by swapping stylesheets or other classes.
