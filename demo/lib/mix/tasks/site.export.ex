@@ -50,8 +50,33 @@ defmodule Mix.Tasks.Site.Export do
     File.write!(Path.join(out, "404.html"), redirect_html("/"))
 
     copy_static(out)
+    prefix_static_assets(out)
 
     Mix.shell().info([:green, "✓ ", :reset, "Exported #{length(pages)} pages + assets to #{out}/"])
+  end
+
+  # Phoenix prefixes generated route links with the URL base path, but `~p` for
+  # static assets (`/assets`, `/images`, …) is not prefixed. When hosting under a
+  # base path (e.g. a GitHub Pages project site), rewrite those roots in the HTML
+  # so they resolve under the same prefix.
+  defp prefix_static_assets(out) do
+    base = System.get_env("URL_PATH")
+
+    if base && base not in ["", "/"] do
+      base = String.trim_trailing(base, "/")
+      roots = ShadcnDaisyuiDemoWeb.static_paths()
+
+      for file <- Path.wildcard(Path.join(out, "**/*.html")) do
+        html = File.read!(file)
+
+        new =
+          Enum.reduce(roots, html, fn root, acc ->
+            String.replace(acc, ~s(="/#{root}), ~s(="#{base}/#{root}))
+          end)
+
+        File.write!(file, new)
+      end
+    end
   end
 
   defp render(path) do
