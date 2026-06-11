@@ -1,0 +1,142 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">One value, every platform</h2>
+    <p class="text-sm text-muted-foreground">
+      Values are stated in dual units everywhere:
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">1rem = 16px</code>
+      on the web and
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">1pt ≈ 1px</code>
+      at 1× on iOS — so a value written once is the same physical size on both.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <div
+        :for={
+          u <- [
+            %{rem: "0.5rem", px: "8px", pt: "8pt"},
+            %{rem: "1rem", px: "16px", pt: "16pt"},
+            %{rem: "1.5rem", px: "24px", pt: "24pt"},
+            %{rem: "2.75rem", px: "44px", pt: "44pt"}
+          ]
+        }
+        class="rounded-lg border border-base-300 px-4 py-3 text-center"
+      >
+        <p class="font-mono text-sm font-medium">{u.rem}</p>
+        <p class="font-mono text-xs text-muted-foreground">{u.px} · {u.pt}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Who wins: HIG or these guidelines?</h2>
+    <p class="text-sm text-muted-foreground">
+      On iOS, Apple's Human Interface Guidelines own the platform chrome; this design
+      system owns the brandable surface. Never invent a third option.
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th class="w-44">Winner</th>
+            <th>Examples</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Navigation chrome</td>
+            <td><span class="badge badge-outline">HIG</span></td>
+            <td class="text-muted-foreground">Tab bars, nav bars, split views, back button</td>
+          </tr>
+          <tr>
+            <td>System gestures &amp; surfaces</td>
+            <td><span class="badge badge-outline">HIG</span></td>
+            <td class="text-muted-foreground">Swipe-back, alerts, share sheets, keyboards</td>
+          </tr>
+          <tr>
+            <td>Spacing scale</td>
+            <td><span class="badge">Guidelines</span></td>
+            <td class="text-muted-foreground">4pt grid, blessed steps</td>
+          </tr>
+          <tr>
+            <td>Type roles &amp; weights</td>
+            <td><span class="badge">Guidelines</span></td>
+            <td class="text-muted-foreground">The six-role ramp, mapped to SF text styles</td>
+          </tr>
+          <tr>
+            <td>Color semantics &amp; radius</td>
+            <td><span class="badge">Guidelines</span></td>
+            <td class="text-muted-foreground">Semantic roles, 6/8/10/14pt corners</td>
+          </tr>
+          <tr>
+            <td>Touch target floor</td>
+            <td><span class="badge badge-secondary">Both agree</span></td>
+            <td class="text-muted-foreground">44 × 44pt minimum</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">Token map → SwiftUI</h2>
+    <p class="text-sm text-muted-foreground">
+      The <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyUI</code>
+      Swift package ships these as Color/constant tokens with light + dark variants baked in.
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Web token</th>
+            <th>Swift token</th>
+            <th>System analogue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={
+            {web, swift, sys} <- [
+              {"--background", "Color.sdBackground", "systemBackground"},
+              {"--foreground", "Color.sdForeground", "label"},
+              {"--muted-foreground", "Color.sdMutedForeground", "secondaryLabel"},
+              {"--primary", "Color.sdPrimary", "accent color role"},
+              {"--destructive", "Color.sdDestructive", "systemRed role"},
+              {"--border-color", "Color.sdBorder", "separator"},
+              {"--radius-xl (14px)", "Radius.xl (14pt)", "continuous corners"}
+            ]
+          }>
+            <td class="font-mono text-xs">{web}</td>
+            <td class="font-mono text-xs">{swift}</td>
+            <td class="font-mono text-xs text-muted-foreground">{sys}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Window size classes</h2>
+    <p class="text-sm text-muted-foreground">
+      Three classes drive layout and navigation on every platform — see
+      <a href="/docs/foundations/layout" class="link link-primary">Layout</a>
+      and <a href="/docs/foundations/navigation" class="link link-primary">Navigation</a>.
+    </p>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div
+        :for={
+          c <- [
+            %{name: "compact", range: "< 640px", devices: "iPhone, iPad slide-over"},
+            %{name: "medium", range: "640–1023px", devices: "portrait iPad splits"},
+            %{name: "expanded", range: "≥ 1024px", devices: "iPad landscape, desktop"}
+          ]
+        }
+        class="rounded-lg border border-base-300 p-4"
+      >
+        <p class="text-sm font-medium">{c.name}</p>
+        <p class="font-mono text-xs text-muted-foreground">{c.range}</p>
+        <p class="mt-1 text-xs text-muted-foreground">{c.devices}</p>
+      </div>
+    </div>
+  </section>
+</.docs_layout>

@@ -1,0 +1,89 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The floor</h2>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={
+            {check, target} <- [
+              {"Body text contrast", "4.5:1"},
+              {"Large text / UI boundaries", "3:1"},
+              {"Touch target", "44 × 44pt effective hit area"},
+              {"Smallest text", "12px / 12pt (text-xs) — labels only"},
+              {"Focus ring", "3px at 50% ring color, :focus-visible only"}
+            ]
+          }>
+            <td>{check}</td>
+            <td class="font-mono text-xs text-muted-foreground">{target}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-sm text-muted-foreground">
+      The theme's token pairs already pass contrast — the rule exists so you don't defeat
+      them.
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">text-muted-foreground</code>
+      is for secondary text only, never below 12px, never on muted surfaces.
+    </p>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Focus is never removed</h2>
+    <div class="flex flex-wrap items-center gap-6 rounded-lg border border-base-300 p-6">
+      <button class="btn btn-outline" style="box-shadow: var(--ring-shadow)">
+        Focused control
+      </button>
+      <p class="max-w-sm text-sm text-muted-foreground" data-platform="web">
+        Never <code class="font-mono text-xs">outline-none</code> without a replacement.
+        The ring appears on <code class="font-mono text-xs">:focus-visible</code> —
+        keyboard users see it, mouse clicks don't trigger it.
+      </p>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Writing UI text</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="rounded-lg border border-success/40 p-4">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-success">Do</p>
+        <ul class="space-y-2 text-sm">
+          <li>Sentence case everywhere</li>
+          <li>"Save changes" / "Delete project" — verbs first</li>
+          <li>"Email is already taken — try signing in instead"</li>
+          <li>"Delete 'Q3 report'?" → Delete / Cancel</li>
+        </ul>
+      </div>
+      <div class="rounded-lg border border-destructive/40 p-4">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">Don't</p>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li>Title Case Or ALL CAPS</li>
+          <li>"OK" / "Yes" / "Click here"</li>
+          <li>"Invalid input"</li>
+          <li>"Are you sure?" → Yes / No</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-3" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">iOS / SwiftUI</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      <p>
+        Every tappable element gets <code class="font-mono text-xs">.accessibilityLabel</code>
+        unless its text is the label. Group composite rows with <code class="font-mono text-xs">.accessibilityElement(children: .combine)</code>.
+        Support Dynamic Type at least ±1 step; test critical flows at accessibility XL.
+        Check <code class="font-mono text-xs">accessibilityReduceMotion</code>
+        before
+        custom animations.
+      </p>
+    </div>
+  </section>
+</.docs_layout>

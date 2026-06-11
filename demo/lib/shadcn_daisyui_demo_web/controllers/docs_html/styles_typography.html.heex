@@ -1,0 +1,100 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The six-role ramp</h2>
+    <p class="text-sm text-muted-foreground">
+      Six roles cover every screen. Weights: 500 for buttons/labels, 600 for titles,
+      700 for the page title only — never bold body copy for emphasis.
+    </p>
+    <div class="space-y-6 rounded-lg border border-base-300 p-6">
+      <div>
+        <p class="text-3xl font-bold tracking-tight">Page title</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-3xl · 30px · 700 <span data-platform="ios">· ↔ Large Title 34pt</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-xl font-semibold tracking-tight">Section title</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-xl · 20px · 600 <span data-platform="ios">· ↔ Title 3 20pt</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-lg font-medium">Subtitle / card title</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-lg · 18px · 500 <span data-platform="ios">· ↔ Headline 17pt</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-base">Body — prose reads at sixteen pixels with normal weight.</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-base · 16px · 400 <span data-platform="ios">· ↔ Body 17pt</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-sm">UI / controls — the system-wide control size.</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-sm · 14px · 400–500 <span data-platform="ios">· ↔ Subheadline 15pt</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-xs font-medium">LABEL / CAPTION — the floor, labels only</p>
+        <p class="mt-1 font-mono text-xs text-muted-foreground">
+          text-xs · 12px · 500 <span data-platform="ios">· ↔ Footnote 13pt</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Iconography</h2>
+    <p class="text-sm text-muted-foreground">
+      <span data-platform="web">
+        Heroicons: outline by default, solid for active/selected states.
+      </span>
+      <span data-platform="ios">
+        SF Symbols: outline variants for parity, .fill when selected.
+      </span>
+      Functional icon-only controls get accessible labels; decorative icons are hidden
+      from assistive tech.
+    </p>
+    <div
+      class="flex flex-wrap items-center gap-8 rounded-lg border border-base-300 p-6"
+      data-platform="web"
+    >
+      <div class="space-y-2 text-center">
+        <button class="btn btn-outline">
+          <span class="hero-arrow-down-tray size-4" aria-hidden="true"></span> Export
+        </button>
+        <p class="font-mono text-xs text-muted-foreground">size-4 · 16px in controls</p>
+      </div>
+      <div class="space-y-2 text-center">
+        <span class="hero-bell inline-block size-5" aria-hidden="true"></span>
+        <p class="font-mono text-xs text-muted-foreground">size-5 · 20px standalone</p>
+      </div>
+      <div class="space-y-2 text-center">
+        <span class="flex items-center gap-1">
+          <span class="hero-star inline-block size-5 text-muted-foreground" aria-hidden="true">
+          </span>
+          <span class="hero-star-solid inline-block size-5 text-primary" aria-hidden="true">
+          </span>
+        </span>
+        <p class="font-mono text-xs text-muted-foreground">outline → solid when active</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-3" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">iOS / SwiftUI</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      <p>
+        Map roles via the Swift package's <code class="font-mono text-xs">Typography</code>
+        Font extensions — built on SF text styles so Dynamic Type scales them. Never pin
+        <code class="font-mono text-xs">Font.system(size:)</code>
+        for body content. Match
+        symbol scale to the adjacent text style.
+      </p>
+    </div>
+  </section>
+</.docs_layout>

@@ -150,6 +150,17 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
             <.icon name="hero-swatch" class="size-4" /> Themes
           </a>
         </li>
+        <%= for group <- ShadcnDaisyuiDemoWeb.Guides.groups() do %>
+          <li class="command-group-label" data-group>{group.title}</li>
+          <li :for={guide <- group.guides}>
+            <a class="command-item" data-command-item href={guide.path}>
+              {guide.title}
+              <span class="ml-auto truncate text-xs text-muted-foreground">
+                {guide.description}
+              </span>
+            </a>
+          </li>
+        <% end %>
         <%= for group <- @groups do %>
           <li class="command-group-label" data-group>{group.title}</li>
           <li :for={component <- group.components}>

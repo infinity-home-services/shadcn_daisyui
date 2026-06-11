@@ -11,6 +11,7 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
   """
 
   alias ShadcnDaisyuiDemoWeb.Catalog
+  alias ShadcnDaisyuiDemoWeb.Guides
 
   @summary """
   shadcn_daisyui is a daisyUI v5 theme + component kit that makes daisyUI \
@@ -52,10 +53,20 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
 
     - [Installation](#{base}/docs/installation): how to add the theme and JS to a Phoenix app.
     - [Themes](#{base}/docs/themes): theming tokens and the interactive theme creator.
+
+    ## Design guidelines
+
+    Platform-portable rules (web + native iOS/iPadOS). One-file bundle:
+    [design-guidelines.md](#{base}/design-guidelines.md).
+
+    #{guide_index(base)}
     """
   end
 
-  @doc "The llms-full.txt document: the index intro plus every component's markdown."
+  @doc """
+  The llms-full.txt document: the index intro, the design guidelines, then every
+  component's markdown.
+  """
   def llms_full_txt(_base \\ "") do
     full =
       Catalog.slugs()
@@ -69,24 +80,47 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
 
     ---
 
+    #{Guides.design_guidelines_md()}
+    ---
+
     #{full}\
     """
   end
 
-  @doc "The search index: one entry per component, in sidebar order."
+  @doc "The search index: guides then components, in sidebar order."
   def search_index(base \\ "") do
-    for group <- Catalog.groups(), component <- group.components do
-      %{
-        slug: component.slug,
-        title: component.title,
-        description: component.description,
-        group: group.title,
-        url: "#{base}/docs/components/#{component.slug}"
-      }
-    end
+    guides =
+      for group <- Guides.groups(), guide <- group.guides do
+        %{
+          slug: guide.slug,
+          title: guide.title,
+          description: guide.description,
+          group: group.title,
+          url: "#{base}#{guide.path}"
+        }
+      end
+
+    components =
+      for group <- Catalog.groups(), component <- group.components do
+        %{
+          slug: component.slug,
+          title: component.title,
+          description: component.description,
+          group: group.title,
+          url: "#{base}/docs/components/#{component.slug}"
+        }
+      end
+
+    guides ++ components
   end
 
   # ---------------------------------------------------------------------------
+
+  defp guide_index(base) do
+    Guides.all()
+    |> Enum.map(fn g -> "- [#{g.title}](#{base}#{g.path}.md): #{g.description}" end)
+    |> Enum.join("\n")
+  end
 
   defp component_index(base) do
     Catalog.slugs()

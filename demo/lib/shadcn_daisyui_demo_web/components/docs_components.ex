@@ -7,6 +7,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   use ShadcnDaisyuiDemoWeb, :html
 
   alias ShadcnDaisyuiDemoWeb.Catalog
+  alias ShadcnDaisyuiDemoWeb.Guides
 
   @doc """
   Top navigation bar — shared by every page. `active` highlights a primary link
@@ -138,6 +139,22 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                 </a>
               </div>
 
+              <div :for={group <- Guides.groups()} class="space-y-1">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  {group.title}
+                </p>
+                <a
+                  :for={g <- group.guides}
+                  href={g.path}
+                  class={[
+                    "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                    sidebar_link_class(@active_guide == g.slug)
+                  ]}
+                >
+                  {g.title}
+                </a>
+              </div>
+
               <div :for={group <- @groups} class="space-y-1">
                 <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
                   {group.title}
@@ -178,6 +195,21 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                     <a
                       :for={g <- guides()}
                       href={"/docs/#{g.slug}"}
+                      class={[
+                        "block rounded-md px-2 py-1.5 text-sm",
+                        sidebar_link_class(@active_guide == g.slug)
+                      ]}
+                    >
+                      {g.title}
+                    </a>
+                  </div>
+                  <div :for={group <- Guides.groups()} class="mb-2 space-y-0.5">
+                    <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                      {group.title}
+                    </p>
+                    <a
+                      :for={g <- group.guides}
+                      href={g.path}
                       class={[
                         "block rounded-md px-2 py-1.5 text-sm",
                         sidebar_link_class(@active_guide == g.slug)
@@ -228,6 +260,9 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       guide = Enum.find(guides(), &(&1.slug == active_guide)) ->
         guide.title
 
+      guide = Enum.find(Guides.all(), &(&1.slug == active_guide)) ->
+        guide.title
+
       c = groups |> Enum.flat_map(& &1.components) |> Enum.find(&(&1.slug == active)) ->
         c.title
 
@@ -273,6 +308,43 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     >
       <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
     </button>
+    """
+  end
+
+  @doc """
+  Web | iOS | All filter for guideline pages. Buttons toggle a
+  `data-platform-view` attribute on `<html>` (persisted in localStorage by
+  `app.js`); CSS hides blocks marked `data-platform="web"`/`"ios"` accordingly.
+  """
+  def platform_toggle(assigns) do
+    ~H"""
+    <div data-platform-toggle role="group" aria-label="Filter by platform" class="tabs tabs-box w-fit">
+      <button type="button" class="tab tab-active" data-platform-choice="all">All</button>
+      <button type="button" class="tab" data-platform-choice="web">Web</button>
+      <button type="button" class="tab" data-platform-choice="ios">iOS</button>
+    </div>
+    """
+  end
+
+  @doc """
+  Header block for a guideline page: heading + platform toggle + a pointer to
+  the portable markdown source (the agent-facing artifact).
+  """
+  attr :guide, :map, required: true
+
+  def guide_heading(assigns) do
+    ~H"""
+    <.doc_heading title={@guide.title} description={@guide.description} />
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <.platform_toggle />
+      <p class="text-sm text-muted-foreground">
+        Portable source:
+        <a href={"#{@guide.path}.md"} class="link link-primary font-medium">
+          usage-rules/{@guide.source}
+        </a>
+        · <a href="/design-guidelines.md" class="link link-hover">all-in-one bundle</a>
+      </p>
+    </div>
     """
   end
 

@@ -102,6 +102,26 @@ const persistSidebarScroll = () => {
   window.addEventListener("pagehide", save)
 }
 
-const bootShadcn = () => { initShadcnDaisyui(); initThemeCreator(); persistSidebarScroll() }
+// Platform filter (Web | iOS | All) on the guideline pages. The chosen view is
+// kept on <html data-platform-view> so CSS can hide [data-platform] blocks, and
+// persisted across pages in localStorage.
+const initPlatformToggle = () => {
+  const KEY = "docs-platform-view"
+  const apply = (view) => {
+    document.documentElement.setAttribute("data-platform-view", view)
+    document.querySelectorAll("[data-platform-toggle] [data-platform-choice]").forEach((btn) => {
+      btn.classList.toggle("tab-active", btn.dataset.platformChoice === view)
+    })
+  }
+  apply(localStorage.getItem(KEY) || "all")
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-platform-choice]")
+    if (!btn) return
+    localStorage.setItem(KEY, btn.dataset.platformChoice)
+    apply(btn.dataset.platformChoice)
+  })
+}
+
+const bootShadcn = () => { initShadcnDaisyui(); initThemeCreator(); persistSidebarScroll(); initPlatformToggle() }
 if (document.readyState !== "loading") bootShadcn()
 else document.addEventListener("DOMContentLoaded", bootShadcn)

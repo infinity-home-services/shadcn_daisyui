@@ -36,3 +36,8 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* Guideline pages: the Web | iOS | All platform filter. Blocks marked
+   data-platform="web"/"ios" hide when the other platform is selected. */
+[data-platform-view="web"] [data-platform="ios"] { display: none; }
+[data-platform-view="ios"] [data-platform="web"] { display: none; }

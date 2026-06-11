@@ -1,0 +1,113 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The state ladder</h2>
+    <p class="text-sm text-muted-foreground">
+      Every interactive control supports all of these. Disabled keeps the variant's
+      colors at 50% opacity — a deliberate divergence from daisyUI's grey wash.
+      Hover is pointer-only and never load-bearing.
+    </p>
+    <div class="overflow-x-auto rounded-lg border border-base-300 p-6">
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="space-y-2 text-center">
+          <button class="btn btn-primary">Default</button>
+          <p class="text-xs text-muted-foreground">default</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <button class="btn btn-primary brightness-95">Hover</button>
+          <p class="text-xs text-muted-foreground">hover (pointer only)</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <button class="btn btn-primary" style="box-shadow: var(--ring-shadow)">Focused</button>
+          <p class="text-xs text-muted-foreground">focus-visible · 3px ring</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <button class="btn btn-primary" disabled>Disabled</button>
+          <p class="text-xs text-muted-foreground">variant color @ 50%</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <button class="btn btn-primary" disabled>
+            <span class="loading loading-spinner loading-xs"></span> Saving…
+          </button>
+          <p class="text-xs text-muted-foreground">loading</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Touch targets: 44pt minimum</h2>
+    <p class="text-sm text-muted-foreground">
+      The 36px (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">h-9</code>) control
+      height is fine for pointer-dense desktop UI. On touch surfaces, every effective hit
+      area is at least 44 × 44pt / 2.75rem.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="rounded-lg border border-base-300 p-6" data-platform="web">
+        <p class="mb-3 text-sm font-medium">
+          The 16px checkbox is never a bare target — its label row is the target:
+        </p>
+        <div class="rounded-md border border-dashed border-primary/50">
+          <label class="flex cursor-pointer items-center gap-2 px-3 py-2">
+            <input type="checkbox" class="checkbox" checked />
+            <span class="text-sm">Email me updates</span>
+            <span class="ml-auto font-mono text-[11px] text-muted-foreground">≥ 44px row</span>
+          </label>
+        </div>
+        <.code_block
+          language="heex"
+          code={
+            ~S"""
+            <label class="flex items-center gap-2 py-2">
+              <input type="checkbox" class="checkbox" />
+              <span class="text-sm">Email me updates</span>
+            </label>
+            """
+          }
+        />
+      </div>
+      <div class="rounded-lg border border-base-300 p-6" data-platform="ios">
+        <p class="mb-3 text-sm font-medium">Small visuals, full-size target in SwiftUI:</p>
+        <.code_block
+          language="swift"
+          code={
+            ~S"""
+            Button { dismiss() } label: {
+              Image(systemName: "xmark")
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            """
+          }
+        />
+      </div>
+    </div>
+    <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+      <li>
+        Compact-screen primary actions: <code class="font-mono text-xs">btn-lg</code>
+        (40px), usually full width.
+      </li>
+      <li>Adjacent small targets keep ≥ 8px between them so hit areas don't overlap.</li>
+      <li>
+        Async actions show progress in place and disable the control — never tappable twice.
+      </li>
+    </ul>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Destructive actions</h2>
+    <p class="text-sm text-muted-foreground">
+      Destructive variant + a confirmation that names the object. One destructive
+      action per surface, placed last. See
+      <a href="/docs/foundations/accessibility" class="link link-primary">
+        Accessibility &amp; content
+      </a>
+      for the wording rules.
+    </p>
+    <div class="flex flex-wrap items-center gap-2 rounded-lg border border-base-300 p-6">
+      <button class="btn btn-outline">Cancel</button>
+      <button class="btn btn-error">Delete "Q3 report"</button>
+    </div>
+  </section>
+</.docs_layout>
