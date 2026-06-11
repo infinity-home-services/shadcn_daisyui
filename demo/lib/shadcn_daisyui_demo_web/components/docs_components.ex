@@ -386,7 +386,10 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         aria-label="HEEx"
       />
       <div :if={@heex} class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
-        <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@heex)}</code></pre>
+        <div data-code-block class="relative">
+          <.code_copy_button class="absolute right-2 top-2 z-10 bg-base-200" />
+          <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@heex)}</code></pre>
+        </div>
       </div>
 
       <input
@@ -396,7 +399,10 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         aria-label={if(@heex, do: "HTML", else: "Code")}
       />
       <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
-        <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@code)}</code></pre>
+        <div data-code-block class="relative">
+          <.code_copy_button class="absolute right-2 top-2 z-10 bg-base-200" />
+          <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@code)}</code></pre>
+        </div>
       </div>
     </div>
     """
