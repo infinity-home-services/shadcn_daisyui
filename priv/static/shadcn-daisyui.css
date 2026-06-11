@@ -893,6 +893,7 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
    --------------------------------------------------------------------------- */
 :root {
   --theme-transition: 150ms;
+  --theme-transition-ease: ease;
 }
 
 /* 1) Give every element a colour transition (covers bare surfaces + text that
@@ -906,15 +907,34 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
     transition-property: background-color, border-color, color, fill, stroke,
       text-decoration-color, outline-color;
     transition-duration: var(--theme-transition);
-    transition-timing-function: ease;
+    transition-timing-function: var(--theme-transition-ease);
   }
 }
 
-/* 2) Pin every element's transition DURATION to the shared value (overriding
-      daisyUI's 0.2–0.3s) so colours finish together. Only the duration is forced
-      (unlayered + !important), so components keep their animated properties.
-      Overlay / enter-exit animations keep their own longer timing. */
+/* 2) Force ONE transition spec — property list, duration, easing, delay — onto
+      every non-excluded element, so all themeable colours move in lockstep.
+
+      Why force the property list too (not just duration): daisyUI/Tailwind give
+      components wildly inconsistent transition-property lists — `.btn` animates
+      colours, `.card` animates only `outline`, card text only
+      `background-color, border-color` (no `color`!), others nothing. Whatever a
+      component omits SNAPS on a theme change while the rest tween — that is the
+      flicker. Restating the full list fixes every component at once instead of
+      patching them one by one.
+
+      The list includes the movement props non-excluded components animate
+      (transform/translate/scale/rotate, left for the theme-toggle slider,
+      grid-template-columns/rows for the switch and accordion) so those keep
+      working — just at the shared duration. The big, deliberate animations
+      (dialog/drawer slide, tooltip, carousel, skeleton, countdown roll) are in
+      the exclusion list and are left completely alone. */
 :not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
     [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
+  transition-property: color, background-color, border-color, outline-color,
+    text-decoration-color, fill, stroke, box-shadow, opacity, transform,
+    translate, scale, rotate, left, grid-template-columns, grid-template-rows,
+    outline !important;
   transition-duration: var(--theme-transition) !important;
+  transition-timing-function: var(--theme-transition-ease) !important;
+  transition-delay: 0s !important;
 }

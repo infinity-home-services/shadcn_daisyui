@@ -47,16 +47,19 @@ Rules:
 
 ## Theme-change transitions (synchronized — do not fight this)
 
-Pure CSS, two rules (no JS):
+Pure CSS, no JS. A single rule forces one transition spec — **property list,
+duration, easing, and zero delay** — onto every element, with `!important`:
 
-1. every element gets a color transition (covers bare surfaces/text daisyUI
-   leaves with none), in `@layer base` so components keep *which* properties
-   they animate;
-2. a duration pin (`transition-duration: var(--theme-transition) !important`)
-   normalizes daisyUI's mixed per-component durations (0.2–0.3s) to the shared
-   value so colors finish together — and it **excludes** components that have
-   their own animations (dialog, drawer, tooltip, carousel, skeleton, countdown,
-   …) so those keep their natural timing.
+- It forces the **property list** (not just the duration) because daisyUI/Tailwind
+  give components wildly inconsistent `transition-property` lists (`.btn` animates
+  colors, `.card` only `outline`, card text only `background-color, border-color`
+  with no `color`). Whatever a component omits *snaps* on a theme change while the
+  rest tween — that's the flicker. Restating the full list (colors + the movement
+  props components animate: transform/translate/scale/rotate, `left`,
+  grid-template-columns/rows) fixes every component at once and keeps movement.
+- It **excludes** the components with big deliberate animations (dialog, drawer,
+  tooltip, carousel, skeleton, countdown) via `:not(...)`, so those keep their own
+  timing untouched.
 
 - NEVER add `transition-*`/`duration-*` utilities or CSS to make theme changes
   smooth — it's automatic. Giving a component its own color-transition duration

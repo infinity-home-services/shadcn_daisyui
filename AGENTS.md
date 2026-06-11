@@ -28,14 +28,17 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   `--border-color`. Don't confuse them.
 - **Components are thin.** Styling belongs in the theme CSS, not in long class
   lists inside components. A component exists to encode structure/ARIA/hook markup.
-- **Theme transitions are pure CSS (no JS).** Two rules at the bottom of
-  `shadcn-daisyui.css`: (1) a base-layer color transition on every element so
-  bare surfaces don't snap; (2) a `transition-duration: var(--theme-transition)
-  !important` pin that normalizes daisyUI's mixed durations — with a `:not(...)`
-  exclusion list for components that own their animations (dialog, drawer,
-  tooltip, carousel, skeleton, countdown). Don't force those to the shared
-  duration (it crushes the dialog slide / countdown roll); don't give a normal
-  component its own color-transition duration (that's what desyncs).
+- **Theme transitions are pure CSS (no JS).** At the bottom of
+  `shadcn-daisyui.css`, one `:not(...)` rule forces the whole transition spec —
+  property list, duration, easing, zero delay — with `!important` on every
+  non-excluded element. Forcing the *property list* (not just duration) is the
+  point: daisyUI/Tailwind give inconsistent lists (`.card` transitions only
+  `outline`, card text omits `color`), so whatever they omit snaps while the
+  rest tween — the flicker. The list includes movement props (transform, `left`,
+  grid-template-columns/rows) so sliders/switches/accordions still animate. The
+  `:not(...)` exclusion list (dialog, drawer, tooltip, carousel, skeleton,
+  countdown) keeps the big deliberate animations untouched — never remove an
+  entry, and never extend the force to all elements (that crushes those).
 - **The demo never copies package assets.** `demo/assets` imports
   `../../../priv/static/shadcn-daisyui.{css,js}` directly — copies drift.
 - **Every interactive component needs `id`** and renders the exact markup its JS

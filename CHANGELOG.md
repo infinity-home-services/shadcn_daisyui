@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Theme-toggle flicker: colors across components no longer transition at
+  different speeds/curves or snap. The root causes were that the old pin forced
+  only `transition-duration` — leaving daisyUI's per-component *easings*
+  (cubic-bezier vs `ease`) and *property lists* in play, so components animated
+  along different curves and any color a component's `transition-property` omitted
+  (e.g. `.card` transitions only `outline`; card text omits `color`) snapped.
+  The pin now forces the full spec — property list, duration, easing, zero delay —
+  on every non-excluded element, so all colors move in lockstep. Movement props
+  (transform, `left`, grid-template-columns/rows) are in the list so sliders,
+  switches, and accordions still animate; the `:not(...)` exclusion list keeps
+  the dialog/drawer/tooltip/carousel/skeleton/countdown animations untouched.
+
 ### Changed
 
 - Docs site now imports the theme CSS/JS straight from the package source
