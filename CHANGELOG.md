@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 (0.x: minor versions may contain breaking changes, noted explicitly).
 
+## [Unreleased]
+
+### Changed
+
+- Theme transitions rebuilt for perfect sync: a `data-theme` watcher adds
+  `theme-transitioning` to `<html>` for one window during which every element
+  transitions colors (and toggle-indicator movement) with the same duration,
+  easing, and start instant (`--theme-transition`, default 150ms; respects
+  `prefers-reduced-motion`). Replaces the always-on `*` transition + duration
+  pin, whose exclusion list let dialogs/tooltips/carousels change off-beat.
+  Components keep their natural interaction animations outside the window.
+- Docs site now imports the theme CSS/JS straight from the package source
+  instead of keeping copies that drift.
+
 ## [0.2.0] - 2026-06-11
 
 ### Added

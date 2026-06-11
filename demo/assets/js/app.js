@@ -25,7 +25,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/shadcn_daisyui_demo"
 import topbar from "../vendor/topbar"
 // interactive components from the shadcn_daisyui package (copied by its install task)
-import { initShadcnDaisyui, showToast } from "./shadcn-daisyui"
+import { initShadcnDaisyui, showToast } from "../../../priv/static/shadcn-daisyui.js"
 // docs-site only: the interactive theme creator on /docs/themes
 import { initThemeCreator } from "./theme_creator"
 

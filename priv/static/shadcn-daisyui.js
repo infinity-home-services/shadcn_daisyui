@@ -24,6 +24,32 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   })
 }
 
+// Synchronized theme transitions: while `theme-transitioning` is on <html>,
+// the theme CSS forces ONE transition spec (property/duration/easing/delay)
+// onto every element, so all colours change in lockstep when the theme
+// toggles. The class is added the moment `data-theme` changes (observer fires
+// before the next paint, so the transition catches the change) and removed
+// after the `--theme-transition` window. Works with any toggle mechanism —
+// Phoenix's phx:set-theme script, LiveView, or manual setAttribute.
+if (typeof window !== "undefined" && !window.__shadcnThemeSync) {
+  window.__shadcnThemeSync = true
+  const root = document.documentElement
+  let timer = null
+  const windowMs = () => {
+    const raw = getComputedStyle(root).getPropertyValue("--theme-transition").trim()
+    const n = parseFloat(raw)
+    if (isNaN(n)) return 150
+    return raw.endsWith("ms") ? n : n * 1000
+  }
+  new MutationObserver(() => {
+    const ms = windowMs()
+    if (ms <= 0) return
+    root.classList.add("theme-transitioning")
+    clearTimeout(timer)
+    timer = setTimeout(() => root.classList.remove("theme-transitioning"), ms + 50)
+  }).observe(root, { attributes: true, attributeFilter: ["data-theme"] })
+}
+
 function showToast(variant) {
   const host = document.getElementById("toast-host")
   if (!host) return

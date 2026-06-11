@@ -883,38 +883,49 @@ dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
 html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------
-   THEME TRANSITION — one duration for every themeable colour change, so nothing
-   trails when toggling light/dark. The single source of truth is the
-   `--theme-transition` variable on :root.
+   THEME TRANSITION — every colour on the page changes at the SAME duration,
+   easing, and instant when the theme toggles.
 
-   daisyUI ships per-component durations (0.2–0.3s) and bare surfaces (html /
-   body / divs) have none — which is why elements used to transition at different
-   speeds. The rules below normalise everything to the shared duration.
+   How: the bundled JS watches `data-theme` on <html> (MutationObserver) and
+   adds `theme-transitioning` for exactly one transition window. While that
+   class is present, the rule below forces ONE transition spec onto every
+   element and pseudo-element (!important beats daisyUI's per-component 0.2–0.3s
+   durations, inline Tailwind transition utilities, and elements with no
+   transition at all). The moment the window ends, the class is removed and
+   every component gets its natural hover / press / dialog animations back.
+
+   This replaces the old approach (always-on `*` transition + a duration pin
+   with an exclusion list), which could not keep excluded elements in sync.
+
+   Single knob: `--theme-transition` (+ `--theme-transition-ease`). Brand themes
+   may override it; `0ms` disables the effect entirely.
    --------------------------------------------------------------------------- */
 :root {
   --theme-transition: 150ms;
+  --theme-transition-ease: ease;
 }
 
-/* 1) Give every element a colour transition (covers bare surfaces + text that
-      otherwise change instantly). This goes in the `base` layer so daisyUI's
-      component rules (a higher layer) keep WHICH properties they animate — their
-      transforms/scales for modals, toggles, etc. stay intact. */
-@layer base {
-  *,
-  *::before,
-  *::after {
-    transition-property: background-color, border-color, color, fill, stroke,
-      text-decoration-color, outline-color;
-    transition-duration: var(--theme-transition);
-    transition-timing-function: ease;
-  }
-}
-
-/* 2) Pin every element's transition DURATION to the shared value (overriding
-      daisyUI's 0.2–0.3s) so colours finish together. Only the duration is forced
-      (unlayered + !important), so components keep their animated properties.
-      Overlay / enter-exit animations keep their own longer timing. */
-:not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
-    [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after,
+html.theme-transitioning *::backdrop {
+  /* colours + the movement props theme-toggle indicators slide with (left /
+     translate / transform), so those stay animated at the same speed */
+  transition-property: color, background-color, border-color, outline-color,
+    text-decoration-color, fill, stroke, box-shadow, left, translate, transform !important;
   transition-duration: var(--theme-transition) !important;
+  transition-timing-function: var(--theme-transition-ease) !important;
+  transition-delay: 0s !important;
+}
+
+/* Respect users who opt out of motion: theme changes snap instantly. */
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after,
+  html.theme-transitioning *::backdrop {
+    transition-duration: 0s !important;
+  }
 }

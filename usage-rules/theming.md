@@ -40,6 +40,23 @@ Rules:
 
 - Set `data-theme` on `<html>`. Toggle buttons: `data-phx-theme="shadcn"` /
   `"shadcn-dark"` (or brand equivalents) with the standard Phoenix theme JS.
+  Phoenix 1.8's stock `light`/`dark` values are aliased and work too.
 - `color-scheme` is set by the theme blocks — don't set it separately.
 - Never use `.dark` class toggling as the primary mechanism; it exists only so raw
   shadcn `dark:` utilities work.
+
+## Theme-change transitions (synchronized — do not fight this)
+
+When `data-theme` changes, the bundled JS puts `theme-transitioning` on `<html>`
+for one window and the theme CSS forces a SINGLE transition spec on every
+element — all colors change at the same duration/easing simultaneously.
+
+- NEVER add `transition-*`/`duration-*` utilities or CSS to make theme changes
+  smooth — it's automatic, and per-element transitions are exactly what causes
+  out-of-sync flicker. Transition utilities are for interaction states
+  (hover/press/open) only.
+- The only knobs are `--theme-transition` (duration, default 150ms; `0ms`
+  disables) and `--theme-transition-ease` on `:root`/your theme block.
+- Don't suppress or reuse the `theme-transitioning` class for other purposes,
+  and don't toggle themes by swapping stylesheets or classes other than
+  `data-theme` — the watcher only sees `data-theme` on `<html>`.
