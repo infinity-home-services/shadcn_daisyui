@@ -11,52 +11,22 @@ defmodule ShadcnDaisyui.Components do
 
   Anything not wrapped here is still available as plain daisyUI classes
   (`btn`, `card`, `tabs tabs-box`, …) — the theme styles them automatically.
+
+  `use ShadcnDaisyui.Components` also imports `ShadcnDaisyui.FormComponents`
+  (field-aware form controls). The generator-compatible `button`, `input`,
+  `flash`, `table`, … live in `ShadcnDaisyui.CoreComponents` — apps normally get
+  those through their own `CoreComponents` module.
   """
   use Phoenix.Component
 
   defmacro __using__(_opts) do
-    quote(do: import(ShadcnDaisyui.Components))
-  end
-
-  # ----------------------------------------------------------------------------
-  # Button
-  # ----------------------------------------------------------------------------
-  @variants %{
-    "default" => "btn-primary",
-    "secondary" => "btn-secondary",
-    "outline" => "btn-outline",
-    "ghost" => "btn-ghost",
-    "link" => "btn-link",
-    "destructive" => "btn-error"
-  }
-  @sizes %{"default" => "", "sm" => "btn-sm", "lg" => "btn-lg", "icon" => "btn-square"}
-
-  @doc """
-  A button. Variants: default, secondary, outline, ghost, link, destructive.
-  Sizes: default, sm, lg, icon.
-
-      <.button variant="outline" size="sm" phx-click="go">Save</.button>
-  """
-  attr(:variant, :string,
-    default: "default",
-    values: ~w(default secondary outline ghost link destructive)
-  )
-
-  attr(:size, :string, default: "default", values: ~w(default sm lg icon))
-  attr(:class, :any, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name type value))
-  slot(:inner_block, required: true)
-
-  def button(assigns) do
-    assigns =
-      assign(assigns, :vclass, @variants[assigns.variant])
-      |> assign(:sclass, @sizes[assigns.size])
-
-    ~H"""
-    <button class={["btn", @vclass, @sclass, @class]} {@rest}>
-      {render_slot(@inner_block)}
-    </button>
-    """
+    quote do
+      import(ShadcnDaisyui.Components)
+      import(ShadcnDaisyui.Components.Overlay)
+      import(ShadcnDaisyui.Components.Navigation)
+      import(ShadcnDaisyui.Components.Display)
+      import(ShadcnDaisyui.FormComponents)
+    end
   end
 
   # ----------------------------------------------------------------------------
@@ -149,42 +119,6 @@ defmodule ShadcnDaisyui.Components do
   def card_description(assigns) do
     ~H"""
     <p class={["text-sm text-muted-foreground", @class]}>{render_slot(@inner_block)}</p>
-    """
-  end
-
-  # ----------------------------------------------------------------------------
-  # Form bits: label, input, textarea, select
-  # ----------------------------------------------------------------------------
-  attr(:for, :string, default: nil)
-  attr(:class, :any, default: nil)
-  slot(:inner_block, required: true)
-
-  def label(assigns) do
-    ~H"""
-    <label for={@for} class={["text-sm font-medium", @class]}>{render_slot(@inner_block)}</label>
-    """
-  end
-
-  @doc "A text input. Pass any input attributes through `rest`."
-  attr(:type, :string, default: "text")
-  attr(:class, :any, default: nil)
-
-  attr(:rest, :global,
-    include: ~w(autocomplete disabled name placeholder readonly required value inputmode)
-  )
-
-  def input(assigns) do
-    ~H"""
-    <input type={@type} class={["input w-full", @class]} {@rest} />
-    """
-  end
-
-  attr(:class, :any, default: nil)
-  attr(:rest, :global, include: ~w(disabled name placeholder readonly required rows))
-
-  def textarea(assigns) do
-    ~H"""
-    <textarea class={["textarea w-full", @class]} {@rest}></textarea>
     """
   end
 
