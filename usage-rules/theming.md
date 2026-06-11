@@ -47,16 +47,19 @@ Rules:
 
 ## Theme-change transitions (synchronized — do not fight this)
 
-When `data-theme` changes, the bundled JS puts `theme-transitioning` on `<html>`
-for one window and the theme CSS forces a SINGLE transition spec on every
-element — all colors change at the same duration/easing simultaneously.
+The theme CSS gives every element one always-on color transition at a single
+shared duration + easing, and normalizes daisyUI's per-component durations
+(`!important`) onto that token. So a theme toggle moves every color in lockstep.
+It's pure CSS — no JS, no class, no timing window — so it cannot desync.
 
 - NEVER add `transition-*`/`duration-*` utilities or CSS to make theme changes
-  smooth — it's automatic, and per-element transitions are exactly what causes
-  out-of-sync flicker. Transition utilities are for interaction states
-  (hover/press/open) only.
+  smooth — it's automatic. Adding a different color-transition duration to a
+  component is exactly what causes the out-of-sync flicker.
 - The only knobs are `--theme-transition` (duration, default 150ms; `0ms`
-  disables) and `--theme-transition-ease` on `:root`/your theme block.
-- Don't suppress or reuse the `theme-transitioning` class for other purposes,
-  and don't toggle themes by swapping stylesheets or classes other than
-  `data-theme` — the watcher only sees `data-theme` on `<html>`.
+  disables) and `--theme-transition-ease` on `:root`/your theme block. This is
+  the one motion-duration token for the whole UI, interaction states included.
+- Movement utilities/animations (a `transition-[left]` slider, a dialog's
+  `transform`) keep their own property and just adopt the token duration — fine.
+  If one element genuinely needs a different duration, set it with `!important`.
+- Toggle themes only by changing `data-theme` on `<html>` (Phoenix's
+  `phx:set-theme` does this) — not by swapping stylesheets or other classes.

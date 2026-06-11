@@ -10,17 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Theme transitions rebuilt for perfect sync: during a theme change every
-  element transitions colors (and toggle-indicator movement) with the same
-  duration, easing, and start instant (`--theme-transition`, default 150ms;
-  respects `prefers-reduced-motion`). The window is opened in the **capture
-  phase of `phx:set-theme`** (with a committed reflow) so the uniform spec is
-  in place *before* `data-theme` flips — otherwise daisyUI buttons/menus and
-  Tailwind `transition-colors` links race ahead and snap while the rest tween.
-  A `data-theme` MutationObserver covers other triggers. Replaces the always-on
-  `*` transition + duration pin, whose exclusion list let dialogs/tooltips/
-  carousels change off-beat; components keep their interaction animations
-  outside the window.
+- Theme transitions are now pure CSS — no JS, no class window. One always-on
+  rule gives every element a color transition and normalizes daisyUI's
+  per-component durations/easings (`.btn` 0.2s cubic-bezier, `.toggle` 0.3s,
+  `.menu` 0.2s, …) onto a single `--theme-transition` token with `!important`,
+  so a toggle moves every color in lockstep. Because there's no timing window,
+  it cannot desync or race (the prior MutationObserver/`theme-transitioning`
+  approach could). Movement utilities/animations (the toggle slider's
+  `transition-[left]`, a dialog's `transform`) keep their property and just
+  adopt the token duration. Respects `prefers-reduced-motion`.
 - Docs site now imports the theme CSS/JS straight from the package source
   instead of keeping copies that drift.
 
