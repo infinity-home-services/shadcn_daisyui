@@ -38,3 +38,12 @@ npm-debug.log
 # Local agent tooling (Claude Code) settings.
 /.claude/
 
+
+# Static site export output
+/_site/
+
+# Digested static files produced by `mix phx.digest` (via mix site.export / assets.deploy)
+/priv/static/**/*.gz
+/priv/static/favicon-*.ico
+/priv/static/robots-*.txt
+/priv/static/images/logo-*.svg

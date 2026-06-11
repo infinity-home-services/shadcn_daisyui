@@ -7,7 +7,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   example carries a single raw HTML string that is rendered both as a live
   preview and as an escaped code block (see `DocsComponents.preview_code/1`).
 
-  Heroicons are written as `<span class="hero-name ...">` — that is exactly what
+  Heroicons are written as `<span class="hero-name ..." aria-hidden="true">` — that is exactly what
   the `<.icon>` helper expands to, so the code shown is real, copy-pasteable
   markup that works with nothing but the theme + heroicons plugin.
   """
@@ -99,7 +99,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <button class="btn btn-primary">Default</button>
             <button class="btn btn-primary btn-lg">Large</button>
             <button class="btn btn-primary btn-square" aria-label="icon">
-              <span class="hero-plus size-4"></span>
+              <span class="hero-plus size-4" aria-hidden="true"></span>
             </button>
             """
           },
@@ -108,7 +108,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <button class="btn btn-primary" disabled>Disabled</button>
             <button class="btn btn-outline">
-              <span class="hero-arrow-down-tray size-4"></span> With icon
+              <span class="hero-arrow-down-tray size-4" aria-hidden="true"></span> With icon
             </button>
             <button class="btn btn-secondary">
               <span class="loading loading-spinner loading-xs"></span> Loading
@@ -186,7 +186,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 </div>
                 <div class="card-actions mt-6">
                   <button class="btn btn-primary w-full">
-                    <span class="hero-check size-4"></span> Mark all as read
+                    <span class="hero-check size-4" aria-hidden="true"></span> Mark all as read
                   </button>
                 </div>
               </div>
@@ -343,14 +343,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <div class="w-full space-y-3">
               <div class="alert" role="alert">
-                <span class="hero-information-circle size-4"></span>
+                <span class="hero-information-circle size-4" aria-hidden="true"></span>
                 <div>
                   <h3 class="text-sm font-medium">Heads up!</h3>
                   <p class="text-sm text-muted-foreground">You can add components to your app using the CLI.</p>
                 </div>
               </div>
               <div class="alert alert-error" role="alert">
-                <span class="hero-exclamation-triangle size-4"></span>
+                <span class="hero-exclamation-triangle size-4" aria-hidden="true"></span>
                 <div>
                   <h3 class="text-sm font-medium">Error</h3>
                   <p class="text-sm">Your session has expired. Please log in again.</p>
@@ -524,13 +524,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             code: ~S"""
-            <div class="breadcrumbs text-sm">
+            <nav class="breadcrumbs text-sm" aria-label="Breadcrumb">
               <ul>
-                <li><a>Home</a></li>
-                <li><a>Components</a></li>
-                <li>Breadcrumb</li>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Components</a></li>
+                <li><span aria-current="page">Breadcrumb</span></li>
               </ul>
-            </div>
+            </nav>
             """
           }
         ]
@@ -545,7 +545,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <div class="dropdown">
               <div tabindex="0" role="button" class="btn btn-outline">
-                Open menu <span class="hero-chevron-down size-4"></span>
+                Open menu <span class="hero-chevron-down size-4" aria-hidden="true"></span>
               </div>
               <ul tabindex="0" class="dropdown-content menu z-10 mt-2 w-48">
                 <li class="menu-title">My Account</li>
@@ -693,7 +693,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <nav class="flex items-center gap-1">
               <button class="btn btn-ghost btn-sm gap-1 px-2.5">
-                <span class="hero-chevron-left size-4"></span> Previous
+                <span class="hero-chevron-left size-4" aria-hidden="true"></span> Previous
               </button>
               <button class="btn btn-ghost btn-sm btn-square">1</button>
               <button class="btn btn-outline btn-sm btn-square">2</button>
@@ -701,7 +701,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <span class="px-1.5 text-sm text-muted-foreground">…</span>
               <button class="btn btn-ghost btn-sm btn-square">8</button>
               <button class="btn btn-ghost btn-sm gap-1 px-2.5">
-                Next <span class="hero-chevron-right size-4"></span>
+                Next <span class="hero-chevron-right size-4" aria-hidden="true"></span>
               </button>
             </nav>
             """
@@ -749,7 +749,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <button class="btn btn-outline" onclick="window.showToast()">Show toast</button>
               <button class="btn btn-outline" onclick="window.showToast('success')">Show success</button>
             </div>
-            <div id="toast-host" class="toast toast-end toast-bottom z-[60]"></div>
+            <div id="toast-host" class="toast toast-end toast-bottom z-[60]" role="status" aria-live="polite"></div>
             """
           }
         ]
@@ -787,7 +787,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               </label>
               <label class="btn btn-outline gap-2">
                 <input type="checkbox" class="hidden" aria-label="Bookmark" />
-                <span class="hero-star size-4"></span> Bookmark
+                <span class="hero-star size-4" aria-hidden="true"></span> Bookmark
               </label>
             </div>
             """
@@ -849,7 +849,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <nav class="flex flex-wrap items-center gap-1">
               <div class="dropdown dropdown-hover">
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
-                  Getting started <span class="hero-chevron-down size-4"></span>
+                  Getting started <span class="hero-chevron-down size-4" aria-hidden="true"></span>
                 </div>
                 <div tabindex="0" class="dropdown-content z-20 mt-1.5 w-80 p-2">
                   <a class="block rounded-md p-3 hover:bg-accent">
@@ -864,7 +864,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               </div>
               <div class="dropdown dropdown-hover">
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
-                  Components <span class="hero-chevron-down size-4"></span>
+                  Components <span class="hero-chevron-down size-4" aria-hidden="true"></span>
                 </div>
                 <div tabindex="0" class="dropdown-content z-20 mt-1.5 grid w-[26rem] grid-cols-2 gap-1 p-2">
                   <a class="rounded-md p-2 hover:bg-accent">
@@ -934,7 +934,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 aria-label="Close"
                 onclick="this.closest('dialog').close()"
               >
-                <span class="hero-x-mark size-4"></span>
+                <span class="hero-x-mark size-4" aria-hidden="true"></span>
               </button>
               <h3 class="text-lg font-semibold">Edit profile</h3>
               <p class="mt-1 text-sm text-muted-foreground">
@@ -1059,7 +1059,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             title: "Default",
             code: ~S"""
             <div class="flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-base-300 p-8 text-center">
-              <span class="hero-inbox size-7 text-muted-foreground"></span>
+              <span class="hero-inbox size-7 text-muted-foreground" aria-hidden="true"></span>
               <p class="text-sm font-medium">No results found</p>
               <p class="text-sm text-muted-foreground">Try adjusting your search.</p>
               <button class="btn btn-outline btn-sm mt-1">Clear filters</button>
@@ -1170,17 +1170,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <div data-combobox class="relative w-60">
               <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
                 <span data-combobox-label class="text-muted-foreground">Select framework…</span>
-                <span class="hero-chevron-up-down size-4 opacity-50"></span>
+                <span class="hero-chevron-up-down size-4 opacity-50" aria-hidden="true"></span>
               </button>
               <div data-combobox-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
                 <input data-combobox-search class="input mb-1 w-full" placeholder="Search framework…" />
                 <ul data-combobox-list class="max-h-52 overflow-auto">
-                  <li><button type="button" class="combo-item" data-value="Next.js"><span class="hero-check size-4 opacity-0"></span> Next.js</button></li>
-                  <li><button type="button" class="combo-item" data-value="SvelteKit"><span class="hero-check size-4 opacity-0"></span> SvelteKit</button></li>
-                  <li><button type="button" class="combo-item" data-value="Nuxt.js"><span class="hero-check size-4 opacity-0"></span> Nuxt.js</button></li>
-                  <li><button type="button" class="combo-item" data-value="Remix"><span class="hero-check size-4 opacity-0"></span> Remix</button></li>
-                  <li><button type="button" class="combo-item" data-value="Astro"><span class="hero-check size-4 opacity-0"></span> Astro</button></li>
-                  <li><button type="button" class="combo-item" data-value="Phoenix"><span class="hero-check size-4 opacity-0"></span> Phoenix</button></li>
+                  <li><button type="button" class="combo-item" data-value="Next.js"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Next.js</button></li>
+                  <li><button type="button" class="combo-item" data-value="SvelteKit"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> SvelteKit</button></li>
+                  <li><button type="button" class="combo-item" data-value="Nuxt.js"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Nuxt.js</button></li>
+                  <li><button type="button" class="combo-item" data-value="Remix"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Remix</button></li>
+                  <li><button type="button" class="combo-item" data-value="Astro"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Astro</button></li>
+                  <li><button type="button" class="combo-item" data-value="Phoenix"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Phoenix</button></li>
                 </ul>
                 <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">No framework found.</p>
               </div>
@@ -1204,17 +1204,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </button>
             <dialog id="command_dialog" data-command class="command-dialog">
               <div class="flex items-center gap-2 border-b border-base-300 px-3">
-                <span class="hero-magnifying-glass size-4 opacity-50"></span>
+                <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
                 <input data-command-search class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Type a command or search…" />
               </div>
               <ul data-command-list class="max-h-80 overflow-auto p-1">
                 <li class="command-group-label" data-group>Suggestions</li>
-                <li><button type="button" class="command-item" data-command-item><span class="hero-calendar size-4"></span> Calendar</button></li>
-                <li><button type="button" class="command-item" data-command-item><span class="hero-face-smile size-4"></span> Search Emoji</button></li>
-                <li><button type="button" class="command-item" data-command-item><span class="hero-calculator size-4"></span> Calculator</button></li>
+                <li><button type="button" class="command-item" data-command-item><span class="hero-calendar size-4" aria-hidden="true"></span> Calendar</button></li>
+                <li><button type="button" class="command-item" data-command-item><span class="hero-face-smile size-4" aria-hidden="true"></span> Search Emoji</button></li>
+                <li><button type="button" class="command-item" data-command-item><span class="hero-calculator size-4" aria-hidden="true"></span> Calculator</button></li>
                 <li class="command-group-label" data-group>Settings</li>
-                <li><button type="button" class="command-item" data-command-item><span class="hero-user size-4"></span> Profile <span class="ml-auto text-xs text-muted-foreground">⌘P</span></button></li>
-                <li><button type="button" class="command-item" data-command-item><span class="hero-cog-6-tooth size-4"></span> Settings <span class="ml-auto text-xs text-muted-foreground">⌘S</span></button></li>
+                <li><button type="button" class="command-item" data-command-item><span class="hero-user size-4" aria-hidden="true"></span> Profile <span class="ml-auto text-xs text-muted-foreground">⌘P</span></button></li>
+                <li><button type="button" class="command-item" data-command-item><span class="hero-cog-6-tooth size-4" aria-hidden="true"></span> Settings <span class="ml-auto text-xs text-muted-foreground">⌘S</span></button></li>
               </ul>
               <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">No results found.</p>
             </dialog>
@@ -1259,7 +1259,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <input data-dt-filter class="input w-full sm:w-64" placeholder="Filter emails…" />
                 <div data-dt-facet="status" class="relative">
                   <button type="button" data-dt-facet-trigger class="btn btn-outline btn-sm border-dashed font-normal">
-                    <span class="hero-plus-circle size-4"></span>
+                    <span class="hero-plus-circle size-4" aria-hidden="true"></span>
                     Status
                     <span data-dt-facet-badges class="hidden"></span>
                   </button>
@@ -1274,7 +1274,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   </div>
                 </div>
                 <button type="button" data-dt-reset class="btn btn-ghost btn-sm hidden">
-                  Reset <span class="hero-x-mark size-4"></span>
+                  Reset <span class="hero-x-mark size-4" aria-hidden="true"></span>
                 </button>
               </div>
               <div class="card overflow-hidden">
@@ -1337,7 +1337,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <p class="text-sm text-muted-foreground">Date picker</p>
                 <div data-datepicker class="relative w-64">
                   <button type="button" data-datepicker-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
-                    <span class="hero-calendar size-4 opacity-70"></span>
+                    <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
                     <span data-datepicker-label class="text-muted-foreground">Pick a date</span>
                   </button>
                   <div data-datepicker-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
@@ -1349,7 +1349,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <p class="text-sm text-muted-foreground">Date range picker</p>
                 <div data-daterange class="relative w-64">
                   <button type="button" data-daterange-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
-                    <span class="hero-calendar size-4 opacity-70"></span>
+                    <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
                     <span data-daterange-label class="text-muted-foreground">Pick a date range</span>
                   </button>
                   <div data-daterange-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
@@ -1390,10 +1390,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 </div>
               </div>
               <button type="button" data-carousel-prev class="btn btn-outline btn-circle btn-sm absolute left-0 top-1/2 -translate-y-1/2">
-                <span class="hero-chevron-left size-4"></span>
+                <span class="hero-chevron-left size-4" aria-hidden="true"></span>
               </button>
               <button type="button" data-carousel-next class="btn btn-outline btn-circle btn-sm absolute right-0 top-1/2 -translate-y-1/2">
-                <span class="hero-chevron-right size-4"></span>
+                <span class="hero-chevron-right size-4" aria-hidden="true"></span>
               </button>
             </div>
             """
@@ -1468,7 +1468,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <span class="font-semibold">One</span>
               </div>
               <div class="resizable-handle" role="separator" aria-orientation="vertical" tabindex="0">
-                <div class="resizable-grip"><span class="hero-ellipsis-vertical size-2.5"></span></div>
+                <div class="resizable-grip"><span class="hero-ellipsis-vertical size-2.5" aria-hidden="true"></span></div>
               </div>
               <div class="resizable-panel flex flex-1 flex-col">
                 <div class="flex flex-1 items-center justify-center border-b border-base-300">
@@ -1629,19 +1629,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <ul class="timeline">
               <li>
-                <div class="timeline-middle"><span class="hero-check-circle size-4 text-primary"></span></div>
+                <div class="timeline-middle"><span class="hero-check-circle size-4 text-primary" aria-hidden="true"></span></div>
                 <div class="timeline-end timeline-box">Project kickoff</div>
                 <hr />
               </li>
               <li>
                 <hr />
-                <div class="timeline-middle"><span class="hero-check-circle size-4 text-primary"></span></div>
+                <div class="timeline-middle"><span class="hero-check-circle size-4 text-primary" aria-hidden="true"></span></div>
                 <div class="timeline-end timeline-box">Design complete</div>
                 <hr />
               </li>
               <li>
                 <hr />
-                <div class="timeline-middle"><span class="hero-clock size-4 text-muted-foreground"></span></div>
+                <div class="timeline-middle"><span class="hero-clock size-4 text-muted-foreground" aria-hidden="true"></span></div>
                 <div class="timeline-end timeline-box">Launch</div>
               </li>
             </ul>
@@ -1698,9 +1698,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             title: "Default",
             code: ~S"""
             <div class="flex items-center gap-6">
-              <div class="radial-progress text-sm" style="--value:70;" role="progressbar">70%</div>
-              <div class="radial-progress text-sm" style="--value:40;" role="progressbar">40%</div>
-              <div class="radial-progress text-primary text-sm" style="--value:90;" role="progressbar">90%</div>
+              <div class="radial-progress text-sm" style="--value:70;" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" aria-label="70%">70%</div>
+              <div class="radial-progress text-sm" style="--value:40;" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" aria-label="40%">40%</div>
+              <div class="radial-progress text-primary text-sm" style="--value:90;" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100" aria-label="90%">90%</div>
             </div>
             """
           }
@@ -1717,7 +1717,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <div class="indicator">
               <span class="indicator-item badge badge-error">9</span>
               <button class="btn btn-outline">
-                <span class="hero-bell size-4"></span> Inbox
+                <span class="hero-bell size-4" aria-hidden="true"></span> Inbox
               </button>
             </div>
             """
@@ -1819,7 +1819,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   <div class="font-medium">Alex Brown</div>
                   <div class="text-xs text-muted-foreground">alex@example.com</div>
                 </div>
-                <button class="btn btn-ghost btn-sm btn-square"><span class="hero-ellipsis-horizontal size-4"></span></button>
+                <button class="btn btn-ghost btn-sm btn-square" aria-label="More options"><span class="hero-ellipsis-horizontal size-4" aria-hidden="true"></span></button>
               </li>
               <li class="list-row flex items-center gap-3 p-3">
                 <div class="avatar avatar-placeholder">
@@ -1829,7 +1829,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   <div class="font-medium">Casey Day</div>
                   <div class="text-xs text-muted-foreground">casey@example.com</div>
                 </div>
-                <button class="btn btn-ghost btn-sm btn-square"><span class="hero-ellipsis-horizontal size-4"></span></button>
+                <button class="btn btn-ghost btn-sm btn-square" aria-label="More options"><span class="hero-ellipsis-horizontal size-4" aria-hidden="true"></span></button>
               </li>
             </ul>
             """
@@ -1845,9 +1845,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             title: "Default",
             code: ~S"""
             <label class="swap swap-rotate btn btn-outline btn-square">
-              <input type="checkbox" />
-              <span class="hero-sun swap-on size-5"></span>
-              <span class="hero-moon swap-off size-5"></span>
+              <input type="checkbox" aria-label="Toggle theme" />
+              <span class="hero-sun swap-on size-5" aria-hidden="true"></span>
+              <span class="hero-moon swap-off size-5" aria-hidden="true"></span>
             </label>
             """
           }
@@ -1974,13 +1974,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <div class="relative h-24 w-full overflow-hidden rounded-xl border border-base-300">
               <div class="dock dock-sm" style="position:absolute">
                 <button class="dock-active">
-                  <span class="hero-home size-5"></span><span class="dock-label">Home</span>
+                  <span class="hero-home size-5" aria-hidden="true"></span><span class="dock-label">Home</span>
                 </button>
                 <button>
-                  <span class="hero-magnifying-glass size-5"></span><span class="dock-label">Search</span>
+                  <span class="hero-magnifying-glass size-5" aria-hidden="true"></span><span class="dock-label">Search</span>
                 </button>
                 <button>
-                  <span class="hero-user size-5"></span><span class="dock-label">Profile</span>
+                  <span class="hero-user size-5" aria-hidden="true"></span><span class="dock-label">Profile</span>
                 </button>
               </div>
             </div>
@@ -1997,7 +1997,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             title: "Default",
             code: ~S"""
             <form class="filter">
-              <input class="btn btn-square btn-outline" type="reset" value="×" />
+              <input class="btn btn-square btn-outline" type="reset" value="×" aria-label="Clear filters" />
               <input class="btn btn-outline" type="radio" name="frameworks" aria-label="Svelte" />
               <input class="btn btn-outline" type="radio" name="frameworks" aria-label="Vue" />
               <input class="btn btn-outline" type="radio" name="frameworks" aria-label="React" />

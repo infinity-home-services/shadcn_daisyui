@@ -20,21 +20,34 @@ Then visit [`localhost:4000`](http://localhost:4000).
 The package is linked by path (`{:shadcn_daisyui, path: ".."}`) so local changes to the package
 are picked up live.
 
-## Deploy (Phoenix host: Fly.io, Render, …)
+## Deploy — static site (recommended)
 
-A `Dockerfile` is included (`mix phx.gen.release --docker`). Because the demo's build context is
-`demo/` — where the package source one directory up isn't available — the image build fetches the
-package from GitHub by setting `SHADCN_DAISYUI_FROM_GIT=1` (handled in the `Dockerfile` and
-`shadcn_daisyui_dep/0` in `mix.exs`).
+The site has no dynamic data, so it pre-renders to static HTML and can be served by any static
+host (Render Static Site, Cloudflare Pages, Netlify, GitHub Pages — free, fast, nothing to run).
 
-Required runtime env vars (see `config/runtime.exs`):
+```bash
+cd demo
+MIX_ENV=prod mix site.export      # -> _site/  (every route as HTML + digested assets)
+```
 
-- `SECRET_KEY_BASE` — generate with `mix phx.gen.secret`
-- `PHX_HOST` — your public hostname
-- `PORT` — defaults to `4000`
+`mix site.export` builds + digests assets, renders each route to `…/index.html`, and copies the
+assets into `_site/`. Internal links are clean URLs (`/docs/components/button`), which static hosts
+resolve to the matching `index.html`. All interactivity (theme toggle, calendar, command palette,
+data table) is client-side JS and works with no server.
 
-**Fly.io:** from `demo/`, run `fly launch` (it detects the `Dockerfile`), set the secrets
-(`fly secrets set SECRET_KEY_BASE=… PHX_HOST=…`), then `fly deploy`.
+**Render (Static Site):** Build Command `mix deps.get && MIX_ENV=prod mix site.export`,
+Publish Directory `demo/_site` (set the Root Directory to `demo`). Requires an Elixir build
+environment — if the static-site builder lacks Elixir, run the export in CI (GitHub Actions) and
+publish `_site` instead.
 
-**Render:** new Web Service → this repo → root directory `demo`, Docker runtime; add the env vars
-above.
+**Cloudflare Pages / Netlify / GitHub Pages:** point them at the generated `_site/` (build it in CI
+or commit it).
+
+## Deploy — live Phoenix server (alternative)
+
+A `Dockerfile` is also included (`mix phx.gen.release --docker`) for running the app as a real
+service. Because the build context is `demo/` — where the package one directory up isn't available
+— the image build fetches the package from GitHub via `SHADCN_DAISYUI_FROM_GIT=1` (handled in the
+`Dockerfile` and `shadcn_daisyui_dep/0` in `mix.exs`). Set `SECRET_KEY_BASE` (`mix phx.gen.secret`),
+`PHX_HOST`, and optionally `PORT`, then deploy with `fly launch` (Fly.io) or a Docker Web Service
+(Render, root directory `demo`).

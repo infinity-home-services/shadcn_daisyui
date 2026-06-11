@@ -156,7 +156,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
             <details class="dropdown mb-6 w-full lg:hidden">
               <summary class="btn btn-outline w-full justify-between font-normal">
                 <span>{mobile_summary(@groups, @active, @active_guide)}</span>
-                <span class="hero-chevron-down size-4"></span>
+                <span class="hero-chevron-down size-4" aria-hidden="true"></span>
               </summary>
               <div class="dropdown-content z-30 mt-1 max-h-[70vh] w-full overflow-y-auto">
                 <div class="p-2">
@@ -242,7 +242,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10"
         onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); this.classList.add('text-success')"
       >
-        <span class="hero-clipboard-document size-4"></span>
+        <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
       </button>
       <pre class="overflow-x-auto p-4 text-sm leading-relaxed"><code class="font-mono">{String.trim_trailing(@code)}</code></pre>
     </div>
@@ -268,7 +268,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   def js_hook_callout(assigns) do
     ~H"""
     <div class="mt-6 flex gap-3 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
-      <span class="hero-bolt size-4 shrink-0 translate-y-0.5 text-foreground"></span>
+      <span class="hero-bolt size-4 shrink-0 translate-y-0.5 text-foreground" aria-hidden="true"></span>
       <div class="space-y-1">
         <p class="font-medium text-foreground">Requires JavaScript</p>
         <p class="text-muted-foreground">

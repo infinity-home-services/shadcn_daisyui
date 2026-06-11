@@ -223,7 +223,7 @@ defmodule ShadcnDaisyui.Components do
     ~H"""
     <div id={@id} phx-hook="ShadcnDatePicker" data-datepicker class={["relative", @class]}>
       <button type="button" data-datepicker-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
-        <span class="size-4 opacity-70 hero-calendar"></span>
+        <span class="size-4 opacity-70 hero-calendar" aria-hidden="true"></span>
         <span data-datepicker-label class="text-muted-foreground">{@placeholder}</span>
       </button>
       <div data-datepicker-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
@@ -242,7 +242,7 @@ defmodule ShadcnDaisyui.Components do
     ~H"""
     <div id={@id} phx-hook="ShadcnDateRange" data-daterange class={["relative", @class]}>
       <button type="button" data-daterange-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
-        <span class="size-4 opacity-70 hero-calendar"></span>
+        <span class="size-4 opacity-70 hero-calendar" aria-hidden="true"></span>
         <span data-daterange-label class="text-muted-foreground">{@placeholder}</span>
       </button>
       <div data-daterange-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
@@ -273,14 +273,14 @@ defmodule ShadcnDaisyui.Components do
     <div id={@id} phx-hook="ShadcnCombobox" data-combobox class={["relative", @class]}>
       <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
         <span data-combobox-label class="text-muted-foreground">{@placeholder}</span>
-        <span class="size-4 opacity-50 hero-chevron-up-down"></span>
+        <span class="size-4 opacity-50 hero-chevron-up-down" aria-hidden="true"></span>
       </button>
       <div data-combobox-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
         <input data-combobox-search class="input mb-1 w-full" placeholder={@placeholder} />
         <ul data-combobox-list class="max-h-52 overflow-auto">
           <li :for={opt <- @option}>
             <button type="button" class="combo-item" data-value={opt.value}>
-              <span class="size-4 opacity-0 hero-check"></span>
+              <span class="size-4 opacity-0 hero-check" aria-hidden="true"></span>
               {render_slot(opt)}
             </button>
           </li>
@@ -324,10 +324,10 @@ defmodule ShadcnDaisyui.Components do
         <div :for={s <- @slide} class="carousel-item w-full">{render_slot(s)}</div>
       </div>
       <button type="button" data-carousel-prev class="btn btn-outline btn-circle btn-sm absolute left-0 top-1/2 -translate-y-1/2">
-        <span class="size-4 hero-chevron-left"></span>
+        <span class="size-4 hero-chevron-left" aria-hidden="true"></span>
       </button>
       <button type="button" data-carousel-next class="btn btn-outline btn-circle btn-sm absolute right-0 top-1/2 -translate-y-1/2">
-        <span class="size-4 hero-chevron-right"></span>
+        <span class="size-4 hero-chevron-right" aria-hidden="true"></span>
       </button>
     </div>
     """
@@ -349,7 +349,7 @@ defmodule ShadcnDaisyui.Components do
     >
       <div class="resizable-panel flex items-center justify-center" style="width: 50%">{render_slot(@start)}</div>
       <div class="resizable-handle" role="separator" aria-orientation="vertical" tabindex="0">
-        <div class="resizable-grip"><span class="size-2.5 hero-ellipsis-vertical"></span></div>
+        <div class="resizable-grip"><span class="size-2.5 hero-ellipsis-vertical" aria-hidden="true"></span></div>
       </div>
       <div class="resizable-panel flex flex-1 items-center justify-center">{render_slot(@end_pane)}</div>
     </div>
