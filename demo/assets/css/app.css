@@ -35,4 +35,12 @@
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
+/* This demo uses the GRAYSCALE neutral theme, so solid primary/secondary/neutral
+   badges invert fully (near-black ↔ near-white) and cross over on a theme toggle
+   — content briefly loses contrast. Snap them (see `.theme-snap`). A coloured
+   brand primary doesn't cross, so brand-themed apps don't need this. */
+.badge-primary, .badge-secondary, .badge-neutral {
+  transition-duration: 0s !important;
+}
+
 /* This file is for your main application CSS */

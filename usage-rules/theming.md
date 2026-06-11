@@ -66,5 +66,12 @@ duration, easing, and zero delay** — onto every element, with `!important`:
   is what causes the out-of-sync flicker.
 - The single knob is `--theme-transition` (default 150ms) on `:root`/your theme
   block.
+- **Crossover:** an element whose foreground AND background fully invert (a
+  `bg-primary text-primary-content` mark, or a solid primary/neutral badge in the
+  GRAYSCALE neutral theme) can't tween cleanly — near-black ↔ near-white passes
+  through equal lightness at the midpoint, so its content briefly loses contrast
+  even though it's perfectly in sync. Add `.theme-snap` to such an element to flip
+  it instantly instead. A COLORED brand primary barely crosses, so brand-themed
+  apps rarely need it.
 - Toggle themes only by changing `data-theme` on `<html>` (Phoenix's
   `phx:set-theme` does this) — not by swapping stylesheets or other classes.

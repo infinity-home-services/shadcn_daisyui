@@ -938,3 +938,18 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
   transition-timing-function: var(--theme-transition-ease) !important;
   transition-delay: 0s !important;
 }
+
+/* 3) Crossover opt-out. An element whose foreground AND background fully invert
+      between themes — a `bg-primary text-primary-content` mark, or a solid
+      primary/neutral badge in the GRAYSCALE neutral theme — can't tween cleanly:
+      near-black ↔ near-white passes through equal lightness at the midpoint, so
+      the content briefly loses contrast (a "flicker") even though it is perfectly
+      in sync. Snapping it (instant flip) keeps the content readable throughout.
+      Add `.theme-snap` to such elements. (A COLOURED brand primary barely crosses,
+      so brand-themed apps usually don't need this.) */
+.theme-snap,
+.theme-snap *,
+.theme-snap::before,
+.theme-snap::after {
+  transition-duration: 0s !important;
+}
