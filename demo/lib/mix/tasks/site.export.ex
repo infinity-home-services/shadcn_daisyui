@@ -43,6 +43,7 @@ defmodule Mix.Tasks.Site.Export do
 
     pages =
       ["/", "/docs/installation", "/docs/themes"] ++
+        Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.path) ++
         Enum.map(Catalog.slugs(), &"/docs/components/#{&1}")
 
     Enum.each(pages, fn path -> write(out, path, render(path)) end)
@@ -54,7 +55,8 @@ defmodule Mix.Tasks.Site.Export do
     # Their bodies are rendered through the endpoint, so any URL_PATH prefix is
     # already baked into the links they contain.
     ai_files =
-      ["/llms.txt", "/llms-full.txt", "/docs/search.json"] ++
+      ["/llms.txt", "/llms-full.txt", "/docs/search.json", "/design-guidelines.md"] ++
+        Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), &"#{&1.path}.md") ++
         Enum.map(Catalog.slugs(), &"/docs/components/#{&1}.md")
 
     Enum.each(ai_files, fn path -> write_file(out, path, render(path)) end)

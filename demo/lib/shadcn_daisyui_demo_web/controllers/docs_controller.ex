@@ -2,6 +2,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
   use ShadcnDaisyuiDemoWeb, :controller
 
   alias ShadcnDaisyuiDemoWeb.Catalog
+  alias ShadcnDaisyuiDemoWeb.Guides
   alias ShadcnDaisyuiDemoWeb.Markdown
 
   # /docs -> first component page
@@ -48,6 +49,41 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
 
   def search(conn, _params) do
     json(conn, Markdown.search_index(base_path()))
+  end
+
+  # /docs/foundations/:slug and /docs/styles/:slug render the visual guideline
+  # page; the .md variant serves the shipped markdown source verbatim.
+  def guide(conn, %{"guide" => slug}) do
+    section = Enum.at(conn.path_info, 1)
+
+    case Path.extname(slug) do
+      ".md" -> guide_markdown(conn, section, Path.rootname(slug))
+      _ -> guide_html(conn, section, slug)
+    end
+  end
+
+  defp guide_html(conn, section, slug) do
+    case Guides.guide(section, slug) do
+      nil ->
+        not_found(conn)
+
+      guide ->
+        conn
+        |> assign(:page_title, guide.title)
+        |> assign(:guide, guide)
+        |> render(guide.template)
+    end
+  end
+
+  defp guide_markdown(conn, section, slug) do
+    case Guides.guide(section, slug) do
+      nil -> not_found(conn)
+      guide -> text_response(conn, "text/markdown", guide.markdown)
+    end
+  end
+
+  def design_guidelines(conn, _params) do
+    text_response(conn, "text/markdown", Guides.design_guidelines_md())
   end
 
   def installation(conn, _params) do

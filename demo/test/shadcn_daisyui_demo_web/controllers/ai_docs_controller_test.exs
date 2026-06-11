@@ -54,17 +54,52 @@ defmodule ShadcnDaisyuiDemoWeb.AiDocsControllerTest do
   end
 
   describe "GET /docs/search.json" do
-    test "returns a valid JSON index containing every slug", %{conn: conn} do
+    test "returns a valid JSON index containing every guide and component slug", %{conn: conn} do
       conn = get(conn, "/docs/search.json")
       index = json_response(conn, 200)
 
-      assert Enum.map(index, & &1["slug"]) == Catalog.slugs()
+      guide_slugs = Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.slug)
+      assert Enum.map(index, & &1["slug"]) == guide_slugs ++ Catalog.slugs()
 
       for entry <- index do
         assert is_binary(entry["title"])
         assert is_binary(entry["description"])
         assert is_binary(entry["group"])
-        assert entry["url"] == "/docs/components/#{entry["slug"]}"
+        assert String.contains?(entry["url"], "/docs/")
+      end
+    end
+  end
+
+  describe "GET /docs/foundations/:guide.md and /design-guidelines.md" do
+    test "serves the shipped markdown for a guide", %{conn: conn} do
+      conn = get(conn, "/docs/foundations/spacing.md")
+
+      assert response(conn, 200) =~ "# shadcn_daisyui — spacing"
+      assert response_content_type(conn, :md) =~ "text/markdown"
+    end
+
+    test "404s for an unknown guide", %{conn: conn} do
+      assert conn |> get("/docs/foundations/not-a-guide.md") |> response(404)
+      assert conn |> get("/docs/styles/not-a-guide") |> response(404)
+    end
+
+    test "serves the aggregate bundle with every guideline file", %{conn: conn} do
+      body = conn |> get("/design-guidelines.md") |> response(200)
+
+      for guide <- ShadcnDaisyuiDemoWeb.Guides.all() do
+        assert body =~ String.trim_trailing(guide.markdown)
+      end
+    end
+  end
+
+  describe "GET /docs/foundations/:guide (HTML)" do
+    test "renders every guideline page with the platform toggle", %{conn: conn} do
+      for guide <- ShadcnDaisyuiDemoWeb.Guides.all() do
+        html = conn |> get(guide.path) |> html_response(200)
+
+        assert html =~ Plug.HTML.html_escape(guide.title)
+        assert html =~ "data-platform-toggle"
+        assert html =~ "#{guide.path}.md"
       end
     end
   end

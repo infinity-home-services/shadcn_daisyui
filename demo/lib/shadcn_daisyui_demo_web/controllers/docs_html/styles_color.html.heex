@@ -1,0 +1,102 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The emphasis ladder</h2>
+    <p class="text-sm text-muted-foreground">
+      One <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">primary</code>
+      action per view region; everything else steps down.
+    </p>
+    <div class="flex flex-wrap items-center gap-3 rounded-lg border border-base-300 p-6">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-outline">Outline</button>
+      <button class="btn btn-ghost">Ghost</button>
+      <button class="btn btn-link">Link</button>
+      <span class="mx-2 h-6 w-px bg-base-300"></span>
+      <button class="btn btn-error">Destructive</button>
+    </div>
+    <p class="text-sm text-muted-foreground">
+      Destructive styling is only for irreversible actions, always paired with a
+      confirmation — never for emphasis.
+    </p>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">
+      Surfaces separate with borders, not color blocks
+    </h2>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="rounded-lg border border-base-300 bg-base-100 p-4">
+        <p class="text-sm font-medium">base-100</p>
+        <p class="text-xs text-muted-foreground">page &amp; cards</p>
+      </div>
+      <div class="rounded-lg border border-base-300 bg-base-200 p-4">
+        <p class="text-sm font-medium">base-200</p>
+        <p class="text-xs text-muted-foreground">subtle insets, wells, hover</p>
+      </div>
+      <div class="rounded-lg border-2 border-base-300 bg-base-100 p-4">
+        <p class="text-sm font-medium">base-300</p>
+        <p class="text-xs text-muted-foreground">borders (1px)</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Status colors always mean status</h2>
+    <p class="text-sm text-muted-foreground">
+      The only non-neutral accents. Never decoration, never raw green/yellow/red utilities —
+      and never color alone (pair with icon or text).
+    </p>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="alert alert-info">
+        <span class="hero-information-circle size-5" aria-hidden="true"></span>
+        <span>A new version is available.</span>
+      </div>
+      <div class="alert alert-success">
+        <span class="hero-check-circle size-5" aria-hidden="true"></span>
+        <span>Changes saved.</span>
+      </div>
+      <div class="alert alert-warning">
+        <span class="hero-exclamation-triangle size-5" aria-hidden="true"></span>
+        <span>Your trial ends in 3 days.</span>
+      </div>
+      <div class="alert alert-error">
+        <span class="hero-x-circle size-5" aria-hidden="true"></span>
+        <span>Payment failed — update your card.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Brand splash rule</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
+      <p class="text-muted-foreground">
+        A brand recolors by overriding theme tokens in its own
+        <code class="font-mono text-xs">[data-theme="&lt;brand&gt;"]</code>
+        block — never with inline brand colors in markup or views.
+        <strong class="text-foreground">
+          If a brand color appears in a template, it's a bug.
+        </strong>
+        See <a href="/docs/themes" class="link link-primary">Themes</a>
+        for the override
+        workflow and the theme creator.
+      </p>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-3" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">iOS / SwiftUI</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      <p>
+        The same semantic roles ship as Color tokens with light/dark variants — never
+        <code class="font-mono text-xs">Color(red:green:blue:)</code>
+        in views. Set the app
+        accent to <code class="font-mono text-xs">sdPrimary</code>
+        once; step emphasis down
+        with button styles (<code class="font-mono text-xs">.bordered</code> ≈ outline), not
+        custom tints.
+      </p>
+    </div>
+  </section>
+</.docs_layout>

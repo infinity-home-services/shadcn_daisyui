@@ -1,0 +1,100 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">One pattern per window size class</h2>
+    <p class="text-sm text-muted-foreground">
+      Destination order, icons, and labels stay identical across platforms — the web
+      bottom dock and the iOS tab bar should read the same.
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="w-28">Class</th>
+            <th>Primary navigation</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-mono text-xs">compact</td>
+            <td>Bottom dock / <span class="font-mono text-xs">TabView</span></td>
+            <td class="text-muted-foreground">3–5 destinations, icon + label, always visible</td>
+          </tr>
+          <tr>
+            <td class="font-mono text-xs">medium</td>
+            <td>Top navbar (or carried-over bottom nav)</td>
+            <td class="text-muted-foreground">Pick one per app and keep it</td>
+          </tr>
+          <tr>
+            <td class="font-mono text-xs">expanded</td>
+            <td>Sidebar (15rem) / <span class="font-mono text-xs">NavigationSplitView</span></td>
+            <td class="text-muted-foreground">Grouped sections; breadcrumbs allowed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4" data-platform="web">
+    <h2 class="text-lg font-medium tracking-tight">Compact: the bottom dock</h2>
+    <p class="text-sm text-muted-foreground">
+      Primary destinations are never hidden behind a hamburger. More than five →
+      rethink the IA; never scroll a tab bar.
+    </p>
+    <div class="mx-auto w-full max-w-xs overflow-hidden rounded-xl border border-base-300">
+      <div class="flex h-32 items-center justify-center bg-base-200 text-xs text-muted-foreground">
+        content
+      </div>
+      <div class="dock dock-sm static border-t border-base-300">
+        <button class="dock-active">
+          <span class="hero-home size-5" aria-hidden="true"></span>
+          <span class="dock-label">Home</span>
+        </button>
+        <button>
+          <span class="hero-magnifying-glass size-5" aria-hidden="true"></span>
+          <span class="dock-label">Search</span>
+        </button>
+        <button>
+          <span class="hero-bell size-5" aria-hidden="true"></span>
+          <span class="dock-label">Alerts</span>
+        </button>
+        <button>
+          <span class="hero-user size-5" aria-hidden="true"></span>
+          <span class="dock-label">Profile</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Going deeper: push vs. sheet</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="rounded-lg border border-base-300 p-4">
+        <p class="text-sm font-medium">Push = going somewhere</p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          Drill-down into detail screens. Back returns up the stack.
+          <span data-platform="ios">
+            The system back gesture is sacred — never custom back buttons.
+          </span>
+        </p>
+      </div>
+      <div class="rounded-lg border border-base-300 p-4">
+        <p class="text-sm font-medium">Sheet = doing something</p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          Self-contained task that returns where you started: dialogs and sheets on
+          the web, <span class="font-mono text-xs" data-platform="ios">.sheet</span>
+          with detents on iOS. Confirm before discarding unsaved input.
+        </p>
+      </div>
+    </div>
+    <p class="text-sm text-muted-foreground">
+      Secondary navigation: tabs within a page are for peer content views — never
+      nested tab bars. Breadcrumbs (<a
+        href="/docs/components/breadcrumb"
+        class="link link-primary"
+      >component</a>) appear at medium and expanded only.
+    </p>
+  </section>
+</.docs_layout>

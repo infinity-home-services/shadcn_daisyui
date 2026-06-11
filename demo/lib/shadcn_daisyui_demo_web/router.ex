@@ -22,6 +22,8 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/docs", DocsController, :index
     get "/docs/installation", DocsController, :installation
     get "/docs/themes", DocsController, :themes
+    get "/docs/foundations/:guide", DocsController, :guide
+    get "/docs/styles/:guide", DocsController, :guide
     get "/docs/components/:component", DocsController, :component
   end
 
@@ -32,6 +34,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/llms.txt", DocsController, :llms
     get "/llms-full.txt", DocsController, :llms_full
     get "/docs/search.json", DocsController, :search
+    get "/design-guidelines.md", DocsController, :design_guidelines
   end
 
   # Other scopes may use custom stacks.

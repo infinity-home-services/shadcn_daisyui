@@ -1,0 +1,94 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Radius roles</h2>
+    <p class="text-sm text-muted-foreground">
+      One <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">--radius</code>
+      (0.625rem) derives the whole scale. Every element family on a screen shares its
+      role's radius — never hardcode pixel radii.
+    </p>
+    <div class="flex flex-wrap gap-6 rounded-lg border border-base-300 p-6">
+      <div
+        :for={
+          r <- [
+            %{class: "rounded-sm", label: "sm · 6px", role: "checkboxes, menu items, kbd"},
+            %{class: "rounded-md", label: "md · 8px", role: "buttons, inputs, tooltips"},
+            %{class: "rounded-lg", label: "lg · 10px", role: "popovers, menus, modals"},
+            %{class: "rounded-xl", label: "xl · 14px", role: "cards, dialogs"},
+            %{class: "rounded-full", label: "full", role: "pills, badges, avatars"}
+          ]
+        }
+        class="w-32 space-y-2 text-center"
+      >
+        <div class={["mx-auto size-20 border-2 border-primary bg-muted", r.class]}></div>
+        <p class="font-mono text-xs font-medium">{r.label}</p>
+        <p class="text-xs text-muted-foreground">{r.role}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The elevation ladder is short on purpose</h2>
+    <p class="text-sm text-muted-foreground">
+      Surfaces are flat; 1px borders do the separation work and shadows are garnish.
+      Nothing carries more than <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadow-sm</code>;
+      hover and focus never change elevation.
+    </p>
+    <div class="grid gap-6 rounded-lg border border-base-300 bg-base-200/50 p-8 sm:grid-cols-3">
+      <div class="space-y-2">
+        <div class="flex h-24 items-center justify-center rounded-xl border border-base-300 bg-base-100 text-sm">
+          flat
+        </div>
+        <p class="text-xs text-muted-foreground">
+          <span class="font-medium text-foreground">0 — flat:</span> page, sections, rows
+        </p>
+      </div>
+      <div class="space-y-2">
+        <div
+          class="flex h-24 items-center justify-center rounded-xl border border-base-300 bg-base-100 text-sm"
+          style="box-shadow: var(--shadow-xs)"
+        >
+          shadow-xs
+        </div>
+        <p class="text-xs text-muted-foreground">
+          <span class="font-medium text-foreground">1 — control:</span> buttons, inputs
+        </p>
+      </div>
+      <div class="space-y-2">
+        <div
+          class="flex h-24 items-center justify-center rounded-xl border border-base-300 bg-base-100 text-sm"
+          style="box-shadow: var(--shadow-sm)"
+        >
+          shadow-sm
+        </div>
+        <p class="text-xs text-muted-foreground">
+          <span class="font-medium text-foreground">2 — raised:</span> cards, popovers, modals
+        </p>
+      </div>
+    </div>
+    <p class="text-sm text-muted-foreground">
+      Overlays (dialogs, sheets, drawers) separate via the backdrop dim plus
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadow-sm</code>
+      —
+      never bigger shadows.
+    </p>
+  </section>
+
+  <section class="mt-12 space-y-3" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">iOS / SwiftUI</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      <p>
+        Use continuous corners:
+        <code class="font-mono text-xs">
+          RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+        </code>
+        with the package's 6/8/10/14pt constants. Prefer system materials
+        (<code class="font-mono text-xs">.thinMaterial</code>) over drop shadows for
+        overlay surfaces; when a shadow is needed, the
+        <code class="font-mono text-xs">Elevation</code>
+        presets are the ceiling.
+      </p>
+    </div>
+  </section>
+</.docs_layout>

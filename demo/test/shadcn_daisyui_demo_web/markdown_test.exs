@@ -55,24 +55,42 @@ defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
     assert txt =~ "(/base/docs/themes)"
   end
 
-  test "llms_full_txt contains every component title" do
+  test "llms_txt links every design guideline under the base path" do
+    txt = Markdown.llms_txt("/base")
+
+    assert txt =~ "[design-guidelines.md](/base/design-guidelines.md)"
+
+    for guide <- ShadcnDaisyuiDemoWeb.Guides.all() do
+      assert txt =~ "- [#{guide.title}](/base#{guide.path}.md):"
+    end
+  end
+
+  test "llms_full_txt contains every component title and the design guidelines" do
     full = Markdown.llms_full_txt()
 
     for slug <- ShadcnDaisyuiDemoWeb.Catalog.slugs() do
       title = ShadcnDaisyuiDemoWeb.Catalog.component(slug).title
       assert full =~ "# #{title}"
     end
+
+    assert full =~ "# shadcn_daisyui — spacing"
+    assert full =~ "# shadcn_daisyui — motion"
   end
 
-  test "search_index has one entry per component with group and url" do
+  test "search_index lists guides then components with group and url" do
     index = Markdown.search_index("/base")
 
-    assert Enum.map(index, & &1.slug) == ShadcnDaisyuiDemoWeb.Catalog.slugs()
+    guide_slugs = Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.slug)
+    assert Enum.map(index, & &1.slug) == guide_slugs ++ ShadcnDaisyuiDemoWeb.Catalog.slugs()
 
     entry = Enum.find(index, &(&1.slug == "button"))
     assert entry.title == "Button"
     assert entry.group == "Core"
     assert entry.url == "/base/docs/components/button"
     assert is_binary(entry.description)
+
+    guide = Enum.find(index, &(&1.url == "/base/docs/foundations/spacing"))
+    assert guide.title == "Spacing"
+    assert guide.group == "Foundations"
   end
 end

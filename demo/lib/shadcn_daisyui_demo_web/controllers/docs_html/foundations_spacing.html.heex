@@ -1,0 +1,118 @@
+<.docs_layout active_guide={@guide.slug}>
+  <.guide_heading guide={@guide} />
+
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">The blessed steps</h2>
+    <p class="text-sm text-muted-foreground">
+      Everything sits on a 4px / 4pt grid, and only these seven steps are used.
+      If a design seems to need 10px or 18px, pick the nearest step.
+    </p>
+    <div class="space-y-3 rounded-lg border border-base-300 p-6">
+      <div
+        :for={
+          s <- [
+            %{tw: "1", px: 4},
+            %{tw: "2", px: 8},
+            %{tw: "3", px: 12},
+            %{tw: "4", px: 16},
+            %{tw: "6", px: 24},
+            %{tw: "8", px: 32},
+            %{tw: "12", px: 48}
+          ]
+        }
+        class="flex items-center gap-4"
+      >
+        <span class="w-16 font-mono text-xs text-muted-foreground">*-{s.tw}</span>
+        <span class="h-4 rounded-sm bg-primary" style={"width: #{s.px}px"}></span>
+        <span class="font-mono text-xs text-muted-foreground">{s.px}px / {s.px}pt</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Where each step lives</h2>
+    <p class="text-sm text-muted-foreground">
+      Tighter gaps group, wider gaps separate. These standards are already encoded
+      in the component CSS — your layouts only space <em>between</em> components.
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th class="w-32">Value</th>
+            <th class="w-40">Web</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={
+            {role, value, web} <- [
+              {"Icon ↔ label inside a control", "8px", "gap-2 (built in)"},
+              {"Controls in a cluster", "8px", "gap-2"},
+              {"Form fields stacked", "16px", "space-y-4"},
+              {"Card interior", "24px", "card-body (built in)"},
+              {"Between cards / list items", "16px", "gap-4"},
+              {"Page sections", "24–32px", "space-y-6 / space-y-8"},
+              {"Major page regions", "48px", "space-y-12"},
+              {"Page gutters", "16 → 24 → 32px", "px-4 sm:px-6 lg:px-8"}
+            ]
+          }>
+            <td>{role}</td>
+            <td class="font-mono text-xs">{value}</td>
+            <td class="font-mono text-xs text-muted-foreground">{web}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-4" data-platform="web">
+    <h2 class="text-lg font-medium tracking-tight">A form on the grid</h2>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="rounded-lg border border-base-300 bg-base-100 p-6">
+        <div class="max-w-md space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Name</label>
+            <input type="text" class="input w-full" placeholder="Ada Lovelace" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Email</label>
+            <input type="email" class="input w-full" placeholder="ada@example.com" />
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="btn btn-primary">Save changes</button>
+            <button class="btn btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <.code_block
+        language="heex"
+        code={
+          ~S"""
+          <div class="max-w-md space-y-4">      <!-- fields: 16px apart -->
+            <.input field={@form[:name]} label="Name" />
+            <.input field={@form[:email]} label="Email" />
+            <div class="flex gap-2 pt-2">       <!-- button cluster: 8px -->
+              <.button>Save changes</.button>
+              <.button variant="outline">Cancel</.button>
+            </div>
+          </div>
+          """
+        }
+      />
+    </div>
+  </section>
+
+  <section class="mt-12 space-y-3" data-platform="ios">
+    <h2 class="text-lg font-medium tracking-tight">iOS / SwiftUI</h2>
+    <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      <p>
+        Same numbers as points: <code class="font-mono text-xs">Spacing.s1…s12</code>
+        (4/8/12/16/24/32/48pt) in the Swift package. SwiftUI's default
+        <code class="font-mono text-xs">.padding()</code>
+        is 16pt — on-grid, keep it. Set explicit stack spacing
+        (<code class="font-mono text-xs">VStack(spacing: Spacing.s4)</code>) where rhythm matters.
+      </p>
+    </div>
+  </section>
+</.docs_layout>
