@@ -9,7 +9,8 @@ defmodule ShadcnDaisyuiDemo.Application do
   def start(_type, _args) do
     children = [
       ShadcnDaisyuiDemoWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:shadcn_daisyui_demo, :dns_cluster_query) || :ignore},
+      {DNSCluster,
+       query: Application.get_env(:shadcn_daisyui_demo, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ShadcnDaisyuiDemo.PubSub},
       # Start a worker by calling: ShadcnDaisyuiDemo.Worker.start_link(arg)
       # {ShadcnDaisyuiDemo.Worker, arg},
