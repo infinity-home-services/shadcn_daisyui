@@ -28,17 +28,17 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   `--border-color`. Don't confuse them.
 - **Components are thin.** Styling belongs in the theme CSS, not in long class
   lists inside components. A component exists to encode structure/ARIA/hook markup.
-- **Theme transitions are pure CSS (no JS).** At the bottom of
-  `shadcn-daisyui.css`, one `:not(...)` rule forces the whole transition spec —
-  property list, duration, easing, zero delay — with `!important` on every
-  non-excluded element. Forcing the *property list* (not just duration) is the
-  point: daisyUI/Tailwind give inconsistent lists (`.card` transitions only
-  `outline`, card text omits `color`), so whatever they omit snaps while the
-  rest tween — the flicker. The list includes movement props (transform, `left`,
-  grid-template-columns/rows) so sliders/switches/accordions still animate. The
-  `:not(...)` exclusion list (dialog, drawer, tooltip, carousel, skeleton,
-  countdown) keeps the big deliberate animations untouched — never remove an
-  entry, and never extend the force to all elements (that crushes those).
+- **Theme toggle is INSTANT (pure CSS, no JS).** Fading between light and dark
+  inherently flickers — a fading background sweeps through the lightness of the
+  text/borders in front of it, so they cross at a gray midpoint and lose
+  contrast. No fade survives that, so one `:not(...)` rule at the bottom of
+  `shadcn-daisyui.css` forces `transition-duration: 0` on every non-excluded
+  element; the theme just switches. The `:not(...)` exclusion list (dialog,
+  drawer, tooltip, carousel, skeleton, countdown) keeps those components' own
+  enter/exit animations. Don't reintroduce a color fade for theme changes (it
+  brings the flicker back). Bringing back animated hover/focus while keeping the
+  toggle instant would need a small JS "disable transitions during the swap"
+  guard — intentionally omitted.
 - **The demo never copies package assets.** `demo/assets` imports
   `../../../priv/static/shadcn-daisyui.{css,js}` directly — copies drift.
 - **Every interactive component needs `id`** and renders the exact markup its JS
