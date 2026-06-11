@@ -139,6 +139,42 @@ Browse the full gallery (77 components) in the docs site (`demo/`) or
   tokens that adapt automatically; only use `dark:` for genuinely asymmetric cases.
 - See `usage-rules/theming.md` for creating/overriding brand themes.
 
+## Design guidelines
+
+Platform-portable rules (web + native iOS/iPadOS). Load-bearing values:
+
+- Spacing: 4px grid, blessed steps only — 4/8/12/16/24/32/48 (`gap-1/2/3/4/6/8/12`).
+  Icon↔label 8px, form fields 16px apart, card interior 24px, page sections 24–48px.
+- Window size classes: compact < 640px (phones), medium 640–1023, expanded ≥ 1024.
+  Mobile-first: unprefixed = compact, enhance with `sm:`/`lg:`. One column on compact.
+- Content widths: shell `max-w-7xl`, prose ~65ch, forms `max-w-md`–`max-w-lg`.
+  Gutters `px-4 sm:px-6 lg:px-8`.
+- Navigation: compact = bottom dock (3–5 destinations), expanded = sidebar (15rem).
+  Primary destinations never hide behind a hamburger. Breadcrumbs ≥ medium only.
+- Touch targets: 44pt / 2.75rem minimum effective hit area on touch surfaces.
+  `h-9` controls are desktop-fine; compact primary actions use `btn-lg` full-width;
+  checkboxes/radios always wrapped in a tappable label row.
+- Type ramp: `text-3xl` bold page title, `text-xl` semibold section, `text-base`
+  prose, `text-sm` controls/UI (default), `text-xs` labels. Weights: 500 controls,
+  600 titles, 700 page title only.
+- Motion: 150ms micro states, ~180ms small surfaces, 300ms sheets/drawers;
+  opacity/transform only; respect reduced motion.
+- Hover is an enhancement, never a requirement. Disabled = variant colors at 50%
+  opacity (never grey-washed).
+
+Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags):
+
+- See `usage-rules/foundations-platforms.md` — dual units, HIG arbitration, token→SwiftUI map
+- See `usage-rules/foundations-accessibility.md` — contrast, focus, labels, writing basics
+- See `usage-rules/foundations-layout.md` — breakpoints, size classes, scaffold
+- See `usage-rules/foundations-spacing.md` — grid, blessed steps, standards table
+- See `usage-rules/foundations-navigation.md` — nav per size class, destination limits
+- See `usage-rules/foundations-interaction.md` — state ladder, touch targets, dismissal
+- See `usage-rules/styles-color.md` — token usage semantics, brand splash rules
+- See `usage-rules/styles-typography.md` — type ramp, iconography
+- See `usage-rules/styles-shape-elevation.md` — radius roles, elevation ladder
+- See `usage-rules/styles-motion.md` — durations, easings, patch guard
+
 ## Setup invariants (do not undo)
 
 - `app.css` keeps: `@plugin "…daisyui" { themes: false; }`, the shadcn-daisyui CSS

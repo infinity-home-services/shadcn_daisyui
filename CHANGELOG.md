@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Design guidelines layer** — ten platform-portable guideline files under
+  `usage-rules/` covering Foundations (platforms, accessibility & content,
+  layout, spacing, navigation, interaction) and Styles (color usage, typography
+  & icons, shape & elevation, motion). Each file pairs terse agent rules with
+  reference tables in dual units (rem/px for web, pt for iOS/iPadOS), tagged
+  `[web]`/`[ios]` where platform-specific. `usage-rules.md` gains a
+  "Design guidelines" section inlining the load-bearing values and indexing the
+  files; ExDoc groups them under Foundations/Styles.
+
 ### Changed
 
 - **Theme toggle is now instant** (no color fade). Fading between light and dark
