@@ -245,23 +245,34 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
 
   def code_block(assigns) do
     ~H"""
-    <div class="relative overflow-hidden rounded-lg border border-base-300 bg-base-200">
+    <div data-code-block class="overflow-hidden rounded-lg border border-base-300 bg-base-200">
       <div
         :if={@language}
-        class="border-b border-base-300 px-4 py-1.5 font-mono text-xs text-muted-foreground"
+        class="flex items-center justify-between gap-2 border-b border-base-300 py-1 pl-4 pr-1.5"
       >
-        {@language}
+        <span class="font-mono text-xs text-muted-foreground">{@language}</span>
+        <.code_copy_button />
       </div>
-      <button
-        type="button"
-        aria-label="Copy code"
-        class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10"
-        onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); this.classList.add('text-success')"
-      >
-        <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
-      </button>
-      <pre class="overflow-x-auto p-4 text-sm leading-relaxed"><code class="font-mono">{String.trim_trailing(@code)}</code></pre>
+      <div class="relative">
+        <.code_copy_button :if={!@language} class="absolute right-2 top-2 z-10" />
+        <pre class="overflow-x-auto p-4 text-sm leading-relaxed"><code class="font-mono">{String.trim_trailing(@code)}</code></pre>
+      </div>
     </div>
+    """
+  end
+
+  attr :class, :any, default: nil
+
+  defp code_copy_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      aria-label="Copy code"
+      class={["btn btn-ghost btn-xs btn-square", @class]}
+      onclick="navigator.clipboard.writeText(this.closest('[data-code-block]').querySelector('pre').innerText); this.classList.add('text-success')"
+    >
+      <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+    </button>
     """
   end
 
