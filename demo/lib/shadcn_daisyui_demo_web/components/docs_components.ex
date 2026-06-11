@@ -77,9 +77,14 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
         <p>
           Built with
-          <a href="https://daisyui.com" class="link link-hover font-medium text-foreground">daisyUI v5</a>
+          <a href="https://daisyui.com" class="link link-hover font-medium text-foreground">
+            daisyUI v5
+          </a>
           and the
-          <a href="https://github.com/N00nDay/shadcn_daisyui" class="link link-hover font-medium text-foreground">
+          <a
+            href="https://github.com/N00nDay/shadcn_daisyui"
+            class="link link-hover font-medium text-foreground"
+          >
             shadcn_daisyui
           </a>
           theme.
@@ -111,40 +116,40 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         <aside class="hidden lg:block lg:min-h-0">
           <div data-docs-sidebar class="h-full overflow-y-auto overscroll-contain">
             <nav class="space-y-6 py-8 pr-2">
-                <div class="space-y-1">
-                  <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
-                    Guides
-                  </p>
-                  <a
-                    :for={g <- guides()}
-                    href={"/docs/#{g.slug}"}
-                    class={[
-                      "block rounded-md px-2 py-1.5 text-sm transition-colors",
-                      sidebar_link_class(@active_guide == g.slug)
-                    ]}
-                  >
-                    {g.title}
-                  </a>
-                </div>
+              <div class="space-y-1">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Guides
+                </p>
+                <a
+                  :for={g <- guides()}
+                  href={"/docs/#{g.slug}"}
+                  class={[
+                    "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                    sidebar_link_class(@active_guide == g.slug)
+                  ]}
+                >
+                  {g.title}
+                </a>
+              </div>
 
-                <div :for={group <- @groups} class="space-y-1">
-                  <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
-                    {group.title}
-                  </p>
-                  <a
-                    :for={c <- group.components}
-                    href={~p"/docs/components/#{c.slug}"}
-                    class={[
-                      "block rounded-md px-2 py-1.5 text-sm transition-colors",
-                      sidebar_link_class(@active == c.slug)
-                    ]}
-                  >
-                    {c.title}
-                  </a>
-                </div>
-              </nav>
-            </div>
-          </aside>
+              <div :for={group <- @groups} class="space-y-1">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  {group.title}
+                </p>
+                <a
+                  :for={c <- group.components}
+                  href={~p"/docs/components/#{c.slug}"}
+                  class={[
+                    "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                    sidebar_link_class(@active == c.slug)
+                  ]}
+                >
+                  {c.title}
+                </a>
+              </div>
+            </nav>
+          </div>
+        </aside>
 
         <%!-- Content — its own scroll pane on desktop --%>
         <main
@@ -160,31 +165,36 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
               </summary>
               <div class="dropdown-content z-30 mt-1 max-h-[70vh] w-full overflow-y-auto">
                 <div class="p-2">
-                <div class="mb-2 space-y-0.5">
-                  <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">Guides</p>
-                  <a
-                    :for={g <- guides()}
-                    href={"/docs/#{g.slug}"}
-                    class={["block rounded-md px-2 py-1.5 text-sm", sidebar_link_class(@active_guide == g.slug)]}
-                  >
-                    {g.title}
-                  </a>
-                </div>
-                <div :for={group <- @groups} class="mb-2 space-y-0.5">
-                  <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
-                    {group.title}
-                  </p>
-                  <a
-                    :for={c <- group.components}
-                    href={~p"/docs/components/#{c.slug}"}
-                    class={[
-                      "block rounded-md px-2 py-1.5 text-sm",
-                      sidebar_link_class(@active == c.slug)
-                    ]}
-                  >
-                    {c.title}
-                  </a>
-                </div>
+                  <div class="mb-2 space-y-0.5">
+                    <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                      Guides
+                    </p>
+                    <a
+                      :for={g <- guides()}
+                      href={"/docs/#{g.slug}"}
+                      class={[
+                        "block rounded-md px-2 py-1.5 text-sm",
+                        sidebar_link_class(@active_guide == g.slug)
+                      ]}
+                    >
+                      {g.title}
+                    </a>
+                  </div>
+                  <div :for={group <- @groups} class="mb-2 space-y-0.5">
+                    <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                      {group.title}
+                    </p>
+                    <a
+                      :for={c <- group.components}
+                      href={~p"/docs/components/#{c.slug}"}
+                      class={[
+                        "block rounded-md px-2 py-1.5 text-sm",
+                        sidebar_link_class(@active == c.slug)
+                      ]}
+                    >
+                      {c.title}
+                    </a>
+                  </div>
                 </div>
               </div>
             </details>
@@ -268,7 +278,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   def js_hook_callout(assigns) do
     ~H"""
     <div class="mt-6 flex gap-3 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
-      <span class="hero-bolt size-4 shrink-0 translate-y-0.5 text-foreground" aria-hidden="true"></span>
+      <span class="hero-bolt size-4 shrink-0 translate-y-0.5 text-foreground" aria-hidden="true">
+      </span>
       <div class="space-y-1">
         <p class="font-medium text-foreground">Requires JavaScript</p>
         <p class="text-muted-foreground">
@@ -276,8 +287,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">LiveSocket</code>
           (or call
           <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">initShadcnDaisyui()</code>
-          for dead views) — see
-          <a href={~p"/docs/installation"} class="link link-primary font-medium">
+          for dead views) — see <a href={~p"/docs/installation"} class="link link-primary font-medium">
             Installation → Wire the JavaScript
           </a>.
         </p>
@@ -322,9 +332,14 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
 
   `id` must be unique on the page (it names the radio group). Pass `center={false}`
   for examples that should not be centered (tables, full-width layouts).
+
+  Pass `heex` (a function-component usage snippet) to add a HEEx tab between the
+  preview and the raw markup — the raw tab is then labeled "HTML" instead of
+  "Code".
   """
   attr :id, :string, required: true
   attr :code, :string, required: true
+  attr :heex, :string, default: nil
   attr :center, :boolean, default: true
 
   def preview_code(assigns) do
@@ -347,10 +362,21 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       </div>
 
       <input
+        :if={@heex}
         type="radio"
         name={"tab-#{@id}"}
         class="tab [--tab-bg:var(--color-base-100)]"
-        aria-label="Code"
+        aria-label="HEEx"
+      />
+      <div :if={@heex} class="tab-content rounded-lg border-base-300 bg-base-100">
+        <pre class="max-h-[28rem] overflow-auto rounded-lg bg-base-200 p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@heex)}</code></pre>
+      </div>
+
+      <input
+        type="radio"
+        name={"tab-#{@id}"}
+        class="tab [--tab-bg:var(--color-base-100)]"
+        aria-label={if(@heex, do: "HTML", else: "Code")}
       />
       <div class="tab-content rounded-lg border-base-300 bg-base-100">
         <pre class="max-h-[28rem] overflow-auto rounded-lg bg-base-200 p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@code)}</code></pre>

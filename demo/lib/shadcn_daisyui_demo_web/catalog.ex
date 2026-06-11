@@ -83,6 +83,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Variants",
+            heex: ~S"""
+            <.button>Primary</.button>
+            <.button variant="secondary">Secondary</.button>
+            <.button variant="outline">Outline</.button>
+            <.button variant="ghost">Ghost</.button>
+            <.button variant="link">Link</.button>
+            <.button variant="destructive">Destructive</.button>
+            """,
             code: ~S"""
             <button class="btn btn-primary">Primary</button>
             <button class="btn btn-secondary">Secondary</button>
@@ -122,11 +130,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         title: "Badge",
         description: "Displays a badge or a component that looks like a badge.",
         props: [
-          %{name: "variant", type: "default | secondary | outline | destructive", default: "default"}
+          %{
+            name: "variant",
+            type: "default | secondary | outline | destructive",
+            default: "default"
+          }
         ],
         examples: [
           %{
             title: "Variants",
+            heex: ~S"""
+            <.badge>Primary</.badge>
+            <.badge variant="secondary">Secondary</.badge>
+            <.badge variant="outline">Outline</.badge>
+            <.badge variant="destructive">Destructive</.badge>
+            """,
             code: ~S"""
             <span class="badge badge-primary">Primary</span>
             <span class="badge badge-secondary">Secondary</span>
@@ -143,6 +161,18 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "With form",
+            heex: ~S"""
+            <.card class="w-full max-w-sm">
+              <.card_body>
+                <.card_title>Create project</.card_title>
+                <.card_description>Deploy your new project in one click.</.card_description>
+                <div class="card-actions mt-6 flex justify-between">
+                  <.button variant="outline">Cancel</.button>
+                  <.button>Deploy</.button>
+                </div>
+              </.card_body>
+            </.card>
+            """,
             code: ~S"""
             <div class="card w-full max-w-sm">
               <div class="card-body">
@@ -202,6 +232,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.input field={@form[:email]} type="email" label="Email" placeholder="you@example.com" />
+            """,
             code: ~S"""
             <label class="block w-full max-w-sm space-y-1.5">
               <span class="text-sm font-medium">Email</span>
@@ -218,6 +251,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.textarea field={@form[:message]} label="Message" rows="3" placeholder="Type your message..." />
+            """,
             code: ~S"""
             <label class="block w-full max-w-sm space-y-1.5">
               <span class="text-sm font-medium">Message</span>
@@ -230,11 +266,21 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       %{
         slug: "select",
         title: "Select",
-        description: "Displays a list of options for the user to pick from, triggered by a button.",
+        description:
+          "Displays a list of options for the user to pick from, triggered by a button.",
         hook: true,
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.select id="fruit" placeholder="Select a fruit">
+              <:option value="Apple">Apple</:option>
+              <:option value="Banana">Banana</:option>
+              <:option value="Blueberry">Blueberry</:option>
+              <:option value="Grapes">Grapes</:option>
+              <:option value="Pineapple">Pineapple</:option>
+            </.select>
+            """,
             code: ~S"""
             <div data-select class="relative w-60">
               <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
@@ -260,6 +306,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.native_select
+              field={@form[:role]}
+              label="Role"
+              prompt="Select a role"
+              options={["Admin", "Member", "Viewer"]}
+            />
+            """,
             code: ~S"""
             <label class="block w-full max-w-sm space-y-1.5">
               <span class="text-sm font-medium">Role</span>
@@ -281,6 +335,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.checkbox field={@form[:terms]} label="Accept terms and conditions" />
+            <.checkbox field={@form[:newsletter]} label="Subscribe to newsletter" />
+            """,
             code: ~S"""
             <div class="space-y-3">
               <label class="flex items-center gap-2 text-sm">
@@ -304,6 +362,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.radio_group field={@form[:plan]} label="Plan">
+              <:radio value="free">Free</:radio>
+              <:radio value="pro">Pro</:radio>
+              <:radio value="enterprise">Enterprise</:radio>
+            </.radio_group>
+            """,
             code: ~S"""
             <div class="space-y-3">
               <label class="flex items-center gap-2 text-sm">
@@ -327,6 +392,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.switch field={@form[:airplane_mode]} label="Airplane mode" />
+            <.switch field={@form[:wifi]} label="Wi-Fi" />
+            """,
             code: ~S"""
             <div class="space-y-3">
               <label class="flex items-center gap-3 text-sm">
@@ -347,6 +416,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.label for="terms">Accept terms and conditions</.label>
+            """,
             code: ~S"""
             <label class="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" class="checkbox" /> Accept terms and conditions
@@ -366,6 +438,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default & destructive",
             center: false,
+            heex: ~S"""
+            <.alert>
+              <:title>Heads up!</:title>
+              You can add components to your app using the CLI.
+            </.alert>
+
+            <.alert variant="destructive">
+              <:title>Error</:title>
+              Your session has expired. Please log in again.
+            </.alert>
+            """,
             code: ~S"""
             <div class="w-full space-y-3">
               <div class="alert" role="alert">
@@ -394,6 +477,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.tabs id="settings">
+              <:tab label="Account" checked>Account settings…</:tab>
+              <:tab label="Password">Password settings…</:tab>
+              <:tab label="Notifications">Notification settings…</:tab>
+            </.tabs>
+            """,
             code: ~S"""
             <div role="tablist" class="tabs tabs-box w-fit">
               <input type="radio" name="demo_tabs" class="tab" aria-label="Account" checked />
@@ -412,6 +502,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             center: false,
+            heex: ~S"""
+            <.table id="invoices" rows={@invoices}>
+              <:col :let={invoice} label="Invoice">{invoice.id}</:col>
+              <:col :let={invoice} label="Status">{invoice.status}</:col>
+              <:col :let={invoice} label="Method">{invoice.method}</:col>
+              <:col :let={invoice} label="Amount">{invoice.amount}</:col>
+            </.table>
+            """,
             code: ~S"""
             <div class="card w-full overflow-hidden">
               <table class="table">
@@ -460,6 +558,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Horizontal & vertical",
             center: false,
+            heex: ~S"""
+            <.separator />
+            <.separator orientation="vertical" />
+            """,
             code: ~S"""
             <div class="w-full max-w-sm">
               <div class="space-y-1">
@@ -487,6 +589,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             center: false,
+            heex: ~S"""
+            <.accordion id="faq">
+              <:section title="Is it accessible?" open>
+                Yes. It adheres to the WAI-ARIA design pattern.
+              </:section>
+              <:section title="Is it styled?">
+                Yes. It comes with shadcn-matched styles out of the box.
+              </:section>
+              <:section title="Is it animated?">
+                Yes. It uses a smooth height transition.
+              </:section>
+            </.accordion>
+            """,
             code: ~S"""
             <div class="card w-full">
               <div class="card-body py-1">
@@ -518,6 +633,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Placeholders & group",
+            heex: ~S"""
+            <.avatar fallback="JD" />
+            <.avatar fallback="UI" shape="rounded-lg" />
+            <.avatar_group>
+              <.avatar fallback="AB" />
+              <.avatar fallback="CD" />
+              <.avatar fallback="+3" />
+            </.avatar_group>
+            """,
             code: ~S"""
             <div class="flex items-center gap-4">
               <div class="avatar avatar-placeholder">
@@ -549,6 +673,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.breadcrumb>
+              <:item navigate={~p"/"}>Home</:item>
+              <:item navigate={~p"/docs"}>Components</:item>
+              <:item>Breadcrumb</:item>
+            </.breadcrumb>
+            """,
             code: ~S"""
             <nav class="breadcrumbs text-sm" aria-label="Breadcrumb">
               <ul>
@@ -568,6 +699,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.dropdown_menu>
+              <:trigger>Open menu</:trigger>
+              <:label>My Account</:label>
+              <:item><.link navigate={~p"/profile"}>Profile</.link></:item>
+              <:item>Billing</:item>
+              <:item>Settings</:item>
+              <:item phx-click="logout" class="text-destructive">Log out</:item>
+            </.dropdown_menu>
+            """,
             code: ~S"""
             <div class="dropdown">
               <div tabindex="0" role="button" class="btn btn-outline">
@@ -592,6 +733,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.dialog id="confirm">
+              <:trigger><.button>Open dialog</.button></:trigger>
+              <:title>Are you absolutely sure?</:title>
+              <:description>
+                This action cannot be undone. This will permanently delete your account.
+              </:description>
+              <:actions>
+                <form method="dialog"><.button variant="outline">Cancel</.button></form>
+                <.button variant="destructive" phx-click="delete">Delete</.button>
+              </:actions>
+            </.dialog>
+            """,
             code: ~S"""
             <button class="btn btn-primary" onclick="dialog_demo.showModal()">Open dialog</button>
             <dialog id="dialog_demo" class="modal">
@@ -620,6 +774,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.tooltip tip="Tooltip text">
+              <.button variant="secondary">Hover me</.button>
+            </.tooltip>
+            """,
             code: ~S"""
             <div class="tooltip" data-tip="Tooltip text">
               <button class="btn btn-secondary">Hover me</button>
@@ -636,6 +795,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             center: false,
+            heex: ~S"""
+            <.progress value={60} />
+            """,
             code: ~S"""
             <progress class="progress w-full" value="60" max="100"></progress>
             """
@@ -649,6 +811,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.skeleton class="h-10 w-10 rounded-full" />
+            <.skeleton class="h-3 w-40" />
+            <.skeleton class="h-3 w-24" />
+            """,
             code: ~S"""
             <div class="flex items-center gap-3">
               <div class="skeleton h-10 w-10 rounded-full"></div>
@@ -697,6 +864,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.spinner />
+            <.spinner size="loading-sm" />
+            <.button><.spinner size="loading-xs" /> Please wait</.button>
+            """,
             code: ~S"""
             <div class="flex items-center gap-4">
               <span class="loading loading-spinner"></span>
@@ -716,6 +888,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.pagination page={@page} total_pages={@total_pages} path={fn p -> ~p"/items?page=#{p}" end} />
+            <.pagination page={@page} total_pages={@total_pages} event="paginate" />
+            """,
             code: ~S"""
             <nav class="flex items-center gap-1">
               <button class="btn btn-ghost btn-sm gap-1 px-2.5">
@@ -741,6 +917,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.popover>
+              <:trigger>Open popover</:trigger>
+              <div class="space-y-1">
+                <h4 class="text-sm font-medium leading-none">Dimensions</h4>
+                <p class="text-sm text-muted-foreground">Set the dimensions for the layer.</p>
+              </div>
+            </.popover>
+            """,
             code: ~S"""
             <div class="dropdown">
               <div tabindex="0" role="button" class="btn btn-outline">Open popover</div>
@@ -770,6 +955,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <%!-- Put one toast host in your root layout; the bundled showToast() appends to it.
+                 For server-driven notices use <.flash> instead. --%>
+            <.toast_host />
+            """,
             code: ~S"""
             <div class="flex flex-wrap items-center gap-3">
               <button class="btn btn-outline" onclick="window.showToast()">Show toast</button>
@@ -950,6 +1140,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.sheet id="edit-profile">
+              <:trigger><.button variant="outline">Open sheet →</.button></:trigger>
+              <:title>Edit profile</:title>
+              <:description>Make changes to your profile here. Click save when you're done.</:description>
+              <.input field={@form[:name]} label="Name" />
+              <.input field={@form[:username]} label="Username" />
+            </.sheet>
+            """,
             code: ~S"""
             <button class="btn btn-outline" onclick="document.getElementById('sheet_dialog').showModal()">
               Open sheet →
@@ -993,6 +1192,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             center: false,
+            heex: ~S"""
+            <.sidebar_layout>
+              <:sidebar>
+                <.sidebar_group title="Platform">
+                  <:item navigate={~p"/"} active>Dashboard</:item>
+                  <:item navigate={~p"/projects"}>Projects</:item>
+                  <:item navigate={~p"/team"}>Team</:item>
+                  <:item navigate={~p"/settings"}>Settings</:item>
+                </.sidebar_group>
+              </:sidebar>
+              Main content area
+            </.sidebar_layout>
+            """,
             code: ~S"""
             <div class="flex h-64 overflow-hidden rounded-xl border border-base-300">
               <aside class="w-56 border-r border-base-300 bg-base-100 p-2">
@@ -1017,6 +1229,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.field field={@form[:email]} label="Email" description="We never share it.">
+              <.input field={@form[:email]} type="email" />
+            </.field>
+            """,
             code: ~S"""
             <fieldset class="w-full max-w-sm space-y-1.5 rounded-lg border border-base-300 p-4">
               <legend class="px-1 text-sm font-medium">Notifications</legend>
@@ -1192,6 +1409,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.combobox id="framework" placeholder="Select framework…">
+              <:option value="Next.js">Next.js</:option>
+              <:option value="SvelteKit">SvelteKit</:option>
+              <:option value="Nuxt.js">Nuxt.js</:option>
+              <:option value="Remix">Remix</:option>
+              <:option value="Astro">Astro</:option>
+              <:option value="Phoenix">Phoenix</:option>
+            </.combobox>
+            """,
             code: ~S"""
             <div data-combobox class="relative w-60">
               <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
@@ -1223,6 +1450,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.command id="commands">
+              <:trigger_label>Search commands…</:trigger_label>
+              <:item group="Suggestions" icon="hero-calendar">Calendar</:item>
+              <:item group="Suggestions" icon="hero-face-smile">Search Emoji</:item>
+              <:item group="Suggestions" icon="hero-calculator">Calculator</:item>
+              <:item group="Settings" icon="hero-user" shortcut="⌘P">Profile</:item>
+              <:item group="Settings" icon="hero-cog-6-tooth" shortcut="⌘S">Settings</:item>
+            </.command>
+            """,
             code: ~S"""
             <button class="btn btn-outline w-64 justify-between" onclick="document.getElementById('command_dialog').showModal()">
               <span class="text-muted-foreground">Search commands…</span>
@@ -1341,6 +1578,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.calendar id="cal" />
+            """,
             code: ~S"""
             <div class="card w-fit">
               <div class="card-body"><div data-calendar></div></div>
@@ -1357,6 +1597,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Single & range",
+            heex: ~S"""
+            <.date_picker id="date" placeholder="Pick a date" />
+            <.date_range id="range" placeholder="Pick a date range" />
+            """,
             code: ~S"""
             <div class="flex flex-col gap-4">
               <div class="space-y-2">
@@ -1396,6 +1640,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.carousel id="gallery">
+              <:slide><div class="flex aspect-video w-full items-center justify-center bg-muted text-3xl font-semibold">1</div></:slide>
+              <:slide><div class="flex aspect-video w-full items-center justify-center bg-muted text-3xl font-semibold">2</div></:slide>
+              <:slide><div class="flex aspect-video w-full items-center justify-center bg-muted text-3xl font-semibold">3</div></:slide>
+            </.carousel>
+            """,
             code: ~S"""
             <div class="relative w-full max-w-sm px-4">
               <div data-carousel class="carousel w-full rounded-lg">
@@ -1433,6 +1684,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.drawer id="goal">
+              <:trigger><.button variant="outline">Open drawer</.button></:trigger>
+              <div class="mx-auto w-full max-w-md text-center">
+                <h3 class="text-lg font-semibold">Move goal</h3>
+                <p class="mt-1 text-sm text-muted-foreground">Set your daily activity goal.</p>
+              </div>
+            </.drawer>
+            """,
             code: ~S"""
             <button class="btn btn-outline" onclick="document.getElementById('drawer_bottom').showModal()">
               Open drawer
@@ -1462,6 +1722,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.input_otp id="otp" />
+            <.input_otp id="pin" length={4} group={0} />
+            """,
             code: ~S"""
             <div data-otp class="flex items-center gap-2">
               <input class="otp-slot" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
@@ -1484,6 +1748,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         examples: [
           %{
             title: "Default",
+            heex: ~S"""
+            <.resizable id="panes" class="h-44 w-80 max-w-full">
+              <:start><span class="font-semibold">One</span></:start>
+              <:end_pane><span class="font-semibold">Two</span></:end_pane>
+            </.resizable>
+            """,
             code: ~S"""
             <div
               id="resizable-demo"

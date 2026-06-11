@@ -116,6 +116,67 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
   end
 
   @doc """
+  Cmd+K search palette over the component catalog.
+
+  Rendered once from the root layout so it is available on every page. Uses the
+  design system's command-dialog markup: the bundled `shadcn-daisyui.js` already
+  opens any `[data-command]` dialog on Cmd/Ctrl+K and filters its items, so all
+  this has to do is render the items (one link per component, grouped like the
+  sidebar) plus a small floating trigger button.
+  """
+  def command_palette(assigns) do
+    assigns = assign(assigns, :groups, ShadcnDaisyuiDemoWeb.Catalog.groups())
+
+    ~H"""
+    <button
+      type="button"
+      class="btn btn-outline btn-sm fixed bottom-4 right-4 z-40 gap-2 bg-base-100 shadow-md"
+      onclick="document.getElementById('docs-search-palette').showModal()"
+    >
+      <.icon name="hero-magnifying-glass" class="size-4" /> Search <kbd class="kbd kbd-sm">⌘K</kbd>
+    </button>
+    <dialog id="docs-search-palette" data-command class="command-dialog">
+      <div class="flex items-center gap-2 border-b border-base-300 px-3">
+        <.icon name="hero-magnifying-glass" class="size-4 opacity-50" />
+        <input
+          data-command-search
+          class="h-11 w-full bg-transparent text-sm outline-none"
+          placeholder="Search components…"
+          aria-label="Search components"
+        />
+      </div>
+      <ul data-command-list class="max-h-80 overflow-auto p-1">
+        <li class="command-group-label" data-group>Guides</li>
+        <li>
+          <a class="command-item" data-command-item href={~p"/docs/installation"}>
+            <.icon name="hero-book-open" class="size-4" /> Installation
+          </a>
+        </li>
+        <li>
+          <a class="command-item" data-command-item href={~p"/docs/themes"}>
+            <.icon name="hero-swatch" class="size-4" /> Themes
+          </a>
+        </li>
+        <%= for group <- @groups do %>
+          <li class="command-group-label" data-group>{group.title}</li>
+          <li :for={component <- group.components}>
+            <a class="command-item" data-command-item href={~p"/docs/components/#{component.slug}"}>
+              {component.title}
+              <span class="ml-auto truncate text-xs text-muted-foreground">
+                {component.description}
+              </span>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+      <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+        No results found.
+      </p>
+    </dialog>
+    """
+  end
+
+  @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
   See <head> in root.html.heex which applies the theme before page load.

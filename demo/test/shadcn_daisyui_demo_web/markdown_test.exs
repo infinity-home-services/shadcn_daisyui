@@ -1,0 +1,78 @@
+defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
+  use ExUnit.Case, async: true
+
+  alias ShadcnDaisyuiDemoWeb.Markdown
+
+  @spec_fixture %{
+    slug: "widget",
+    title: "Widget",
+    description: "A test widget.",
+    hook: true,
+    props: [%{name: "variant", type: "a | b", default: "a"}],
+    examples: [
+      %{title: "Default", code: "<div class=\"widget\"></div>\n"}
+    ]
+  }
+
+  test "component_markdown renders title, description, hook note, props, and examples" do
+    md = Markdown.component_markdown(@spec_fixture)
+
+    assert md =~ "# Widget"
+    assert md =~ "A test widget."
+    assert md =~ "Requires a JS hook"
+    assert md =~ "| Name | Type | Default |"
+    assert md =~ "| variant | a \\| b | a |"
+    assert md =~ "## Default"
+    assert md =~ "```html\n<div class=\"widget\"></div>\n```"
+  end
+
+  test "component_markdown includes a HEEx block when an example has :heex" do
+    spec =
+      put_in(@spec_fixture.examples, [
+        %{title: "Default", code: "<div></div>", heex: "<.widget variant=\"a\" />"}
+      ])
+
+    md = Markdown.component_markdown(spec)
+
+    assert md =~ "```heex\n<.widget variant=\"a\" />\n```"
+    assert md =~ "```html\n<div></div>\n```"
+  end
+
+  test "component_markdown omits hook note and props when absent" do
+    spec = @spec_fixture |> Map.drop([:hook, :props])
+    md = Markdown.component_markdown(spec)
+
+    refute md =~ "Requires a JS hook"
+    refute md =~ "| Name | Type | Default |"
+  end
+
+  test "llms_txt links every component markdown file under the base path" do
+    txt = Markdown.llms_txt("/base")
+
+    assert txt =~ "# shadcn_daisyui"
+    assert txt =~ "- [Button](/base/docs/components/button.md):"
+    assert txt =~ "(/base/docs/installation)"
+    assert txt =~ "(/base/docs/themes)"
+  end
+
+  test "llms_full_txt contains every component title" do
+    full = Markdown.llms_full_txt()
+
+    for slug <- ShadcnDaisyuiDemoWeb.Catalog.slugs() do
+      title = ShadcnDaisyuiDemoWeb.Catalog.component(slug).title
+      assert full =~ "# #{title}"
+    end
+  end
+
+  test "search_index has one entry per component with group and url" do
+    index = Markdown.search_index("/base")
+
+    assert Enum.map(index, & &1.slug) == ShadcnDaisyuiDemoWeb.Catalog.slugs()
+
+    entry = Enum.find(index, &(&1.slug == "button"))
+    assert entry.title == "Button"
+    assert entry.group == "Core"
+    assert entry.url == "/base/docs/components/button"
+    assert is_binary(entry.description)
+  end
+end
