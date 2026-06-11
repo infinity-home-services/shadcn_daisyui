@@ -160,6 +160,74 @@ function initDock(scope) {
     document.addEventListener("click", (e) => { if (!root.contains(e.target)) open(false) })
   }
 
+  function initSelect(root) {
+    if (!root.id) root.id = "sd-sel-" + (++a11yUid)
+    const trigger = root.querySelector("[data-select-trigger]")
+    const panel = root.querySelector("[data-select-panel]")
+    const label = root.querySelector("[data-select-label]")
+    const items = [...root.querySelectorAll("[data-select-item]")]
+    if (!trigger || !panel) return
+
+    const listId = root.id + "-list"
+    panel.id = listId
+    panel.setAttribute("role", "listbox")
+    trigger.setAttribute("aria-haspopup", "listbox")
+    trigger.setAttribute("aria-expanded", "false")
+    trigger.setAttribute("aria-controls", listId)
+    items.forEach((it, i) => {
+      it.id = listId + "-opt-" + i
+      it.setAttribute("role", "option")
+      it.setAttribute("aria-selected", "false")
+    })
+
+    let active = -1
+    const isOpen = () => !panel.classList.contains("hidden")
+    const setActive = (i) => {
+      items.forEach((it) => it.classList.remove("bg-accent", "text-accent-foreground"))
+      if (!items.length) { active = -1; return }
+      active = (i + items.length) % items.length
+      const el = items[active]
+      el.classList.add("bg-accent", "text-accent-foreground")
+      el.scrollIntoView({ block: "nearest" })
+      trigger.setAttribute("aria-activedescendant", el.id)
+    }
+    const open = (o) => {
+      panel.classList.toggle("hidden", !o)
+      trigger.setAttribute("aria-expanded", String(o))
+      if (o) {
+        const sel = items.findIndex((it) => it.getAttribute("aria-selected") === "true")
+        setActive(sel >= 0 ? sel : 0)
+      } else {
+        trigger.removeAttribute("aria-activedescendant")
+      }
+    }
+    const choose = (it) => {
+      label.textContent = it.dataset.value
+      label.classList.remove("text-muted-foreground")
+      items.forEach((x) => {
+        x.setAttribute("aria-selected", "false")
+        const c = x.querySelector("span"); if (c) c.classList.add("opacity-0")
+      })
+      it.setAttribute("aria-selected", "true")
+      const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
+      open(false)
+      trigger.focus()
+    }
+    trigger.addEventListener("click", () => open(!isOpen()))
+    trigger.addEventListener("keydown", (e) => {
+      if (!isOpen()) {
+        if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) { e.preventDefault(); open(true) }
+        return
+      }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (items[active]) choose(items[active]) }
+      else if (e.key === "Escape") { e.preventDefault(); open(false) }
+    })
+    items.forEach((it) => it.addEventListener("click", () => choose(it)))
+    document.addEventListener("click", (e) => { if (!root.contains(e.target)) open(false) })
+  }
+
   function initCommand(dialog) {
     const search = dialog.querySelector("[data-command-search]")
     const listEl = dialog.querySelector("[data-command-list]")
@@ -614,6 +682,7 @@ function initDock(scope) {
 export function initShadcnDaisyui(root) {
   root = root || document
   root.querySelectorAll("[data-combobox]").forEach(initCombobox)
+  root.querySelectorAll("[data-select]").forEach(initSelect)
   root.querySelectorAll("[data-command]").forEach(initCommand)
   root.querySelectorAll("[data-otp]").forEach(initOtp)
   root.querySelectorAll("[data-datepicker]").forEach(initDatepicker)
@@ -629,6 +698,7 @@ export function initShadcnDaisyui(root) {
 // Phoenix LiveView hooks. Attach with phx-hook="ShadcnCombobox" etc.
 export const Hooks = {
   ShadcnCombobox: { mounted() { initCombobox(this.el) } },
+  ShadcnSelect: { mounted() { initSelect(this.el) } },
   ShadcnCommand: { mounted() { initCommand(this.el) } },
   ShadcnOtp: { mounted() { initOtp(this.el) } },
   ShadcnContextMenu: { mounted() { initContextMenu() } },

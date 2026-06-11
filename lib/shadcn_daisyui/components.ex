@@ -291,6 +291,46 @@ defmodule ShadcnDaisyui.Components do
     """
   end
 
+  @doc """
+  A custom select (shadcn-style trigger + listbox popover). Provide options as
+  `:option` slots. For the plain HTML control use a `<select class="select">`.
+
+      <.select id="fruit" placeholder="Select a fruit">
+        <:option value="Apple">Apple</:option>
+        <:option value="Banana">Banana</:option>
+      </.select>
+  """
+  attr(:id, :string, required: true)
+  attr(:placeholder, :string, default: "Select…")
+  attr(:class, :any, default: "w-60")
+
+  slot :option, doc: "each option; set `value`" do
+    attr(:value, :string, required: true)
+  end
+
+  def select(assigns) do
+    ~H"""
+    <div id={@id} phx-hook="ShadcnSelect" data-select class={["relative", @class]}>
+      <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
+        <span data-select-label class="text-muted-foreground">{@placeholder}</span>
+        <span class="size-4 opacity-50 hero-chevron-down" aria-hidden="true"></span>
+      </button>
+      <div data-select-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
+        <button
+          :for={opt <- @option}
+          type="button"
+          class="combo-item"
+          data-select-item
+          data-value={opt.value}
+        >
+          <span class="size-4 opacity-0 hero-check" aria-hidden="true"></span>
+          {render_slot(opt)}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   @doc "A segmented one-time-code input."
   attr(:id, :string, required: true)
   attr(:length, :integer, default: 6)

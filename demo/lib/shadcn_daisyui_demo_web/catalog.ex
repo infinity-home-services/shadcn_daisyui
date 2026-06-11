@@ -15,7 +15,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   @groups [
     %{
       title: "Core",
-      slugs: ~w(button badge card input textarea select checkbox radio-group switch
+      slugs: ~w(button badge card input textarea select native-select checkbox radio-group switch
                 label alert tabs table separator accordion avatar breadcrumb
                 dropdown-menu dialog tooltip progress skeleton kbd slider spinner
                 pagination popover toast)
@@ -230,7 +230,33 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       %{
         slug: "select",
         title: "Select",
-        description: "A native select for choosing from a list of options.",
+        description: "Displays a list of options for the user to pick from, triggered by a button.",
+        hook: true,
+        examples: [
+          %{
+            title: "Default",
+            code: ~S"""
+            <div data-select class="relative w-60">
+              <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
+                <span data-select-label class="text-muted-foreground">Select a fruit</span>
+                <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
+              </button>
+              <div data-select-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
+                <button type="button" class="combo-item" data-select-item data-value="Apple"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Apple</button>
+                <button type="button" class="combo-item" data-select-item data-value="Banana"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Banana</button>
+                <button type="button" class="combo-item" data-select-item data-value="Blueberry"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Blueberry</button>
+                <button type="button" class="combo-item" data-select-item data-value="Grapes"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Grapes</button>
+                <button type="button" class="combo-item" data-select-item data-value="Pineapple"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Pineapple</button>
+              </div>
+            </div>
+            """
+          }
+        ]
+      },
+      %{
+        slug: "native-select",
+        title: "Select Native",
+        description: "The native HTML select control, styled to match.",
         examples: [
           %{
             title: "Default",
