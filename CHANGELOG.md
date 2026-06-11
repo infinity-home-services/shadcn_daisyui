@@ -10,15 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Theme transitions are now pure CSS — no JS, no class window. One always-on
-  rule gives every element a color transition and normalizes daisyUI's
-  per-component durations/easings (`.btn` 0.2s cubic-bezier, `.toggle` 0.3s,
-  `.menu` 0.2s, …) onto a single `--theme-transition` token with `!important`,
-  so a toggle moves every color in lockstep. Because there's no timing window,
-  it cannot desync or race (the prior MutationObserver/`theme-transitioning`
-  approach could). Movement utilities/animations (the toggle slider's
-  `transition-[left]`, a dialog's `transform`) keep their property and just
-  adopt the token duration. Respects `prefers-reduced-motion`.
 - Docs site now imports the theme CSS/JS straight from the package source
   instead of keeping copies that drift.
 

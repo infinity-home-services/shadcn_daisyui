@@ -883,56 +883,38 @@ dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
 html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------
-   THEME TRANSITION — every colour on the page changes at ONE shared duration
-   and easing, so a light/dark (or brand) toggle moves in perfect lockstep.
+   THEME TRANSITION — one duration for every themeable colour change, so nothing
+   trails when toggling light/dark. The single source of truth is the
+   `--theme-transition` variable on :root.
 
-   Pure CSS, always on. There is no JS and no "transition window", so there is
-   never a frame where some elements carry the transition and others don't —
-   that timing gap was the snap/race. The single rule below:
-
-     • gives EVERY element (incl. bare body / cards / text, which daisyUI leaves
-       with no transition) a colour transition — `transition-property` is left
-       non-important so components keep their own property lists;
-     • forces the DURATION and EASING on everything with `!important`, which
-       normalises daisyUI's per-component values (`.btn` 0.2s cubic-bezier,
-       `.toggle` 0.3s, `.menu` items 0.2s, …) onto the shared token. That single
-       normalisation is what makes buttons, button groups, menu/sidebar items,
-       combobox, countdown, etc. all finish together.
-
-   It's one motion-duration token for the whole UI (interaction states included)
-   — deliberate for a design system. Need a different duration somewhere? set it
-   on that element with `!important`. Brand themes may override the token;
-   `--theme-transition: 0ms` disables theme tweening entirely.
-
-   Lives in `@layer utilities` on purpose: the colour `transition-property` stays
-   low-specificity so a movement utility/component (the theme-toggle's
-   `transition-[left]`, a dialog's `transform`, …) keeps ITS property and still
-   slides — only the duration + easing get normalised (those are `!important`,
-   so they win regardless). The `*` property only fills in bare elements
-   (body / cards / text) that daisyUI leaves with no transition at all.
+   daisyUI ships per-component durations (0.2–0.3s) and bare surfaces (html /
+   body / divs) have none — which is why elements used to transition at different
+   speeds. The rules below normalise everything to the shared duration.
    --------------------------------------------------------------------------- */
 :root {
   --theme-transition: 150ms;
-  --theme-transition-ease: ease;
 }
 
-@layer utilities {
+/* 1) Give every element a colour transition (covers bare surfaces + text that
+      otherwise change instantly). This goes in the `base` layer so daisyUI's
+      component rules (a higher layer) keep WHICH properties they animate — their
+      transforms/scales for modals, toggles, etc. stay intact. */
+@layer base {
   *,
   *::before,
-  *::after,
-  ::backdrop {
-    transition-property: color, background-color, border-color, outline-color,
-      text-decoration-color, fill, stroke, box-shadow;
-    transition-duration: var(--theme-transition) !important;
-    transition-timing-function: var(--theme-transition-ease) !important;
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke,
+      text-decoration-color, outline-color;
+    transition-duration: var(--theme-transition);
+    transition-timing-function: ease;
   }
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after,
-    ::backdrop {
-      transition-duration: 0.01ms !important;
-    }
-  }
+/* 2) Pin every element's transition DURATION to the shared value (overriding
+      daisyUI's 0.2–0.3s) so colours finish together. Only the duration is forced
+      (unlayered + !important), so components keep their animated properties.
+      Overlay / enter-exit animations keep their own longer timing. */
+:not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
+    [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
+  transition-duration: var(--theme-transition) !important;
 }

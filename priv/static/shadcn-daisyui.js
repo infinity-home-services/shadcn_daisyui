@@ -24,10 +24,6 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   })
 }
 
-// Theme transitions are handled entirely in CSS (one always-on, normalised
-// colour transition on every element — see shadcn-daisyui.css). No JS hook is
-// needed, so there is no class-window timing gap that could desync.
-
 function showToast(variant) {
   const host = document.getElementById("toast-host")
   if (!host) return
