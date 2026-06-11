@@ -13,7 +13,9 @@
     </p>
 
     <div class="grid gap-6 md:grid-cols-2">
-      <div :for={{label, theme} <- [{"Light — shadcn", "shadcn"}, {"Dark — shadcn-dark", "shadcn-dark"}]}>
+      <div :for={
+        {label, theme} <- [{"Light — shadcn", "shadcn"}, {"Dark — shadcn-dark", "shadcn-dark"}]
+      }>
         <div
           data-theme={theme}
           class="overflow-hidden rounded-xl border border-base-300 bg-base-100 text-base-content"
@@ -37,7 +39,8 @@
   <section class="mt-12 space-y-4">
     <h2 class="text-lg font-medium tracking-tight">Radius scale</h2>
     <p class="text-sm text-muted-foreground">
-      Derived from a single <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">--radius</code>
+      Derived from a single
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">--radius</code>
       of 0.625rem. Components pick from this scale so corners stay consistent.
     </p>
     <div class="flex flex-wrap gap-6">
@@ -94,13 +97,23 @@
             <span>Radius</span>
             <span data-radius-val class="font-mono text-muted-foreground">0.625rem</span>
           </div>
-          <input type="range" data-radius min="0" max="1.5" step="0.025" class="range range-sm w-full" />
+          <input
+            type="range"
+            data-radius
+            min="0"
+            max="1.5"
+            step="0.025"
+            class="range range-sm w-full"
+          />
         </div>
       </div>
 
       <%!-- Preview + export --%>
       <div class="space-y-4">
-        <div data-theme-preview class="rounded-xl border border-base-300 bg-base-100 p-6 text-base-content">
+        <div
+          data-theme-preview
+          class="rounded-xl border border-base-300 bg-base-100 p-6 text-base-content"
+        >
           <div class="grid gap-5">
             <div class="card border border-base-300">
               <div class="card-body space-y-3 p-5">

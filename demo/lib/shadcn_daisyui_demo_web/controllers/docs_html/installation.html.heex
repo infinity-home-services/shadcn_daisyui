@@ -6,7 +6,8 @@
 
   <div class="mt-6 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
     Requires <span class="font-medium text-foreground">Tailwind v4</span>
-    and <span class="font-medium text-foreground">daisyUI v5</span> — both ship with Phoenix 1.8.
+    and <span class="font-medium text-foreground">daisyUI v5</span>
+    — both ship with Phoenix 1.8.
   </div>
 
   <div class="mt-10 space-y-12">
@@ -15,8 +16,8 @@
       <h2 class="text-xl font-semibold tracking-tight">1. Add the dependency</h2>
       <p class="text-sm text-muted-foreground">
         Install straight from GitHub — no Hex publish needed. Add it to your
-        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">deps/0</code> in
-        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">mix.exs</code>:
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">deps/0</code>
+        in <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">mix.exs</code>:
       </p>
       <.code_block
         language="mix.exs"
@@ -30,7 +31,8 @@ end|}
       <.code_block language="shell" code={~S|mix deps.get
 mix shadcn_daisyui.install|} />
       <p class="text-sm text-muted-foreground">
-        The task copies <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn-daisyui.css</code>
+        The task copies
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn-daisyui.css</code>
         into <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">assets/css/</code>,
         <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn-daisyui.js</code>
         into <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">assets/vendor/</code>,
@@ -81,7 +83,10 @@ else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
         code={~S|<html lang="en" data-theme="shadcn">|}
       />
       <p class="text-sm text-muted-foreground">
-        Switch to <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">data-theme="shadcn-dark"</code>
+        Switch to
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+          data-theme="shadcn-dark"
+        </code>
         for dark mode — wire it to a toggle and you're done.
       </p>
     </section>
@@ -96,8 +101,7 @@ else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
 <div class="card"><div class="card-body">…</div></div>|}
       />
       <p class="text-sm text-muted-foreground">
-        Or reach for the function components in
-        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyui.Components</code>:
+        Or reach for the function components in <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyui.Components</code>:
       </p>
       <.code_block
         language="heex"
@@ -113,7 +117,8 @@ else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
 </.combobox>|}
       />
       <p class="text-sm text-muted-foreground">
-        Interactive components need an <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">id</code>
+        Interactive components need an
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">id</code>
         (the LiveView hook requirement) and the hooks registered.
       </p>
     </section>
@@ -126,17 +131,22 @@ else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
       </p>
       <.code_block
         language="assets/css/app.css"
-        code={~S|@import "tailwindcss";
+        code={
+          ~S|@import "tailwindcss";
 @plugin "../vendor/daisyui" { themes: false; }
 @import "../../deps/shadcn_daisyui/priv/static/shadcn-daisyui.css";
 @source "../../deps/shadcn_daisyui/lib";
-@custom-variant dark (&:where([data-theme=shadcn-dark], [data-theme=shadcn-dark] *, .dark, .dark *));|}
+@custom-variant dark (&:where([data-theme=shadcn-dark], [data-theme=shadcn-dark] *, .dark, .dark *));|
+        }
       />
     </section>
   </div>
 
   <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
-    <a href="https://github.com/N00nDay/shadcn_daisyui" class="link link-hover text-muted-foreground">
+    <a
+      href="https://github.com/N00nDay/shadcn_daisyui"
+      class="link link-hover text-muted-foreground"
+    >
       View the source on GitHub →
     </a>
     <a href={~p"/docs/themes"} class="link link-hover text-muted-foreground">Themes →</a>

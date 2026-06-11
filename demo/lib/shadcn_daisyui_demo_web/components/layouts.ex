@@ -122,19 +122,12 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
   design system's command-dialog markup: the bundled `shadcn-daisyui.js` already
   opens any `[data-command]` dialog on Cmd/Ctrl+K and filters its items, so all
   this has to do is render the items (one link per component, grouped like the
-  sidebar) plus a small floating trigger button.
+  sidebar). The header's Search button opens it; Cmd/Ctrl+K works everywhere.
   """
   def command_palette(assigns) do
     assigns = assign(assigns, :groups, ShadcnDaisyuiDemoWeb.Catalog.groups())
 
     ~H"""
-    <button
-      type="button"
-      class="btn btn-outline btn-sm fixed bottom-4 right-4 z-40 gap-2 bg-base-100 shadow-md"
-      onclick="document.getElementById('docs-search-palette').showModal()"
-    >
-      <.icon name="hero-magnifying-glass" class="size-4" /> Search <kbd class="kbd kbd-sm">⌘K</kbd>
-    </button>
     <dialog id="docs-search-palette" data-command class="command-dialog">
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
         <.icon name="hero-magnifying-glass" class="size-4 opacity-50" />

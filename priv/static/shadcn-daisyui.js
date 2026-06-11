@@ -26,28 +26,49 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
 
 // Synchronized theme transitions: while `theme-transitioning` is on <html>,
 // the theme CSS forces ONE transition spec (property/duration/easing/delay)
-// onto every element, so all colours change in lockstep when the theme
-// toggles. The class is added the moment `data-theme` changes (observer fires
-// before the next paint, so the transition catches the change) and removed
-// after the `--theme-transition` window. Works with any toggle mechanism —
-// Phoenix's phx:set-theme script, LiveView, or manual setAttribute.
+// onto every element, so every colour on the page changes at the same speed
+// and the same instant when the theme toggles.
+//
+// Timing is everything here. The class must be the COMMITTED "before" state
+// *before* `data-theme` flips — otherwise elements that carry their own
+// transition (daisyUI buttons/menus, Tailwind `transition-colors` links) race
+// ahead and snap while the rest tween, which is the exact desync this fixes.
+// So we open the window in the CAPTURE phase of Phoenix's `phx:set-theme`
+// event — before the root-layout handler flips the attribute — and force a
+// reflow to commit it. A MutationObserver covers every other trigger
+// (LiveView push, cross-tab storage event, manual setAttribute) as a fallback.
 if (typeof window !== "undefined" && !window.__shadcnThemeSync) {
   window.__shadcnThemeSync = true
   const root = document.documentElement
-  let timer = null
+  let removeTimer = null
+
   const windowMs = () => {
     const raw = getComputedStyle(root).getPropertyValue("--theme-transition").trim()
     const n = parseFloat(raw)
     if (isNaN(n)) return 150
     return raw.endsWith("ms") ? n : n * 1000
   }
-  new MutationObserver(() => {
+
+  const openWindow = () => {
     const ms = windowMs()
     if (ms <= 0) return
     root.classList.add("theme-transitioning")
-    clearTimeout(timer)
-    timer = setTimeout(() => root.classList.remove("theme-transitioning"), ms + 50)
-  }).observe(root, { attributes: true, attributeFilter: ["data-theme"] })
+    void root.offsetWidth // commit the "before" state with the uniform transition active
+    clearTimeout(removeTimer)
+    removeTimer = setTimeout(() => root.classList.remove("theme-transitioning"), ms + 60)
+  }
+
+  // Fires before the inline `phx:set-theme` handler (capture beats bubble), so
+  // the upcoming attribute flip is already wrapped — no need to own the change
+  // or replicate its localStorage logic.
+  window.addEventListener("phx:set-theme", openWindow, true)
+
+  // Fallback: the change already landed, but opening the window still settles
+  // the repaint uniformly for non-phx triggers.
+  new MutationObserver(openWindow).observe(root, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  })
 }
 
 function showToast(variant) {
