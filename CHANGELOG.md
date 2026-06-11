@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `.theme-snap` utility — opts an element out of the theme transition (instant
+  flip). For elements whose foreground and background fully invert across themes
+  (a `bg-primary text-primary-content` mark, a solid primary/neutral badge in the
+  grayscale neutral theme), which otherwise pass through a low-contrast "crossover"
+  midpoint and briefly lose their content.
+
 ### Fixed
 
 - Theme-toggle flicker: colors across components no longer transition at
