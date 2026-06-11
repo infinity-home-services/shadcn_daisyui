@@ -1,0 +1,159 @@
+<.docs_layout active_guide="themes" active_nav={:themes}>
+  <.doc_heading
+    title="Themes"
+    description="A neutral, shadcn/ui-matched palette in light and dark, plus the radius scale every component shares."
+  />
+
+  <%!-- ============================ PALETTE ============================ --%>
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Palette</h2>
+    <p class="text-sm text-muted-foreground">
+      The same token names resolve to different values per theme. Below, each theme is shown
+      side by side regardless of the toggle above.
+    </p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div :for={{label, theme} <- [{"Light — shadcn", "shadcn"}, {"Dark — shadcn-dark", "shadcn-dark"}]}>
+        <div
+          data-theme={theme}
+          class="overflow-hidden rounded-xl border border-base-300 bg-base-100 text-base-content"
+        >
+          <div class="border-b border-base-300 px-4 py-2.5 text-sm font-medium">{label}</div>
+          <div class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
+            <div :for={sw <- swatches()} class="space-y-1.5">
+              <div class={["h-12 w-full rounded-md border border-base-300", sw.class]}></div>
+              <div>
+                <p class="text-xs font-medium">{sw.label}</p>
+                <p class="text-[11px] text-muted-foreground">{sw.token}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ============================ RADIUS ============================ --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Radius scale</h2>
+    <p class="text-sm text-muted-foreground">
+      Derived from a single <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">--radius</code>
+      of 0.625rem. Components pick from this scale so corners stay consistent.
+    </p>
+    <div class="flex flex-wrap gap-6">
+      <div :for={r <- radii()} class="space-y-2 text-center">
+        <div class={["size-20 border-2 border-primary bg-muted", r.class]}></div>
+        <div>
+          <p class="text-xs font-medium">{r.label}</p>
+          <p class="text-[11px] text-muted-foreground">{r.value}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ========================= THEME CREATOR ========================= --%>
+  <section class="mt-12 space-y-4">
+    <div class="flex flex-wrap items-end justify-between gap-2">
+      <div>
+        <h2 class="text-lg font-medium tracking-tight">Theme creator</h2>
+        <p class="text-sm text-muted-foreground">
+          Tweak the tokens and radius, watch the preview react, then copy the CSS into your app.
+        </p>
+      </div>
+    </div>
+
+    <div data-theme-creator class="grid gap-6">
+      <%!-- Controls --%>
+      <div class="space-y-5 rounded-xl border border-base-300 p-5">
+        <div class="flex items-center justify-between">
+          <div class="inline-flex rounded-md border border-base-300 p-0.5">
+            <button
+              type="button"
+              data-mode="light"
+              class="rounded px-3 py-1 text-sm text-muted-foreground transition-colors aria-selected:bg-muted aria-selected:font-medium aria-selected:text-foreground"
+            >
+              Light
+            </button>
+            <button
+              type="button"
+              data-mode="dark"
+              class="rounded px-3 py-1 text-sm text-muted-foreground transition-colors aria-selected:bg-muted aria-selected:font-medium aria-selected:text-foreground"
+            >
+              Dark
+            </button>
+          </div>
+          <button type="button" data-reset class="btn btn-ghost btn-xs">
+            <span class="hero-arrow-path size-3.5"></span> Reset
+          </button>
+        </div>
+
+        <div data-token-grid class="grid grid-cols-1 gap-2 lg:grid-cols-2"></div>
+
+        <div class="space-y-2 border-t border-base-300 pt-4">
+          <div class="flex items-center justify-between text-xs font-medium">
+            <span>Radius</span>
+            <span data-radius-val class="font-mono text-muted-foreground">0.625rem</span>
+          </div>
+          <input type="range" data-radius min="0" max="1.5" step="0.025" class="range range-sm w-full" />
+        </div>
+      </div>
+
+      <%!-- Preview + export --%>
+      <div class="space-y-4">
+        <div data-theme-preview class="rounded-xl border border-base-300 bg-base-100 p-6 text-base-content">
+          <div class="grid gap-5">
+            <div class="card border border-base-300">
+              <div class="card-body space-y-3 p-5">
+                <div>
+                  <h3 class="card-title text-base">Create account</h3>
+                  <p class="text-sm text-muted-foreground">Enter your email to continue.</p>
+                </div>
+                <label class="block space-y-1.5">
+                  <span class="text-sm font-medium">Email</span>
+                  <input type="email" class="input w-full" placeholder="you@example.com" />
+                </label>
+                <button class="btn btn-primary w-full">Continue</button>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm">Primary</button>
+                <button class="btn btn-secondary btn-sm">Secondary</button>
+                <button class="btn btn-outline btn-sm">Outline</button>
+                <button class="btn btn-error btn-sm">Destructive</button>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge badge-primary">Primary</span>
+                <span class="badge badge-secondary">Secondary</span>
+                <span class="badge badge-outline">Outline</span>
+                <span class="badge badge-error">Error</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="checkbox" class="toggle" checked />
+                <input type="checkbox" class="checkbox" checked />
+                <input type="radio" name="tc_radio" class="radio" checked />
+                <progress class="progress w-20" value="60" max="100"></progress>
+              </div>
+              <div class="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                Muted surface with muted-foreground text.
+              </div>
+              <div class="alert" role="alert">
+                <span class="hero-information-circle size-4"></span>
+                <span class="text-sm">The palette updates instantly.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-base-300 bg-base-200">
+          <div class="flex items-center justify-between border-b border-base-300 px-4 py-2">
+            <span class="font-mono text-xs text-muted-foreground">shadcn-daisyui.css</span>
+            <button type="button" data-copy class="btn btn-outline btn-xs">Copy CSS</button>
+          </div>
+          <pre class="max-h-72 overflow-auto p-4 text-xs leading-relaxed"><code data-export class="font-mono"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</.docs_layout>

@@ -1,0 +1,248 @@
+<div class="min-h-screen bg-base-100 text-base-content">
+  <.site_header active={nil} />
+
+  <main>
+    <%!-- ============================ HERO ============================ --%>
+    <section class="mx-auto flex max-w-3xl flex-col items-center gap-6 px-6 pt-20 pb-14 text-center sm:pt-28">
+      <a
+        href="https://github.com/N00nDay/shadcn_daisyui"
+        class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-muted/40 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+      >
+        <span class="badge badge-primary badge-sm">New</span>
+        <span>Every daisyUI v5 component, shadcn-styled</span>
+        <span class="hero-arrow-right size-3.5"></span>
+      </a>
+
+      <h1 class="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+        The shadcn/ui look, built on daisyUI.
+      </h1>
+
+      <p class="max-w-2xl text-balance text-lg text-muted-foreground">
+        A single theme file turns daisyUI into the neutral, polished shadcn/ui aesthetic —
+        with Phoenix function components and drop-in interactivity. Copy it in and ship.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <a href={~p"/docs/components/button"} class="btn btn-primary">
+          Browse components <span class="hero-arrow-right size-4"></span>
+        </a>
+        <a href={~p"/docs/themes"} class="btn btn-outline">View themes</a>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 pt-2 text-sm text-muted-foreground">
+        <span class="inline-flex items-center gap-1.5">
+          <span class="hero-check size-4 text-primary"></span> Light &amp; dark
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="hero-check size-4 text-primary"></span> 70+ components
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="hero-check size-4 text-primary"></span> No bespoke CSS
+        </span>
+      </div>
+    </section>
+
+    <%!-- ========================== EXAMPLES ========================== --%>
+    <section class="mx-auto max-w-6xl px-6 pb-20">
+      <div class="mb-8 flex flex-col gap-1 text-center">
+        <h2 class="text-2xl font-bold tracking-tight">Built from the components themselves</h2>
+        <p class="text-muted-foreground">
+          Everything below is rendered with the theme — no one-off styles.
+        </p>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-3">
+        <%!-- Stats span full width on top --%>
+        <div class="lg:col-span-3">
+          <div class="stats w-full border border-base-300">
+            <div class="stat">
+              <div class="stat-title">Total Revenue</div>
+              <div class="stat-value">$45,231</div>
+              <div class="stat-desc">+20.1% from last month</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">Subscriptions</div>
+              <div class="stat-value">+2,350</div>
+              <div class="stat-desc">+180.1% from last month</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">Active Now</div>
+              <div class="stat-value">+573</div>
+              <div class="stat-desc">+201 since last hour</div>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Sign-in card --%>
+        <div class="card">
+          <div class="card-body space-y-4">
+            <div>
+              <h3 class="card-title">Create an account</h3>
+              <p class="text-sm text-muted-foreground">Enter your email below to get started.</p>
+            </div>
+            <div class="join w-full">
+              <button class="join-item btn btn-outline flex-1">
+                <span class="hero-code-bracket size-4"></span> GitHub
+              </button>
+              <button class="join-item btn btn-outline flex-1">
+                <span class="hero-envelope size-4"></span> Email
+              </button>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-muted-foreground">
+              <div class="h-px flex-1 bg-base-300"></div>
+              OR CONTINUE WITH
+              <div class="h-px flex-1 bg-base-300"></div>
+            </div>
+            <label class="block space-y-1.5">
+              <span class="text-sm font-medium">Email</span>
+              <input type="email" class="input w-full" placeholder="you@example.com" />
+            </label>
+            <label class="block space-y-1.5">
+              <span class="text-sm font-medium">Password</span>
+              <input type="password" class="input w-full" value="password" />
+            </label>
+            <button class="btn btn-primary w-full">Create account</button>
+          </div>
+        </div>
+
+        <%!-- Notifications + payments --%>
+        <div class="card">
+          <div class="card-body space-y-4">
+            <div>
+              <h3 class="card-title">Notifications</h3>
+              <p class="text-sm text-muted-foreground">You have 3 unread messages.</p>
+            </div>
+            <div class="flex items-center justify-between rounded-lg border border-base-300 p-3">
+              <div class="space-y-0.5">
+                <p class="text-sm font-medium">Push Notifications</p>
+                <p class="text-xs text-muted-foreground">Send to your device.</p>
+              </div>
+              <input type="checkbox" class="toggle" checked />
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-3">
+                <span class="status status-info mt-1.5"></span>
+                <div>
+                  <p class="text-sm font-medium">Your call has been confirmed.</p>
+                  <p class="text-xs text-muted-foreground">1 hour ago</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="status status-success mt-1.5"></span>
+                <div>
+                  <p class="text-sm font-medium">You have a new message.</p>
+                  <p class="text-xs text-muted-foreground">1 hour ago</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="status mt-1.5"></span>
+                <div>
+                  <p class="text-sm font-medium">Subscription upgraded.</p>
+                  <p class="text-xs text-muted-foreground">2 hours ago</p>
+                </div>
+              </li>
+            </ul>
+            <button class="btn btn-outline w-full">
+              <span class="hero-check size-4"></span> Mark all as read
+            </button>
+          </div>
+        </div>
+
+        <%!-- Team / chart card --%>
+        <div class="card">
+          <div class="card-body space-y-4">
+            <div>
+              <h3 class="card-title">Exercise minutes</h3>
+              <p class="text-sm text-muted-foreground">Your trend this week.</p>
+            </div>
+            <svg viewBox="0 0 300 130" class="h-32 w-full" preserveAspectRatio="none">
+              <polygon
+                fill="var(--primary)"
+                opacity="0.08"
+                points="0,120 0,80 50,90 100,55 150,70 200,35 250,50 300,20 300,120"
+              />
+              <polyline
+                fill="none"
+                stroke="var(--primary)"
+                stroke-width="2"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+                points="0,80 50,90 100,55 150,70 200,35 250,50 300,20"
+              />
+            </svg>
+            <div class="divider my-0"></div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="avatar avatar-placeholder">
+                  <div class="w-9 rounded-full"><span class="text-xs">JD</span></div>
+                </div>
+                <div>
+                  <p class="text-sm font-medium">Jane Doe</p>
+                  <p class="text-xs text-muted-foreground">Owner</p>
+                </div>
+              </div>
+              <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+                  <span class="hero-ellipsis-horizontal size-4"></span>
+                </div>
+                <ul tabindex="0" class="dropdown-content menu z-10 mt-2 w-40">
+                  <li><a>View profile</a></li>
+                  <li><a>Settings</a></li>
+                  <li><a class="text-destructive">Remove</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Payments table spans full width --%>
+        <div class="lg:col-span-3">
+          <div class="card overflow-hidden">
+            <div class="card-body pb-0">
+              <h3 class="card-title">Recent payments</h3>
+              <p class="text-sm text-muted-foreground">A summary of your latest transactions.</p>
+            </div>
+            <table class="table mt-2">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Status</th>
+                  <th>Method</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-medium">INV001</td>
+                  <td><span class="badge badge-secondary">Paid</span></td>
+                  <td>Credit Card</td>
+                  <td class="text-right">$250.00</td>
+                </tr>
+                <tr>
+                  <td class="font-medium">INV002</td>
+                  <td><span class="badge badge-outline">Pending</span></td>
+                  <td>PayPal</td>
+                  <td class="text-right">$150.00</td>
+                </tr>
+                <tr>
+                  <td class="font-medium">INV003</td>
+                  <td><span class="badge badge-error">Unpaid</span></td>
+                  <td>Bank Transfer</td>
+                  <td class="text-right">$350.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-10 text-center">
+        <a href={~p"/docs/components/button"} class="btn btn-outline">
+          Explore all components <span class="hero-arrow-right size-4"></span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <.site_footer />
+</div>

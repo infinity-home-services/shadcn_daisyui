@@ -1,0 +1,144 @@
+<.docs_layout active_guide="installation">
+  <.doc_heading
+    title="Installation"
+    description="Add the theme to a Phoenix 1.8 app and every daisyUI class renders shadcn-styled."
+  />
+
+  <div class="mt-6 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+    Requires <span class="font-medium text-foreground">Tailwind v4</span>
+    and <span class="font-medium text-foreground">daisyUI v5</span> — both ship with Phoenix 1.8.
+  </div>
+
+  <div class="mt-10 space-y-12">
+    <%!-- 1. Dependency --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">1. Add the dependency</h2>
+      <p class="text-sm text-muted-foreground">
+        Install straight from GitHub — no Hex publish needed. Add it to your
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">deps/0</code> in
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">mix.exs</code>:
+      </p>
+      <.code_block
+        language="mix.exs"
+        code={~S|def deps do
+  [
+    {:shadcn_daisyui, github: "N00nDay/shadcn_daisyui"}
+  ]
+end|}
+      />
+      <p class="text-sm text-muted-foreground">Then fetch it and run the installer:</p>
+      <.code_block language="shell" code={~S|mix deps.get
+mix shadcn_daisyui.install|} />
+      <p class="text-sm text-muted-foreground">
+        The task copies <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn-daisyui.css</code>
+        into <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">assets/css/</code>,
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn-daisyui.js</code>
+        into <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">assets/vendor/</code>,
+        and patches <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">app.css</code>
+        (daisyUI <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">themes: false</code>,
+        imports the theme, and registers the dark variant).
+      </p>
+    </section>
+
+    <%!-- 2. Wire the JS --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">2. Wire the JavaScript</h2>
+      <p class="text-sm text-muted-foreground">
+        For LiveView apps, register the hooks so the interactive components (command,
+        combobox, calendar, date-picker, data-table, …) work:
+      </p>
+      <.code_block
+        language="assets/js/app.js"
+        code={~S|import { Hooks } from "../vendor/shadcn-daisyui"
+
+const liveSocket = new LiveSocket("/live", Socket, {
+  params: { _csrf_token: csrfToken },
+  hooks: { ...Hooks },
+})|}
+      />
+      <p class="text-sm text-muted-foreground">
+        For dead views (plain controllers, like this docs site), boot the vanilla initializer instead:
+      </p>
+      <.code_block
+        language="assets/js/app.js"
+        code={~S|import { initShadcnDaisyui } from "../vendor/shadcn-daisyui"
+
+if (document.readyState !== "loading") initShadcnDaisyui()
+else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
+      />
+    </section>
+
+    <%!-- 3. Set the theme --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">3. Activate the theme</h2>
+      <p class="text-sm text-muted-foreground">
+        Set <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">data-theme</code>
+        on the <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">&lt;html&gt;</code>
+        tag in your root layout:
+      </p>
+      <.code_block
+        language="root.html.heex"
+        code={~S|<html lang="en" data-theme="shadcn">|}
+      />
+      <p class="text-sm text-muted-foreground">
+        Switch to <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">data-theme="shadcn-dark"</code>
+        for dark mode — wire it to a toggle and you're done.
+      </p>
+    </section>
+
+    <%!-- 4. Use it --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">4. Use it</h2>
+      <p class="text-sm text-muted-foreground">Plain daisyUI classes are already themed:</p>
+      <.code_block
+        language="heex"
+        code={~S|<button class="btn btn-primary">Deploy</button>
+<div class="card"><div class="card-body">…</div></div>|}
+      />
+      <p class="text-sm text-muted-foreground">
+        Or reach for the function components in
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyui.Components</code>:
+      </p>
+      <.code_block
+        language="heex"
+        code={~S|use ShadcnDaisyui.Components
+
+<.button variant="outline" size="sm">Save</.button>
+<.badge variant="secondary">Paid</.badge>
+
+<.date_picker id="due-date" />
+<.combobox id="framework" placeholder="Select framework…">
+  <:option value="Phoenix">Phoenix</:option>
+  <:option value="Next.js">Next.js</:option>
+</.combobox>|}
+      />
+      <p class="text-sm text-muted-foreground">
+        Interactive components need an <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">id</code>
+        (the LiveView hook requirement) and the hooks registered.
+      </p>
+    </section>
+
+    <%!-- 5. Manual --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Manual setup (without the task)</h2>
+      <p class="text-sm text-muted-foreground">
+        Prefer to wire it yourself? Point your CSS at the dependency directly:
+      </p>
+      <.code_block
+        language="assets/css/app.css"
+        code={~S|@import "tailwindcss";
+@plugin "../vendor/daisyui" { themes: false; }
+@import "../../deps/shadcn_daisyui/priv/static/shadcn-daisyui.css";
+@source "../../deps/shadcn_daisyui/lib";
+@custom-variant dark (&:where([data-theme=shadcn-dark], [data-theme=shadcn-dark] *, .dark, .dark *));|}
+      />
+    </section>
+  </div>
+
+  <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
+    <a href="https://github.com/N00nDay/shadcn_daisyui" class="link link-hover text-muted-foreground">
+      View the source on GitHub →
+    </a>
+    <a href={~p"/docs/themes"} class="link link-hover text-muted-foreground">Themes →</a>
+  </div>
+</.docs_layout>

@@ -1,0 +1,39 @@
+<.docs_layout active={@spec.slug}>
+  <.doc_heading title={@spec.title} description={@spec.description} />
+
+  <.js_hook_callout :if={Map.get(@spec, :hook, false)} />
+
+  <div class="mt-8 space-y-10">
+    <section :for={{ex, i} <- Enum.with_index(@spec.examples)} class="space-y-3">
+      <h2 :if={length(@spec.examples) > 1} class="text-lg font-medium tracking-tight">
+        {ex.title}
+      </h2>
+      <.preview_code
+        id={"#{@spec.slug}-#{i}"}
+        code={ex.code}
+        center={Map.get(ex, :center, true)}
+      />
+    </section>
+  </div>
+
+  <section :if={Map.get(@spec, :props, []) != []} class="mt-12 space-y-3 border-t border-base-300 pt-8">
+    <div class="space-y-1">
+      <h2 class="text-lg font-medium tracking-tight">API reference</h2>
+      <p class="text-sm text-muted-foreground">
+        Props for the
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyui.Components</code>
+        function component.
+      </p>
+    </div>
+    <.props_table props={Map.get(@spec, :props, [])} />
+  </section>
+
+  <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
+    <a href="https://ui.shadcn.com/docs/components" class="link link-hover text-muted-foreground">
+      Compare with shadcn/ui →
+    </a>
+    <a href={~p"/docs/themes"} class="link link-hover text-muted-foreground">
+      Themes →
+    </a>
+  </div>
+</.docs_layout>
