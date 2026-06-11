@@ -47,19 +47,21 @@ Rules:
 
 ## Theme-change transitions (synchronized — do not fight this)
 
-The theme CSS gives every element one always-on color transition at a single
-shared duration + easing, and normalizes daisyUI's per-component durations
-(`!important`) onto that token. So a theme toggle moves every color in lockstep.
-It's pure CSS — no JS, no class, no timing window — so it cannot desync.
+Pure CSS, two rules (no JS):
+
+1. every element gets a color transition (covers bare surfaces/text daisyUI
+   leaves with none), in `@layer base` so components keep *which* properties
+   they animate;
+2. a duration pin (`transition-duration: var(--theme-transition) !important`)
+   normalizes daisyUI's mixed per-component durations (0.2–0.3s) to the shared
+   value so colors finish together — and it **excludes** components that have
+   their own animations (dialog, drawer, tooltip, carousel, skeleton, countdown,
+   …) so those keep their natural timing.
 
 - NEVER add `transition-*`/`duration-*` utilities or CSS to make theme changes
-  smooth — it's automatic. Adding a different color-transition duration to a
-  component is exactly what causes the out-of-sync flicker.
-- The only knobs are `--theme-transition` (duration, default 150ms; `0ms`
-  disables) and `--theme-transition-ease` on `:root`/your theme block. This is
-  the one motion-duration token for the whole UI, interaction states included.
-- Movement utilities/animations (a `transition-[left]` slider, a dialog's
-  `transform`) keep their own property and just adopt the token duration — fine.
-  If one element genuinely needs a different duration, set it with `!important`.
+  smooth — it's automatic. Giving a component its own color-transition duration
+  is what causes the out-of-sync flicker.
+- The single knob is `--theme-transition` (default 150ms) on `:root`/your theme
+  block.
 - Toggle themes only by changing `data-theme` on `<html>` (Phoenix's
   `phx:set-theme` does this) — not by swapping stylesheets or other classes.
