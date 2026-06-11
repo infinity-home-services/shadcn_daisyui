@@ -1,0 +1,68 @@
+name: Deploy demo site
+
+# Rebuilds the static docs/demo site and publishes it to the `gh-pages` branch on
+# every push to main. GitHub Pages (Settings -> Pages -> Source: Deploy from a
+# branch -> gh-pages) serves it at https://n00nday.github.io/shadcn_daisyui/.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow pushing to gh-pages with the built-in token.
+permissions:
+  contents: write
+
+# Never run two deploys at once; newer pushes win.
+concurrency:
+  group: deploy-demo-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: prod
+      # Hosted on a GitHub Pages *project* site, so everything lives under /<repo>/.
+      URL_PATH: /shadcn_daisyui
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.18"
+
+      - name: Cache deps & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            demo/deps
+            demo/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('demo/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Install asset tooling (tailwind + esbuild)
+        run: mix assets.setup
+
+      - name: Build static site
+        run: mix site.export
+
+      - name: Publish to gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd _site
+          touch .nojekyll
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:gh-pages
