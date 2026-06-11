@@ -52,15 +52,16 @@ function readTheme(theme) {
   const probe = document.createElement("div")
   probe.setAttribute("data-theme", theme)
   probe.style.cssText = "position:absolute;left:-9999px;top:0;opacity:0;pointer-events:none"
-  const span = document.createElement("span")
-  probe.appendChild(span)
   document.body.appendChild(probe)
 
+  // Read each token's CSS custom property value directly (e.g. "oklch(1 0 0)").
+  // Custom properties don't animate, so this is unaffected by the theme colour
+  // transitions — reading via a transitioning `color` would return in-flight values.
+  const cs = getComputedStyle(probe)
   const colors = {}
   let bg = [255, 255, 255]
   TOKENS.forEach((t) => {
-    span.style.color = `var(${t.vars[0]})`
-    const [r, g, b, a] = resolveRGBA(getComputedStyle(span).color)
+    const [r, g, b, a] = resolveRGBA(cs.getPropertyValue(t.vars[0]).trim())
     const af = a / 255
     const R = r * af + bg[0] * (1 - af)
     const G = g * af + bg[1] * (1 - af)
@@ -68,7 +69,7 @@ function readTheme(theme) {
     if (t.id === "background") bg = [R, G, B]
     colors[t.id] = toHex(R, G, B)
   })
-  const radius = parseFloat(getComputedStyle(probe).getPropertyValue("--radius")) || 0.625
+  const radius = parseFloat(cs.getPropertyValue("--radius")) || 0.625
 
   document.body.removeChild(probe)
   return { colors, radius }
