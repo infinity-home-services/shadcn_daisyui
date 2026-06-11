@@ -122,13 +122,18 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div class="relative flex flex-row items-center border border-base-300 bg-base-200 rounded-full">
+    <div
+      class="relative flex flex-row items-center border border-base-300 bg-base-200 rounded-full"
+      role="group"
+      aria-label="Theme"
+    >
       <div class="absolute w-1/2 h-full rounded-full border border-base-300 bg-base-100 left-0 [[data-theme=shadcn-dark]_&]:left-1/2 transition-[left]" />
 
       <button
         class="relative flex p-2 cursor-pointer w-1/2 justify-center"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="shadcn"
+        aria-label="Light theme"
       >
         <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
@@ -137,6 +142,7 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
         class="relative flex p-2 cursor-pointer w-1/2 justify-center"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="shadcn-dark"
+        aria-label="Dark theme"
       >
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>

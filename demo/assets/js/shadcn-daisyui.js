@@ -4,6 +4,10 @@
 //   • Phoenix LiveView:         import { Hooks } from "shadcn-daisyui"; new LiveSocket(..., { hooks: { ...Hooks } })
 // The matching CSS is shadcn-daisyui.css.
 
+// Counter for generating unique ids when a component root has none (needed for
+// ARIA relationships like aria-controls / aria-activedescendant).
+let a11yUid = 0
+
 function showToast(variant) {
   const host = document.getElementById("toast-host")
   if (!host) return
@@ -81,10 +85,45 @@ function initDock(scope) {
     const search = root.querySelector("[data-combobox-search]")
     const label = root.querySelector("[data-combobox-label]")
     const empty = root.querySelector("[data-combobox-empty]")
+    const list = root.querySelector("[data-combobox-list]")
     const items = [...root.querySelectorAll(".combo-item")]
+
+    // a11y: name the widget, expose listbox + option roles and selection state
+    if (!root.id) root.id = "sd-cb-" + (++a11yUid)
+    const listId = root.id + "-list"
+    if (list) { list.id = listId; list.setAttribute("role", "listbox") }
+    trigger.setAttribute("aria-haspopup", "listbox")
+    trigger.setAttribute("aria-expanded", "false")
+    trigger.setAttribute("aria-controls", listId)
+    if (search) {
+      search.setAttribute("role", "combobox")
+      search.setAttribute("aria-controls", listId)
+      search.setAttribute("aria-expanded", "true")
+      search.setAttribute("aria-autocomplete", "list")
+      if (!search.getAttribute("aria-label")) search.setAttribute("aria-label", "Search options")
+    }
+    items.forEach((it, i) => {
+      it.id = listId + "-opt-" + i
+      it.setAttribute("role", "option")
+      it.setAttribute("aria-selected", "false")
+    })
+
+    let active = -1
+    const visible = () => items.filter((it) => !it.parentElement.classList.contains("hidden"))
+    const setActive = (i) => {
+      const vis = visible()
+      items.forEach((it) => it.classList.remove("bg-accent", "text-accent-foreground"))
+      if (!vis.length) { active = -1; search && search.removeAttribute("aria-activedescendant"); return }
+      active = (i + vis.length) % vis.length
+      const el = vis[active]
+      el.classList.add("bg-accent", "text-accent-foreground")
+      el.scrollIntoView({ block: "nearest" })
+      search && search.setAttribute("aria-activedescendant", el.id)
+    }
     const open = (o) => {
       panel.classList.toggle("hidden", !o)
-      if (o) { search.value = ""; filter(""); search.focus() }
+      trigger.setAttribute("aria-expanded", String(o))
+      if (o) { search.value = ""; filter(""); setActive(0); search.focus() }
     }
     const filter = (q) => {
       const ql = q.toLowerCase()
@@ -95,26 +134,69 @@ function initDock(scope) {
         if (m) n++
       })
       empty.classList.toggle("hidden", n > 0)
+      setActive(0)
+    }
+    const choose = (it) => {
+      label.textContent = it.dataset.value
+      label.classList.remove("text-muted-foreground")
+      items.forEach((x) => {
+        x.setAttribute("aria-selected", "false")
+        const c = x.querySelector("svg"); if (c) c.classList.add("opacity-0")
+      })
+      it.setAttribute("aria-selected", "true")
+      const chk = it.querySelector("svg"); if (chk) chk.classList.remove("opacity-0")
+      open(false)
+      trigger.focus()
     }
     trigger.addEventListener("click", () => open(panel.classList.contains("hidden")))
     search.addEventListener("input", () => filter(search.value))
-    items.forEach((it) =>
-      it.addEventListener("click", () => {
-        label.textContent = it.dataset.value
-        label.classList.remove("text-muted-foreground")
-        items.forEach((x) => { const c = x.querySelector("svg"); if (c) c.classList.add("opacity-0") })
-        const chk = it.querySelector("svg"); if (chk) chk.classList.remove("opacity-0")
-        open(false)
-      })
-    )
+    search.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
+      else if (e.key === "Enter") { e.preventDefault(); const v = visible(); if (v[active]) choose(v[active]) }
+      else if (e.key === "Escape") { open(false); trigger.focus() }
+    })
+    items.forEach((it) => it.addEventListener("click", () => choose(it)))
     document.addEventListener("click", (e) => { if (!root.contains(e.target)) open(false) })
   }
 
   function initCommand(dialog) {
     const search = dialog.querySelector("[data-command-search]")
+    const listEl = dialog.querySelector("[data-command-list]")
     const items = [...dialog.querySelectorAll("[data-command-item]")]
     const groups = [...dialog.querySelectorAll("[data-group]")]
     const empty = dialog.querySelector("[data-command-empty]")
+
+    // a11y: combobox-style palette over a listbox of options
+    if (!dialog.id) dialog.id = "sd-cmd-" + (++a11yUid)
+    const listId = dialog.id + "-list"
+    if (listEl) { listEl.id = listId; listEl.setAttribute("role", "listbox") }
+    if (search) {
+      search.setAttribute("role", "combobox")
+      search.setAttribute("aria-controls", listId)
+      search.setAttribute("aria-expanded", "true")
+      search.setAttribute("aria-autocomplete", "list")
+      if (!search.getAttribute("aria-label")) search.setAttribute("aria-label", "Search commands")
+    }
+    items.forEach((it, i) => {
+      it.id = listId + "-opt-" + i
+      it.setAttribute("role", "option")
+      it.setAttribute("aria-selected", "false")
+    })
+
+    let active = -1
+    const visible = () => items.filter((it) => !it.parentElement.classList.contains("hidden"))
+    const setActive = (i) => {
+      const vis = visible()
+      items.forEach((it) => { it.classList.remove("bg-accent", "text-accent-foreground"); it.setAttribute("aria-selected", "false") })
+      if (!vis.length) { active = -1; search && search.removeAttribute("aria-activedescendant"); return }
+      active = (i + vis.length) % vis.length
+      const el = vis[active]
+      el.classList.add("bg-accent", "text-accent-foreground")
+      el.setAttribute("aria-selected", "true")
+      el.scrollIntoView({ block: "nearest" })
+      search && search.setAttribute("aria-activedescendant", el.id)
+    }
     const filter = (q) => {
       const ql = q.toLowerCase()
       let total = 0
@@ -132,12 +214,18 @@ function initDock(scope) {
         g.classList.toggle("hidden", !vis)
       })
       empty.classList.toggle("hidden", total > 0)
+      setActive(0)
     }
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close() })
     new MutationObserver(() => {
       if (dialog.open) { search.value = ""; filter(""); search.focus() }
     }).observe(dialog, { attributes: true, attributeFilter: ["open"] })
     search.addEventListener("input", () => filter(search.value))
+    search.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
+      else if (e.key === "Enter") { e.preventDefault(); const v = visible(); if (v[active]) v[active].click() }
+    })
     items.forEach((it) => it.addEventListener("click", () => dialog.close()))
     window.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -149,7 +237,10 @@ function initDock(scope) {
 
   function initOtp(root) {
     const slots = [...root.querySelectorAll(".otp-slot")]
+    if (!root.getAttribute("role")) root.setAttribute("role", "group")
+    if (!root.getAttribute("aria-label")) root.setAttribute("aria-label", "One-time code")
     slots.forEach((s, i) => {
+      if (!s.getAttribute("aria-label")) s.setAttribute("aria-label", "Digit " + (i + 1) + " of " + slots.length)
       s.addEventListener("input", () => {
         s.value = s.value.replace(/\D/g, "").slice(0, 1)
         if (s.value && slots[i + 1]) slots[i + 1].focus()
@@ -170,15 +261,23 @@ function initDock(scope) {
     const menu = document.querySelector("[data-context-menu]")
     const trigger = document.querySelector("[data-context-menu-trigger]")
     if (!menu || !trigger) return
-    trigger.addEventListener("contextmenu", (e) => {
-      e.preventDefault()
-      menu.classList.remove("hidden")
-      const x = Math.min(e.clientX, window.innerWidth - menu.offsetWidth - 8)
-      const y = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8)
-      menu.style.left = x + "px"
-      menu.style.top = y + "px"
-    })
+    menu.setAttribute("role", "menu")
+    menu.querySelectorAll("button").forEach((b) => b.setAttribute("role", "menuitem"))
     const hide = () => menu.classList.add("hidden")
+    const showAt = (x, y) => {
+      menu.classList.remove("hidden")
+      menu.style.left = Math.min(x, window.innerWidth - menu.offsetWidth - 8) + "px"
+      menu.style.top = Math.min(y, window.innerHeight - menu.offsetHeight - 8) + "px"
+      const first = menu.querySelector("button"); if (first) first.focus()
+    }
+    trigger.addEventListener("contextmenu", (e) => { e.preventDefault(); showAt(e.clientX, e.clientY) })
+    menu.addEventListener("keydown", (e) => {
+      const btns = [...menu.querySelectorAll("button")]
+      const i = btns.indexOf(document.activeElement)
+      if (e.key === "Escape") { hide(); trigger.focus() }
+      else if (e.key === "ArrowDown") { e.preventDefault(); (btns[i + 1] || btns[0]).focus() }
+      else if (e.key === "ArrowUp") { e.preventDefault(); (btns[i - 1] || btns[btns.length - 1]).focus() }
+    })
     document.addEventListener("click", hide)
     document.addEventListener("scroll", hide, true)
     window.addEventListener("blur", hide)
@@ -229,6 +328,7 @@ function initDock(scope) {
         } else if (!range && same(date, selected)) {
           el.classList.add("is-selected")
         }
+        el.setAttribute("aria-selected", el.classList.contains("is-selected") ? "true" : "false")
       })
     }
 
@@ -255,8 +355,14 @@ function initDock(scope) {
       wrap.appendChild(cap)
       const grid = document.createElement("div")
       grid.className = "cal-grid"
-      ;["Su","Mo","Tu","We","Th","Fr","Sa"].forEach((d) => {
-        const w = document.createElement("div"); w.className = "cal-weekday"; w.textContent = d; grid.appendChild(w)
+      grid.setAttribute("role", "grid")
+      grid.setAttribute("aria-label", cap.textContent)
+      const fullDays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+      ;["Su","Mo","Tu","We","Th","Fr","Sa"].forEach((d, i) => {
+        const w = document.createElement("div")
+        w.className = "cal-weekday"; w.textContent = d
+        w.setAttribute("role", "columnheader"); w.setAttribute("aria-label", fullDays[i])
+        grid.appendChild(w)
       })
       const firstDay = new Date(base.getFullYear(), base.getMonth(), 1).getDay()
       const days = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate()
@@ -265,6 +371,8 @@ function initDock(scope) {
         const date = new Date(base.getFullYear(), base.getMonth(), d)
         const cell = document.createElement("button")
         cell.type = "button"; cell.className = "cal-day"; cell.textContent = d
+        cell.setAttribute("role", "gridcell")
+        cell.setAttribute("aria-label", date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" }))
         cell.addEventListener("click", () => {
           if (range) {
             if (!rng.start || rng.end) { rng.start = date; rng.end = null; hover = null }
@@ -327,8 +435,11 @@ function initDock(scope) {
         }
       },
     })
-    trigger.addEventListener("click", () => panel.classList.toggle("hidden"))
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) panel.classList.add("hidden") })
+    trigger.setAttribute("aria-haspopup", "dialog")
+    const sync = () => trigger.setAttribute("aria-expanded", String(!panel.classList.contains("hidden")))
+    sync()
+    trigger.addEventListener("click", () => { panel.classList.toggle("hidden"); sync() })
+    document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
   }
 
   function initDatepicker(root) {
@@ -343,8 +454,11 @@ function initDock(scope) {
         panel.classList.add("hidden")
       },
     })
-    trigger.addEventListener("click", () => panel.classList.toggle("hidden"))
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) panel.classList.add("hidden") })
+    trigger.setAttribute("aria-haspopup", "dialog")
+    const sync = () => trigger.setAttribute("aria-expanded", String(!panel.classList.contains("hidden")))
+    sync()
+    trigger.addEventListener("click", () => { panel.classList.toggle("hidden"); sync() })
+    document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
   }
 
   function initDataTable(root) {
@@ -386,11 +500,13 @@ function initDock(scope) {
 
     const setIcons = () => {
       root.querySelectorAll("th[data-dt-sort]").forEach((th) => {
+        const active = th.dataset.dtSort === sortKey
+        th.setAttribute("aria-sort", !active ? "none" : sortDir === 1 ? "ascending" : "descending")
         const ic = th.querySelector("[data-dt-sort-icon]")
         if (!ic) return
-        const active = th.dataset.dtSort === sortKey
         const name = !active ? "hero-chevron-up-down" : sortDir === 1 ? "hero-arrow-up" : "hero-arrow-down"
         ic.className = name + " size-3.5 " + (active ? "opacity-100" : "opacity-50")
+        ic.setAttribute("aria-hidden", "true")
       })
     }
 
@@ -444,14 +560,21 @@ function initDock(scope) {
       facetClear.classList.toggle("hidden", facet.size === 0)
     }
 
-    root.querySelectorAll("th[data-dt-sort]").forEach((th) =>
-      th.addEventListener("click", () => {
+    root.querySelectorAll("th[data-dt-sort]").forEach((th) => {
+      th.setAttribute("tabindex", "0")
+      th.setAttribute("aria-sort", "none")
+      th.classList.add("cursor-pointer")
+      const sort = () => {
         const k = th.dataset.dtSort
         if (sortKey === k) sortDir = -sortDir
         else { sortKey = k; sortDir = 1 }
         render()
+      }
+      th.addEventListener("click", sort)
+      th.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort() }
       })
-    )
+    })
     filterEl.addEventListener("input", () => { q = filterEl.value.toLowerCase(); page = 0; render(); updateReset() })
     prev.addEventListener("click", () => { if (page > 0) { page--; render() } })
     next.addEventListener("click", () => { page++; render() })
@@ -468,10 +591,19 @@ function initDock(scope) {
 
   function initCarousel(carousel) {
     const wrap = carousel.parentElement
+    carousel.setAttribute("role", "group")
+    carousel.setAttribute("aria-roledescription", "carousel")
+    if (!carousel.getAttribute("aria-label")) carousel.setAttribute("aria-label", "Carousel")
     const prev = wrap.querySelector("[data-carousel-prev]")
     const next = wrap.querySelector("[data-carousel-next]")
-    if (next) next.addEventListener("click", () => carousel.scrollBy({ left: carousel.clientWidth, behavior: "smooth" }))
-    if (prev) prev.addEventListener("click", () => carousel.scrollBy({ left: -carousel.clientWidth, behavior: "smooth" }))
+    if (next) {
+      if (!next.getAttribute("aria-label")) next.setAttribute("aria-label", "Next slide")
+      next.addEventListener("click", () => carousel.scrollBy({ left: carousel.clientWidth, behavior: "smooth" }))
+    }
+    if (prev) {
+      if (!prev.getAttribute("aria-label")) prev.setAttribute("aria-label", "Previous slide")
+      prev.addEventListener("click", () => carousel.scrollBy({ left: -carousel.clientWidth, behavior: "smooth" }))
+    }
   }
 
 
