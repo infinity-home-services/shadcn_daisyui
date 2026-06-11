@@ -877,3 +877,23 @@ dialog.drawer-bottom::backdrop { background-color: rgb(0 0 0 / 0); transition: b
 dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
 @starting-style { dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0); } }
 html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
+
+/* ---------------------------------------------------------------------------
+   THEME TRANSITION — while a light/dark switch is in flight, the consuming app
+   adds `.theme-transition` to <html> for ~200ms (see root.html.heex). Every
+   element then animates its themeable properties at the SAME duration, so
+   nothing trails. It's removed afterward, so normal hover/focus transitions are
+   untouched. `left`/`translate` are included so the theme-toggle slider still
+   slides during the switch.
+   --------------------------------------------------------------------------- */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition-property:
+    background-color, border-color, color, fill, stroke, text-decoration-color,
+    outline-color, box-shadow, left, translate !important;
+  transition-duration: 150ms !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0s !important;
+}

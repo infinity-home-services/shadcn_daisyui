@@ -19,12 +19,27 @@
             document.documentElement.setAttribute("data-theme", theme);
           }
         };
+        // Wrap a user-initiated theme change so every element transitions together
+        // (see `.theme-transition` in shadcn-daisyui.css). Not used on initial load.
+        const withTransition = (apply) => {
+          const html = document.documentElement;
+          html.classList.add("theme-transition");
+          apply();
+          window.clearTimeout(html.__themeTransitionTimer);
+          html.__themeTransitionTimer = window.setTimeout(
+            () => html.classList.remove("theme-transition"),
+            200
+          );
+        };
         if (!document.documentElement.hasAttribute("data-theme")) {
           setTheme(localStorage.getItem("phx:theme") || "shadcn");
         }
-        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
-        
-        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && withTransition(() => setTheme(e.newValue || "system")));
+
+        window.addEventListener("phx:set-theme", (e) => {
+          const theme = e.target.dataset.phxTheme;
+          withTransition(() => setTheme(theme));
+        });
       })();
     </script>
   </head>
