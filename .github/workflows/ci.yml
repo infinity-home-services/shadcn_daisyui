@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18"
+          otp-version: "27"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+            demo/deps
+            demo/_build
+          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock', 'demo/mix.lock') }}
+          restore-keys: mix-${{ runner.os }}-
+
+      - name: Package — deps, format, test
+        run: |
+          mix deps.get
+          mix format --check-formatted
+          mix test
+
+      - name: Demo — deps, format, test
+        working-directory: demo
+        run: |
+          mix deps.get
+          mix format --check-formatted
+          mix test
