@@ -358,7 +358,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         aria-label="Preview"
         checked
       />
-      <div class="tab-content rounded-lg border-base-300 bg-base-100">
+      <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-100">
         <div class={[
           "flex min-h-[20rem] w-full gap-4 p-8",
           if(@center, do: "flex-wrap items-center justify-center", else: "flex-col")
@@ -371,21 +371,21 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         :if={@heex}
         type="radio"
         name={"tab-#{@id}"}
-        class="tab [--tab-bg:var(--color-base-100)]"
+        class="tab [--tab-bg:var(--color-base-200)]"
         aria-label="HEEx"
       />
-      <div :if={@heex} class="tab-content rounded-lg border-base-300 bg-base-100">
-        <pre class="max-h-[28rem] overflow-auto rounded-lg bg-base-200 p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@heex)}</code></pre>
+      <div :if={@heex} class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+        <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@heex)}</code></pre>
       </div>
 
       <input
         type="radio"
         name={"tab-#{@id}"}
-        class="tab [--tab-bg:var(--color-base-100)]"
+        class="tab [--tab-bg:var(--color-base-200)]"
         aria-label={if(@heex, do: "HTML", else: "Code")}
       />
-      <div class="tab-content rounded-lg border-base-300 bg-base-100">
-        <pre class="max-h-[28rem] overflow-auto rounded-lg bg-base-200 p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@code)}</code></pre>
+      <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+        <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{format_code(@code)}</code></pre>
       </div>
     </div>
     """
