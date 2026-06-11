@@ -27,7 +27,11 @@ defmodule Mix.Tasks.Site.Export do
 
     # The endpoint boots from prod runtime config; provide throwaway values so a
     # static build doesn't require real secrets.
-    System.put_env("SECRET_KEY_BASE", System.get_env("SECRET_KEY_BASE") || String.duplicate("z", 64))
+    System.put_env(
+      "SECRET_KEY_BASE",
+      System.get_env("SECRET_KEY_BASE") || String.duplicate("z", 64)
+    )
+
     System.put_env("PHX_HOST", System.get_env("PHX_HOST") || "localhost")
 
     # Build + digest assets, then start the app so the digest manifest is loaded.
@@ -46,13 +50,27 @@ defmodule Mix.Tasks.Site.Export do
     # /docs is a redirect route → emit a meta-refresh to the first component.
     write(out, "/docs", redirect_html("/docs/components/#{Catalog.first_slug()}"))
 
+    # AI-consumable endpoints: written as plain files (not dir/index.html pairs).
+    # Their bodies are rendered through the endpoint, so any URL_PATH prefix is
+    # already baked into the links they contain.
+    ai_files =
+      ["/llms.txt", "/llms-full.txt", "/docs/search.json"] ++
+        Enum.map(Catalog.slugs(), &"/docs/components/#{&1}.md")
+
+    Enum.each(ai_files, fn path -> write_file(out, path, render(path)) end)
+
     # Minimal 404 (hosts can be configured to serve it).
     File.write!(Path.join(out, "404.html"), redirect_html("/"))
 
     copy_static(out)
     prefix_static_assets(out)
 
-    Mix.shell().info([:green, "✓ ", :reset, "Exported #{length(pages)} pages + assets to #{out}/"])
+    Mix.shell().info([
+      :green,
+      "✓ ",
+      :reset,
+      "Exported #{length(pages)} pages + #{length(ai_files)} AI files + assets to #{out}/"
+    ])
   end
 
   # Phoenix prefixes generated route links with the URL base path, but `~p` for
@@ -94,6 +112,13 @@ defmodule Mix.Tasks.Site.Export do
     dir = Path.join(out, String.trim_leading(path, "/"))
     File.mkdir_p!(dir)
     File.write!(Path.join(dir, "index.html"), html)
+  end
+
+  # "/llms.txt" -> out/llms.txt ; "/docs/components/button.md" -> out/docs/components/button.md
+  defp write_file(out, path, body) do
+    dest = Path.join(out, String.trim_leading(path, "/"))
+    File.mkdir_p!(Path.dirname(dest))
+    File.write!(dest, body)
   end
 
   defp copy_static(out) do

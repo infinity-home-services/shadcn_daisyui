@@ -25,6 +25,15 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/docs/components/:component", DocsController, :component
   end
 
+  # AI-consumable plain-text/JSON endpoints. No browser pipeline: these are
+  # fetched by crawlers and agents with arbitrary Accept headers, and need no
+  # session, CSRF, or layout.
+  scope "/", ShadcnDaisyuiDemoWeb do
+    get "/llms.txt", DocsController, :llms
+    get "/llms-full.txt", DocsController, :llms_full
+    get "/docs/search.json", DocsController, :search
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", ShadcnDaisyuiDemoWeb do
   #   pipe_through :api
