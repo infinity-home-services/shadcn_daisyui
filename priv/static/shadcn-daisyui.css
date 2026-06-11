@@ -48,7 +48,10 @@
    1. LIGHT THEME TOKENS
    --------------------------------------------------------------------------- */
 :root,
-[data-theme="shadcn"] {
+[data-theme="shadcn"],
+[data-theme="light"] {
+  /* "light" alias: Phoenix 1.8's stock theme toggle (data-theme="light"/"dark"
+     via the phx:set-theme script) works without touching the layout. */
   color-scheme: light;
 
   /* --- raw shadcn tokens (bridge vars; also usable directly) --- */
@@ -130,6 +133,7 @@
    2. DARK THEME TOKENS  (mirror onto .dark too, so raw shadcn `dark:` works)
    --------------------------------------------------------------------------- */
 [data-theme="shadcn-dark"],
+[data-theme="dark"],
 .dark {
   color-scheme: dark;
 

@@ -8,6 +8,22 @@
 // ARIA relationships like aria-controls / aria-activedescendant).
 let a11yUid = 0
 
+// Global listeners so the server side can open/close native <dialog> elements
+// (dialog, sheet, drawer, command) via JS.dispatch — see
+// ShadcnDaisyui.Components.show_modal/2 and hide_modal/2. Registered once at
+// module load; works for both dead views and LiveView.
+if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
+  window.__shadcnDialogEvents = true
+  window.addEventListener("shadcn:show-modal", (e) => {
+    const el = e.target
+    if (el && typeof el.showModal === "function" && !el.open) el.showModal()
+  })
+  window.addEventListener("shadcn:hide-modal", (e) => {
+    const el = e.target
+    if (el && typeof el.close === "function" && el.open) el.close()
+  })
+}
+
 function showToast(variant) {
   const host = document.getElementById("toast-host")
   if (!host) return
@@ -529,6 +545,9 @@ function initDock(scope) {
     document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
   }
 
+  // SHOWCASE ONLY: renders a fixed demo dataset for the docs gallery. In a real
+  // app use ShadcnDaisyui.CoreComponents.table/1 with LiveView-driven sorting,
+  // filtering, and pagination (phx-click events) instead of this hook.
   function initDataTable(root) {
     const data = [
       { status: "Success", email: "ken99@example.com", amount: 316 },
