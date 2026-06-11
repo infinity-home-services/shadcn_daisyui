@@ -53,7 +53,22 @@ defmodule ShadcnDaisyui.MixProject do
         "CHANGELOG.md",
         "usage-rules.md",
         "usage-rules/forms.md",
-        "usage-rules/theming.md"
+        "usage-rules/theming.md",
+        "usage-rules/foundations-platforms.md",
+        "usage-rules/foundations-accessibility.md",
+        "usage-rules/foundations-layout.md",
+        "usage-rules/foundations-spacing.md",
+        "usage-rules/foundations-navigation.md",
+        "usage-rules/foundations-interaction.md",
+        "usage-rules/styles-color.md",
+        "usage-rules/styles-typography.md",
+        "usage-rules/styles-shape-elevation.md",
+        "usage-rules/styles-motion.md"
+      ],
+      groups_for_extras: [
+        Guides: ["usage-rules.md", "usage-rules/forms.md", "usage-rules/theming.md"],
+        Foundations: ~r"usage-rules/foundations-.*",
+        Styles: ~r"usage-rules/styles-.*"
       ],
       source_url: @source_url,
       source_ref: "v#{@version}"
