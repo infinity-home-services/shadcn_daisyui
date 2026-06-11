@@ -1,7 +1,7 @@
 defmodule ShadcnDaisyui.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/N00nDay/shadcn_daisyui"
 
   def project do
@@ -27,7 +27,8 @@ defmodule ShadcnDaisyui.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, ">= 0.20.0"},
+      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_html, "~> 4.1"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
@@ -37,15 +38,23 @@ defmodule ShadcnDaisyui.MixProject do
       maintainers: ["Craig Howell"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      # ship the components (lib) and the css/js assets (priv/static)
-      files: ~w(lib priv .formatter.exs mix.exs README.md LICENSE)
+      # ship the components (lib), the css/js assets (priv/static), the npm entry
+      # point (package.json) and the AI usage rules
+      files: ~w(lib priv .formatter.exs mix.exs package.json README.md LICENSE CHANGELOG.md
+           usage-rules.md usage-rules)
     ]
   end
 
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "usage-rules.md",
+        "usage-rules/forms.md",
+        "usage-rules/theming.md"
+      ],
       source_url: @source_url,
       source_ref: "v#{@version}"
     ]
