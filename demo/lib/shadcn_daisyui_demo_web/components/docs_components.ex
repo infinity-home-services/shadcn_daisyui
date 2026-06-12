@@ -249,7 +249,11 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
 
   @doc false
   def guides do
-    [%{slug: "installation", title: "Installation"}, %{slug: "themes", title: "Themes"}]
+    [
+      %{slug: "installation", title: "Installation"},
+      %{slug: "adopt", title: "Adopt the design system"},
+      %{slug: "themes", title: "Themes"}
+    ]
   end
 
   defp sidebar_link_class(true), do: "bg-muted font-medium text-foreground"

@@ -98,6 +98,12 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
     |> render(:themes)
   end
 
+  def adopt(conn, _params) do
+    conn
+    |> assign(:page_title, "Adopt the design system")
+    |> render(:adopt)
+  end
+
   defp not_found(conn) do
     conn
     |> put_status(:not_found)
