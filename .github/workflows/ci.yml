@@ -31,13 +31,13 @@ jobs:
           key: mix-${{ runner.os }}-${{ hashFiles('mix.lock', 'demo/mix.lock') }}
           restore-keys: mix-${{ runner.os }}-
 
-      - name: Package — deps, format, test
+      - name: Package - deps, format, test
         run: |
           mix deps.get
           mix format --check-formatted
           mix test
 
-      - name: Demo — deps, format, test
+      - name: Demo - deps, format, test
         working-directory: demo
         run: |
           mix deps.get

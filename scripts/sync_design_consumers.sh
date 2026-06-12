@@ -3,9 +3,13 @@
 # copy: the Claude plugin/skill repo and the Swift package's bundled aggregate.
 #
 # Canonical source: usage-rules/{foundations,styles}-*.md in THIS repo.
-# Run this after editing any of those files — one edit, propagated everywhere.
 # The docs site and the Phoenix usage_rules sync read the canonical files
 # directly, so they need no step here.
+#
+# You normally do NOT run this by hand: the "Sync design guidelines" GitHub
+# Action (.github/workflows/sync-design-guidelines.yml) runs it automatically on
+# every push that touches usage-rules/ and pushes the result to the consumers, so
+# the bundled copies can never drift. Run it locally only to preview the output.
 #
 # Sibling repo paths default to ../<name> and can be overridden via env vars.
 set -euo pipefail
@@ -16,7 +20,7 @@ src="$here/usage-rules"
 plugin_repo="${PLUGIN_REPO:-$here/../shadcn_daisyui_design}"
 swift_repo="${SWIFT_REPO:-$here/../shadcn_daisyui_swift}"
 
-# Aggregate order — platforms first as the preamble (matches the docs site's
+# Aggregate order - platforms first as the preamble (matches the docs site's
 # Guides registry and /design-guidelines.md).
 order=(
   foundations-platforms
@@ -34,7 +38,7 @@ order=(
 build_aggregate() {
   cat <<'EOF'
 <!--
-shadcn_daisyui design guidelines — single-file bundle.
+shadcn_daisyui design guidelines - single-file bundle.
 Source of truth: the usage-rules/*.md files shipped in the shadcn_daisyui
 hex package. Rules tagged [web]/[ios] are platform-scoped; untagged rules
 are universal.
@@ -57,7 +61,7 @@ if [ -d "$plugin_refs" ]; then
   cp "$src"/foundations-*.md "$src"/styles-*.md "$plugin_refs/"
   echo "✓ synced 10 reference files → $plugin_refs"
 else
-  echo "– skipped plugin (no dir at $plugin_refs)"
+  echo "- skipped plugin (no dir at $plugin_refs)"
 fi
 
 # 2. Swift package bundled aggregate.
@@ -66,7 +70,7 @@ if [ -d "$(dirname "$swift_res")" ]; then
   build_aggregate > "$swift_res"
   echo "✓ rebuilt aggregate → $swift_res"
 else
-  echo "– skipped Swift bundle (no dir at $(dirname "$swift_res"))"
+  echo "- skipped Swift bundle (no dir at $(dirname "$swift_res"))"
 fi
 
 echo "Done. Commit the changes in each consumer repo."
