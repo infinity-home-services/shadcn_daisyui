@@ -21,6 +21,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
 
     get "/docs", DocsController, :index
     get "/docs/installation", DocsController, :installation
+    get "/docs/adopt", DocsController, :adopt
     get "/docs/themes", DocsController, :themes
     get "/docs/foundations/:guide", DocsController, :guide
     get "/docs/styles/:guide", DocsController, :guide

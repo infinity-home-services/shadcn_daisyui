@@ -146,6 +146,11 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
           </a>
         </li>
         <li>
+          <a class="command-item" data-command-item href={~p"/docs/adopt"}>
+            <.icon name="hero-puzzle-piece" class="size-4" /> Adopt the design system
+          </a>
+        </li>
+        <li>
           <a class="command-item" data-command-item href={~p"/docs/themes"}>
             <.icon name="hero-swatch" class="size-4" /> Themes
           </a>

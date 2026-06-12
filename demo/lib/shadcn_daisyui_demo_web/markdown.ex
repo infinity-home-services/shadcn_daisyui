@@ -53,6 +53,7 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
     ## Guides
 
     - [Installation](#{base}/docs/installation): how to add the theme and JS to a Phoenix app.
+    - [Adopt the design system](#{base}/docs/adopt): add the guidelines to any project — Claude plugin, usage_rules sync, Swift package, or one-file bundle.
     - [Themes](#{base}/docs/themes): theming tokens and the interactive theme creator.
 
     ## Design guidelines

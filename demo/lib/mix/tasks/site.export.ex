@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Site.Export do
     File.mkdir_p!(out)
 
     pages =
-      ["/", "/docs/installation", "/docs/themes"] ++
+      ["/", "/docs/installation", "/docs/adopt", "/docs/themes"] ++
         Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.path) ++
         Enum.map(Catalog.slugs(), &"/docs/components/#{&1}")
 

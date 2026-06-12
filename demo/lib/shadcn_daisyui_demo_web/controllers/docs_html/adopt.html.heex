@@ -1,0 +1,130 @@
+<.docs_layout active_guide="adopt">
+  <.doc_heading
+    title="Adopt the design system"
+    description="Add the guidelines to any project — as AI guardrails, Phoenix rules, iOS tokens, or a single file. The Foundations and Styles pages are the human reference; these are the ways to pull them into your codebase."
+  />
+
+  <div class="mt-6 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+    One source of truth (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">usage-rules/*.md</code>),
+    four ways to consume it. Pick the channel that matches your project.
+  </div>
+
+  <div class="mt-10 space-y-12">
+    <%!-- 1. Claude plugin --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">
+        Claude plugin — AI guardrails, any project
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        Installs a skill that auto-loads whenever you ask Claude to build, style, or
+        review UI — so the guidelines apply without attaching a doc. Works in Claude
+        Code, claude.ai, and the Agent SDK; covers both web and native iOS/iPadOS.
+      </p>
+      <.code_block
+        language="claude"
+        code={~S|/plugin marketplace add N00nDay/shadcn_daisyui_design
+/plugin install shadcn-daisyui-design-system@shadcn-daisyui|}
+      />
+      <p class="text-sm text-muted-foreground">
+        All ten reference files are bundled — nothing else to download. Update later with <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+          /plugin marketplace update shadcn-daisyui
+        </code>. Prefer no plugin? Copy the skill folder into
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">.claude/skills/</code>
+        from the <a
+          href="https://github.com/N00nDay/shadcn_daisyui_design"
+          class="link link-primary"
+        >
+          plugin repo
+        </a>.
+      </p>
+    </section>
+
+    <%!-- 2. Phoenix usage_rules --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">
+        Phoenix — sync the rules into AGENTS.md
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        If your app already depends on
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadcn_daisyui</code>
+        (see <a href={~p"/docs/installation"} class="link link-primary">Installation</a>),
+        sync its rules — component picking, forms, theming, and all ten design
+        guidelines — into your
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">AGENTS.md</code>
+        / <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">CLAUDE.md</code>:
+      </p>
+      <.code_block
+        language="shell"
+        code={~S|# add the sync tool (dev only)
+{:usage_rules, "~> 0.1", only: :dev}
+
+mix deps.get
+mix usage_rules.sync AGENTS.md --all|}
+      />
+      <p class="text-sm text-muted-foreground">
+        Sync just this package with <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+          mix usage_rules.sync AGENTS.md shadcn_daisyui
+        </code>, or a single guideline as a sub-rule, e.g. <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+          shadcn_daisyui:foundations-spacing
+        </code>.
+      </p>
+    </section>
+
+    <%!-- 3. Swift package --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">iOS / iPadOS — the Swift token package</h2>
+      <p class="text-sm text-muted-foreground">
+        Add <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ShadcnDaisyUI</code>
+        via Swift Package Manager (the same semantic colors, spacing grid, radius
+        scale, type ramp, motion, and elevation as the web theme — light and dark
+        baked in):
+      </p>
+      <.code_block
+        language="Package.swift"
+        code={~S|.package(url: "https://github.com/N00nDay/shadcn_daisyui_swift", from: "0.1.0")|}
+      />
+      <.code_block
+        language="swift"
+        code={~S|import ShadcnDaisyUI
+
+Text("Settings").font(.sdPageTitle).foregroundStyle(Color.sdForeground)
+  .padding(Spacing.s6)
+  .background(Color.sdCard, in: .rect(cornerRadius: Radius.xl, style: .continuous))|}
+      />
+      <p class="text-sm text-muted-foreground">
+        The package bundles these guidelines as
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">design-guidelines.md</code>
+        and ships an
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">AGENTS.md</code>
+        to drop into the Xcode project so AI stays on the rails there too.
+      </p>
+    </section>
+
+    <%!-- 4. One-file bundle --%>
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Any other project — one file</h2>
+      <p class="text-sm text-muted-foreground">
+        Every guideline concatenated into a single portable markdown file — drop it into
+        any repo as the human + AI reference:
+      </p>
+      <.code_block
+        language="shell"
+        code={~S|curl https://n00nday.github.io/shadcn_daisyui/design-guidelines.md > DESIGN.md|}
+      />
+      <p class="text-sm text-muted-foreground">
+        It's also the
+        <a href={~p"/design-guidelines.md"} class="link link-primary">live bundle</a>
+        linked from every Foundations and Styles page.
+      </p>
+    </section>
+  </div>
+
+  <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
+    <a href={~p"/docs/foundations/platforms"} class="link link-hover text-muted-foreground">
+      ← Foundations
+    </a>
+    <a href={~p"/docs/installation"} class="link link-hover text-muted-foreground">
+      Phoenix installation →
+    </a>
+  </div>
+</.docs_layout>
