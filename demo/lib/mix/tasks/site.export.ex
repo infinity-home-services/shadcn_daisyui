@@ -49,7 +49,7 @@ defmodule Mix.Tasks.Site.Export do
     Enum.each(pages, fn path -> write(out, path, render(path)) end)
 
     # /docs is a redirect route → emit a meta-refresh to the first component.
-    write(out, "/docs", redirect_html("/docs/components/#{Catalog.first_slug()}"))
+    write(out, "/docs", redirect_html(@endpoint.path("/docs/components/#{Catalog.first_slug()}")))
 
     # AI-consumable endpoints: written as plain files (not dir/index.html pairs).
     # Their bodies are rendered through the endpoint, so any URL_PATH prefix is
@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Site.Export do
     Enum.each(ai_files, fn path -> write_file(out, path, render(path)) end)
 
     # Minimal 404 (hosts can be configured to serve it).
-    File.write!(Path.join(out, "404.html"), redirect_html("/"))
+    File.write!(Path.join(out, "404.html"), redirect_html(@endpoint.path("/")))
 
     copy_static(out)
     prefix_static_assets(out)

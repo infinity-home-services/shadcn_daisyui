@@ -19,7 +19,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     ~H"""
     <header class="sticky top-0 z-40 w-full border-b border-base-300 bg-base-100/85 backdrop-blur">
       <div class="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-        <a href="/" class="flex items-center gap-2">
+        <a href={~p"/"} class="flex items-center gap-2">
           <span class="grid size-7 place-items-center rounded-md bg-primary text-primary-content">
             <.icon name="hero-square-3-stack-3d" class="size-4" />
           </span>
