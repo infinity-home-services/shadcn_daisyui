@@ -252,7 +252,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     [
       %{slug: "installation", title: "Installation"},
       %{slug: "adopt", title: "Adopt the design system"},
-      %{slug: "themes", title: "Themes"}
+      %{slug: "themes", title: "Themes"},
+      %{slug: "tokens", title: "Tokens"}
     ]
   end
 
@@ -434,6 +435,192 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     </div>
     """
   end
+
+  @doc """
+  Specs panel for a component page: anatomy (labeled parts), measurements
+  (expressed as theme tokens, not magic numbers), and the tokens it consumes
+  rendered as live swatches. All keys optional.
+  """
+  attr :specs, :map, required: true
+
+  def specs_panel(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <div :if={@specs[:anatomy]} class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anatomy</p>
+        <div
+          :if={@specs[:anatomy_svg]}
+          class="flex justify-center rounded-lg border border-base-300 bg-base-200/40 p-6"
+        >
+          {Phoenix.HTML.raw(@specs.anatomy_svg)}
+        </div>
+        <dl class="divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300">
+          <div :for={{part, i} <- Enum.with_index(@specs.anatomy, 1)} class="flex gap-3 px-4 py-3">
+            <span class={[
+              "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium",
+              if(@specs[:anatomy_svg],
+                do: "bg-foreground text-background",
+                else: "bg-muted text-muted-foreground"
+              )
+            ]}>
+              {i}
+            </span>
+            <dt class="w-36 shrink-0 text-sm font-medium">{part.part}</dt>
+            <dd class="text-sm text-muted-foreground">{part.description}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div :if={@specs[:measurements]} class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Measurements
+        </p>
+        <div class="overflow-hidden rounded-lg border border-base-300">
+          <table class="table">
+            <tbody>
+              <tr :for={m <- @specs.measurements}>
+                <td class="w-40 font-medium">{m.property}</td>
+                <td class="font-mono text-xs text-muted-foreground">{m.value}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div :if={@specs[:tokens]} class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Tokens used
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <span
+            :for={token <- @specs.tokens}
+            class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs"
+          >
+            <span class="size-4 rounded border border-base-300" style={"background: var(--#{token})"}>
+            </span>
+            <code class="font-mono">{token}</code>
+          </span>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Accessibility panel for a component page: the keyboard map plus the role/ARIA
+  contract, focus behavior, screen-reader notes, touch target, and reduced-motion
+  behavior. All keys optional.
+  """
+  attr :accessibility, :map, required: true
+
+  def accessibility_panel(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <div :if={@accessibility[:keyboard]} class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Keyboard</p>
+        <div class="overflow-hidden rounded-lg border border-base-300">
+          <table class="table">
+            <tbody>
+              <tr :for={key <- @accessibility.keyboard}>
+                <td class="w-44"><kbd class="kbd kbd-sm">{key.keys}</kbd></td>
+                <td class="text-sm text-muted-foreground">{key.action}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <dl class="space-y-2 text-sm">
+        <div :if={@accessibility[:roles]} class="flex gap-2">
+          <dt class="w-36 shrink-0 font-medium">Role / ARIA</dt>
+          <dd class="text-muted-foreground">{@accessibility.roles}</dd>
+        </div>
+        <div :if={@accessibility[:focus]} class="flex gap-2">
+          <dt class="w-36 shrink-0 font-medium">Focus</dt>
+          <dd class="text-muted-foreground">{@accessibility.focus}</dd>
+        </div>
+        <div :if={@accessibility[:screen_reader]} class="flex gap-2">
+          <dt class="w-36 shrink-0 font-medium">Screen reader</dt>
+          <dd class="text-muted-foreground">{@accessibility.screen_reader}</dd>
+        </div>
+        <div :if={@accessibility[:touch_target]} class="flex gap-2">
+          <dt class="w-36 shrink-0 font-medium">Touch target</dt>
+          <dd class="text-muted-foreground">{@accessibility.touch_target}</dd>
+        </div>
+        <div :if={@accessibility[:reduced_motion]} class="flex gap-2">
+          <dt class="w-36 shrink-0 font-medium">Reduced motion</dt>
+          <dd class="text-muted-foreground">{@accessibility.reduced_motion}</dd>
+        </div>
+      </dl>
+    </div>
+    """
+  end
+
+  @doc """
+  Do / Don't panel: a rendered good example beside a rendered bad one, each with a
+  short label. Both `do` and `dont` are maps of `%{label, code}`.
+  """
+  attr :do_dont, :map, required: true
+
+  def do_dont_panel(assigns) do
+    ~H"""
+    <div class="grid gap-4 sm:grid-cols-2">
+      <figure class="overflow-hidden rounded-lg border border-success/40">
+        <div class="flex items-center gap-2 border-b border-success/30 bg-success/10 px-4 py-2">
+          <span class="hero-check-circle size-4 text-success" aria-hidden="true"></span>
+          <figcaption class="text-sm font-medium text-success">Do · {@do_dont.do.label}</figcaption>
+        </div>
+        <div class="flex min-h-28 flex-wrap items-center justify-center gap-3 p-6">
+          {raw(@do_dont.do.code)}
+        </div>
+      </figure>
+      <figure class="overflow-hidden rounded-lg border border-destructive/40">
+        <div class="flex items-center gap-2 border-b border-destructive/30 bg-destructive/10 px-4 py-2">
+          <span class="hero-x-circle size-4 text-destructive" aria-hidden="true"></span>
+          <figcaption class="text-sm font-medium text-destructive">
+            Don't · {@do_dont.dont.label}
+          </figcaption>
+        </div>
+        <div class="flex min-h-28 flex-wrap items-center justify-center gap-3 p-6">
+          {raw(@do_dont.dont.code)}
+        </div>
+      </figure>
+    </div>
+    """
+  end
+
+  @doc """
+  Native (SwiftUI) panel: the SwiftUI-equivalent snippet plus a parity badge
+  derived from `ios_status`. Shown inside a `data-platform="ios"` section.
+  """
+  attr :swiftui, :map, required: true
+  attr :ios_status, :atom, default: nil
+
+  def native_panel(assigns) do
+    ~H"""
+    <div class="space-y-3">
+      <span :if={@ios_status} class={["badge badge-sm", ios_status_class(@ios_status)]}>
+        {ios_status_label(@ios_status)}
+      </span>
+      <div
+        data-code-block
+        class="relative overflow-hidden rounded-lg border border-base-300 bg-base-200"
+      >
+        <.code_copy_button class="absolute right-2 top-2 z-10 bg-base-200" />
+        <pre class="overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">{@swiftui.code}</code></pre>
+      </div>
+      <p :if={@swiftui[:notes]} class="text-sm text-muted-foreground">{@swiftui.notes}</p>
+    </div>
+    """
+  end
+
+  defp ios_status_class(:parity), do: "badge-success"
+  defp ios_status_class(:partial), do: "badge-warning"
+  defp ios_status_class(:guidance_only), do: "badge-ghost"
+
+  defp ios_status_label(:parity), do: "Native parity"
+  defp ios_status_label(:partial), do: "Partial parity"
+  defp ios_status_label(:guidance_only), do: "Guidance only"
 
   @doc """
   API reference table for a component's function-component props.

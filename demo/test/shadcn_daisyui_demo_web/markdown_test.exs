@@ -46,6 +46,61 @@ defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
     refute md =~ "| Name | Type | Default |"
   end
 
+  test "component_markdown renders specs, accessibility, and native sections when present" do
+    spec =
+      Map.merge(@spec_fixture, %{
+        specs: %{
+          anatomy: [%{part: "Container", description: "The surface."}],
+          measurements: [%{property: "Height", value: "2.25rem"}],
+          tokens: ["primary", "ring"]
+        },
+        accessibility: %{
+          keyboard: [%{keys: "Enter / Space", action: "Activate"}],
+          roles: "Native button."
+        },
+        swiftui: %{code: "Button(\"Go\") {}", notes: "Use .borderedProminent."},
+        ios_status: :parity
+      })
+
+    md = Markdown.component_markdown(spec)
+
+    assert md =~ "## Specs"
+    assert md =~ "| Part | Description |"
+    assert md =~ "| Height | 2.25rem |"
+    assert md =~ "Tokens used: `primary`, `ring`"
+    assert md =~ "## Accessibility"
+    assert md =~ "| Keys | Action |"
+    assert md =~ "Role / ARIA: Native button."
+    assert md =~ "## Native (SwiftUI)"
+    assert md =~ "Parity: native parity"
+    assert md =~ "```swift\nButton(\"Go\") {}\n```"
+    assert md =~ "Use .borderedProminent."
+  end
+
+  test "component_markdown omits the new sections when absent" do
+    md = Markdown.component_markdown(@spec_fixture)
+
+    refute md =~ "## Specs"
+    refute md =~ "## Accessibility"
+    refute md =~ "## Native (SwiftUI)"
+    refute md =~ "## Do / Don't"
+  end
+
+  test "component_markdown renders the do/don't pair when present" do
+    spec =
+      Map.put(@spec_fixture, :do_dont, %{
+        do: %{label: "Label fields", code: "<label>Email</label>"},
+        dont: %{label: "Placeholder only", code: "<input placeholder=Email>"}
+      })
+
+    md = Markdown.component_markdown(spec)
+
+    assert md =~ "## Do / Don't"
+    assert md =~ "Do - Label fields:"
+    assert md =~ "Don't - Placeholder only:"
+    assert md =~ "<label>Email</label>"
+  end
+
   test "llms_txt links every component markdown file under the base path" do
     txt = Markdown.llms_txt("/base")
 

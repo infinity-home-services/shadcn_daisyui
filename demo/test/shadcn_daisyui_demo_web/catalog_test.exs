@@ -21,6 +21,36 @@ defmodule ShadcnDaisyuiDemoWeb.CatalogTest do
     assert slugs == Enum.uniq(slugs)
   end
 
+  test "the curated visual components keep their anatomy diagrams and do/don't pairs" do
+    for slug <- ~w(button input card) do
+      assert is_binary(Catalog.component(slug).specs.anatomy_svg),
+             "#{slug} lost its anatomy diagram"
+    end
+
+    for slug <- ~w(button input dialog) do
+      assert is_map(Catalog.component(slug).do_dont), "#{slug} lost its do/don't pair"
+    end
+  end
+
+  test "every design-enrichment key maps to a real component slug" do
+    slugs = MapSet.new(Catalog.slugs())
+
+    for slug <- Map.keys(ShadcnDaisyuiDemoWeb.Catalog.Enrichment.all()) do
+      assert MapSet.member?(slugs, slug),
+             "enrichment lists #{inspect(slug)}, which is not a component slug"
+    end
+  end
+
+  test "every defined component appears in exactly one sidebar group (no orphans either way)" do
+    defined = Catalog.components() |> Map.keys() |> Enum.sort()
+    grouped = Catalog.slugs() |> Enum.sort()
+
+    # A defined component missing from @groups would never show in the sidebar;
+    # a grouped slug with no definition would crash component!/1. Both are drift.
+    assert defined == grouped,
+           "catalog/group drift - only defined: #{inspect(defined -- grouped)}; only grouped: #{inspect(grouped -- defined)}"
+  end
+
   test "every component has at least one example and every example has :code" do
     for slug <- Catalog.slugs() do
       component = Catalog.component(slug)

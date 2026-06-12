@@ -17,9 +17,37 @@
     </section>
   </div>
 
+  <section :if={Map.get(@spec, :specs)} class="mt-12 space-y-4 border-t border-base-300 pt-8">
+    <h2 class="text-lg font-medium tracking-tight">Specs</h2>
+    <.specs_panel specs={@spec.specs} />
+  </section>
+
   <section :if={Map.get(@spec, :guidance)} class="mt-12 space-y-4 border-t border-base-300 pt-8">
     <h2 class="text-lg font-medium tracking-tight">Usage guidance</h2>
     <.guidance_panel guidance={@spec.guidance} />
+    <.do_dont_panel :if={Map.get(@spec, :do_dont)} do_dont={@spec.do_dont} />
+  </section>
+
+  <section
+    :if={Map.get(@spec, :accessibility)}
+    class="mt-12 space-y-4 border-t border-base-300 pt-8"
+  >
+    <h2 class="text-lg font-medium tracking-tight">Accessibility</h2>
+    <.accessibility_panel accessibility={@spec.accessibility} />
+  </section>
+
+  <section
+    :if={Map.get(@spec, :swiftui)}
+    data-platform="ios"
+    class="mt-12 space-y-4 border-t border-base-300 pt-8"
+  >
+    <div class="space-y-1">
+      <h2 class="text-lg font-medium tracking-tight">Native (SwiftUI)</h2>
+      <p class="text-sm text-muted-foreground">
+        The SwiftUI equivalent for the iOS/iPadOS package.
+      </p>
+    </div>
+    <.native_panel swiftui={@spec.swiftui} ios_status={Map.get(@spec, :ios_status)} />
   </section>
 
   <section

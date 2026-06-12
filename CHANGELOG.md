@@ -8,6 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`priv/tokens.json`** - a machine-readable single source of truth for the
+  color tokens (name, light value, dark value, role group), mirroring the values
+  in `priv/static/shadcn-daisyui.css`. Intended to power a Tokens reference page,
+  per-component specs, and the Swift-package sync. An agreement test in the demo
+  fails CI if the JSON and the CSS drift apart.
+- **Validated docs catalog schema** - the docs-site component catalog is now
+  built through a `Catalog.Spec` struct that enforces required fields and rejects
+  unknown/typo'd keys, with a test suite (schema validation, sidebar-group
+  coverage, render-every-component-page) that fails CI on drift.
+- **Per-component Specs, Accessibility, and Native (SwiftUI) sections** across all
+  77 components in the docs site. Specs render anatomy, token-expressed
+  measurements, and the tokens a component consumes as live color swatches;
+  Accessibility renders the keyboard map plus role/ARIA, focus, screen-reader,
+  touch-target, and reduced-motion notes (grounded in each component's real markup
+  and JS); Native shows the SwiftUI equivalent with an honest parity badge
+  (`ios_status`). All three are schema-validated and exported to the AI markdown /
+  `design-guidelines.md` bundle. Design metadata lives in per-group enrichment
+  files (`catalog/enrichment/*.ex`) merged onto the base catalog by slug.
+- **Tokens reference page** (`/docs/tokens`) - every color token grouped by role,
+  shown as light/dark swatch pairs with OKLCH values, read from `priv/tokens.json`.
+- **Visual polish:** labeled SVG anatomy diagrams (numbered to match the anatomy
+  list) on Button, Input, and Card; rendered Do/Don't example pairs on Button,
+  Input, and Dialog; and interactive "Replay" motion demos on the Motion
+  guidelines page driven by the Web Animations API (so they survive the
+  instant-theme transition guard). Do/Don't pairs are schema-validated and
+  exported to the AI markdown.
+
+### Changed
+
+- **Layout guidelines: content-width rationale + a dense/data-entry-form
+  exception.** `usage-rules/foundations-layout.md` now explains *why* prose and
+  forms are width-capped (the readable measure, not the container) and sanctions a
+  wider `max-w-2xl`-`max-w-4xl` two-column field grid for data-entry-heavy forms
+  (service tickets, work orders) on medium/expanded screens, while keeping the
+  single-column `max-w-md` default for short/sequential forms and all compact
+  screens.
+
 ## [0.3.0] - 2026-06-11
 
 ### Added

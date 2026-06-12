@@ -10,7 +10,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   Heroicons are written as `<span class="hero-name ..." aria-hidden="true">` - that is exactly what
   the `<.icon>` helper expands to, so the code shown is real, copy-pasteable
   markup that works with nothing but the theme + heroicons plugin.
+
+  Every entry is built through `ShadcnDaisyuiDemoWeb.Catalog.Spec.new!/1`, which
+  validates required fields and rejects unknown/typo'd keys - so a malformed edit
+  fails loudly (named by slug) rather than rendering a broken page.
   """
+
+  alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
+  alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
   @groups [
     %{
@@ -41,8 +48,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
 
   @doc "Ordered sidebar groups, each with its resolved component structs (slug + title only needed)."
   def groups do
+    # Build the spec map once and reuse it for every slug; resolving each slug
+    # through `components/0` individually would rebuild + revalidate all 77 specs
+    # per slug (O(n^2) per page render).
+    comps = components()
+
     Enum.map(@groups, fn g ->
-      %{title: g.title, components: Enum.map(g.slugs, &component!/1)}
+      %{title: g.title, components: Enum.map(g.slugs, &Map.fetch!(comps, &1))}
     end)
   end
 
@@ -55,11 +67,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   @doc "Look up a component by slug, or nil."
   def component(slug), do: Map.get(components(), slug)
 
-  defp component!(slug), do: Map.fetch!(components(), slug)
-
-  @doc "Map of slug => component spec."
+  @doc "Map of slug => validated `%Spec{}` (base data merged with design enrichment)."
   def components do
-    for c <- all(), into: %{}, do: {c.slug, c}
+    enrichment = Enrichment.all()
+
+    for c <- all(), into: %{} do
+      spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
+      {c.slug, Spec.new!(spec)}
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -96,6 +111,96 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           },
           %{name: "size", type: "default | sm | lg | icon", default: "default"}
         ],
+        specs: %{
+          anatomy: [
+            %{
+              part: "Container",
+              description:
+                "The clickable surface - sets height, padding, radius, and a 1px border."
+            },
+            %{part: "Label", description: "Text and/or icon, 14px / font-medium, centered."},
+            %{
+              part: "Icon (optional)",
+              description: "16px leading or trailing glyph, 8px gap from the label."
+            }
+          ],
+          measurements: [
+            %{property: "Height", value: "2.25rem / 36px (default); btn-sm 2rem; btn-lg 2.5rem"},
+            %{property: "Padding", value: "1rem inline (px-4)"},
+            %{property: "Radius", value: "var(--radius-md)"},
+            %{property: "Gap", value: "0.5rem (icon ↔ label)"},
+            %{property: "Border", value: "1px (transparent on solid variants)"},
+            %{property: "Font", value: "0.875rem / weight 500"},
+            %{property: "Focus ring", value: "0 0 0 3px var(--ring) @ 50%"}
+          ],
+          tokens: [
+            "primary",
+            "primary-foreground",
+            "secondary",
+            "secondary-foreground",
+            "ring",
+            "destructive",
+            "destructive-foreground"
+          ],
+          anatomy_svg: ~S"""
+          <svg viewBox="0 0 440 168" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md" role="img" aria-label="Button anatomy diagram">
+            <rect x="150" y="62" width="172" height="44" rx="8" fill="var(--primary)" />
+            <g stroke="var(--primary-foreground)" stroke-width="2" stroke-linecap="round">
+              <line x1="182" y1="84" x2="196" y2="84" />
+              <line x1="189" y1="77" x2="189" y2="91" />
+            </g>
+            <text x="210" y="89" fill="var(--primary-foreground)" font-family="ui-sans-serif, system-ui" font-size="15" font-weight="500">Button</text>
+            <g stroke="var(--border-color)" stroke-width="1">
+              <line x1="150" y1="62" x2="98" y2="36" />
+              <line x1="240" y1="106" x2="240" y2="138" />
+              <line x1="189" y1="84" x2="120" y2="138" />
+            </g>
+            <g font-family="ui-sans-serif, system-ui" font-size="12" font-weight="600">
+              <circle cx="90" cy="32" r="11" fill="var(--foreground)" /><text x="90" y="36" text-anchor="middle" fill="var(--background)">1</text>
+              <circle cx="240" cy="148" r="11" fill="var(--foreground)" /><text x="240" y="152" text-anchor="middle" fill="var(--background)">2</text>
+              <circle cx="112" cy="146" r="11" fill="var(--foreground)" /><text x="112" y="150" text-anchor="middle" fill="var(--background)">3</text>
+            </g>
+          </svg>
+          """
+        },
+        do_dont: %{
+          do: %{
+            label: "One primary action per region",
+            code:
+              ~S(<button class="btn btn-primary">Save</button><button class="btn btn-outline">Cancel</button>)
+          },
+          dont: %{
+            label: "Competing primary buttons",
+            code:
+              ~S(<button class="btn btn-primary">Save</button><button class="btn btn-primary">Cancel</button><button class="btn btn-primary">Delete</button>)
+          }
+        },
+        accessibility: %{
+          roles:
+            "Native <button>. Icon-only buttons (btn-square) need an aria-label; decorative icons are aria-hidden.",
+          keyboard: [
+            %{keys: "Tab", action: "Move focus to / from the button"},
+            %{keys: "Enter / Space", action: "Activate the button"}
+          ],
+          focus:
+            "Visible 3px focus ring (var(--ring)); focus is never removed, only restyled via :focus-visible.",
+          screen_reader:
+            "Announced as a button with its label; the disabled attribute conveys the disabled state.",
+          touch_target:
+            "44pt minimum effective hit area on touch; h-9 (36px) is acceptable on pointer devices.",
+          reduced_motion:
+            "Only color/box-shadow transitions (150ms); nothing that moves, so reduced-motion is unaffected."
+        },
+        swiftui: %{
+          code: ~S"""
+          Button("Primary") { save() }
+              .buttonStyle(.borderedProminent)   // secondary/outline → .bordered, ghost → .borderless
+              .controlSize(.regular)             // .small ↔ btn-sm, .large ↔ btn-lg
+          """,
+          notes:
+            "Destructive maps to .tint(.red) (or role: .destructive in menus). Keep a 44pt minimum hit area."
+        },
+        ios_status: :parity,
         examples: [
           %{
             title: "Variants",
@@ -277,6 +382,99 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           ios:
             "TextField in a Form section; rely on system styling, set keyboard type and textContentType per field."
         },
+        specs: %{
+          anatomy: [
+            %{
+              part: "Label",
+              description: "Field name above the control, 14px / font-medium, 6-8px gap."
+            },
+            %{
+              part: "Control",
+              description:
+                "The text field - h-9 surface with a 1px border and rounded-md corners."
+            },
+            %{
+              part: "Placeholder",
+              description: "Muted hint text shown when empty (text-muted-foreground)."
+            },
+            %{
+              part: "Error message",
+              description: "Rendered below, gated on used_input?, in text-destructive."
+            }
+          ],
+          measurements: [
+            %{property: "Height", value: "2.25rem / 36px (h-9)"},
+            %{property: "Padding", value: "0.75rem inline (px-3)"},
+            %{property: "Radius", value: "var(--radius-md)"},
+            %{property: "Border", value: "1px var(--input)"},
+            %{property: "Font", value: "0.875rem / text-sm"},
+            %{property: "Focus ring", value: "0 0 0 3px var(--ring) @ 50%"}
+          ],
+          tokens: ["background", "foreground", "muted-foreground", "input", "ring", "destructive"],
+          anatomy_svg: ~S"""
+          <svg viewBox="0 0 440 200" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md" role="img" aria-label="Input anatomy diagram">
+            <text x="150" y="40" fill="var(--foreground)" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500">Email</text>
+            <rect x="150" y="52" width="200" height="40" rx="6" fill="var(--background)" stroke="var(--input)" stroke-width="1.5" />
+            <text x="166" y="77" fill="var(--muted-foreground)" font-family="ui-sans-serif, system-ui" font-size="14">you@example.com</text>
+            <text x="150" y="122" fill="var(--destructive)" font-family="ui-sans-serif, system-ui" font-size="12.5">Email is required.</text>
+            <g stroke="var(--border-color)" stroke-width="1">
+              <line x1="188" y1="34" x2="208" y2="34" />
+              <line x1="350" y1="62" x2="386" y2="44" />
+              <line x1="276" y1="72" x2="300" y2="150" />
+              <line x1="244" y1="118" x2="300" y2="172" />
+            </g>
+            <g font-family="ui-sans-serif, system-ui" font-size="12" font-weight="600">
+              <circle cx="219" cy="34" r="11" fill="var(--foreground)" /><text x="219" y="38" text-anchor="middle" fill="var(--background)">1</text>
+              <circle cx="394" cy="40" r="11" fill="var(--foreground)" /><text x="394" y="44" text-anchor="middle" fill="var(--background)">2</text>
+              <circle cx="308" cy="156" r="11" fill="var(--foreground)" /><text x="308" y="160" text-anchor="middle" fill="var(--background)">3</text>
+              <circle cx="308" cy="178" r="11" fill="var(--foreground)" /><text x="308" y="182" text-anchor="middle" fill="var(--background)">4</text>
+            </g>
+          </svg>
+          """
+        },
+        do_dont: %{
+          do: %{
+            label: "Label every field",
+            code: ~S"""
+            <label class="block w-full max-w-xs space-y-1.5">
+              <span class="text-sm font-medium">Email</span>
+              <input type="email" class="input w-full" placeholder="you@example.com" />
+            </label>
+            """
+          },
+          dont: %{
+            label: "Placeholder as the only label",
+            code: ~S"""
+            <input type="email" class="input w-full max-w-xs" placeholder="Email" />
+            """
+          }
+        },
+        accessibility: %{
+          roles:
+            "Native <input>; always paired with a <label> via the FormField. aria-invalid + aria-describedby wire to the error when present.",
+          keyboard: [
+            %{keys: "Tab", action: "Move focus between fields in source order"},
+            %{keys: "Type", action: "Enter the value; native input behaviors apply"}
+          ],
+          focus:
+            "Visible 3px focus ring (var(--ring)); the border shifts to the ring color on :focus-visible.",
+          screen_reader:
+            "Label is announced with the field; errors are linked via aria-describedby so they are read on focus.",
+          touch_target:
+            "44pt row height on touch - wrap the label + control so the whole row is tappable.",
+          reduced_motion: "Color-only focus transition; nothing animates position."
+        },
+        swiftui: %{
+          code: ~S"""
+          TextField("you@example.com", text: $email)
+              .textContentType(.emailAddress)
+              .keyboardType(.emailAddress)
+              .textFieldStyle(.roundedBorder)
+          """,
+          notes:
+            "Put fields in a Form { Section { … } }; let the system own height, focus ring, and Dynamic Type."
+        },
+        ios_status: :parity,
         examples: [
           %{
             title: "Default",
@@ -840,6 +1038,105 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           ios:
             ".sheet for tasks (with detents), .alert only for short confirmations - never recreate web-style modals."
         },
+        specs: %{
+          anatomy: [
+            %{
+              part: "Trigger",
+              description: "The control that opens the dialog (calls id.showModal())."
+            },
+            %{
+              part: "Backdrop",
+              description:
+                "Dimmed overlay behind the box; clicking it closes via the dialog form."
+            },
+            %{
+              part: "Modal box",
+              description: "Centered surface - rounded-lg, shadow-sm, its own padding."
+            },
+            %{
+              part: "Title / Description",
+              description: "Heading and supporting text at the top of the box."
+            },
+            %{part: "Actions", description: "Trailing button row; cancel uses method=\"dialog\"."}
+          ],
+          measurements: [
+            %{property: "Box radius", value: "var(--radius-lg)"},
+            %{property: "Elevation", value: "shadow-sm (flat by design)"},
+            %{
+              property: "Max width",
+              value: "near-full-width on compact; the component caps it otherwise"
+            },
+            %{property: "Backdrop", value: "dimmed scrim; enter/exit animation is preserved"}
+          ],
+          tokens: [
+            "popover",
+            "popover-foreground",
+            "background",
+            "border-color",
+            "muted-foreground"
+          ]
+        },
+        do_dont: %{
+          do: %{
+            label: "Short, focused confirmation",
+            code: ~S"""
+            <div class="w-64 rounded-lg border border-base-300 bg-base-100 p-5 text-left shadow-sm">
+              <h3 class="text-base font-semibold">Delete file?</h3>
+              <p class="py-2 text-sm text-muted-foreground">This can't be undone.</p>
+              <div class="flex justify-end gap-2">
+                <button class="btn btn-sm btn-outline">Cancel</button>
+                <button class="btn btn-sm btn-error">Delete</button>
+              </div>
+            </div>
+            """
+          },
+          dont: %{
+            label: "A long form that belongs on a page",
+            code: ~S"""
+            <div class="w-64 space-y-2 rounded-lg border border-base-300 bg-base-100 p-5 text-left shadow-sm">
+              <h3 class="text-base font-semibold">New customer</h3>
+              <input class="input input-sm w-full" placeholder="Name" />
+              <input class="input input-sm w-full" placeholder="Address" />
+              <input class="input input-sm w-full" placeholder="Phone" />
+              <input class="input input-sm w-full" placeholder="Email" />
+              <input class="input input-sm w-full" placeholder="Notes" />
+            </div>
+            """
+          }
+        },
+        accessibility: %{
+          roles:
+            "Native <dialog> opened with showModal() - the browser provides the modal role, focus trap, and inert background.",
+          keyboard: [
+            %{keys: "Esc", action: "Close the dialog (native)"},
+            %{
+              keys: "Tab / Shift+Tab",
+              action: "Cycle focus within the dialog only (focus is trapped)"
+            },
+            %{keys: "Enter", action: "Activate the focused action"}
+          ],
+          focus:
+            "Focus moves into the dialog on open and returns to the trigger on close; the 3px ring applies to controls inside.",
+          screen_reader:
+            "Announced as a modal dialog; give it an accessible name via the <:title> (aria-labelledby).",
+          touch_target:
+            "Action buttons keep the 44pt touch minimum; on compact prefer a bottom drawer for reach.",
+          reduced_motion:
+            "The open/close animation is exempt from the instant-theme rule; honor prefers-reduced-motion to skip it."
+        },
+        swiftui: %{
+          code: ~S"""
+          .sheet(isPresented: $isPresented) {        // tasks / short forms
+              ConfirmView()
+                  .presentationDetents([.medium, .large])
+          }
+          // short confirmations only:
+          .alert("Are you sure?", isPresented: $confirm) { … }
+          """,
+          notes:
+            "iOS has no web-style modal - use .sheet (with detents) for tasks and .alert for short confirmations."
+        },
+        ios_status: :partial,
         examples: [
           %{
             title: "Default",

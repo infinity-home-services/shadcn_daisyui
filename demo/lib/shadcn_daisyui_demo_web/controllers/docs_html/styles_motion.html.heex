@@ -42,6 +42,40 @@
       <a href={~p"/docs/components/drawer"} class="link link-primary">drawer</a>
       component (large surface).
     </p>
+
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div
+        :for={
+          {tier, dur} <- [
+            {"micro", 150},
+            {"small surface", 180},
+            {"large surface", 300}
+          ]
+        }
+        class="space-y-3 rounded-lg border border-base-300 p-4"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium">{tier}</span>
+          <span class="font-mono text-xs text-muted-foreground">{dur}ms</span>
+        </div>
+        <div class="relative h-9 overflow-hidden rounded-md bg-muted">
+          <div
+            data-motion-box
+            class="absolute left-1 top-1 flex size-7 items-center justify-center rounded bg-primary text-primary-foreground"
+          >
+            <span class="hero-arrow-right size-4" aria-hidden="true"></span>
+          </div>
+        </div>
+        <%!-- Web Animations API: immune to the instant-theme transition-duration override. --%>
+        <button
+          type="button"
+          class="btn btn-outline btn-sm w-full"
+          onclick={"const b=this.closest('div').querySelector('[data-motion-box]');const t=b.closest('.relative');b.animate([{transform:'translateX(0)'},{transform:'translateX('+(t.offsetWidth-b.offsetWidth-8)+'px)'}],{duration:#{dur},easing:'cubic-bezier(0.4,0,0.2,1)',fill:'forwards'})"}
+        >
+          Replay {dur}ms
+        </button>
+      </div>
+    </div>
   </section>
 
   <section class="mt-12 space-y-4" data-platform="web">
