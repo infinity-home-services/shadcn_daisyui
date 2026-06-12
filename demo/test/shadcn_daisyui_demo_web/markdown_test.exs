@@ -140,7 +140,7 @@ defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
 
     entry = Enum.find(index, &(&1.slug == "button"))
     assert entry.title == "Button"
-    assert entry.group == "Core"
+    assert entry.group == "Actions"
     assert entry.url == "/base/docs/components/button"
     assert is_binary(entry.description)
 

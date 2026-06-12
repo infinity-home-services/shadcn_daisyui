@@ -19,34 +19,45 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
   alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
+  # Functional groups (what the component is FOR), not provenance. Slugs may be
+  # listed in any order - `groups/0` sorts each group alphabetically by title.
   @groups [
     %{
-      title: "Core",
-      slugs: ~w(button badge card input textarea select native-select checkbox radio-group switch
-                label alert tabs table separator accordion avatar breadcrumb
-                dropdown-menu dialog tooltip progress skeleton kbd slider spinner
-                pagination popover toast)
+      title: "Forms & inputs",
+      slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
+                toggle-group label field input-group input-otp slider combobox calendar
+                date-picker rating filter validator)
     },
     %{
-      title: "More primitives",
-      slugs: ~w(button-group toggle toggle-group input-group navigation-menu hover-card
-                sheet sidebar field aspect-ratio scroll-area empty typography
-                alert-dialog collapsible)
+      title: "Actions",
+      slugs: ~w(button button-group dropdown-menu command swap)
     },
     %{
-      title: "Interactive",
-      slugs: ~w(combobox command context-menu data-table calendar date-picker carousel
-                drawer input-otp resizable menubar chart)
+      title: "Navigation",
+      slugs: ~w(breadcrumb pagination tabs navigation-menu menubar sidebar dock link steps navbar)
     },
     %{
-      title: "daisyUI extras",
-      slugs: ~w(stat steps timeline chat rating radial-progress indicator status
-                countdown mockup link list swap stack mask navbar footer hero dock
-                filter validator)
+      title: "Overlays",
+      slugs: ~w(dialog alert-dialog sheet drawer popover hover-card tooltip context-menu)
+    },
+    %{
+      title: "Feedback & status",
+      slugs:
+        ~w(alert toast progress radial-progress skeleton spinner badge indicator status countdown)
+    },
+    %{
+      title: "Data display",
+      slugs: ~w(table data-table card avatar stat chart timeline chat list kbd accordion
+                collapsible carousel)
+    },
+    %{
+      title: "Layout",
+      slugs: ~w(separator aspect-ratio scroll-area resizable empty stack footer hero typography
+                mockup mask)
     }
   ]
 
-  @doc "Ordered sidebar groups, each with its resolved component structs (slug + title only needed)."
+  @doc "Sidebar groups in order, each with its components sorted alphabetically by title."
   def groups do
     # Build the spec map once and reuse it for every slug; resolving each slug
     # through `components/0` individually would rebuild + revalidate all 77 specs
@@ -54,15 +65,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     comps = components()
 
     Enum.map(@groups, fn g ->
-      %{title: g.title, components: Enum.map(g.slugs, &Map.fetch!(comps, &1))}
+      sorted = g.slugs |> Enum.map(&Map.fetch!(comps, &1)) |> Enum.sort_by(& &1.title)
+      %{title: g.title, components: sorted}
     end)
   end
 
-  @doc "All component slugs, in sidebar order."
-  def slugs, do: Enum.flat_map(@groups, & &1.slugs)
+  @doc "All component slugs, in sidebar order (group order, alphabetical within each group)."
+  def slugs, do: for(g <- groups(), c <- g.components, do: c.slug)
 
-  @doc "The first component slug (landing target for /docs)."
-  def first_slug, do: hd(slugs())
+  @doc "The first component slug (landing target for /docs) - Button if present."
+  def first_slug do
+    slugs = slugs()
+    if "button" in slugs, do: "button", else: hd(slugs)
+  end
 
   @doc "Look up a component by slug, or nil."
   def component(slug), do: Map.get(components(), slug)
