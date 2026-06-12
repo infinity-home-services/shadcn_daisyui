@@ -50,13 +50,13 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         <div class="flex flex-1 items-center justify-end gap-2">
           <button
             type="button"
-            class="btn btn-outline btn-sm gap-2 font-normal text-muted-foreground"
+            class="btn btn-outline btn-sm gap-2 font-normal text-muted-foreground sm:w-[264px] sm:justify-start"
             onclick="document.getElementById('docs-search-palette').showModal()"
             aria-label="Search components"
           >
             <.icon name="hero-magnifying-glass" class="size-4" />
             <span class="hidden sm:inline">Search</span>
-            <kbd class="kbd kbd-sm">⌘K</kbd>
+            <kbd class="kbd kbd-sm sm:ml-auto">⌘K</kbd>
           </button>
           <a
             href="https://github.com/N00nDay/shadcn_daisyui"
