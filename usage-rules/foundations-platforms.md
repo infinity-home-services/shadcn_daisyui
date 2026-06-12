@@ -1,4 +1,4 @@
-# shadcn_daisyui — platforms
+# shadcn_daisyui - platforms
 
 How these guidelines apply across web (mobile-first, scales to desktop) and native
 iOS / iPadOS (SwiftUI). Read this file first; every other guideline file uses its
@@ -54,7 +54,7 @@ conventions.
 | Guideline class | Web width | iOS |
 |---|---|---|
 | compact | < 640px | compact width (iPhone, iPad slide-over) |
-| medium | 640–1023px | regular width, constrained (iPad portrait split) |
+| medium | 640-1023px | regular width, constrained (iPad portrait split) |
 | expanded | ≥ 1024px | regular width (full-screen iPad, desktop) |
 
 See `foundations-layout.md` for how layout changes per class.
@@ -63,7 +63,7 @@ See `foundations-layout.md` for how layout changes per class.
 
 - Distribute tokens via the `ShadcnDaisyUI` Swift package (SPM); it bundles a copy
   of these guidelines as `design-guidelines.md`.
-- Dynamic Type: type roles map to SF text styles so they scale automatically —
+- Dynamic Type: type roles map to SF text styles so they scale automatically -
   never use fixed `Font.system(size:)` for body content.
 - Dark mode: every semantic color has light and dark variants baked into the token;
   never branch on `colorScheme` to pick colors manually.

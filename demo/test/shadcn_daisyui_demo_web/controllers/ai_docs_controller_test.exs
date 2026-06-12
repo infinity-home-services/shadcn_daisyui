@@ -74,7 +74,7 @@ defmodule ShadcnDaisyuiDemoWeb.AiDocsControllerTest do
     test "serves the shipped markdown for a guide", %{conn: conn} do
       conn = get(conn, "/docs/foundations/spacing.md")
 
-      assert response(conn, 200) =~ "# shadcn_daisyui — spacing"
+      assert response(conn, 200) =~ "# shadcn_daisyui - spacing"
       assert response_content_type(conn, :md) =~ "text/markdown"
     end
 

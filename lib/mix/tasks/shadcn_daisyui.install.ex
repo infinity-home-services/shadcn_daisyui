@@ -6,15 +6,15 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
       mix shadcn_daisyui.install
 
   By default assets are **imported from deps** so `mix deps.update shadcn_daisyui`
-  upgrades styling and behavior everywhere — nothing is copied into your app.
+  upgrades styling and behavior everywhere - nothing is copied into your app.
 
   It will:
 
-    * patch `assets/css/app.css` — daisyUI `themes: false`, import the theme from
+    * patch `assets/css/app.css` - daisyUI `themes: false`, import the theme from
       `deps/`, add `@source` for the package's components, set the `dark:` variant
-    * patch `assets/js/app.js` — import the `Hooks` and spread them into your
+    * patch `assets/js/app.js` - import the `Hooks` and spread them into your
       `LiveSocket`
-    * patch your root layout — `data-theme="shadcn"` on `<html>`
+    * patch your root layout - `data-theme="shadcn"` on `<html>`
     * replace `lib/<app>_web/components/core_components.ex` with a thin module
       delegating to `ShadcnDaisyui.CoreComponents` (original backed up; every
       component stays overridable; your Gettext error translation is preserved)
@@ -23,9 +23,9 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
 
   ## Options
 
-    * `--copy` — copy the CSS/JS into `assets/` instead of importing from deps
+    * `--copy` - copy the CSS/JS into `assets/` instead of importing from deps
       (you own the files; refresh them later with `mix shadcn_daisyui.upgrade`)
-    * `--no-core-components` — skip the CoreComponents replacement
+    * `--no-core-components` - skip the CoreComponents replacement
   """
   use Mix.Task
 
@@ -98,7 +98,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
         end
 
       opts[:required] ->
-        Mix.raise("#{path} not found — run this from your Phoenix project root.")
+        Mix.raise("#{path} not found - run this from your Phoenix project root.")
 
       true ->
         Mix.shell().info([:yellow, "* skipped (not found) ", :reset, path])
@@ -113,7 +113,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
 
         Mix.shell().info("""
 
-        #{IO.ANSI.yellow()}Couldn't find your LiveSocket in assets/js/app.js — register the hooks manually:#{IO.ANSI.reset()}
+        #{IO.ANSI.yellow()}Couldn't find your LiveSocket in assets/js/app.js - register the hooks manually:#{IO.ANSI.reset()}
 
             import { Hooks as ShadcnHooks } from "#{import_from}"
             new LiveSocket("/live", Socket, { params, hooks: { ...ShadcnHooks } })
@@ -134,7 +134,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
       [] ->
         Mix.shell().info("""
 
-        #{IO.ANSI.yellow()}Couldn't find root.html.heex — set the theme manually:#{IO.ANSI.reset()}
+        #{IO.ANSI.yellow()}Couldn't find root.html.heex - set the theme manually:#{IO.ANSI.reset()}
 
             <html lang="en" data-theme="shadcn">
         """)
@@ -211,7 +211,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
 
     * Theme toggle buttons: point them at data-phx-theme="shadcn" / "shadcn-dark".
     * #{upgrade_note}
-    * AI agents: add the design-system rules to your AGENTS.md / CLAUDE.md —
+    * AI agents: add the design-system rules to your AGENTS.md / CLAUDE.md -
       with the usage_rules package installed, run:
 
           mix usage_rules.sync AGENTS.md --all

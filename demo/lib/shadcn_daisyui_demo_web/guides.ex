@@ -4,7 +4,7 @@ defmodule ShadcnDaisyuiDemoWeb.Guides do
   `ShadcnDaisyuiDemoWeb.Catalog` for components.
 
   Each guide's source of truth is its markdown file in the package's
-  `usage-rules/` directory — read at compile time so the `.md` routes and the
+  `usage-rules/` directory - read at compile time so the `.md` routes and the
   `/design-guidelines.md` aggregate serve exactly what ships in the hex package.
   The HEEx page for each guide is a visual companion, not a rendering of the
   markdown.
@@ -137,7 +137,7 @@ defmodule ShadcnDaisyuiDemoWeb.Guides do
 
     """
     <!--
-    shadcn_daisyui design guidelines — single-file bundle.
+    shadcn_daisyui design guidelines - single-file bundle.
     Source of truth: the usage-rules/*.md files shipped in the shadcn_daisyui
     hex package. Rules tagged [web]/[ios] are platform-scoped; untagged rules
     are universal.

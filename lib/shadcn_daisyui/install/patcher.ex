@@ -111,11 +111,11 @@ defmodule ShadcnDaisyui.Install.Patcher do
       js =~ "...ShadcnHooks" ->
         {:ok, js}
 
-      # an existing hooks: { ... } option — merge ours in first
+      # an existing hooks: { ... } option - merge ours in first
       Regex.match?(~r/hooks:\s*\{/, js) ->
         {:ok, Regex.replace(~r/hooks:\s*\{/, js, "hooks: { ...ShadcnHooks, ", global: false)}
 
-      # no hooks option — add one to the LiveSocket options object
+      # no hooks option - add one to the LiveSocket options object
       Regex.match?(~r/new LiveSocket\([^,]+,\s*\w+,\s*\{/, js) ->
         {:ok,
          Regex.replace(
@@ -134,7 +134,7 @@ defmodule ShadcnDaisyui.Install.Patcher do
   Adds data-theme="shadcn" to the <html> tag of the root layout.
 
   Phoenix 1.8's stock layout manages data-theme client-side (the phx:set-theme
-  script, values "light"/"dark"/"system") — the theme CSS aliases those values,
+  script, values "light"/"dark"/"system") - the theme CSS aliases those values,
   so such layouts are left untouched.
   """
   def patch_root_layout(heex) do
@@ -193,7 +193,7 @@ defmodule ShadcnDaisyui.Install.Patcher do
       Core UI components, provided by the shadcn_daisyui design system.
 
       Every component delegates to `ShadcnDaisyui.CoreComponents` and is
-      overridable — redefine any of them here to customize for this app.
+      overridable - redefine any of them here to customize for this app.
       The original Phoenix-generated file was backed up next to this one.
       \"\"\"
       use ShadcnDaisyui.CoreComponents
@@ -208,7 +208,7 @@ defmodule ShadcnDaisyui.Install.Patcher do
       Core UI components, provided by the shadcn_daisyui design system.
 
       Every component delegates to `ShadcnDaisyui.CoreComponents` and is
-      overridable — redefine any of them here to customize for this app.
+      overridable - redefine any of them here to customize for this app.
       The original Phoenix-generated file was backed up next to this one.
       \"\"\"
       use ShadcnDaisyui.CoreComponents

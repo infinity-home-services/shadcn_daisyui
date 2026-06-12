@@ -16,7 +16,7 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
   @summary """
   shadcn_daisyui is a daisyUI v5 theme + component kit that makes daisyUI \
   components look like shadcn/ui, built for Phoenix apps. Components are plain, \
-  copy-pasteable HTML styled by the theme — no React required. Install it with \
+  copy-pasteable HTML styled by the theme - no React required. Install it with \
   `mix shadcn_daisyui.install`. Usage rules for AI agents ship as \
   `usage-rules.md` and can be synced into your project with the `usage_rules` \
   package.\
@@ -53,7 +53,7 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
     ## Guides
 
     - [Installation](#{base}/docs/installation): how to add the theme and JS to a Phoenix app.
-    - [Adopt the design system](#{base}/docs/adopt): add the guidelines to any project — Claude plugin, usage_rules sync, Swift package, or one-file bundle.
+    - [Adopt the design system](#{base}/docs/adopt): add the guidelines to any project - Claude plugin, usage_rules sync, Swift package, or one-file bundle.
     - [Themes](#{base}/docs/themes): theming tokens and the interactive theme creator.
 
     ## Design guidelines
@@ -210,6 +210,6 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
   end
 
   # Prop types like "default | secondary | outline" contain literal pipes that
-  # would break the markdown table — escape them.
+  # would break the markdown table - escape them.
   defp cell(value), do: String.replace(to_string(value), "|", "\\|")
 end
