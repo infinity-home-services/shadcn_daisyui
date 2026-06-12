@@ -153,7 +153,11 @@ defmodule ShadcnDaisyuiDemoWeb.Layouts do
         <%= for group <- ShadcnDaisyuiDemoWeb.Guides.groups() do %>
           <li class="command-group-label" data-group>{group.title}</li>
           <li :for={guide <- group.guides}>
-            <a class="command-item" data-command-item href={guide.path}>
+            <a
+              class="command-item"
+              data-command-item
+              href={ShadcnDaisyuiDemoWeb.Endpoint.path(guide.path)}
+            >
               {guide.title}
               <span class="ml-auto truncate text-xs text-muted-foreground">
                 {guide.description}
