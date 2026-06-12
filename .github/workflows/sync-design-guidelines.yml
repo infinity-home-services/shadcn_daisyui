@@ -28,19 +28,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out canonical (shadcn_daisyui)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: canonical
 
       - name: Check out plugin repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: N00nDay/shadcn_daisyui_design
           path: plugin
           token: ${{ secrets.SYNC_TOKEN }}
 
       - name: Check out Swift repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: N00nDay/shadcn_daisyui_swift
           path: swift
