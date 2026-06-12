@@ -4,7 +4,7 @@
   <section class="mt-10 space-y-4">
     <h2 class="text-lg font-medium tracking-tight">Three durations</h2>
     <p class="text-sm text-muted-foreground">
-      Motion confirms an action or orients a transition — it never decorates.
+      Motion confirms an action or orients a transition - it never decorates.
       Easing is <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ease</code>
       / <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ease-out</code>;
       animate only opacity and transform.
@@ -25,7 +25,7 @@
               {"micro", "150ms", "color, bg, border, shadow", "button hover / active"},
               {"small surface", "180ms", "opacity, transform", "popover, tooltip, ⌘K palette"},
               {"large surface", "300ms", "translate, backdrop", "sheet, drawer"},
-              {"theme switch", "0ms", "—", "instant by design"}
+              {"theme switch", "0ms", "-", "instant by design"}
             ]
           }>
             <td class="font-medium">{tier}</td>
@@ -45,7 +45,7 @@
   </section>
 
   <section class="mt-12 space-y-4" data-platform="web">
-    <h2 class="text-lg font-medium tracking-tight">The patch guard — don't fight it</h2>
+    <h2 class="text-lg font-medium tracking-tight">The patch guard - don't fight it</h2>
     <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
       <p>
         Theme switching is instant by design: fading light↔dark passes text through a grey
@@ -53,12 +53,12 @@
         <code class="font-mono text-xs">transition-duration: 0s</code>
         on everything except
         components with their own enter/exit animations (dialog, drawer, tooltip, carousel,
-        skeleton, countdown). Missing hover fades are intentional — adding per-element
+        skeleton, countdown). Missing hover fades are intentional - adding per-element
         transition overrides reintroduces the flicker.
       </p>
     </div>
     <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-      <li>No entrance animations for page content — skeletons cover loading.</li>
+      <li>No entrance animations for page content - skeletons cover loading.</li>
       <li>Never animate layout properties (width, height, top/left, margin).</li>
       <li>
         Gate any added animation behind <code class="font-mono text-xs">prefers-reduced-motion</code>.

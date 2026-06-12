@@ -1,22 +1,22 @@
 # shadcn_daisyui
 
 Make [daisyUI v5](https://daisyui.com) look and behave like [shadcn/ui](https://ui.shadcn.com)
-in Phoenix — neutral palette, light + dark — shipped as a Hex-style package.
+in Phoenix - neutral palette, light + dark - shipped as a Hex-style package.
 
 It bundles:
 
-- **Theme CSS** — one self-contained Tailwind v4 / daisyUI v5 file. Import it and every
+- **Theme CSS** - one self-contained Tailwind v4 / daisyUI v5 file. Import it and every
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
-- **Interactive JS** — `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
+- **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
   stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable, …).
-- **Function components** — `ShadcnDaisyui.Components` (`<.badge>`, `<.card>`,
+- **Function components** - `ShadcnDaisyui.Components` (`<.badge>`, `<.card>`,
   `<.dialog>`, `<.combobox>`, `<.tabs>`, `<.sidebar_layout>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
-  `<.radio_group>`, …), and `ShadcnDaisyui.CoreComponents` — a **drop-in replacement
+  `<.radio_group>`, …), and `ShadcnDaisyui.CoreComponents` - a **drop-in replacement
   for Phoenix 1.8's generated core components** (`<.input field={@form[:email]}>`,
   `<.button>`, `<.table>`, `<.flash>`), so `phx.gen.live` / `phx.gen.html` output
   works unmodified.
-- **AI usage rules** — `usage-rules.md` ships in the package; sync it into your app's
+- **AI usage rules** - `usage-rules.md` ships in the package; sync it into your app's
   `AGENTS.md` / `CLAUDE.md` with the [usage_rules](https://hex.pm/packages/usage_rules)
   package so coding agents follow the design system on every UI decision.
 
@@ -40,14 +40,14 @@ mix shadcn_daisyui.install
 
 The installer wires everything automatically:
 
-- `assets/css/app.css` — daisyUI `themes: false`, imports the theme from `deps/`,
+- `assets/css/app.css` - daisyUI `themes: false`, imports the theme from `deps/`,
   adds `@source` for the package's components, sets the `dark:` variant
-- `assets/js/app.js` — imports the `Hooks` and spreads them into your `LiveSocket`
-- root layout — `data-theme="shadcn"` on `<html>`
-- `core_components.ex` — replaced with a thin module delegating to
+- `assets/js/app.js` - imports the `Hooks` and spreads them into your `LiveSocket`
+- root layout - `data-theme="shadcn"` on `<html>`
+- `core_components.ex` - replaced with a thin module delegating to
   `ShadcnDaisyui.CoreComponents` (original backed up; every component overridable;
   your Gettext error translation preserved)
-- `lib/<app>_web.ex` — templates get `use ShadcnDaisyui.Components`
+- `lib/<app>_web.ex` - templates get `use ShadcnDaisyui.Components`
 
 Because assets are imported from `deps/`, upgrading is just
 `mix deps.update shadcn_daisyui`. Prefer owning the files? `mix shadcn_daisyui.install --copy`
@@ -118,7 +118,7 @@ registered (the installer does this).
 ## Theming / branding
 
 The neutral theme is the default. Brand themes override the same OKLCH tokens in a
-`[data-theme="yourbrand"]` block — generate one with:
+`[data-theme="yourbrand"]` block - generate one with:
 
 ```bash
 mix shadcn_daisyui.gen.theme acme --primary "oklch(0.55 0.2 250)" --radius 0.5rem
@@ -128,7 +128,7 @@ See `usage-rules/theming.md` and the interactive theme creator on the docs site.
 
 ## What's included
 
-All 58 shadcn/ui components are reproducible with this theme — function-component
+All 58 shadcn/ui components are reproducible with this theme - function-component
 wrappers exist for the common primitives, forms, overlays, navigation, and the
 interactive components; everything else is raw daisyUI classes that the theme
 styles (recipes in `usage-rules.md`). See the docs site for a live gallery of

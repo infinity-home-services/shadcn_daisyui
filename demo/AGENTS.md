@@ -191,7 +191,7 @@ custom classes must fully style the input
         <% end %>
       </div>
 
-  and **Never** do this – the program will terminate with a syntax error:
+  and **Never** do this - the program will terminate with a syntax error:
 
       <%!-- THIS IS INVALID NEVER EVER DO THIS --%>
       <div id="<%= @invalid_interpolation %>">

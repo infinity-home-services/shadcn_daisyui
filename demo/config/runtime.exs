@@ -39,7 +39,7 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
 
   # URL_PATH lets the app (and `mix site.export`) generate links AND assets under a
-  # base path — e.g. "/shadcn_daisyui" when hosted on a GitHub Pages project site.
+  # base path - e.g. "/shadcn_daisyui" when hosted on a GitHub Pages project site.
   url_path = System.get_env("URL_PATH") || "/"
 
   config :shadcn_daisyui_demo, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")

@@ -3,9 +3,9 @@ defmodule ShadcnDaisyui.CoreComponents do
   A drop-in replacement for the core components Phoenix 1.8 generates, styled by
   the shadcn-daisyui theme.
 
-  Exposes the exact API `phx.gen.live` / `phx.gen.html` templates call —
+  Exposes the exact API `phx.gen.live` / `phx.gen.html` templates call -
   `input/1`, `button/1`, `error/1`, `header/1`, `table/1`, `list/1`, `icon/1`,
-  `flash/1` — so generated code works unmodified.
+  `flash/1` - so generated code works unmodified.
 
   ## Replacing your app's CoreComponents
 
@@ -16,7 +16,7 @@ defmodule ShadcnDaisyui.CoreComponents do
         use ShadcnDaisyui.CoreComponents
       end
 
-  Every component is `defoverridable` — redefine any function locally to customize:
+  Every component is `defoverridable` - redefine any function locally to customize:
 
       defmodule MyAppWeb.CoreComponents do
         use ShadcnDaisyui.CoreComponents
@@ -52,7 +52,7 @@ defmodule ShadcnDaisyui.CoreComponents do
 
   defmacro __using__(_opts) do
     # Wrapper definitions (not imports) so the using module *exports* the
-    # components — `import MyAppWeb.CoreComponents` elsewhere keeps working.
+    # components - `import MyAppWeb.CoreComponents` elsewhere keeps working.
     # `flash_group/1` is deliberately not wrapped: Phoenix 1.8 defines it in
     # `Layouts`, and a wrapper here would conflict with that local definition.
     wrappers =
@@ -136,7 +136,7 @@ defmodule ShadcnDaisyui.CoreComponents do
   @doc """
   Shows the flash group with standard titles and content.
 
-  Phoenix 1.8 defines this in your `Layouts` module — keep that one if you have
+  Phoenix 1.8 defines this in your `Layouts` module - keep that one if you have
   it; this is provided for apps that don't.
   """
   attr(:flash, :map, required: true, doc: "the map of flash messages")

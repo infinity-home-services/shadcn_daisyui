@@ -10,7 +10,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   alias ShadcnDaisyuiDemoWeb.Guides
 
   @doc """
-  Top navigation bar — shared by every page. `active` highlights a primary link
+  Top navigation bar - shared by every page. `active` highlights a primary link
   (`:docs`, `:themes`, or `nil`).
   """
   attr :active, :atom, default: nil
@@ -77,7 +77,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   defp nav_class(true), do: "font-medium text-foreground"
   defp nav_class(false), do: "text-muted-foreground"
 
-  @doc "Site footer — shared by every page."
+  @doc "Site footer - shared by every page."
   def site_footer(assigns) do
     ~H"""
     <footer class="border-t border-base-300">
@@ -96,7 +96,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           </a>
           theme.
         </p>
-        <p>Components styled to match shadcn/ui — for Phoenix.</p>
+        <p>Components styled to match shadcn/ui - for Phoenix.</p>
       </div>
     </footer>
     """
@@ -119,7 +119,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       <.site_header active={@active_nav} />
 
       <div class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10 lg:px-8">
-        <%!-- Sidebar — sticks under the header while the window scrolls --%>
+        <%!-- Sidebar - sticks under the header while the window scrolls --%>
         <aside class="hidden lg:block">
           <div
             data-docs-sidebar
@@ -177,7 +177,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           </div>
         </aside>
 
-        <%!-- Content — scrolls with the window (scrollbar at the viewport edge) --%>
+        <%!-- Content - scrolls with the window (scrollbar at the viewport edge) --%>
         <main data-docs-main class="flex min-w-0 flex-col">
           <div class="flex-1 py-8 lg:py-10">
             <%!-- Mobile component picker (sidebar is hidden below lg) --%>
@@ -277,7 +277,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
 
   @doc """
   A titled, escaped code block with a copy button. Pure-HTML copy (inline
-  `navigator.clipboard`) — no hook required.
+  `navigator.clipboard`) - no hook required.
   """
   attr :code, :string, required: true
   attr :language, :string, default: nil
@@ -369,7 +369,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   end
 
   @doc """
-  Callout shown on interactive component pages — points to the JS-hook setup.
+  Callout shown on interactive component pages - points to the JS-hook setup.
   """
   def js_hook_callout(assigns) do
     ~H"""
@@ -383,7 +383,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">LiveSocket</code>
           (or call
           <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">initShadcnDaisyui()</code>
-          for dead views) — see <a href={~p"/docs/installation"} class="link link-primary font-medium">
+          for dead views) - see <a href={~p"/docs/installation"} class="link link-primary font-medium">
             Installation → Wire the JavaScript
           </a>.
         </p>
@@ -455,7 +455,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           <tr :for={p <- @props}>
             <td class="font-mono text-sm font-medium">{p.name}</td>
             <td class="font-mono text-xs text-muted-foreground">{p.type}</td>
-            <td class="font-mono text-xs text-muted-foreground">{Map.get(p, :default) || "—"}</td>
+            <td class="font-mono text-xs text-muted-foreground">{Map.get(p, :default) || "-"}</td>
           </tr>
         </tbody>
       </table>
@@ -473,7 +473,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   for examples that should not be centered (tables, full-width layouts).
 
   Pass `heex` (a function-component usage snippet) to add a HEEx tab between the
-  preview and the raw markup — the raw tab is then labeled "HTML" instead of
+  preview and the raw markup - the raw tab is then labeled "HTML" instead of
   "Code".
   """
   attr :id, :string, required: true

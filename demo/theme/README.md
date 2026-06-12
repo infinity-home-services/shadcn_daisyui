@@ -1,19 +1,19 @@
 # shadcn-daisyui
 
-A single, self-contained CSS file — [`shadcn-daisyui.css`](./shadcn-daisyui.css) — that makes
+A single, self-contained CSS file - [`shadcn-daisyui.css`](./shadcn-daisyui.css) - that makes
 [daisyUI v5](https://daisyui.com) components look like [shadcn/ui](https://ui.shadcn.com)
 (the **neutral** palette, light + dark). Drop it into any Tailwind v4 + daisyUI v5 project and you
 write `btn btn-primary` / `card` / `input` and get the shadcn look.
 
 It does three things:
 
-1. **Tokens** — declares shadcn/ui's real OKLCH values and maps daisyUI's semantic colour variables
+1. **Tokens** - declares shadcn/ui's real OKLCH values and maps daisyUI's semantic colour variables
    (`--color-primary`, `--color-base-100`, …) onto them, for both a light theme (`shadcn`) and a
    dark theme (`shadcn-dark`).
-2. **Utilities** — exposes the shadcn token names as Tailwind utilities (`text-muted-foreground`,
+2. **Utilities** - exposes the shadcn token names as Tailwind utilities (`text-muted-foreground`,
    `bg-card`, `border-border`, `text-destructive`, `rounded-lg`, …) via `@theme inline`, so they
    stay theme-reactive.
-3. **Component overrides** — restates shadcn's signature metrics on daisyUI components: `h-9`
+3. **Component overrides** - restates shadcn's signature metrics on daisyUI components: `h-9`
    controls, `rounded-md` fields / `rounded-xl` cards, the `ring-[3px] ring/50` focus ring,
    `shadow-xs` / `shadow-sm`, flat surfaces (no daisyUI depth/noise).
 
@@ -48,7 +48,7 @@ file at the repo root:
 @import "../../theme/shadcn-daisyui.css";
 ```
 
-This repo's demo (`/`) is wired exactly this way — see
+This repo's demo (`/`) is wired exactly this way - see
 [`assets/css/app.css`](../assets/css/app.css).
 
 ## Activate the theme
@@ -68,7 +68,7 @@ and Tailwind `dark:` utilities work. The demo's `dark:` variant is configured in
 @custom-variant dark (&:where([data-theme=shadcn-dark], [data-theme=shadcn-dark] *, .dark, .dark *));
 ```
 
-Toggle it however you like — flip `data-theme` between `shadcn` / `shadcn-dark`. The demo reuses
+Toggle it however you like - flip `data-theme` between `shadcn` / `shadcn-dark`. The demo reuses
 Phoenix's built-in `phx:set-theme` mechanism.
 
 ## What you can use
@@ -90,7 +90,7 @@ Plus shadcn-named utilities: `bg-background`, `text-foreground`, `bg-card`, `tex
 shadcn uses `--border` as a **colour**; daisyUI uses `--border` as a **width** (it appears inside
 component size `calc()`s). They collide, so in this file:
 
-- `--border` = `1px` (daisyUI's width — leave it alone)
+- `--border` = `1px` (daisyUI's width - leave it alone)
 - `--border-color` = the shadcn border colour (use this, or the `border-border` utility)
 
 ## Customising

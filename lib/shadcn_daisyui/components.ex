@@ -4,17 +4,17 @@ defmodule ShadcnDaisyui.Components do
 
   Most components are thin wrappers over daisyUI classes (so the theme does the
   styling). The interactive ones render the markup the JS hooks expect and set
-  `phx-hook="Shadcn…"` — add the hooks to your `LiveSocket` (see the README).
+  `phx-hook="Shadcn…"` - add the hooks to your `LiveSocket` (see the README).
 
       use ShadcnDaisyui.Components
       # or: import ShadcnDaisyui.Components
 
   Anything not wrapped here is still available as plain daisyUI classes
-  (`btn`, `card`, `tabs tabs-box`, …) — the theme styles them automatically.
+  (`btn`, `card`, `tabs tabs-box`, …) - the theme styles them automatically.
 
   `use ShadcnDaisyui.Components` also imports `ShadcnDaisyui.FormComponents`
   (field-aware form controls). The generator-compatible `button`, `input`,
-  `flash`, `table`, … live in `ShadcnDaisyui.CoreComponents` — apps normally get
+  `flash`, `table`, … live in `ShadcnDaisyui.CoreComponents` - apps normally get
   those through their own `CoreComponents` module.
   """
   use Phoenix.Component

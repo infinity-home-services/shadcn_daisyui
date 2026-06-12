@@ -5,23 +5,23 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
 
       mix shadcn_daisyui.gen.theme acme --primary "oklch(0.55 0.2 250)" --radius 0.5rem
 
-  Writes `assets/css/themes/acme.css` containing `[data-theme="acme"]` (sparse —
+  Writes `assets/css/themes/acme.css` containing `[data-theme="acme"]` (sparse -
   everything not overridden inherits the base light theme) and
-  `[data-theme="acme-dark"]` (complete — copied from the base dark theme with
+  `[data-theme="acme-dark"]` (complete - copied from the base dark theme with
   your overrides applied), then wires it into `assets/css/app.css` (import +
   dark variant) and switches the root layout to `data-theme="acme"`.
 
-  Tune the rest of the brand by editing the generated file — every token is
+  Tune the rest of the brand by editing the generated file - every token is
   listed. You can also build values visually in the docs site's theme creator
   and paste them in.
 
   ## Options
 
-    * `--primary` — brand color, e.g. `"oklch(0.55 0.2 250)"` (any CSS color works)
-    * `--primary-foreground` — text color on primary (default near-white)
-    * `--radius` — base radius, e.g. `0.5rem` (sm/md/lg/xl derive from it)
-    * `--dark-primary` — primary for the dark theme (defaults to `--primary`)
-    * `--dark-primary-foreground` — defaults to `--primary-foreground`
+    * `--primary` - brand color, e.g. `"oklch(0.55 0.2 250)"` (any CSS color works)
+    * `--primary-foreground` - text color on primary (default near-white)
+    * `--radius` - base radius, e.g. `0.5rem` (sm/md/lg/xl derive from it)
+    * `--dark-primary` - primary for the dark theme (defaults to `--primary`)
+    * `--dark-primary-foreground` - defaults to `--primary-foreground`
   """
   use Mix.Task
 
@@ -101,7 +101,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
       |> apply_overrides(dark_overrides)
 
     """
-    /* #{name} — brand theme for shadcn-daisyui.
+    /* #{name} - brand theme for shadcn-daisyui.
        Light: overrides only what differs from the base theme (the rest inherits).
        Dark: a complete token set (dark can't inherit across [data-theme] blocks),
        copied from the base dark theme with the brand overrides applied. */
@@ -128,7 +128,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
 
       _ ->
         Mix.raise(
-          "couldn't find the dark theme block in shadcn-daisyui.css — " <>
+          "couldn't find the dark theme block in shadcn-daisyui.css - " <>
             "the packaged CSS layout changed; please report this"
         )
     end
@@ -150,7 +150,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
     path = "assets/css/app.css"
 
     unless File.exists?(path) do
-      Mix.raise("#{path} not found — run this from your Phoenix project root.")
+      Mix.raise("#{path} not found - run this from your Phoenix project root.")
     end
 
     css =
@@ -181,7 +181,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
 
       [] ->
         Mix.shell().info("""
-        #{IO.ANSI.yellow()}Couldn't find root.html.heex — set:#{IO.ANSI.reset()}  <html data-theme="#{name}">
+        #{IO.ANSI.yellow()}Couldn't find root.html.heex - set:#{IO.ANSI.reset()}  <html data-theme="#{name}">
         """)
     end
   end

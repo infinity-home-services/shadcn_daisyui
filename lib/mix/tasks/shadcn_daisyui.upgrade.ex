@@ -7,9 +7,9 @@ defmodule Mix.Tasks.ShadcnDaisyui.Upgrade do
       mix shadcn_daisyui.upgrade
 
   Only needed for `--copy`-mode installs. If you installed in the default
-  import-from-deps mode there is nothing to do — `mix deps.update` is enough.
+  import-from-deps mode there is nothing to do - `mix deps.update` is enough.
 
-  Local edits to the copied files are overwritten — diff first if you changed
+  Local edits to the copied files are overwritten - diff first if you changed
   them (`git diff assets/css/shadcn-daisyui.css assets/js/shadcn-daisyui.js`).
   """
   use Mix.Task
@@ -28,7 +28,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Upgrade do
 
     if existing == [] do
       Mix.shell().info("""
-      No copied assets found — you're on the import-from-deps install, so
+      No copied assets found - you're on the import-from-deps install, so
       `mix deps.update shadcn_daisyui` already upgraded everything.
       """)
     else

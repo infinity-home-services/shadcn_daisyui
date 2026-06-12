@@ -78,7 +78,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   @doc """
-  A sheet — a panel that slides in from the right edge.
+  A sheet - a panel that slides in from the right edge.
 
       <.sheet id="edit-profile">
         <:trigger><.button variant="outline">Open sheet</.button></:trigger>
@@ -119,7 +119,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   @doc """
-  A drawer — a panel that slides up from the bottom (Vaul-style).
+  A drawer - a panel that slides up from the bottom (Vaul-style).
 
       <.drawer id="goal">
         <:trigger><.button variant="outline">Open drawer</.button></:trigger>
@@ -150,7 +150,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   @doc """
-  A popover — rich floating content on click (CSS-only, daisyUI dropdown).
+  A popover - rich floating content on click (CSS-only, daisyUI dropdown).
 
       <.popover>
         <:trigger>Open popover</:trigger>

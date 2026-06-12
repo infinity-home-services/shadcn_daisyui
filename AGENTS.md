@@ -8,19 +8,19 @@ its own `demo/AGENTS.md` with general Phoenix/Elixir guidelines.)
 
 A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
 
-- `priv/static/shadcn-daisyui.css` — the entire theme: OKLCH bridge tokens,
+- `priv/static/shadcn-daisyui.css` - the entire theme: OKLCH bridge tokens,
   daisyUI semantic mapping, `@theme inline` Tailwind utilities, and a
   `@layer utilities` override layer with shadcn metrics. Single self-contained file.
-- `priv/static/shadcn-daisyui.js` — vanilla-JS interactivity: `initShadcnDaisyui()`
+- `priv/static/shadcn-daisyui.js` - vanilla-JS interactivity: `initShadcnDaisyui()`
   for dead views and LiveView `Hooks` (one `Shadcn*` hook per interactive component).
-- `lib/shadcn_daisyui/` — Phoenix function components (`Components`,
+- `lib/shadcn_daisyui/` - Phoenix function components (`Components`,
   `FormComponents`, `CoreComponents`) and install/generator Mix tasks.
-- `demo/` — separate Phoenix app: the docs site (catalog of all components with
+- `demo/` - separate Phoenix app: the docs site (catalog of all components with
   preview + code tabs), statically exported to GitHub Pages via `mix site.export`.
 
 ## Invariants
 
-- **The package stays neutral.** No IHS or other brand tokens here — brands are
+- **The package stays neutral.** No IHS or other brand tokens here - brands are
   separate theme packages/files layered via `[data-theme]` overrides.
 - **CSS overrides live in `@layer utilities`** and must come after the daisyUI
   plugin in import order; daisyUI v5 emits there, same layer + later source wins.
@@ -29,7 +29,7 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
 - **Components are thin.** Styling belongs in the theme CSS, not in long class
   lists inside components. A component exists to encode structure/ARIA/hook markup.
 - **Theme toggle is INSTANT (pure CSS, no JS).** Fading between light and dark
-  inherently flickers — a fading background sweeps through the lightness of the
+  inherently flickers - a fading background sweeps through the lightness of the
   text/borders in front of it, so they cross at a gray midpoint and lose
   contrast. No fade survives that, so one `:not(...)` rule at the bottom of
   `shadcn-daisyui.css` forces `transition-duration: 0` on every non-excluded
@@ -38,9 +38,9 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   enter/exit animations. Don't reintroduce a color fade for theme changes (it
   brings the flicker back). Bringing back animated hover/focus while keeping the
   toggle instant would need a small JS "disable transitions during the swap"
-  guard — intentionally omitted.
+  guard - intentionally omitted.
 - **The demo never copies package assets.** `demo/assets` imports
-  `../../../priv/static/shadcn-daisyui.{css,js}` directly — copies drift.
+  `../../../priv/static/shadcn-daisyui.{css,js}` directly - copies drift.
 - **Every interactive component needs `id`** and renders the exact markup its JS
   hook expects (`data-*` attributes). Keep component HEEx and JS in sync.
 - **Public API**: `ShadcnDaisyui.Components`, `ShadcnDaisyui.FormComponents`,
@@ -52,7 +52,7 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
 - Variant/size maps as module attributes (`@variants`, `@sizes`); `attr :class, :any`
   merged last; `attr :rest, :global` passthrough; `@doc` with a copy-pasteable HEEx
   example on every public component.
-- Keep `usage-rules.md` in sync when adding/changing components — that file is what
+- Keep `usage-rules.md` in sync when adding/changing components - that file is what
   agents in consuming apps see.
 - Add a CHANGELOG entry (Keep a Changelog format) for every user-visible change.
 - `mix format` before committing; CI runs `mix format --check-formatted` and tests.

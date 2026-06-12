@@ -1,20 +1,20 @@
 defmodule ShadcnDaisyui do
   @moduledoc """
-  shadcn-daisyui — a daisyUI v5 theme + Phoenix components that make daisyUI
+  shadcn-daisyui - a daisyUI v5 theme + Phoenix components that make daisyUI
   look and behave like [shadcn/ui](https://ui.shadcn.com).
 
   This package ships three things:
 
-    * **Theme CSS** — `priv/static/shadcn-daisyui.css`. A self-contained Tailwind
+    * **Theme CSS** - `priv/static/shadcn-daisyui.css`. A self-contained Tailwind
       v4 / daisyUI v5 theme (neutral palette, light + dark) plus component
       overrides. Import it once and every daisyUI class looks like shadcn.
 
-    * **Interactive JS** — `priv/static/shadcn-daisyui.js`. Vanilla handlers for
+    * **Interactive JS** - `priv/static/shadcn-daisyui.js`. Vanilla handlers for
       the components that need state (command palette, combobox, calendar,
       date-picker, data-table, context-menu, OTP, carousel, resizable). Exposes
       `initShadcnDaisyui()` for dead views and `Hooks` for LiveView.
 
-    * **Function components** — `ShadcnDaisyui.Components`. `<.button>`,
+    * **Function components** - `ShadcnDaisyui.Components`. `<.button>`,
       `<.badge>`, `<.card>`, `<.date_picker>`, … so you write components instead
       of copied markup.
 

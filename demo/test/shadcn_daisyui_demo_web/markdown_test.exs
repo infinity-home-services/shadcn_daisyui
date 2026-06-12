@@ -73,8 +73,8 @@ defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
       assert full =~ "# #{title}"
     end
 
-    assert full =~ "# shadcn_daisyui — spacing"
-    assert full =~ "# shadcn_daisyui — motion"
+    assert full =~ "# shadcn_daisyui - spacing"
+    assert full =~ "# shadcn_daisyui - motion"
   end
 
   test "search_index lists guides then components with group and url" do
