@@ -1,0 +1,70 @@
+name: Sync design guidelines
+
+# The guideline markdown in usage-rules/ is the single source of truth. Two
+# consumers bundle a generated copy of it: the Claude plugin (shadcn_daisyui_design)
+# and the Swift package (shadcn_daisyui_swift). This workflow regenerates those
+# copies and pushes them whenever usage-rules/ changes, so the copies can never
+# drift from canonical. It is just an automated wrapper around
+# scripts/sync_design_consumers.sh (the same script you can run locally).
+#
+# Requires a repo secret SYNC_TOKEN: a fine-grained PAT with Contents: read/write
+# on N00nDay/shadcn_daisyui_design and N00nDay/shadcn_daisyui_swift. The built-in
+# GITHUB_TOKEN only has access to this repo, so cross-repo pushes need the PAT.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "usage-rules/**"
+      - "scripts/sync_design_consumers.sh"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-design-guidelines
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical (shadcn_daisyui)
+        uses: actions/checkout@v4
+        with:
+          path: canonical
+
+      - name: Check out plugin repo
+        uses: actions/checkout@v4
+        with:
+          repository: N00nDay/shadcn_daisyui_design
+          path: plugin
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Check out Swift repo
+        uses: actions/checkout@v4
+        with:
+          repository: N00nDay/shadcn_daisyui_swift
+          path: swift
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Regenerate bundles from canonical
+        run: |
+          export PLUGIN_REPO="$GITHUB_WORKSPACE/plugin"
+          export SWIFT_REPO="$GITHUB_WORKSPACE/swift"
+          bash "$GITHUB_WORKSPACE/canonical/scripts/sync_design_consumers.sh"
+
+      - name: Push regenerated copies to each consumer
+        run: |
+          short="${GITHUB_SHA:0:7}"
+          for repo in plugin swift; do
+            cd "$GITHUB_WORKSPACE/$repo"
+            if [ -n "$(git status --porcelain)" ]; then
+              git config user.name "design-sync[bot]"
+              git config user.email "design-sync[bot]@users.noreply.github.com"
+              git add -A
+              git commit -m "Sync design guidelines from shadcn_daisyui@${short}"
+              git push
+              echo "$repo: pushed"
+            else
+              echo "$repo: already in sync"
+            fi
+          done
