@@ -12,6 +12,7 @@ defmodule ShadcnDaisyuiDemoWeb.TokensTest do
   @package_root Path.expand("..", File.cwd!())
   @tokens_json Path.join(@package_root, "priv/tokens.json")
   @theme_css Path.join(@package_root, "priv/static/shadcn-daisyui.css")
+  @theme_creator Path.join(@package_root, "demo/assets/js/theme_creator.js")
 
   setup_all do
     tokens = @tokens_json |> File.read!() |> Jason.decode!() |> Map.fetch!("tokens")
@@ -54,6 +55,30 @@ defmodule ShadcnDaisyuiDemoWeb.TokensTest do
         token <- specs[:tokens] || [] do
       assert MapSet.member?(known, token),
              "#{slug} specs.tokens lists #{inspect(token)}, which is not a token in tokens.json"
+    end
+  end
+
+  test "every var the theme creator edits is a real token (no silent drift)", %{tokens: tokens} do
+    known = MapSet.new(tokens, & &1["name"])
+    js = File.read!(@theme_creator)
+
+    # Isolate the `const TOKENS = [ ... ]` array so we only inspect the vars the
+    # editor exposes, not the many other --vars this file reads/writes at runtime.
+    block =
+      case Regex.run(~r/const TOKENS = \[(.*?)\n\]/s, js) do
+        [_, body] -> body
+        _ -> flunk("could not locate the TOKENS array in theme_creator.js")
+      end
+
+    vars =
+      ~r/--([a-z0-9-]+)/ |> Regex.scan(block) |> Enum.map(fn [_, n] -> n end) |> Enum.uniq()
+
+    assert vars != [], "no --vars found in the theme creator TOKENS array"
+
+    for v <- vars do
+      assert MapSet.member?(known, v),
+             "theme_creator.js edits --#{v}, which is not a token in tokens.json " <>
+               "(rename or typo drift between the editor and the source of truth)"
     end
   end
 

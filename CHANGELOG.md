@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Docs-site navigation & component pages.** The catalog sidebar now groups
+  components by function (Forms & inputs, Actions, Navigation, Overlays, Feedback
+  & status, Data display, Layout), alphabetized within each group, and every
+  component page splits its content into Usage and Design & specs tabs.
+- **`usage-rules.md`: documented the `context-menu` and bottom-`dock` recipes**
+  (previously shipped in the JS/demo but absent from the consuming-app rules), and
+  clarified that the `ShadcnDataTable` JS hook is docs-demo only - apps build data
+  tables with `<.table>` + LiveView events.
 - **Layout guidelines: content-width rationale + a dense/data-entry-form
   exception.** `usage-rules/foundations-layout.md` now explains *why* prose and
   forms are width-capped (the readable measure, not the container) and sanctions a
