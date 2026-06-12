@@ -129,7 +129,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                 </p>
                 <a
                   :for={g <- guides()}
-                  href={"/docs/#{g.slug}"}
+                  href={ShadcnDaisyuiDemoWeb.Endpoint.path("/docs/#{g.slug}")}
                   class={[
                     "block rounded-md px-2 py-1.5 text-sm transition-colors",
                     sidebar_link_class(@active_guide == g.slug)
@@ -145,7 +145,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                 </p>
                 <a
                   :for={g <- group.guides}
-                  href={g.path}
+                  href={ShadcnDaisyuiDemoWeb.Endpoint.path(g.path)}
                   class={[
                     "block rounded-md px-2 py-1.5 text-sm transition-colors",
                     sidebar_link_class(@active_guide == g.slug)
@@ -194,7 +194,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                     </p>
                     <a
                       :for={g <- guides()}
-                      href={"/docs/#{g.slug}"}
+                      href={ShadcnDaisyuiDemoWeb.Endpoint.path("/docs/#{g.slug}")}
                       class={[
                         "block rounded-md px-2 py-1.5 text-sm",
                         sidebar_link_class(@active_guide == g.slug)
@@ -209,7 +209,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                     </p>
                     <a
                       :for={g <- group.guides}
-                      href={g.path}
+                      href={ShadcnDaisyuiDemoWeb.Endpoint.path(g.path)}
                       class={[
                         "block rounded-md px-2 py-1.5 text-sm",
                         sidebar_link_class(@active_guide == g.slug)
@@ -339,10 +339,13 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       <.platform_toggle />
       <p class="text-sm text-muted-foreground">
         Portable source:
-        <a href={"#{@guide.path}.md"} class="link link-primary font-medium">
+        <a
+          href={ShadcnDaisyuiDemoWeb.Endpoint.path("#{@guide.path}.md")}
+          class="link link-primary font-medium"
+        >
           usage-rules/{@guide.source}
         </a>
-        · <a href="/design-guidelines.md" class="link link-hover">all-in-one bundle</a>
+        · <a href={~p"/design-guidelines.md"} class="link link-hover">all-in-one bundle</a>
       </p>
     </div>
     """
