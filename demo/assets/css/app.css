@@ -41,3 +41,10 @@
    data-platform="web"/"ios" hide when the other platform is selected. */
 [data-platform-view="web"] [data-platform="ios"] { display: none; }
 [data-platform-view="ios"] [data-platform="web"] { display: none; }
+
+/* Theme creator color chips: let the native <input type="color"> swatch fill its
+   rounded container instead of sitting as an inset square. The browser's internal
+   swatch wrapper/border can only be reached via these pseudo-elements. */
+[data-token-grid] input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+[data-token-grid] input[type="color"]::-webkit-color-swatch { border: none; border-radius: inherit; }
+[data-token-grid] input[type="color"]::-moz-color-swatch { border: none; border-radius: inherit; }
