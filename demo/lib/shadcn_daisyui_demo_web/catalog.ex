@@ -1990,7 +1990,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             code: ~S"""
-            <div data-context-menu-trigger class="flex h-32 w-full max-w-sm items-center justify-center rounded-lg border border-dashed border-base-300 text-sm text-muted-foreground">
+            <div id="demo-context-menu" phx-hook="ShadcnContextMenu" data-context-menu-trigger class="flex h-32 w-full max-w-sm items-center justify-center rounded-lg border border-dashed border-base-300 text-sm text-muted-foreground">
               Right-click here
             </div>
             <ul data-context-menu class="context-menu hidden">

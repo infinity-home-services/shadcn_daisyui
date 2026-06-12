@@ -22,8 +22,9 @@ like shadcn/ui. **Every UI decision goes through this package.**
   `border-neutral-200`, hex/oklch literals) in templates. Use semantic tokens only
   (see Theme tokens).
 - Interactive components (combobox, select, date picker, calendar, OTP, carousel,
-  resizable, command) REQUIRE a unique `id` attribute and the JS hooks registered
-  on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` … `hooks: { ...Hooks }`).
+  resizable, command, context-menu) REQUIRE a unique `id` attribute and the JS hooks
+  registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
+  `hooks: { ...Hooks }`).
 
 ## Picking a component
 
@@ -98,9 +99,11 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 |---|---|
 | Tabs | `<div role="tablist" class="tabs tabs-box w-fit">` + `<input type="radio" name="…" class="tab" aria-label="…">` |
 | Static table | `<div class="card w-full overflow-hidden"><table class="table">…` |
+| Data table (sortable/faceted/paged) | Build with `<.table>` + LiveView `phx-click` sort/filter/page events. The `ShadcnDataTable` JS hook is docs-demo only (fixed dataset) - do not wire it in apps. |
 | Modal/dialog | native `<dialog class="modal"><div class="modal-box">…` + `id.showModal()`; backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
 | Tooltip | `<div class="tooltip" data-tip="…">` wrapping the trigger |
 | Dropdown | `<div class="dropdown">` + `tabindex="0"` trigger + `<ul class="dropdown-content menu …">` |
+| Context menu | trigger `<div data-context-menu-trigger>` + `<ul data-context-menu class="context-menu hidden">`; needs `id` + `phx-hook="ShadcnContextMenu"` (one per page) |
 | Progress | `<progress class="progress w-full" value="60" max="100">` |
 | Skeleton | `<div class="skeleton h-4 w-48">` |
 | Spinner | `<span class="loading loading-spinner">` |
@@ -117,6 +120,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Headings | `text-3xl font-bold tracking-tight` (h1), `text-xl font-semibold tracking-tight` (h2, often with `border-b border-base-300 pb-2`) |
 | Secondary text | `text-sm text-muted-foreground` |
 | Page hero | `<div class="hero">`, navbar `<div class="navbar">`, footer `<footer class="footer">` |
+| Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
 Browse the full gallery (77 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
