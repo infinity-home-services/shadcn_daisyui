@@ -1,0 +1,47 @@
+<.docs_layout active_guide="tokens">
+  <.doc_heading
+    title="Tokens"
+    description="The semantic color tokens every component and theme is built from, in light and dark. The same names resolve to different values per theme - never use raw color utilities."
+  />
+
+  <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+    <p>
+      Source of truth:
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+        priv/tokens.json
+      </code>
+    </p>
+    <span aria-hidden="true">·</span>
+    <p>
+      Each swatch shows <span class="font-medium text-foreground">light</span>
+      then <span class="font-medium text-foreground">dark</span>.
+    </p>
+  </div>
+
+  <div class="mt-10 space-y-12">
+    <section :for={group <- @token_groups} class="space-y-4">
+      <h2 class="text-lg font-medium tracking-tight">{group.label}</h2>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          :for={token <- group.tokens}
+          class="overflow-hidden rounded-lg border border-base-300"
+        >
+          <div class="flex h-16">
+            <div class="flex-1" style={"background: #{token["light"]}"} aria-hidden="true"></div>
+            <div class="flex-1" style={"background: #{token["dark"]}"} aria-hidden="true"></div>
+          </div>
+          <div class="space-y-1.5 p-3">
+            <p class="text-sm font-medium">{token["label"]}</p>
+            <code class="block font-mono text-xs text-muted-foreground">--{token["name"]}</code>
+            <dl class="grid grid-cols-[1.25rem_1fr] gap-x-2 gap-y-0.5 pt-1 font-mono text-[11px] text-muted-foreground">
+              <dt>L</dt>
+              <dd>{token["light"]}</dd>
+              <dt>D</dt>
+              <dd>{token["dark"]}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</.docs_layout>

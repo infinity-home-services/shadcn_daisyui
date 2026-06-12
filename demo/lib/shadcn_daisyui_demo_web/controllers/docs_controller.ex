@@ -104,6 +104,13 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
     |> render(:adopt)
   end
 
+  def tokens(conn, _params) do
+    conn
+    |> assign(:page_title, "Tokens")
+    |> assign(:token_groups, ShadcnDaisyuiDemoWeb.Catalog.Tokens.grouped())
+    |> render(:tokens)
+  end
+
   defp not_found(conn) do
     conn
     |> put_status(:not_found)

@@ -30,6 +30,10 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
       hook_note(spec),
       notes(spec),
       guidance(spec),
+      do_dont_md(spec),
+      specs_md(spec),
+      accessibility_md(spec),
+      swiftui_md(spec),
       props_table(spec),
       examples(spec)
     ]
@@ -166,6 +170,96 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
         |> Enum.reject(&(&1 in [nil, false]))
         |> Enum.join("\n\n")
     end
+  end
+
+  defp do_dont_md(spec) do
+    case Map.get(spec, :do_dont) do
+      nil ->
+        nil
+
+      dd ->
+        [
+          "## Do / Don't",
+          "Do - #{dd.do.label}:\n\n" <> code_block("html", dd.do.code),
+          "Don't - #{dd.dont.label}:\n\n" <> code_block("html", dd.dont.code)
+        ]
+        |> compact_join()
+    end
+  end
+
+  defp specs_md(spec) do
+    case Map.get(spec, :specs) do
+      nil ->
+        nil
+
+      s ->
+        [
+          "## Specs",
+          s[:anatomy] &&
+            table(["Part", "Description"], Enum.map(s.anatomy, &[&1.part, &1.description])),
+          s[:measurements] &&
+            table(["Property", "Value"], Enum.map(s.measurements, &[&1.property, &1.value])),
+          s[:tokens] && "Tokens used: #{Enum.map_join(s.tokens, ", ", &"`#{&1}`")}"
+        ]
+        |> compact_join()
+    end
+  end
+
+  defp accessibility_md(spec) do
+    case Map.get(spec, :accessibility) do
+      nil ->
+        nil
+
+      a ->
+        [
+          "## Accessibility",
+          a[:keyboard] && table(["Keys", "Action"], Enum.map(a.keyboard, &[&1.keys, &1.action])),
+          a[:roles] && "Role / ARIA: #{a.roles}",
+          a[:focus] && "Focus: #{a.focus}",
+          a[:screen_reader] && "Screen reader: #{a.screen_reader}",
+          a[:touch_target] && "Touch target: #{a.touch_target}",
+          a[:reduced_motion] && "Reduced motion: #{a.reduced_motion}"
+        ]
+        |> compact_join()
+    end
+  end
+
+  defp swiftui_md(spec) do
+    case Map.get(spec, :swiftui) do
+      nil ->
+        nil
+
+      sw ->
+        [
+          "## Native (SwiftUI)",
+          ios_status_line(Map.get(spec, :ios_status)),
+          code_block("swift", sw.code),
+          sw[:notes]
+        ]
+        |> compact_join()
+    end
+  end
+
+  defp ios_status_line(:parity), do: "Parity: native parity with the web component."
+  defp ios_status_line(:partial), do: "Parity: partial - some web features are not yet native."
+  defp ios_status_line(:guidance_only), do: "Parity: guidance only - no native component yet."
+  defp ios_status_line(nil), do: nil
+
+  defp compact_join(parts) do
+    parts
+    |> Enum.reject(&(&1 in [nil, false]))
+    |> Enum.join("\n\n")
+  end
+
+  # A GitHub-flavored markdown table from a header row and a list of cell rows.
+  defp table(headers, rows) do
+    header = "| #{Enum.join(headers, " | ")} |"
+    divider = "| #{Enum.map_join(headers, " | ", fn _ -> "---" end)} |"
+
+    body =
+      Enum.map_join(rows, "\n", fn cells -> "| #{Enum.map_join(cells, " | ", &cell/1)} |" end)
+
+    Enum.join([header, divider, body], "\n")
   end
 
   defp props_table(spec) do
