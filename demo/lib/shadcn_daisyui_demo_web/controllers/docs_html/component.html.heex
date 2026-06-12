@@ -4,48 +4,27 @@
   <.js_hook_callout :if={Map.get(@spec, :hook, false)} />
 
   <%!--
-    Two-view split so "I want to use this" and "I want the spec" don't fight over
-    one scroll. Pure-CSS radio tabs (no JS) so it works in the static export; the
-    AI markdown export stays linear and is unaffected.
+    Usage / Design split. The toggle is our built-in tab styling (daisyUI
+    `tabs tabs-box` + radio `tab` inputs) - bar only, no content panels. The
+    content lives in the page's own sections below and is shown/hidden off the
+    selected tab via :has() (targeting the Design radio specifically by
+    data-view, so the example previews' own radio tabs can't trigger it). Pure
+    CSS - works in the static export; the AI markdown export is unaffected.
   --%>
-  <div class="mt-8">
-    <input
-      type="radio"
-      name={"view-#{@spec.slug}"}
-      id={"view-#{@spec.slug}-usage"}
-      class="peer/usage sr-only"
-      checked
-    />
-    <input
-      type="radio"
-      name={"view-#{@spec.slug}"}
-      id={"view-#{@spec.slug}-design"}
-      class="peer/design sr-only"
-    />
-
-    <div
-      role="tablist"
-      aria-label="Documentation view"
-      class="inline-flex items-center gap-1 rounded-lg border border-base-300 bg-muted/60 p-1 text-sm"
-    >
-      <label
-        for={"view-#{@spec.slug}-usage"}
-        role="tab"
-        class="cursor-pointer rounded-md px-3 py-1.5 font-medium text-muted-foreground peer-checked/usage:bg-base-100 peer-checked/usage:text-foreground peer-checked/usage:shadow-sm"
-      >
-        Usage
-      </label>
-      <label
-        for={"view-#{@spec.slug}-design"}
-        role="tab"
-        class="cursor-pointer rounded-md px-3 py-1.5 font-medium text-muted-foreground peer-checked/design:bg-base-100 peer-checked/design:text-foreground peer-checked/design:shadow-sm"
-      >
-        Design &amp; specs
-      </label>
+  <div class="group/view mt-8">
+    <div role="tablist" class="tabs tabs-box w-fit">
+      <input type="radio" name={"view-#{@spec.slug}"} class="tab" aria-label="Usage" checked />
+      <input
+        type="radio"
+        name={"view-#{@spec.slug}"}
+        class="tab"
+        aria-label="Design & specs"
+        data-view="design"
+      />
     </div>
 
     <%!-- ============================ USAGE ============================ --%>
-    <div class="hidden pt-8 peer-checked/usage:block">
+    <div class="pt-8 group-has-[[data-view=design]:checked]/view:hidden">
       <div class="space-y-10">
         <section :for={{ex, i} <- Enum.with_index(@spec.examples)} class="space-y-3">
           <h2 :if={length(@spec.examples) > 1} class="text-lg font-medium tracking-tight">
@@ -88,7 +67,7 @@
     </div>
 
     <%!-- ======================== DESIGN & SPECS ======================== --%>
-    <div class="hidden space-y-12 pt-8 peer-checked/design:block">
+    <div class="hidden space-y-12 pt-8 group-has-[[data-view=design]:checked]/view:block">
       <section :if={Map.get(@spec, :specs)} class="space-y-4">
         <h2 class="text-lg font-medium tracking-tight">Specs</h2>
         <.specs_panel specs={@spec.specs} />
