@@ -115,13 +115,16 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     assigns = assign(assigns, :groups, Catalog.groups())
 
     ~H"""
-    <div class="flex min-h-screen flex-col bg-base-100 text-base-content lg:h-screen lg:min-h-0 lg:overflow-hidden">
+    <div class="flex min-h-screen flex-col bg-base-100 text-base-content">
       <.site_header active={@active_nav} />
 
-      <div class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:grid lg:min-h-0 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10 lg:px-8">
-        <%!-- Sidebar — its own scroll pane on desktop --%>
-        <aside class="hidden lg:block lg:min-h-0">
-          <div data-docs-sidebar class="h-full overflow-y-auto overscroll-contain">
+      <div class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10 lg:px-8">
+        <%!-- Sidebar — sticks under the header while the window scrolls --%>
+        <aside class="hidden lg:block">
+          <div
+            data-docs-sidebar
+            class="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain"
+          >
             <nav class="space-y-6 py-8 pr-2">
               <div class="space-y-1">
                 <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
@@ -174,11 +177,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           </div>
         </aside>
 
-        <%!-- Content — its own scroll pane on desktop --%>
-        <main
-          data-docs-main
-          class="flex min-w-0 flex-col lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain"
-        >
+        <%!-- Content — scrolls with the window (scrollbar at the viewport edge) --%>
+        <main data-docs-main class="flex min-w-0 flex-col">
           <div class="flex-1 py-8 lg:py-10">
             <%!-- Mobile component picker (sidebar is hidden below lg) --%>
             <details class="dropdown mb-6 w-full lg:hidden">
