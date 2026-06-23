@@ -153,7 +153,8 @@ function initDock(scope) {
       setActive(0)
     }
     const choose = (it) => {
-      label.textContent = it.dataset.value
+      const value = it.dataset.value
+      label.textContent = value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
         x.setAttribute("aria-selected", "false")
@@ -161,6 +162,9 @@ function initDock(scope) {
       })
       it.setAttribute("aria-selected", "true")
       const chk = it.querySelector("svg"); if (chk) chk.classList.remove("opacity-0")
+      // Sync hidden input if present (for form binding)
+      const hidden = root.querySelector("input[type=\"hidden\"]")
+      if (hidden) { hidden.value = value; hidden.dispatchEvent(new Event("input", { bubbles: true })) }
       open(false)
       trigger.focus()
     }
@@ -218,7 +222,8 @@ function initDock(scope) {
       }
     }
     const choose = (it) => {
-      label.textContent = it.dataset.value
+      const value = it.dataset.value
+      label.textContent = value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
         x.setAttribute("aria-selected", "false")
@@ -226,6 +231,9 @@ function initDock(scope) {
       })
       it.setAttribute("aria-selected", "true")
       const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
+      // Sync hidden input if present (for form binding)
+      const hidden = root.querySelector("input[type=\"hidden\"]")
+      if (hidden) { hidden.value = value; hidden.dispatchEvent(new Event("input", { bubbles: true })) }
       open(false)
       trigger.focus()
     }

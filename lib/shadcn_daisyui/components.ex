@@ -188,8 +188,15 @@ defmodule ShadcnDaisyui.Components do
 
   @doc """
   A combobox (searchable select). Provide options as `:option` slots.
+  For form binding, provide `name` and `value` attributes to emit a hidden input.
 
       <.combobox id="fw" placeholder="Select framework…">
+        <:option value="Next.js">Next.js</:option>
+        <:option value="Phoenix">Phoenix</:option>
+      </.combobox>
+
+      <!-- With form binding: -->
+      <.combobox id="fw" name="framework" value={@selected_framework}>
         <:option value="Next.js">Next.js</:option>
         <:option value="Phoenix">Phoenix</:option>
       </.combobox>
@@ -197,6 +204,8 @@ defmodule ShadcnDaisyui.Components do
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
   attr(:class, :any, default: "w-60")
+  attr(:name, :string, default: nil, doc: "form field name; if set, emits a hidden input")
+  attr(:value, :string, default: nil, doc: "current selected value")
 
   slot :option, doc: "each option; set `value`" do
     attr(:value, :string, required: true)
@@ -205,6 +214,7 @@ defmodule ShadcnDaisyui.Components do
   def combobox(assigns) do
     ~H"""
     <div id={@id} phx-hook="ShadcnCombobox" data-combobox class={["relative", @class]}>
+      <input :if={@name} type="hidden" name={@name} value={@value} />
       <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
         <span data-combobox-label class="text-muted-foreground">{@placeholder}</span>
         <span class="size-4 opacity-50 hero-chevron-up-down" aria-hidden="true"></span>
@@ -227,16 +237,27 @@ defmodule ShadcnDaisyui.Components do
 
   @doc """
   A custom select (shadcn-style trigger + listbox popover). Provide options as
-  `:option` slots. For the plain HTML control use a `<select class="select">`.
+  `:option` slots. For form binding, provide `name` and `value` attributes to emit
+  a hidden input.
 
       <.select id="fruit" placeholder="Select a fruit">
         <:option value="Apple">Apple</:option>
         <:option value="Banana">Banana</:option>
       </.select>
+
+      <!-- With form binding: -->
+      <.select id="fruit" name="fruit" value={@selected_fruit}>
+        <:option value="Apple">Apple</:option>
+        <:option value="Banana">Banana</:option>
+      </.select>
+
+  For the plain HTML control use `<select class="select">`.
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
   attr(:class, :any, default: "w-60")
+  attr(:name, :string, default: nil, doc: "form field name; if set, emits a hidden input")
+  attr(:value, :string, default: nil, doc: "current selected value")
 
   slot :option, doc: "each option; set `value`" do
     attr(:value, :string, required: true)
@@ -245,6 +266,7 @@ defmodule ShadcnDaisyui.Components do
   def select(assigns) do
     ~H"""
     <div id={@id} phx-hook="ShadcnSelect" data-select class={["relative", @class]}>
+      <input :if={@name} type="hidden" name={@name} value={@value} />
       <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
         <span data-select-label class="text-muted-foreground">{@placeholder}</span>
         <span class="size-4 opacity-50 hero-chevron-down" aria-hidden="true"></span>

@@ -73,6 +73,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(0.922 0 0);   /* shadcn `--border` colour (daisyUI reserves --border for width) */
   --input: oklch(0.922 0 0);
+  --input-background: var(--background);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -155,6 +156,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(1 0 0 / 10%);   /* shadcn `--border` colour; --border (width) inherits 1px from :root */
   --input: oklch(1 0 0 / 15%);
+  --input-background: var(--background);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -292,7 +294,7 @@
   .file-input {
     border-radius: var(--radius-md);
     border: 1px solid var(--input);
-    background-color: transparent;
+    background-color: var(--input-background);
     color: var(--foreground);
     font-size: 0.875rem;
     box-shadow: var(--shadow-xs);
@@ -895,11 +897,11 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
 
    This forces `transition-duration: 0` on everything EXCEPT the components whose
    own enter/exit animations must stay (dialog, drawer, tooltip, carousel,
-   skeleton, countdown, …). Doing it in pure CSS (no JS) means hover/focus colour
-   changes are instant too — which suits the crisp, no-animation feel. To bring
-   back animated interactions while keeping the toggle instant you'd need a tiny
-   JS "disable transitions during the swap" guard; intentionally omitted. */
-:not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
+   skeleton, countdown, …). When a theme swap is in flight, the consuming app
+   should add `theme-transition` to <html>, flip the theme, then remove it on the
+   next frame. This keeps animations on everything else intact while the toggle is
+   flicker-free. A helper hook is provided in the docs. */
+html.theme-transition :not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
     [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
   transition-duration: 0s !important;
 }
