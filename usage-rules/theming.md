@@ -31,6 +31,10 @@ Rules:
 
 - Override only bridge vars (`--primary`, `--radius`, fonts, chart colors…). Never
   fork or edit the base CSS file.
+- To tint form fields, override `--input-background` (defaults to `--background`);
+  it drives `.input`/`.select`/`.textarea`/`.file-input` and the custom
+  `<.select>`/`<.combobox>` triggers together. A one-off `bg-*` utility on a single
+  control still needs the `!` modifier (the base rule lives in `@layer utilities`).
 - Always provide BOTH light and dark blocks; unset vars inherit from the base theme.
 - The dark `@custom-variant` in `app.css` must list every `*-dark` theme name.
 - IHS apps: use the `ihs_theme` package (`data-theme="ihs"`) - do not re-derive IHS
@@ -38,9 +42,15 @@ Rules:
 
 ## Theme switching
 
-- Set `data-theme` on `<html>`. Toggle buttons: `data-phx-theme="shadcn"` /
-  `"shadcn-dark"` (or brand equivalents) with the standard Phoenix theme JS.
-  Phoenix 1.8's stock `light`/`dark` values are aliased and work too.
+- Switch themes with the package's `setTheme(theme)` helper
+  (`import { setTheme } from "shadcn_daisyui"`), or wire it to the standard
+  Phoenix theme event:
+  `window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme))`.
+  Toggle buttons carry `data-phx-theme="shadcn"` / `"shadcn-dark"` (or brand
+  equivalents); Phoenix 1.8's stock `light`/`dark` values are aliased and work too.
+- `setTheme` flips `data-theme` on `<html>` inside the `theme-transition` guard
+  (see below) so the swap is flicker-free. Setting `data-theme` directly skips the
+  guard and the swap will fade-flicker.
 - `color-scheme` is set by the theme blocks - don't set it separately.
 - Never use `.dark` class toggling as the primary mechanism; it exists only so raw
   shadcn `dark:` utilities work.
@@ -54,14 +64,15 @@ midpoint and briefly lose contrast (text vanishes, borders trail). There's no
 way to *fade* colors between inverted themes without that muddy middle, so the
 theme switches instantly (flicker-free, like Tailwind's and GitHub's sites).
 
-A single CSS rule forces `transition-duration: 0` on everything except the
-components whose own enter/exit animations must stay (dialog, drawer, tooltip,
-carousel, skeleton, countdown).
+The mechanism: while `<html>` carries the `theme-transition` class, one CSS rule
+forces `transition-duration: 0` on everything except the components whose own
+enter/exit animations must stay (dialog, drawer, tooltip, carousel, skeleton,
+countdown). `setTheme` adds that class only for the duration of the swap, so
+hover/focus/micro transitions stay live the rest of the time.
 
 - NEVER add `transition-*`/`duration-*` to color the theme change "smoothly" - a
   partial fade reintroduces the flicker. Color transitions on theme toggle are
   intentionally off.
-- Interaction color transitions (hover/focus) are instant too, as a consequence
-  of doing this in pure CSS - it suits the crisp, no-animation feel.
-- Toggle themes only by changing `data-theme` on `<html>` (Phoenix's
-  `phx:set-theme` does this) - not by swapping stylesheets or other classes.
+- Always switch themes through `setTheme` (directly or via `phx:set-theme`), never
+  by setting `data-theme` / swapping stylesheets yourself - that bypasses the
+  guard and the swap flickers.

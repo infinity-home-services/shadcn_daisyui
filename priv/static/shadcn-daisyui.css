@@ -73,6 +73,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(0.922 0 0);   /* shadcn `--border` colour (daisyUI reserves --border for width) */
   --input: oklch(0.922 0 0);
+  --input-background: var(--background);   /* form-control fill; override to tint fields */
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -155,6 +156,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(1 0 0 / 10%);   /* shadcn `--border` colour; --border (width) inherits 1px from :root */
   --input: oklch(1 0 0 / 15%);
+  --input-background: var(--background);   /* form-control fill; override to tint fields */
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -292,7 +294,7 @@
   .file-input {
     border-radius: var(--radius-md);
     border: 1px solid var(--input);
-    background-color: transparent;
+    background-color: var(--input-background);
     color: var(--foreground);
     font-size: 0.875rem;
     box-shadow: var(--shadow-xs);
@@ -664,6 +666,16 @@
     box-shadow: var(--ring-shadow);
     z-index: 1;
   }
+
+  /* The custom select/combobox triggers are btn-outline (already
+     --background); pin them to --input-background so they track the form-field
+     fill when a consumer overrides it, matching .input/.select/.textarea. The
+     `.btn[...]` specificity (0,2,0) matches `.btn.btn-outline` and wins on source
+     order; re-assert the outline hover so it isn't flattened by the same. */
+  .btn[data-select-trigger],
+  .btn[data-combobox-trigger] { background-color: var(--input-background); }
+  .btn[data-select-trigger]:hover,
+  .btn[data-combobox-trigger]:hover { background-color: var(--accent); }
 
   /* ---- Command list / Combobox / Date-picker panels ---------------------- */
   .command-item,
