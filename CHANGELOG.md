@@ -65,6 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of a swap by `setTheme`), so the toggle stays flicker-free while ordinary
   transitions work again. Apps that switch the theme by setting `data-theme`
   directly should move to `setTheme` to keep the swap from fading.
+- **Form controls no longer hard-set `background-color: transparent`.** `.input`,
+  `.textarea`, `.select`, and `.file-input` (plus the custom `<.select>` /
+  `<.combobox>` triggers) now use `var(--input-background)`, which defaults to
+  `var(--background)`, so fields stay legible on tinted surfaces (e.g. inside a
+  `.modal-box`). Retint all fields by overriding `--input-background` (per app or
+  per `[data-theme]`); a one-off `bg-*` utility still needs `!` since the base
+  rule lives in `@layer utilities`.
 
 ## [0.3.0] - 2026-06-11
 
