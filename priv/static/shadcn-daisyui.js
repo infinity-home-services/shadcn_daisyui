@@ -152,17 +152,26 @@ function initDock(scope) {
       empty.classList.toggle("hidden", n > 0)
       setActive(0)
     }
-    const choose = (it) => {
+    const hidden = root.querySelector("[data-combobox-input]")
+    const apply = (it, emit) => {
       label.textContent = it.dataset.value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
         x.setAttribute("aria-selected", "false")
-        const c = x.querySelector("svg"); if (c) c.classList.add("opacity-0")
+        const c = x.querySelector("span"); if (c) c.classList.add("opacity-0")
       })
       it.setAttribute("aria-selected", "true")
-      const chk = it.querySelector("svg"); if (chk) chk.classList.remove("opacity-0")
-      open(false)
-      trigger.focus()
+      const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
+      if (hidden) {
+        hidden.value = it.dataset.value
+        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
+      }
+    }
+    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
+    // Reflect a preselected value (e.g. an edit form) on mount — no event.
+    if (hidden && hidden.value) {
+      const match = items.find((it) => it.dataset.value === hidden.value)
+      if (match) apply(match, false)
     }
     trigger.addEventListener("click", () => open(panel.classList.contains("hidden")))
     search.addEventListener("input", () => filter(search.value))
@@ -217,7 +226,8 @@ function initDock(scope) {
         trigger.removeAttribute("aria-activedescendant")
       }
     }
-    const choose = (it) => {
+    const hidden = root.querySelector("[data-select-input]")
+    const apply = (it, emit) => {
       label.textContent = it.dataset.value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
@@ -226,8 +236,16 @@ function initDock(scope) {
       })
       it.setAttribute("aria-selected", "true")
       const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
-      open(false)
-      trigger.focus()
+      if (hidden) {
+        hidden.value = it.dataset.value
+        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
+      }
+    }
+    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
+    // Reflect a preselected value (e.g. an edit form) on mount — no event.
+    if (hidden && hidden.value) {
+      const match = items.find((it) => it.dataset.value === hidden.value)
+      if (match) apply(match, false)
     }
     trigger.addEventListener("click", () => open(!isOpen()))
     trigger.addEventListener("keydown", (e) => {

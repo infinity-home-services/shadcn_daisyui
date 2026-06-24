@@ -178,6 +178,34 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assert html =~ "data-combobox-empty"
       assert count(html, "combo-item") == 2
     end
+
+    test "emits no hidden input without a name" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.combobox id="fw"><:option value="Next.js">Next.js</:option></.combobox>
+        """)
+
+      refute html =~ "data-combobox-input"
+    end
+
+    test "form binding emits a hidden input carrying name and value" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.combobox id="fw" name="user[framework]" value="Phoenix">
+          <:option value="Next.js">Next.js</:option>
+          <:option value="Phoenix">Phoenix</:option>
+        </.combobox>
+        """)
+
+      assert html =~ ~s(type="hidden")
+      assert html =~ "data-combobox-input"
+      assert html =~ ~s(name="user[framework]")
+      assert html =~ ~s(value="Phoenix")
+    end
   end
 
   describe "select/1" do
@@ -199,6 +227,34 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assert count(html, "data-select-item") == 2
       assert html =~ ~s(data-value="Apple")
       assert html =~ ~s(data-value="Banana")
+    end
+
+    test "emits no hidden input without a name" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="fruit"><:option value="Apple">Apple</:option></.select>
+        """)
+
+      refute html =~ "data-select-input"
+    end
+
+    test "form binding emits a hidden input carrying name and value" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="fruit" name="order[fruit]" value="Banana">
+          <:option value="Apple">Apple</:option>
+          <:option value="Banana">Banana</:option>
+        </.select>
+        """)
+
+      assert html =~ ~s(type="hidden")
+      assert html =~ "data-select-input"
+      assert html =~ ~s(name="order[fruit]")
+      assert html =~ ~s(value="Banana")
     end
   end
 

@@ -66,7 +66,7 @@ Decision order:
 | `<.toast_host>` | once in root layout; pairs with JS `showToast()` |
 | `<.calendar>` | `id` required (hook) |
 | `<.date_picker>` / `<.date_range>` | `id` required (hook), `placeholder` |
-| `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="...">` slots |
+| `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="...">` slots; optional `name`/`value` to form-bind (emits a synced hidden input) |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
 | `<.resizable>` | `id` (hook), `<:start>` / `<:end_pane>` slots |
