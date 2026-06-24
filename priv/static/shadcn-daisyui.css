@@ -893,13 +893,16 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
    cleaner. So the theme switches instantly instead, which is flicker-free and
    what most production sites do (Tailwind, GitHub, …).
 
-   This forces `transition-duration: 0` on everything EXCEPT the components whose
-   own enter/exit animations must stay (dialog, drawer, tooltip, carousel,
-   skeleton, countdown, …). Doing it in pure CSS (no JS) means hover/focus colour
-   changes are instant too — which suits the crisp, no-animation feel. To bring
-   back animated interactions while keeping the toggle instant you'd need a tiny
-   JS "disable transitions during the swap" guard; intentionally omitted. */
-:not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
+   While <html> carries the `theme-transition` class this forces
+   `transition-duration: 0` on everything EXCEPT the components whose own
+   enter/exit animations must stay (dialog, drawer, tooltip, carousel, skeleton,
+   countdown, …). The class is meant to be on ONLY during the swap: add it, flip
+   `data-theme` in the same tick, then drop it on the next frame. That keeps the
+   toggle flicker-free while leaving hover/focus/micro transitions live the rest
+   of the time. The package ships `setTheme(theme)` (shadcn-daisyui.js) which does
+   exactly this — wire it to your theme control instead of setting `data-theme`
+   directly, or the swap will fade-flicker. */
+html.theme-transition :not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
     [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
   transition-duration: 0s !important;
 }

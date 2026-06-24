@@ -696,6 +696,30 @@ function initDock(scope) {
 
 // ---- Public API -----------------------------------------------------------
 
+// Switch the active theme without the light↔dark colour fade flickering.
+//
+// The CSS only zeroes out transition-duration while <html> carries the
+// `theme-transition` class. This helper adds that class, swaps `data-theme` in
+// the same tick (so the new theme paints with transitions disabled — no
+// flicker), then drops the class on the next frame so hover/focus transitions
+// resume. Pass null / "system" to clear the attribute (follow the OS).
+//
+//   import { setTheme } from "shadcn-daisyui"
+//   setTheme("shadcn-dark")
+//
+// In LiveView, wire it to the standard phx:set-theme event:
+//   window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme))
+export function setTheme(theme) {
+  const el = document.documentElement
+  el.classList.add("theme-transition")
+  if (!theme || theme === "system") el.removeAttribute("data-theme")
+  else el.setAttribute("data-theme", theme)
+  // Re-enable transitions only after the swapped theme has painted.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => el.classList.remove("theme-transition"))
+  )
+}
+
 // Wire every component found under `root` (default: whole document). For dead
 // views / plain HTML. Safe to call once on page load.
 export function initShadcnDaisyui(root) {
