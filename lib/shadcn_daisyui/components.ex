@@ -193,10 +193,20 @@ defmodule ShadcnDaisyui.Components do
         <:option value="Next.js">Next.js</:option>
         <:option value="Phoenix">Phoenix</:option>
       </.combobox>
+
+  Pass `name` (and `value`) to bind it to a form - it emits a hidden input the
+  JS hook keeps in sync, and a preselected `value` is reflected on mount:
+
+      <.combobox id="fw" name="user[framework]" value={@form[:framework].value}>
+        <:option value="Next.js">Next.js</:option>
+        <:option value="Phoenix">Phoenix</:option>
+      </.combobox>
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
   attr(:class, :any, default: "w-60")
+  attr(:name, :string, default: nil, doc: "form field name; emits a hidden input when set")
+  attr(:value, :string, default: nil, doc: "current/preselected value")
 
   slot :option, doc: "each option; set `value`" do
     attr(:value, :string, required: true)
@@ -205,6 +215,7 @@ defmodule ShadcnDaisyui.Components do
   def combobox(assigns) do
     ~H"""
     <div id={@id} phx-hook="ShadcnCombobox" data-combobox class={["relative", @class]}>
+      <input :if={@name} type="hidden" name={@name} value={@value} data-combobox-input />
       <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
         <span data-combobox-label class="text-muted-foreground">{@placeholder}</span>
         <span class="size-4 opacity-50 hero-chevron-up-down" aria-hidden="true"></span>
@@ -227,16 +238,28 @@ defmodule ShadcnDaisyui.Components do
 
   @doc """
   A custom select (shadcn-style trigger + listbox popover). Provide options as
-  `:option` slots. For the plain HTML control use a `<select class="select">`.
+  `:option` slots.
 
       <.select id="fruit" placeholder="Select a fruit">
         <:option value="Apple">Apple</:option>
         <:option value="Banana">Banana</:option>
       </.select>
+
+  Pass `name` (and `value`) to bind it to a form - it emits a hidden input the
+  JS hook keeps in sync, and a preselected `value` is reflected on mount:
+
+      <.select id="fruit" name="order[fruit]" value={@form[:fruit].value}>
+        <:option value="Apple">Apple</:option>
+        <:option value="Banana">Banana</:option>
+      </.select>
+
+  For the plain HTML control use a `<select class="select">`.
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
   attr(:class, :any, default: "w-60")
+  attr(:name, :string, default: nil, doc: "form field name; emits a hidden input when set")
+  attr(:value, :string, default: nil, doc: "current/preselected value")
 
   slot :option, doc: "each option; set `value`" do
     attr(:value, :string, required: true)
@@ -245,6 +268,7 @@ defmodule ShadcnDaisyui.Components do
   def select(assigns) do
     ~H"""
     <div id={@id} phx-hook="ShadcnSelect" data-select class={["relative", @class]}>
+      <input :if={@name} type="hidden" name={@name} value={@value} data-select-input />
       <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
         <span data-select-label class="text-muted-foreground">{@placeholder}</span>
         <span class="size-4 opacity-50 hero-chevron-down" aria-hidden="true"></span>

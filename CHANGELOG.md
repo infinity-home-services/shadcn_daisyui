@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   flicker-free by adding the `theme-transition` class, swapping `data-theme`, and
   dropping the class on the next frame. Wire it to your theme control (or the
   standard `phx:set-theme` event) instead of setting `data-theme` directly.
+- **`<.select>` and `<.combobox>` are now form-bindable.** Pass `name` (and
+  `value`) and the component emits a hidden `<input>` the JS hook keeps in sync
+  (dispatching `input` + `change` so LiveView `phx-change` fires), so the
+  shadcn-style dropdowns can back a real changeset field. A preselected `value` is
+  reflected in the trigger on mount, so edit forms show the current selection. Also
+  fixes the combobox check icon, which never toggled (it queried `svg`, but the
+  mark is a `hero-check` span).
 
 ### Changed
 
