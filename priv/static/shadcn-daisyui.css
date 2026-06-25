@@ -73,6 +73,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(0.922 0 0);   /* shadcn `--border` colour (daisyUI reserves --border for width) */
   --input: oklch(0.922 0 0);
+  --input-background: var(--background);   /* form-control fill; override to tint fields */
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -155,6 +156,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(1 0 0 / 10%);   /* shadcn `--border` colour; --border (width) inherits 1px from :root */
   --input: oklch(1 0 0 / 15%);
+  --input-background: var(--background);   /* form-control fill; override to tint fields */
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -292,7 +294,7 @@
   .file-input {
     border-radius: var(--radius-md);
     border: 1px solid var(--input);
-    background-color: transparent;
+    background-color: var(--input-background);
     color: var(--foreground);
     font-size: 0.875rem;
     box-shadow: var(--shadow-xs);
@@ -665,6 +667,16 @@
     z-index: 1;
   }
 
+  /* The custom select/combobox triggers are btn-outline (already
+     --background); pin them to --input-background so they track the form-field
+     fill when a consumer overrides it, matching .input/.select/.textarea. The
+     `.btn[...]` specificity (0,2,0) matches `.btn.btn-outline` and wins on source
+     order; re-assert the outline hover so it isn't flattened by the same. */
+  .btn[data-select-trigger],
+  .btn[data-combobox-trigger] { background-color: var(--input-background); }
+  .btn[data-select-trigger]:hover,
+  .btn[data-combobox-trigger]:hover { background-color: var(--accent); }
+
   /* ---- Command list / Combobox / Date-picker panels ---------------------- */
   .command-item,
   .combo-item {
@@ -893,13 +905,16 @@ html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
    cleaner. So the theme switches instantly instead, which is flicker-free and
    what most production sites do (Tailwind, GitHub, …).
 
-   This forces `transition-duration: 0` on everything EXCEPT the components whose
-   own enter/exit animations must stay (dialog, drawer, tooltip, carousel,
-   skeleton, countdown, …). Doing it in pure CSS (no JS) means hover/focus colour
-   changes are instant too — which suits the crisp, no-animation feel. To bring
-   back animated interactions while keeping the toggle instant you'd need a tiny
-   JS "disable transitions during the swap" guard; intentionally omitted. */
-:not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
+   While <html> carries the `theme-transition` class this forces
+   `transition-duration: 0` on everything EXCEPT the components whose own
+   enter/exit animations must stay (dialog, drawer, tooltip, carousel, skeleton,
+   countdown, …). The class is meant to be on ONLY during the swap: add it, flip
+   `data-theme` in the same tick, then drop it on the next frame. That keeps the
+   toggle flicker-free while leaving hover/focus/micro transitions live the rest
+   of the time. The package ships `setTheme(theme)` (shadcn-daisyui.js) which does
+   exactly this — wire it to your theme control instead of setting `data-theme`
+   directly, or the swap will fade-flicker. */
+html.theme-transition :not(dialog, .modal-box, .drawer-side, [class*="tooltip"], [class*="mockup"],
     [class*="carousel"], .loading, .skeleton, .radial-progress, .countdown) {
   transition-duration: 0s !important;
 }

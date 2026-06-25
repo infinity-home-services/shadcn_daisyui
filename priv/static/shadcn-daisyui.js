@@ -152,17 +152,26 @@ function initDock(scope) {
       empty.classList.toggle("hidden", n > 0)
       setActive(0)
     }
-    const choose = (it) => {
+    const hidden = root.querySelector("[data-combobox-input]")
+    const apply = (it, emit) => {
       label.textContent = it.dataset.value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
         x.setAttribute("aria-selected", "false")
-        const c = x.querySelector("svg"); if (c) c.classList.add("opacity-0")
+        const c = x.querySelector("span"); if (c) c.classList.add("opacity-0")
       })
       it.setAttribute("aria-selected", "true")
-      const chk = it.querySelector("svg"); if (chk) chk.classList.remove("opacity-0")
-      open(false)
-      trigger.focus()
+      const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
+      if (hidden) {
+        hidden.value = it.dataset.value
+        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
+      }
+    }
+    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
+    // Reflect a preselected value (e.g. an edit form) on mount — no event.
+    if (hidden && hidden.value) {
+      const match = items.find((it) => it.dataset.value === hidden.value)
+      if (match) apply(match, false)
     }
     trigger.addEventListener("click", () => open(panel.classList.contains("hidden")))
     search.addEventListener("input", () => filter(search.value))
@@ -217,7 +226,8 @@ function initDock(scope) {
         trigger.removeAttribute("aria-activedescendant")
       }
     }
-    const choose = (it) => {
+    const hidden = root.querySelector("[data-select-input]")
+    const apply = (it, emit) => {
       label.textContent = it.dataset.value
       label.classList.remove("text-muted-foreground")
       items.forEach((x) => {
@@ -226,8 +236,16 @@ function initDock(scope) {
       })
       it.setAttribute("aria-selected", "true")
       const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
-      open(false)
-      trigger.focus()
+      if (hidden) {
+        hidden.value = it.dataset.value
+        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
+      }
+    }
+    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
+    // Reflect a preselected value (e.g. an edit form) on mount — no event.
+    if (hidden && hidden.value) {
+      const match = items.find((it) => it.dataset.value === hidden.value)
+      if (match) apply(match, false)
     }
     trigger.addEventListener("click", () => open(!isOpen()))
     trigger.addEventListener("keydown", (e) => {
@@ -695,6 +713,30 @@ function initDock(scope) {
 
 
 // ---- Public API -----------------------------------------------------------
+
+// Switch the active theme without the light↔dark colour fade flickering.
+//
+// The CSS only zeroes out transition-duration while <html> carries the
+// `theme-transition` class. This helper adds that class, swaps `data-theme` in
+// the same tick (so the new theme paints with transitions disabled — no
+// flicker), then drops the class on the next frame so hover/focus transitions
+// resume. Pass null / "system" to clear the attribute (follow the OS).
+//
+//   import { setTheme } from "shadcn-daisyui"
+//   setTheme("shadcn-dark")
+//
+// In LiveView, wire it to the standard phx:set-theme event:
+//   window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme))
+export function setTheme(theme) {
+  const el = document.documentElement
+  el.classList.add("theme-transition")
+  if (!theme || theme === "system") el.removeAttribute("data-theme")
+  else el.setAttribute("data-theme", theme)
+  // Re-enable transitions only after the swapped theme has painted.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => el.classList.remove("theme-transition"))
+  )
+}
 
 // Wire every component found under `root` (default: whole document). For dead
 // views / plain HTML. Safe to call once on page load.

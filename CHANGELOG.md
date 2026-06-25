@@ -36,6 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   guidelines page driven by the Web Animations API (so they survive the
   instant-theme transition guard). Do/Don't pairs are schema-validated and
   exported to the AI markdown.
+- **`setTheme(theme)` export in `shadcn-daisyui.js`** - switches the active theme
+  flicker-free by adding the `theme-transition` class, swapping `data-theme`, and
+  dropping the class on the next frame. Wire it to your theme control (or the
+  standard `phx:set-theme` event) instead of setting `data-theme` directly.
+- **`<.select>` and `<.combobox>` are now form-bindable.** Pass `name` (and
+  `value`) and the component emits a hidden `<input>` the JS hook keeps in sync
+  (dispatching `input` + `change` so LiveView `phx-change` fires), so the
+  shadcn-style dropdowns can back a real changeset field. A preselected `value` is
+  reflected in the trigger on mount, so edit forms show the current selection. Also
+  fixes the combobox check icon, which never toggled (it queried `svg`, but the
+  mark is a `hero-check` span).
 
 ### Changed
 
@@ -54,6 +65,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (service tickets, work orders) on medium/expanded screens, while keeping the
   single-column `max-w-md` default for short/sequential forms and all compact
   screens.
+- **Theme-toggle transition guard is now scoped, not global.** The rule that
+  zeroes out `transition-duration` previously applied to every element at all
+  times, silently killing any consumer hover/focus/micro transitions. It now fires
+  only while `<html>` carries the `theme-transition` class (added for the duration
+  of a swap by `setTheme`), so the toggle stays flicker-free while ordinary
+  transitions work again. Apps that switch the theme by setting `data-theme`
+  directly should move to `setTheme` to keep the swap from fading.
+- **Form controls no longer hard-set `background-color: transparent`.** `.input`,
+  `.textarea`, `.select`, and `.file-input` (plus the custom `<.select>` /
+  `<.combobox>` triggers) now use `var(--input-background)`, which defaults to
+  `var(--background)`, so fields stay legible on tinted surfaces (e.g. inside a
+  `.modal-box`). Retint all fields by overriding `--input-background` (per app or
+  per `[data-theme]`); a one-off `bg-*` utility still needs `!` since the base
+  rule lives in `@layer utilities`.
 
 ## [0.3.0] - 2026-06-11
 
