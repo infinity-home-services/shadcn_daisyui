@@ -1,0 +1,105 @@
+# shadcn_daisyui
+
+shadcn_daisyui is a daisyUI v5 theme + component kit that makes daisyUI components look like shadcn/ui, built for Phoenix apps. Components are plain, copy-pasteable HTML styled by the theme - no React required. Install it with `mix shadcn_daisyui.install`. Usage rules for AI agents ship as `usage-rules.md` and can be synced into your project with the `usage_rules` package.
+
+## Components
+
+- [Calendar](/shadcn_daisyui/docs/components/calendar.md): A date-selection calendar.
+- [Checkbox](/shadcn_daisyui/docs/components/checkbox.md): A control that toggles between checked and unchecked.
+- [Combobox](/shadcn_daisyui/docs/components/combobox.md): An input with a searchable, filterable list of options.
+- [Date Picker](/shadcn_daisyui/docs/components/date-picker.md): A popover calendar for picking a single date or a range.
+- [Field](/shadcn_daisyui/docs/components/field.md): A grouped set of related form controls.
+- [Filter](/shadcn_daisyui/docs/components/filter.md): A radio-button filter group with a reset.
+- [Input](/shadcn_daisyui/docs/components/input.md): A form input field for collecting text from the user.
+- [Input Group](/shadcn_daisyui/docs/components/input-group.md): An input with attached addons or actions.
+- [Input OTP](/shadcn_daisyui/docs/components/input-otp.md): A segmented input for one-time passcodes.
+- [Label](/shadcn_daisyui/docs/components/label.md): An accessible label associated with a form control.
+- [Radio Group](/shadcn_daisyui/docs/components/radio-group.md): A set of checkable buttons where only one can be selected at a time.
+- [Rating](/shadcn_daisyui/docs/components/rating.md): A star rating input.
+- [Select](/shadcn_daisyui/docs/components/select.md): Displays a list of options for the user to pick from, triggered by a button.
+- [Select Native](/shadcn_daisyui/docs/components/native-select.md): The native HTML select control, styled to match.
+- [Slider](/shadcn_daisyui/docs/components/slider.md): An input for selecting a value from a range.
+- [Switch](/shadcn_daisyui/docs/components/switch.md): A control that toggles between on and off states.
+- [Textarea](/shadcn_daisyui/docs/components/textarea.md): A multi-line text input field.
+- [Toggle](/shadcn_daisyui/docs/components/toggle.md): A two-state button that can be on or off.
+- [Toggle Group](/shadcn_daisyui/docs/components/toggle-group.md): A set of two-state buttons that can be toggled together.
+- [Validator](/shadcn_daisyui/docs/components/validator.md): Form-validation visual states with a hint.
+- [Button](/shadcn_daisyui/docs/components/button.md): Displays a button or a component that looks like a button.
+- [Button Group](/shadcn_daisyui/docs/components/button-group.md): A set of buttons joined into a single segmented control.
+- [Command](/shadcn_daisyui/docs/components/command.md): A command palette for fast keyboard-driven actions.
+- [Dropdown Menu](/shadcn_daisyui/docs/components/dropdown-menu.md): A menu of actions or links triggered by a button.
+- [Swap](/shadcn_daisyui/docs/components/swap.md): An animated swap between two icons or states.
+- [Breadcrumb](/shadcn_daisyui/docs/components/breadcrumb.md): Displays the path to the current resource.
+- [Dock](/shadcn_daisyui/docs/components/dock.md): A bottom navigation bar for mobile.
+- [Link](/shadcn_daisyui/docs/components/link.md): A styled inline anchor.
+- [Menubar](/shadcn_daisyui/docs/components/menubar.md): A horizontal bar of dropdown menus, like a desktop app.
+- [Navbar](/shadcn_daisyui/docs/components/navbar.md): A top application bar.
+- [Navigation Menu](/shadcn_daisyui/docs/components/navigation-menu.md): A horizontal menu with rich dropdown panels.
+- [Pagination](/shadcn_daisyui/docs/components/pagination.md): Navigation for moving between pages of content.
+- [Sidebar](/shadcn_daisyui/docs/components/sidebar.md): An app navigation sidebar layout.
+- [Steps](/shadcn_daisyui/docs/components/steps.md): A horizontal stepper showing progress through a flow.
+- [Tabs](/shadcn_daisyui/docs/components/tabs.md): Layered sections of content shown one panel at a time.
+- [Alert Dialog](/shadcn_daisyui/docs/components/alert-dialog.md): A modal that interrupts the user to confirm an action.
+- [Context Menu](/shadcn_daisyui/docs/components/context-menu.md): A menu shown on right-click.
+- [Dialog](/shadcn_daisyui/docs/components/dialog.md): A modal window overlaid on the page.
+- [Drawer](/shadcn_daisyui/docs/components/drawer.md): A panel that slides up from the bottom of the screen.
+- [Hover Card](/shadcn_daisyui/docs/components/hover-card.md): A card of preview content shown on hover.
+- [Popover](/shadcn_daisyui/docs/components/popover.md): Rich floating content triggered by a button.
+- [Sheet](/shadcn_daisyui/docs/components/sheet.md): A panel that slides in from the edge of the screen.
+- [Tooltip](/shadcn_daisyui/docs/components/tooltip.md): A floating label shown on hover or focus.
+- [Alert](/shadcn_daisyui/docs/components/alert.md): Displays a callout for user attention.
+- [Badge](/shadcn_daisyui/docs/components/badge.md): Displays a badge or a component that looks like a badge.
+- [Countdown](/shadcn_daisyui/docs/components/countdown.md): An animated numeric odometer for countdowns.
+- [Indicator](/shadcn_daisyui/docs/components/indicator.md): A corner badge overlaid on another element.
+- [Progress](/shadcn_daisyui/docs/components/progress.md): Displays an indicator showing completion progress.
+- [Radial Progress](/shadcn_daisyui/docs/components/radial-progress.md): A circular percentage progress ring.
+- [Skeleton](/shadcn_daisyui/docs/components/skeleton.md): A placeholder preview while content is loading.
+- [Spinner](/shadcn_daisyui/docs/components/spinner.md): An animated loading indicator.
+- [Status](/shadcn_daisyui/docs/components/status.md): A tiny status dot for online/offline state.
+- [Toast](/shadcn_daisyui/docs/components/toast.md): A brief, auto-dismissing notification.
+- [Accordion](/shadcn_daisyui/docs/components/accordion.md): Vertically stacked, expandable sections.
+- [Avatar](/shadcn_daisyui/docs/components/avatar.md): An image element with a text fallback.
+- [Card](/shadcn_daisyui/docs/components/card.md): A container for grouping related content and actions.
+- [Carousel](/shadcn_daisyui/docs/components/carousel.md): A slideshow of items with previous/next controls.
+- [Chart](/shadcn_daisyui/docs/components/chart.md): Simple bar and line charts drawn with the theme colors.
+- [Chat](/shadcn_daisyui/docs/components/chat.md): Chat-bubble message rows aligned left or right.
+- [Collapsible](/shadcn_daisyui/docs/components/collapsible.md): A single expandable/collapsible section.
+- [Data Table](/shadcn_daisyui/docs/components/data-table.md): A table with filtering, faceted filters, sorting, and paging.
+- [Kbd](/shadcn_daisyui/docs/components/kbd.md): Displays keyboard keys or shortcuts inline.
+- [List](/shadcn_daisyui/docs/components/list.md): Vertical rows of items with avatars and actions.
+- [Stat](/shadcn_daisyui/docs/components/stat.md): Compact blocks for key metrics.
+- [Table](/shadcn_daisyui/docs/components/table.md): A responsive table for displaying rows of data.
+- [Timeline](/shadcn_daisyui/docs/components/timeline.md): A vertical or horizontal sequence of events.
+- [Aspect Ratio](/shadcn_daisyui/docs/components/aspect-ratio.md): Constrains content to a fixed width/height ratio.
+- [Empty](/shadcn_daisyui/docs/components/empty.md): A placeholder for when there is no content to show.
+- [Footer](/shadcn_daisyui/docs/components/footer.md): A multi-column page footer layout.
+- [Hero](/shadcn_daisyui/docs/components/hero.md): A full-width hero section layout.
+- [Mask](/shadcn_daisyui/docs/components/mask.md): Clip an element to a shape.
+- [Mockup](/shadcn_daisyui/docs/components/mockup.md): Browser and code window mockup frames.
+- [Resizable](/shadcn_daisyui/docs/components/resizable.md): Panels the user can resize by dragging a handle.
+- [Scroll Area](/shadcn_daisyui/docs/components/scroll-area.md): A scrollable region with a fixed height.
+- [Separator](/shadcn_daisyui/docs/components/separator.md): Visually or semantically separates content.
+- [Stack](/shadcn_daisyui/docs/components/stack.md): Overlapping, stacked elements.
+- [Typography](/shadcn_daisyui/docs/components/typography.md): Styles for headings, prose, lists, and inline code.
+
+## Guides
+
+- [Installation](/shadcn_daisyui/docs/installation): how to add the theme and JS to a Phoenix app.
+- [Adopt the design system](/shadcn_daisyui/docs/adopt): add the guidelines to any project - Claude plugin, usage_rules sync, Swift package, or one-file bundle.
+- [Themes](/shadcn_daisyui/docs/themes): theming tokens and the interactive theme creator.
+
+## Design guidelines
+
+Platform-portable rules (web + native iOS/iPadOS). One-file bundle:
+[design-guidelines.md](/shadcn_daisyui/design-guidelines.md).
+
+- [Platforms](/shadcn_daisyui/docs/foundations/platforms.md): Dual units, HIG arbitration, and the token map between web and SwiftUI.
+- [Accessibility & content](/shadcn_daisyui/docs/foundations/accessibility.md): Contrast, focus, labels, reduced motion, and how to write UI text.
+- [Layout](/shadcn_daisyui/docs/foundations/layout.md): Breakpoints, window size classes, content widths, and the page scaffold.
+- [Spacing](/shadcn_daisyui/docs/foundations/spacing.md): The 4px grid, the blessed steps, and where each one is used.
+- [Navigation](/shadcn_daisyui/docs/foundations/navigation.md): Where navigation lives at each window size class.
+- [Interaction](/shadcn_daisyui/docs/foundations/interaction.md): The state ladder, touch targets, and input-method differences.
+- [Color](/shadcn_daisyui/docs/styles/color.md): Semantic token usage, the emphasis ladder, and brand splash rules.
+- [Typography & icons](/shadcn_daisyui/docs/styles/typography.md): The six-role type ramp and iconography rules.
+- [Shape & elevation](/shadcn_daisyui/docs/styles/shape-elevation.md): Radius roles and the (deliberately flat) elevation ladder.
+- [Motion](/shadcn_daisyui/docs/styles/motion.md): Three durations, standard easing, opacity and transform only.

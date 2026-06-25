@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="shadcn">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="VxFvRDogE2MmIjATbS41CG0QEQoLDDMZzCY0WOjPemrVYhWCYrXnMblc">
+    <title data-default="ShadcnDaisyuiDemo" data-suffix=" · Phoenix Framework">Navbar · Phoenix Framework</title>
+    <link phx-track-static rel="stylesheet" href="/shadcn_daisyui/assets/css/app-7209eb4e69cddee3250f5833dc85b7cc.css?vsn=d">
+    <script defer phx-track-static type="text/javascript" src="/shadcn_daisyui/assets/js/app-5edd951fa78734f0e1352c8247170e12.js?vsn=d">
+    </script>
+    <script>
+      (() => {
+        const setTheme = (theme) => {
+          // Disable transitions for the swap so light↔dark doesn't fade-flicker,
+          // then re-enable on the next frame (mirrors setTheme/0 in shadcn-daisyui.js).
+          const el = document.documentElement;
+          el.classList.add("theme-transition");
+          if (theme === "system") {
+            localStorage.removeItem("phx:theme");
+            el.removeAttribute("data-theme");
+          } else {
+            localStorage.setItem("phx:theme", theme);
+            el.setAttribute("data-theme", theme);
+          }
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => el.classList.remove("theme-transition"))
+          );
+        };
+        if (!document.documentElement.hasAttribute("data-theme")) {
+          setTheme(localStorage.getItem("phx:theme") || "shadcn");
+        }
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="flex min-h-screen flex-col bg-base-100 text-base-content">
+  <header class="sticky top-0 z-40 w-full border-b border-base-300 bg-base-100/85 backdrop-blur">
+  <div class="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+    <a href="/shadcn_daisyui/" class="flex items-center gap-2">
+      <span class="grid size-7 place-items-center rounded-md bg-primary text-primary-content">
+        <span class="hero-square-3-stack-3d size-4" aria-hidden="true"></span>
+      </span>
+      <span class="text-sm font-semibold tracking-tight">shadcn × daisyUI</span>
+    </a>
+
+    <nav class="hidden items-center gap-5 text-sm md:flex">
+      <a href="/shadcn_daisyui/docs/installation" class="transition-colors hover:text-foreground text-muted-foreground">
+        Installation
+      </a>
+      <a href="/shadcn_daisyui/docs/components/button" class="transition-colors hover:text-foreground font-medium text-foreground">
+        Components
+      </a>
+      <a href="/shadcn_daisyui/docs/themes" class="transition-colors hover:text-foreground text-muted-foreground">
+        Themes
+      </a>
+    </nav>
+
+    <div class="flex flex-1 items-center justify-end gap-2">
+      <button type="button" class="btn btn-outline btn-sm gap-2 font-normal text-muted-foreground sm:w-[264px] sm:justify-start" onclick="document.getElementById('docs-search-palette').showModal()" aria-label="Search components">
+        <span class="hero-magnifying-glass size-4" aria-hidden="true"></span>
+        <span class="hidden sm:inline">Search</span>
+        <kbd class="kbd kbd-sm sm:ml-auto">⌘K</kbd>
+      </button>
+      <a href="https://github.com/infinity-home-services/shadcn_daisyui" class="btn btn-ghost btn-sm btn-square" aria-label="GitHub repository">
+        <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+        </svg>
+      </a>
+      <div class="relative flex flex-row items-center border border-base-300 bg-base-200 rounded-full" role="group" aria-label="Theme">
+  <div class="absolute w-1/2 h-full rounded-full border border-base-300 bg-base-100 left-0 [[data-theme=shadcn-dark]_&]:left-1/2 transition-[left]"></div>
+
+  <button class="relative flex p-2 cursor-pointer w-1/2 justify-center" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]" data-phx-theme="shadcn" aria-label="Light theme">
+    <span class="hero-sun-micro size-4 opacity-75 hover:opacity-100" aria-hidden="true"></span>
+  </button>
+
+  <button class="relative flex p-2 cursor-pointer w-1/2 justify-center" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]" data-phx-theme="shadcn-dark" aria-label="Dark theme">
+    <span class="hero-moon-micro size-4 opacity-75 hover:opacity-100" aria-hidden="true"></span>
+  </button>
+</div>
+    </div>
+  </div>
+</header>
+
+  <div class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10 lg:px-8">
+    
+    <aside class="hidden lg:block">
+      <div data-docs-sidebar class="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain">
+        <nav class="space-y-6 py-8 pr-2">
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Guides
+            </p>
+            <a href="/shadcn_daisyui/docs/installation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Installation
+            </a><a href="/shadcn_daisyui/docs/adopt" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Adopt the design system
+            </a><a href="/shadcn_daisyui/docs/themes" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Themes
+            </a><a href="/shadcn_daisyui/docs/tokens" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tokens
+            </a>
+          </div>
+
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Foundations
+            </p>
+            <a href="/shadcn_daisyui/docs/foundations/platforms" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Platforms
+            </a><a href="/shadcn_daisyui/docs/foundations/accessibility" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Accessibility &amp; content
+            </a><a href="/shadcn_daisyui/docs/foundations/layout" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Layout
+            </a><a href="/shadcn_daisyui/docs/foundations/spacing" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Spacing
+            </a><a href="/shadcn_daisyui/docs/foundations/navigation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Navigation
+            </a><a href="/shadcn_daisyui/docs/foundations/interaction" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Interaction
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Styles
+            </p>
+            <a href="/shadcn_daisyui/docs/styles/color" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Color
+            </a><a href="/shadcn_daisyui/docs/styles/typography" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Typography &amp; icons
+            </a><a href="/shadcn_daisyui/docs/styles/shape-elevation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Shape &amp; elevation
+            </a><a href="/shadcn_daisyui/docs/styles/motion" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Motion
+            </a>
+          </div>
+
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Forms &amp; inputs
+            </p>
+            <a href="/shadcn_daisyui/docs/components/calendar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Calendar
+            </a><a href="/shadcn_daisyui/docs/components/checkbox" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Checkbox
+            </a><a href="/shadcn_daisyui/docs/components/combobox" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Combobox
+            </a><a href="/shadcn_daisyui/docs/components/date-picker" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Date Picker
+            </a><a href="/shadcn_daisyui/docs/components/field" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Field
+            </a><a href="/shadcn_daisyui/docs/components/filter" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Filter
+            </a><a href="/shadcn_daisyui/docs/components/input" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input
+            </a><a href="/shadcn_daisyui/docs/components/input-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input Group
+            </a><a href="/shadcn_daisyui/docs/components/input-otp" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input OTP
+            </a><a href="/shadcn_daisyui/docs/components/label" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Label
+            </a><a href="/shadcn_daisyui/docs/components/radio-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Radio Group
+            </a><a href="/shadcn_daisyui/docs/components/rating" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Rating
+            </a><a href="/shadcn_daisyui/docs/components/select" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Select
+            </a><a href="/shadcn_daisyui/docs/components/native-select" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Select Native
+            </a><a href="/shadcn_daisyui/docs/components/slider" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Slider
+            </a><a href="/shadcn_daisyui/docs/components/switch" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Switch
+            </a><a href="/shadcn_daisyui/docs/components/textarea" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Textarea
+            </a><a href="/shadcn_daisyui/docs/components/toggle" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Toggle
+            </a><a href="/shadcn_daisyui/docs/components/toggle-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Toggle Group
+            </a><a href="/shadcn_daisyui/docs/components/validator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Validator
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Actions
+            </p>
+            <a href="/shadcn_daisyui/docs/components/button" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Button
+            </a><a href="/shadcn_daisyui/docs/components/button-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Button Group
+            </a><a href="/shadcn_daisyui/docs/components/command" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Command
+            </a><a href="/shadcn_daisyui/docs/components/dropdown-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dropdown Menu
+            </a><a href="/shadcn_daisyui/docs/components/swap" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Swap
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Navigation
+            </p>
+            <a href="/shadcn_daisyui/docs/components/breadcrumb" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Breadcrumb
+            </a><a href="/shadcn_daisyui/docs/components/dock" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dock
+            </a><a href="/shadcn_daisyui/docs/components/link" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Link
+            </a><a href="/shadcn_daisyui/docs/components/menubar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Menubar
+            </a><a href="/shadcn_daisyui/docs/components/navbar" class="block rounded-md px-2 py-1.5 text-sm transition-colors bg-muted font-medium text-foreground">
+              Navbar
+            </a><a href="/shadcn_daisyui/docs/components/navigation-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Navigation Menu
+            </a><a href="/shadcn_daisyui/docs/components/pagination" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Pagination
+            </a><a href="/shadcn_daisyui/docs/components/sidebar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Sidebar
+            </a><a href="/shadcn_daisyui/docs/components/steps" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Steps
+            </a><a href="/shadcn_daisyui/docs/components/tabs" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tabs
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Overlays
+            </p>
+            <a href="/shadcn_daisyui/docs/components/alert-dialog" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Alert Dialog
+            </a><a href="/shadcn_daisyui/docs/components/context-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Context Menu
+            </a><a href="/shadcn_daisyui/docs/components/dialog" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dialog
+            </a><a href="/shadcn_daisyui/docs/components/drawer" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Drawer
+            </a><a href="/shadcn_daisyui/docs/components/hover-card" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Hover Card
+            </a><a href="/shadcn_daisyui/docs/components/popover" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Popover
+            </a><a href="/shadcn_daisyui/docs/components/sheet" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Sheet
+            </a><a href="/shadcn_daisyui/docs/components/tooltip" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tooltip
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Feedback &amp; status
+            </p>
+            <a href="/shadcn_daisyui/docs/components/alert" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Alert
+            </a><a href="/shadcn_daisyui/docs/components/badge" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Badge
+            </a><a href="/shadcn_daisyui/docs/components/countdown" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Countdown
+            </a><a href="/shadcn_daisyui/docs/components/indicator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Indicator
+            </a><a href="/shadcn_daisyui/docs/components/progress" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Progress
+            </a><a href="/shadcn_daisyui/docs/components/radial-progress" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Radial Progress
+            </a><a href="/shadcn_daisyui/docs/components/skeleton" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Skeleton
+            </a><a href="/shadcn_daisyui/docs/components/spinner" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Spinner
+            </a><a href="/shadcn_daisyui/docs/components/status" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Status
+            </a><a href="/shadcn_daisyui/docs/components/toast" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Toast
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Data display
+            </p>
+            <a href="/shadcn_daisyui/docs/components/accordion" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Accordion
+            </a><a href="/shadcn_daisyui/docs/components/avatar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Avatar
+            </a><a href="/shadcn_daisyui/docs/components/card" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Card
+            </a><a href="/shadcn_daisyui/docs/components/carousel" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Carousel
+            </a><a href="/shadcn_daisyui/docs/components/chart" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Chart
+            </a><a href="/shadcn_daisyui/docs/components/chat" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Chat
+            </a><a href="/shadcn_daisyui/docs/components/collapsible" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Collapsible
+            </a><a href="/shadcn_daisyui/docs/components/data-table" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Data Table
+            </a><a href="/shadcn_daisyui/docs/components/kbd" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Kbd
+            </a><a href="/shadcn_daisyui/docs/components/list" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              List
+            </a><a href="/shadcn_daisyui/docs/components/stat" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Stat
+            </a><a href="/shadcn_daisyui/docs/components/table" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Table
+            </a><a href="/shadcn_daisyui/docs/components/timeline" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Timeline
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Layout
+            </p>
+            <a href="/shadcn_daisyui/docs/components/aspect-ratio" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Aspect Ratio
+            </a><a href="/shadcn_daisyui/docs/components/empty" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Empty
+            </a><a href="/shadcn_daisyui/docs/components/footer" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Footer
+            </a><a href="/shadcn_daisyui/docs/components/hero" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Hero
+            </a><a href="/shadcn_daisyui/docs/components/mask" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Mask
+            </a><a href="/shadcn_daisyui/docs/components/mockup" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Mockup
+            </a><a href="/shadcn_daisyui/docs/components/resizable" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Resizable
+            </a><a href="/shadcn_daisyui/docs/components/scroll-area" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Scroll Area
+            </a><a href="/shadcn_daisyui/docs/components/separator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Separator
+            </a><a href="/shadcn_daisyui/docs/components/stack" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Stack
+            </a><a href="/shadcn_daisyui/docs/components/typography" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Typography
+            </a>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    
+    <main data-docs-main class="flex min-w-0 flex-col">
+      <div class="flex-1 py-8 lg:py-10">
+        
+        <details class="dropdown mb-6 w-full lg:hidden">
+          <summary class="btn btn-outline w-full justify-between font-normal">
+            <span>Navbar</span>
+            <span class="hero-chevron-down size-4" aria-hidden="true"></span>
+          </summary>
+          <div class="dropdown-content z-30 mt-1 max-h-[70vh] w-full overflow-y-auto">
+            <div class="p-2">
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Guides
+                </p>
+                <a href="/shadcn_daisyui/docs/installation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Installation
+                </a><a href="/shadcn_daisyui/docs/adopt" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Adopt the design system
+                </a><a href="/shadcn_daisyui/docs/themes" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Themes
+                </a><a href="/shadcn_daisyui/docs/tokens" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tokens
+                </a>
+              </div>
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Foundations
+                </p>
+                <a href="/shadcn_daisyui/docs/foundations/platforms" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Platforms
+                </a><a href="/shadcn_daisyui/docs/foundations/accessibility" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Accessibility &amp; content
+                </a><a href="/shadcn_daisyui/docs/foundations/layout" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Layout
+                </a><a href="/shadcn_daisyui/docs/foundations/spacing" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Spacing
+                </a><a href="/shadcn_daisyui/docs/foundations/navigation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Navigation
+                </a><a href="/shadcn_daisyui/docs/foundations/interaction" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Interaction
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Styles
+                </p>
+                <a href="/shadcn_daisyui/docs/styles/color" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Color
+                </a><a href="/shadcn_daisyui/docs/styles/typography" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Typography &amp; icons
+                </a><a href="/shadcn_daisyui/docs/styles/shape-elevation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Shape &amp; elevation
+                </a><a href="/shadcn_daisyui/docs/styles/motion" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Motion
+                </a>
+              </div>
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Forms &amp; inputs
+                </p>
+                <a href="/shadcn_daisyui/docs/components/calendar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Calendar
+                </a><a href="/shadcn_daisyui/docs/components/checkbox" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Checkbox
+                </a><a href="/shadcn_daisyui/docs/components/combobox" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Combobox
+                </a><a href="/shadcn_daisyui/docs/components/date-picker" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Date Picker
+                </a><a href="/shadcn_daisyui/docs/components/field" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Field
+                </a><a href="/shadcn_daisyui/docs/components/filter" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Filter
+                </a><a href="/shadcn_daisyui/docs/components/input" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input
+                </a><a href="/shadcn_daisyui/docs/components/input-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input Group
+                </a><a href="/shadcn_daisyui/docs/components/input-otp" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input OTP
+                </a><a href="/shadcn_daisyui/docs/components/label" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Label
+                </a><a href="/shadcn_daisyui/docs/components/radio-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Radio Group
+                </a><a href="/shadcn_daisyui/docs/components/rating" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Rating
+                </a><a href="/shadcn_daisyui/docs/components/select" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Select
+                </a><a href="/shadcn_daisyui/docs/components/native-select" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Select Native
+                </a><a href="/shadcn_daisyui/docs/components/slider" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Slider
+                </a><a href="/shadcn_daisyui/docs/components/switch" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Switch
+                </a><a href="/shadcn_daisyui/docs/components/textarea" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Textarea
+                </a><a href="/shadcn_daisyui/docs/components/toggle" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Toggle
+                </a><a href="/shadcn_daisyui/docs/components/toggle-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Toggle Group
+                </a><a href="/shadcn_daisyui/docs/components/validator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Validator
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Actions
+                </p>
+                <a href="/shadcn_daisyui/docs/components/button" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Button
+                </a><a href="/shadcn_daisyui/docs/components/button-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Button Group
+                </a><a href="/shadcn_daisyui/docs/components/command" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Command
+                </a><a href="/shadcn_daisyui/docs/components/dropdown-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dropdown Menu
+                </a><a href="/shadcn_daisyui/docs/components/swap" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Swap
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Navigation
+                </p>
+                <a href="/shadcn_daisyui/docs/components/breadcrumb" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Breadcrumb
+                </a><a href="/shadcn_daisyui/docs/components/dock" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dock
+                </a><a href="/shadcn_daisyui/docs/components/link" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Link
+                </a><a href="/shadcn_daisyui/docs/components/menubar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Menubar
+                </a><a href="/shadcn_daisyui/docs/components/navbar" class="block rounded-md px-2 py-1.5 text-sm bg-muted font-medium text-foreground">
+                  Navbar
+                </a><a href="/shadcn_daisyui/docs/components/navigation-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Navigation Menu
+                </a><a href="/shadcn_daisyui/docs/components/pagination" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Pagination
+                </a><a href="/shadcn_daisyui/docs/components/sidebar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Sidebar
+                </a><a href="/shadcn_daisyui/docs/components/steps" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Steps
+                </a><a href="/shadcn_daisyui/docs/components/tabs" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tabs
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Overlays
+                </p>
+                <a href="/shadcn_daisyui/docs/components/alert-dialog" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Alert Dialog
+                </a><a href="/shadcn_daisyui/docs/components/context-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Context Menu
+                </a><a href="/shadcn_daisyui/docs/components/dialog" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dialog
+                </a><a href="/shadcn_daisyui/docs/components/drawer" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Drawer
+                </a><a href="/shadcn_daisyui/docs/components/hover-card" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Hover Card
+                </a><a href="/shadcn_daisyui/docs/components/popover" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Popover
+                </a><a href="/shadcn_daisyui/docs/components/sheet" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Sheet
+                </a><a href="/shadcn_daisyui/docs/components/tooltip" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tooltip
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Feedback &amp; status
+                </p>
+                <a href="/shadcn_daisyui/docs/components/alert" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Alert
+                </a><a href="/shadcn_daisyui/docs/components/badge" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Badge
+                </a><a href="/shadcn_daisyui/docs/components/countdown" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Countdown
+                </a><a href="/shadcn_daisyui/docs/components/indicator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Indicator
+                </a><a href="/shadcn_daisyui/docs/components/progress" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Progress
+                </a><a href="/shadcn_daisyui/docs/components/radial-progress" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Radial Progress
+                </a><a href="/shadcn_daisyui/docs/components/skeleton" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Skeleton
+                </a><a href="/shadcn_daisyui/docs/components/spinner" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Spinner
+                </a><a href="/shadcn_daisyui/docs/components/status" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Status
+                </a><a href="/shadcn_daisyui/docs/components/toast" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Toast
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Data display
+                </p>
+                <a href="/shadcn_daisyui/docs/components/accordion" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Accordion
+                </a><a href="/shadcn_daisyui/docs/components/avatar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Avatar
+                </a><a href="/shadcn_daisyui/docs/components/card" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Card
+                </a><a href="/shadcn_daisyui/docs/components/carousel" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Carousel
+                </a><a href="/shadcn_daisyui/docs/components/chart" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Chart
+                </a><a href="/shadcn_daisyui/docs/components/chat" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Chat
+                </a><a href="/shadcn_daisyui/docs/components/collapsible" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Collapsible
+                </a><a href="/shadcn_daisyui/docs/components/data-table" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Data Table
+                </a><a href="/shadcn_daisyui/docs/components/kbd" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Kbd
+                </a><a href="/shadcn_daisyui/docs/components/list" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  List
+                </a><a href="/shadcn_daisyui/docs/components/stat" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Stat
+                </a><a href="/shadcn_daisyui/docs/components/table" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Table
+                </a><a href="/shadcn_daisyui/docs/components/timeline" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Timeline
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Layout
+                </p>
+                <a href="/shadcn_daisyui/docs/components/aspect-ratio" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Aspect Ratio
+                </a><a href="/shadcn_daisyui/docs/components/empty" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Empty
+                </a><a href="/shadcn_daisyui/docs/components/footer" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Footer
+                </a><a href="/shadcn_daisyui/docs/components/hero" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Hero
+                </a><a href="/shadcn_daisyui/docs/components/mask" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Mask
+                </a><a href="/shadcn_daisyui/docs/components/mockup" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Mockup
+                </a><a href="/shadcn_daisyui/docs/components/resizable" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Resizable
+                </a><a href="/shadcn_daisyui/docs/components/scroll-area" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Scroll Area
+                </a><a href="/shadcn_daisyui/docs/components/separator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Separator
+                </a><a href="/shadcn_daisyui/docs/components/stack" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Stack
+                </a><a href="/shadcn_daisyui/docs/components/typography" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Typography
+                </a>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        
+  <div class="space-y-2 border-b border-base-300 pb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Navbar</h1>
+  <p class="text-lg text-muted-foreground">A top application bar.</p>
+</div>
+
+  
+
+  <div class="group/view mt-8">
+    <div role="tablist" class="tabs tabs-box w-fit">
+      <input type="radio" name="view-navbar" class="tab" aria-label="Usage" checked>
+      <input type="radio" name="view-navbar" class="tab" aria-label="Design & specs" data-view="design">
+    </div>
+
+    <div class="pt-8 group-has-[[data-view=design]:checked]/view:hidden">
+      <div class="space-y-10">
+        <section class="space-y-3">
+          
+          <div class="tabs tabs-lift" role="tablist">
+  <input type="radio" name="tab-navbar-0" class="tab [--tab-bg:var(--color-base-100)]" aria-label="Preview" checked>
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-100">
+    <div class="flex min-h-[20rem] w-full gap-4 p-8 flex-col">
+      <div class="navbar w-full rounded-xl border border-base-300 bg-base-100">
+  <div class="flex-1"><a class="btn btn-ghost text-base">Acme Inc</a></div>
+  <div class="flex-none">
+    <ul class="menu menu-horizontal gap-1">
+      <li><a>Docs</a></li>
+      <li><a>Pricing</a></li>
+      <li><a class="btn btn-primary btn-sm text-primary-content">Sign in</a></li>
+    </ul>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+  
+  
+
+  <input type="radio" name="tab-navbar-0" class="tab [--tab-bg:var(--color-base-200)]" aria-label="Code">
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+    <div data-code-block class="relative">
+      <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" onclick="navigator.clipboard.writeText(this.closest('[data-code-block]').querySelector('pre').innerText); this.classList.add('text-success')">
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+      <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">&lt;div class=&quot;navbar w-full rounded-xl border border-base-300 bg-base-100&quot;&gt;
+  &lt;div class=&quot;flex-1&quot;&gt;&lt;a class=&quot;btn btn-ghost text-base&quot;&gt;Acme Inc&lt;/a&gt;&lt;/div&gt;
+  &lt;div class=&quot;flex-none&quot;&gt;
+    &lt;ul class=&quot;menu menu-horizontal gap-1&quot;&gt;
+      &lt;li&gt;&lt;a&gt;Docs&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a&gt;Pricing&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a class=&quot;btn btn-primary btn-sm text-primary-content&quot;&gt;Sign in&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+  </div>
+</div>
+        </section>
+      </div>
+
+      <section class="mt-12 space-y-4 border-t border-base-300 pt-8">
+        <h2 class="text-lg font-medium tracking-tight">Usage guidance</h2>
+        <div class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="rounded-lg border border-success/40 p-4">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-success">Use when</p>
+      <ul class="list-inside list-disc space-y-1 text-sm">
+        <li>Primary navigation at medium width; brand + search + account at any width</li><li>Marketing/docs sites where a dock would be overkill</li>
+      </ul>
+    </div>
+    <div class="rounded-lg border border-destructive/40 p-4">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">
+        Don't use for
+      </p>
+      <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+        <li>The only navigation on compact app screens - primary destinations belong in the dock</li><li>Stuffing primary destinations into a hamburger menu</li>
+      </ul>
+    </div>
+  </div>
+  <dl class="space-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="w-28 shrink-0 font-medium">Sizing</dt>
+      <dd class="text-muted-foreground">h-14 bar, sticky, border-b border-base-300 with backdrop blur; contents are text-sm.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-28 shrink-0 font-medium">Responsive</dt>
+      <dd class="text-muted-foreground">Links collapse below md - keep brand, search, and account visible; move links to the dock or a drawer of secondary items.</dd>
+    </div>
+    <div class="flex gap-2" data-platform="ios">
+      <dt class="w-28 shrink-0 font-medium">iOS</dt>
+      <dd class="text-muted-foreground">The navigation bar (large title) - it comes from NavigationStack, never hand-built.</dd>
+    </div>
+  </dl>
+</div>
+        
+      </section>
+
+      
+    </div>
+
+    <div class="hidden space-y-12 pt-8 group-has-[[data-view=design]:checked]/view:block">
+      <section class="space-y-4">
+        <h2 class="text-lg font-medium tracking-tight">Specs</h2>
+        <div class="space-y-6">
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anatomy</p>
+    
+    <dl class="divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300">
+      <div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          1
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Navbar bar</dt>
+        <dd class="text-sm text-muted-foreground">Top bar container, min-height 3.5rem.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          2
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Brand / start</dt>
+        <dd class="text-sm text-muted-foreground">flex-1 region holding the brand link.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          3
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Menu / end</dt>
+        <dd class="text-sm text-muted-foreground">flex-none region with a horizontal menu and primary action.</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      Measurements
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td class="w-40 font-medium">Min height</td>
+            <td class="font-mono text-xs text-muted-foreground">3.5rem (h-14)</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Border</td>
+            <td class="font-mono text-xs text-muted-foreground">1px border-base-300 (rounded-xl in the demo card)</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Surface</td>
+            <td class="font-mono text-xs text-muted-foreground">bg-base-100</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Font</td>
+            <td class="font-mono text-xs text-muted-foreground">text-sm contents</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      Tokens used
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--background)">
+        </span>
+        <code class="font-mono">background</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--color-base-300)">
+        </span>
+        <code class="font-mono">color-base-300</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--primary)">
+        </span>
+        <code class="font-mono">primary</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--primary-foreground)">
+        </span>
+        <code class="font-mono">primary-foreground</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--foreground)">
+        </span>
+        <code class="font-mono">foreground</code>
+      </span>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <section class="space-y-4 border-t border-base-300 pt-8">
+        <h2 class="text-lg font-medium tracking-tight">Accessibility</h2>
+        <div class="space-y-6">
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Keyboard</p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Tab</kbd></td>
+            <td class="text-sm text-muted-foreground">Move through brand, links, and actions</td>
+          </tr><tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Enter</kbd></td>
+            <td class="text-sm text-muted-foreground">Follow the focused link / activate the button</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dl class="space-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Role / ARIA</dt>
+      <dd class="text-muted-foreground">Navigation landmark - wrap links in &lt;nav&gt;; menu items are real &lt;a&gt; links.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Focus</dt>
+      <dd class="text-muted-foreground">Each link/button shows a native focus ring; nothing hides focus.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Screen reader</dt>
+      <dd class="text-muted-foreground">Announced as a navigation region; links read by their text.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Touch target</dt>
+      <dd class="text-muted-foreground">Bar controls should meet 44pt effective hit areas on touch.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Reduced motion</dt>
+      <dd class="text-muted-foreground">No motion beyond color transitions.</dd>
+    </div>
+  </dl>
+</div>
+      </section>
+
+      <section data-platform="ios" class="space-y-4 border-t border-base-300 pt-8">
+        <div class="space-y-1">
+          <h2 class="text-lg font-medium tracking-tight">Native (SwiftUI)</h2>
+          <p class="text-sm text-muted-foreground">
+            The SwiftUI equivalent for the iOS/iPadOS package.
+          </p>
+        </div>
+        <div class="space-y-3">
+  <span class="badge badge-sm badge-ghost">
+    Guidance only
+  </span>
+  <div data-code-block class="relative overflow-hidden rounded-lg border border-base-300 bg-base-200">
+    <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" onclick="navigator.clipboard.writeText(this.closest('[data-code-block]').querySelector('pre').innerText); this.classList.add('text-success')">
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+    <pre class="overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">NavigationStack {
+    content
+        .toolbar {
+            ToolbarItem(placement: .principal) { Text(&quot;Acme Inc&quot;).font(.headline) }
+            ToolbarItem(placement: .topBarTrailing) { Button(&quot;Sign in&quot;) { } }
+        }
+}
+</code></pre>
+  </div>
+  <p class="text-sm text-muted-foreground">Use the system navigation bar / .toolbar; never hand-build the bar on iOS.</p>
+</div>
+      </section>
+    </div>
+  </div>
+
+  <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
+    <a href="https://ui.shadcn.com/docs/components" class="link link-hover text-muted-foreground">
+      Compare with shadcn/ui →
+    </a>
+    <a href="/shadcn_daisyui/docs/themes" class="link link-hover text-muted-foreground">
+      Themes →
+    </a>
+  </div>
+
+      </div>
+
+      <footer class="border-t border-base-300">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+    <p>
+      Built with
+      <a href="https://daisyui.com" class="link link-hover font-medium text-foreground">
+        daisyUI v5
+      </a>
+      and the
+      <a href="https://github.com/infinity-home-services/shadcn_daisyui" class="link link-hover font-medium text-foreground">
+        shadcn_daisyui
+      </a>
+      theme.
+    </p>
+    <p>Components styled to match shadcn/ui - for Phoenix.</p>
+  </div>
+</footer>
+    </main>
+  </div>
+</div>
+    <dialog id="docs-search-palette" data-command class="command-dialog">
+  <div class="flex items-center gap-2 border-b border-base-300 px-3">
+    <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+    <input data-command-search class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Search components…" aria-label="Search components">
+  </div>
+  <ul data-command-list class="max-h-80 overflow-auto p-1">
+    <li class="command-group-label" data-group>Guides</li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/installation">
+        <span class="hero-book-open size-4" aria-hidden="true"></span> Installation
+      </a>
+    </li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/adopt">
+        <span class="hero-puzzle-piece size-4" aria-hidden="true"></span> Adopt the design system
+      </a>
+    </li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/themes">
+        <span class="hero-swatch size-4" aria-hidden="true"></span> Themes
+      </a>
+    </li>
+    
+      <li class="command-group-label" data-group>Foundations</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/platforms">
+          Platforms
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Dual units, HIG arbitration, and the token map between web and SwiftUI.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/accessibility">
+          Accessibility &amp; content
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Contrast, focus, labels, reduced motion, and how to write UI text.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/layout">
+          Layout
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Breakpoints, window size classes, content widths, and the page scaffold.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/spacing">
+          Spacing
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The 4px grid, the blessed steps, and where each one is used.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/navigation">
+          Navigation
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Where navigation lives at each window size class.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/interaction">
+          Interaction
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The state ladder, touch targets, and input-method differences.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Styles</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/color">
+          Color
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Semantic token usage, the emphasis ladder, and brand splash rules.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/typography">
+          Typography &amp; icons
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The six-role type ramp and iconography rules.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/shape-elevation">
+          Shape &amp; elevation
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Radius roles and the (deliberately flat) elevation ladder.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/motion">
+          Motion
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Three durations, standard easing, opacity and transform only.
+          </span>
+        </a>
+      </li>
+    
+    
+      <li class="command-group-label" data-group>Forms &amp; inputs</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/calendar">
+          Calendar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A date-selection calendar.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/checkbox">
+          Checkbox
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A control that toggles between checked and unchecked.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/combobox">
+          Combobox
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input with a searchable, filterable list of options.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/date-picker">
+          Date Picker
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A popover calendar for picking a single date or a range.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/field">
+          Field
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A grouped set of related form controls.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/filter">
+          Filter
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A radio-button filter group with a reset.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input">
+          Input
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A form input field for collecting text from the user.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input-group">
+          Input Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input with attached addons or actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input-otp">
+          Input OTP
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A segmented input for one-time passcodes.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/label">
+          Label
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An accessible label associated with a form control.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/radio-group">
+          Radio Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of checkable buttons where only one can be selected at a time.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/rating">
+          Rating
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A star rating input.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/select">
+          Select
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a list of options for the user to pick from, triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/native-select">
+          Select Native
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The native HTML select control, styled to match.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/slider">
+          Slider
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input for selecting a value from a range.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/switch">
+          Switch
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A control that toggles between on and off states.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/textarea">
+          Textarea
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A multi-line text input field.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/toggle">
+          Toggle
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A two-state button that can be on or off.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/toggle-group">
+          Toggle Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of two-state buttons that can be toggled together.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/validator">
+          Validator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Form-validation visual states with a hint.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Actions</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/button">
+          Button
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a button or a component that looks like a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/button-group">
+          Button Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of buttons joined into a single segmented control.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/command">
+          Command
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A command palette for fast keyboard-driven actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dropdown-menu">
+          Dropdown Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A menu of actions or links triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/swap">
+          Swap
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated swap between two icons or states.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Navigation</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/breadcrumb">
+          Breadcrumb
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays the path to the current resource.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dock">
+          Dock
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A bottom navigation bar for mobile.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/link">
+          Link
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A styled inline anchor.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/menubar">
+          Menubar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal bar of dropdown menus, like a desktop app.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/navbar">
+          Navbar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A top application bar.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/navigation-menu">
+          Navigation Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal menu with rich dropdown panels.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/pagination">
+          Pagination
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Navigation for moving between pages of content.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/sidebar">
+          Sidebar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An app navigation sidebar layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/steps">
+          Steps
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal stepper showing progress through a flow.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/tabs">
+          Tabs
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Layered sections of content shown one panel at a time.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Overlays</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/alert-dialog">
+          Alert Dialog
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A modal that interrupts the user to confirm an action.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/context-menu">
+          Context Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A menu shown on right-click.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dialog">
+          Dialog
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A modal window overlaid on the page.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/drawer">
+          Drawer
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A panel that slides up from the bottom of the screen.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/hover-card">
+          Hover Card
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A card of preview content shown on hover.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/popover">
+          Popover
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Rich floating content triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/sheet">
+          Sheet
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A panel that slides in from the edge of the screen.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/tooltip">
+          Tooltip
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A floating label shown on hover or focus.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Feedback &amp; status</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/alert">
+          Alert
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a callout for user attention.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/badge">
+          Badge
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a badge or a component that looks like a badge.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/countdown">
+          Countdown
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated numeric odometer for countdowns.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/indicator">
+          Indicator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A corner badge overlaid on another element.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/progress">
+          Progress
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays an indicator showing completion progress.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/radial-progress">
+          Radial Progress
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A circular percentage progress ring.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/skeleton">
+          Skeleton
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A placeholder preview while content is loading.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/spinner">
+          Spinner
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated loading indicator.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/status">
+          Status
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A tiny status dot for online/offline state.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/toast">
+          Toast
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A brief, auto-dismissing notification.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Data display</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/accordion">
+          Accordion
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Vertically stacked, expandable sections.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/avatar">
+          Avatar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An image element with a text fallback.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/card">
+          Card
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A container for grouping related content and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/carousel">
+          Carousel
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A slideshow of items with previous/next controls.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/chart">
+          Chart
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Simple bar and line charts drawn with the theme colors.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/chat">
+          Chat
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Chat-bubble message rows aligned left or right.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/collapsible">
+          Collapsible
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A single expandable/collapsible section.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/data-table">
+          Data Table
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A table with filtering, faceted filters, sorting, and paging.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/kbd">
+          Kbd
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays keyboard keys or shortcuts inline.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/list">
+          List
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Vertical rows of items with avatars and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/stat">
+          Stat
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Compact blocks for key metrics.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/table">
+          Table
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A responsive table for displaying rows of data.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/timeline">
+          Timeline
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A vertical or horizontal sequence of events.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Layout</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/aspect-ratio">
+          Aspect Ratio
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Constrains content to a fixed width/height ratio.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/empty">
+          Empty
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A placeholder for when there is no content to show.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/footer">
+          Footer
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A multi-column page footer layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/hero">
+          Hero
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A full-width hero section layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/mask">
+          Mask
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Clip an element to a shape.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/mockup">
+          Mockup
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Browser and code window mockup frames.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/resizable">
+          Resizable
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Panels the user can resize by dragging a handle.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/scroll-area">
+          Scroll Area
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A scrollable region with a fixed height.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/separator">
+          Separator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Visually or semantically separates content.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/stack">
+          Stack
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Overlapping, stacked elements.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/typography">
+          Typography
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Styles for headings, prose, lists, and inline code.
+          </span>
+        </a>
+      </li>
+    
+  </ul>
+  <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+    No results found.
+  </p>
+</dialog>
+  </body>
+</html>
