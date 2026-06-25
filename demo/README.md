@@ -1,6 +1,6 @@
 # shadcn_daisyui - demo & docs site
 
-A Phoenix 1.8 app that documents the [`shadcn_daisyui`](https://github.com/N00nDay/shadcn_daisyui)
+A Phoenix 1.8 app that documents the [`shadcn_daisyui`](https://github.com/infinity-home-services/shadcn_daisyui)
 package: a landing page, a per-component docs browser (live previews + Preview/Code tabs), an
 installation guide, and an interactive theme creator.
 

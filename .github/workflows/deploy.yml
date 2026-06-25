@@ -2,7 +2,7 @@ name: Deploy demo site
 
 # Rebuilds the static docs/demo site and publishes it to the `gh-pages` branch on
 # every push to main. GitHub Pages (Settings -> Pages -> Source: Deploy from a
-# branch -> gh-pages) serves it at https://n00nday.github.io/shadcn_daisyui/.
+# branch -> gh-pages) serves it at https://infinity-home-services.github.io/shadcn_daisyui/.
 
 on:
   push:

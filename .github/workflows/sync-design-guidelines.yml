@@ -8,7 +8,7 @@ name: Sync design guidelines
 # scripts/sync_design_consumers.sh (the same script you can run locally).
 #
 # Requires a repo secret SYNC_TOKEN: a fine-grained PAT with Contents: read/write
-# on N00nDay/shadcn_daisyui_design and N00nDay/shadcn_daisyui_swift. The built-in
+# on infinity-home-services/shadcn_daisyui_design and infinity-home-services/shadcn_daisyui_swift. The built-in
 # GITHUB_TOKEN only has access to this repo, so cross-repo pushes need the PAT.
 
 on:
@@ -35,14 +35,14 @@ jobs:
       - name: Check out plugin repo
         uses: actions/checkout@v6
         with:
-          repository: N00nDay/shadcn_daisyui_design
+          repository: infinity-home-services/shadcn_daisyui_design
           path: plugin
           token: ${{ secrets.SYNC_TOKEN }}
 
       - name: Check out Swift repo
         uses: actions/checkout@v6
         with:
-          repository: N00nDay/shadcn_daisyui_swift
+          repository: infinity-home-services/shadcn_daisyui_swift
           path: swift
           token: ${{ secrets.SYNC_TOKEN }}
 
