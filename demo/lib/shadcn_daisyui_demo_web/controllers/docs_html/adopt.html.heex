@@ -22,7 +22,7 @@
       </p>
       <.code_block
         language="claude"
-        code={~S|/plugin marketplace add N00nDay/shadcn_daisyui_design
+        code={~S|/plugin marketplace add infinity-home-services/shadcn_daisyui_design
 /plugin install shadcn-daisyui-design-system@shadcn-daisyui|}
       />
       <p class="text-sm text-muted-foreground">
@@ -31,7 +31,7 @@
         </code>. Prefer no plugin? Copy the skill folder into
         <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">.claude/skills/</code>
         from the <a
-          href="https://github.com/N00nDay/shadcn_daisyui_design"
+          href="https://github.com/infinity-home-services/shadcn_daisyui_design"
           class="link link-primary"
         >
           plugin repo
@@ -81,7 +81,9 @@ mix usage_rules.sync AGENTS.md --all|}
       </p>
       <.code_block
         language="Package.swift"
-        code={~S|.package(url: "https://github.com/N00nDay/shadcn_daisyui_swift", from: "0.1.0")|}
+        code={
+          ~S|.package(url: "https://github.com/infinity-home-services/shadcn_daisyui_swift", from: "0.1.0")|
+        }
       />
       <.code_block
         language="swift"
@@ -109,7 +111,9 @@ Text("Settings").font(.sdPageTitle).foregroundStyle(Color.sdForeground)
       </p>
       <.code_block
         language="shell"
-        code={~S|curl https://n00nday.github.io/shadcn_daisyui/design-guidelines.md > DESIGN.md|}
+        code={
+          ~S|curl https://infinity-home-services.github.io/shadcn_daisyui/design-guidelines.md > DESIGN.md|
+        }
       />
       <p class="text-sm text-muted-foreground">
         It's also the

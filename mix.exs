@@ -2,7 +2,7 @@ defmodule ShadcnDaisyui.MixProject do
   use Mix.Project
 
   @version "0.3.0"
-  @source_url "https://github.com/N00nDay/shadcn_daisyui"
+  @source_url "https://github.com/infinity-home-services/shadcn_daisyui"
 
   def project do
     [
