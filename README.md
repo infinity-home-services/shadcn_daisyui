@@ -28,7 +28,7 @@ Requires **Tailwind v4 + daisyUI v5** (Phoenix 1.8 ships both).
 # mix.exs
 def deps do
   [
-    {:shadcn_daisyui, github: "N00nDay/shadcn_daisyui"}
+    {:shadcn_daisyui, github: "infinity-home-services/shadcn_daisyui"}
   ]
 end
 ```

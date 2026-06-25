@@ -41,7 +41,7 @@ defmodule ShadcnDaisyuiDemo.MixProject do
   # SHADCN_DAISYUI_FROM_GIT=1.
   defp shadcn_daisyui_dep do
     if System.get_env("SHADCN_DAISYUI_FROM_GIT") do
-      {:shadcn_daisyui, github: "N00nDay/shadcn_daisyui"}
+      {:shadcn_daisyui, github: "infinity-home-services/shadcn_daisyui"}
     else
       {:shadcn_daisyui, path: ".."}
     end
