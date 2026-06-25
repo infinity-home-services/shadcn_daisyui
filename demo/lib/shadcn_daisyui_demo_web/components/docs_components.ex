@@ -59,7 +59,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
             <kbd class="kbd kbd-sm sm:ml-auto">⌘K</kbd>
           </button>
           <a
-            href="https://github.com/N00nDay/shadcn_daisyui"
+            href="https://github.com/infinity-home-services/shadcn_daisyui"
             class="btn btn-ghost btn-sm btn-square"
             aria-label="GitHub repository"
           >
@@ -89,7 +89,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           </a>
           and the
           <a
-            href="https://github.com/N00nDay/shadcn_daisyui"
+            href="https://github.com/infinity-home-services/shadcn_daisyui"
             class="link link-hover font-medium text-foreground"
           >
             shadcn_daisyui

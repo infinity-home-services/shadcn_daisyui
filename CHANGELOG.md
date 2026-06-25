@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Repository moved to the `infinity-home-services` GitHub organization.** All
+  three repos (`shadcn_daisyui`, `shadcn_daisyui_swift`, `shadcn_daisyui_design`)
+  now live under `github.com/infinity-home-services`. Updated the package
+  `@source_url`, install snippets in the README and docs site, the Pages URL
+  (`infinity-home-services.github.io/shadcn_daisyui`), and the cross-repo
+  references in the "Sync design guidelines" CI workflow. GitHub redirects the old
+  `N00nDay/*` URLs for reads, but pushes and the design-sync workflow require the
+  new owner. (The `SYNC_TOKEN` secret must be reissued as a fine-grained PAT scoped
+  to the new org's consumer repos.)
 - **Docs-site navigation & component pages.** The catalog sidebar now groups
   components by function (Forms & inputs, Actions, Navigation, Overlays, Feedback
   & status, Data display, Layout), alphabetized within each group, and every
