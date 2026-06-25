@@ -17,11 +17,13 @@ action or orients a transition - it never decorates.
   (width, height, top/left, margin) and never color *transitions* on theme
   switch.
 - Theme switching is **instant by design** (no fade - fading light↔dark passes
-  text through a grey crossover). [web] The theme CSS forces
-  `transition-duration: 0s` on everything except components with their own
-  enter/exit animations (dialog, drawer, tooltip, carousel, skeleton, countdown).
-  **Do not fight this patch guard**: missing hover fades are intentional; adding
-  per-element transition overrides reintroduces flicker.
+  text through a grey crossover). [web] The theme CSS only zeroes out
+  `transition-duration` while `<html>` carries the `theme-transition` class, so
+  the swap itself never fades while hover/focus/micro transitions stay live the
+  rest of the time. **Toggle the theme through the package's `setTheme(theme)`
+  helper** (`shadcn-daisyui.js`) - it adds the class, flips `data-theme`, and
+  drops it on the next frame. Setting `data-theme` directly skips the guard and
+  the swap will fade-flicker.
 - No entrance animations for page content - content appears immediately.
   Skeletons cover loading; don't add fade-ins on top.
 - Respect reduced motion: [web] gate any added animation behind
