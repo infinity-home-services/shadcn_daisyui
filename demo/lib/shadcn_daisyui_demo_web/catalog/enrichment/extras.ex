@@ -372,7 +372,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Extras do
             "The polite live region announces each new value as the countdown ticks.",
           touch_target: "Not interactive; no hit-target requirement.",
           reduced_motion:
-            "The digit roll is excluded from the global transition reset; honor prefers-reduced-motion if you drive it yourself."
+            "The digit roll is excluded from the theme-swap transition reset; honor prefers-reduced-motion if you drive it yourself."
         },
         swiftui: %{
           code: ~S"""

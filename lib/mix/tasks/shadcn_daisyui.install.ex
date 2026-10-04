@@ -14,7 +14,8 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
       `deps/`, add `@source` for the package's components, set the `dark:` variant
     * patch `assets/js/app.js` - import the `Hooks` and spread them into your
       `LiveSocket`
-    * patch your root layout - `data-theme="shadcn"` on `<html>`
+    * patch your root layout - `data-theme="shadcn"` on `<html>`, or wrap Phoenix
+      1.8's stock theme script in the `theme-transition` guard (instant swap)
     * replace `lib/<app>_web/components/core_components.ex` with a thin module
       delegating to `ShadcnDaisyui.CoreComponents` (original backed up; every
       component stays overridable; your Gettext error translation is preserved)

@@ -66,7 +66,7 @@
             <span class="hero-arrow-right size-4" aria-hidden="true"></span>
           </div>
         </div>
-        <%!-- Web Animations API: immune to the instant-theme transition-duration override. --%>
+        <%!-- Web Animations API: unaffected by the theme-swap transition-duration override. --%>
         <button
           type="button"
           class="btn btn-outline btn-sm w-full"
@@ -83,12 +83,16 @@
     <div class="rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
       <p>
         Theme switching is instant by design: fading light↔dark passes text through a grey
-        crossover where contrast dies. The theme CSS forces
-        <code class="font-mono text-xs">transition-duration: 0s</code>
-        on everything except
-        components with their own enter/exit animations (dialog, drawer, tooltip, carousel,
-        skeleton, countdown). Missing hover fades are intentional - adding per-element
-        transition overrides reintroduces the flicker.
+        crossover where contrast dies. While <code class="font-mono text-xs">&lt;html&gt;</code>
+        carries the <code class="font-mono text-xs">theme-transition</code>
+        class, the theme CSS forces <code class="font-mono text-xs">transition-duration: 0s</code>
+        on everything except components with their own enter/exit animations (dialog, drawer,
+        tooltip, carousel, skeleton, countdown). <code class="font-mono text-xs">setTheme</code>
+        from <code class="font-mono text-xs">shadcn-daisyui.js</code>
+        adds the class, swaps <code class="font-mono text-xs">data-theme</code>, and drops it on
+        the next frame, so hover/focus/micro transitions stay live the rest of the time. Setting
+        <code class="font-mono text-xs">data-theme</code>
+        directly skips the guard and the swap fades.
       </p>
     </div>
     <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">

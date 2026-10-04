@@ -43,7 +43,9 @@ The installer wires everything automatically:
 - `assets/css/app.css` - daisyUI `themes: false`, imports the theme from `deps/`,
   adds `@source` for the package's components, sets the `dark:` variant
 - `assets/js/app.js` - imports the `Hooks` and spreads them into your `LiveSocket`
-- root layout - `data-theme="shadcn"` on `<html>`
+- root layout - `data-theme="shadcn"` on `<html>`, or, for Phoenix 1.8's stock
+  theme script, wraps its `setTheme` in the `theme-transition` guard so the
+  light/dark swap stays instant
 - `core_components.ex` - replaced with a thin module delegating to
   `ShadcnDaisyui.CoreComponents` (original backed up; every component overridable;
   your Gettext error translation preserved)
@@ -52,6 +54,22 @@ The installer wires everything automatically:
 Because assets are imported from `deps/`, upgrading is just
 `mix deps.update shadcn_daisyui`. Prefer owning the files? `mix shadcn_daisyui.install --copy`
 copies them into `assets/` (refresh later with `mix shadcn_daisyui.upgrade`).
+
+**Upgrading from 0.3:** the transition guard is now scoped to theme swaps, so
+anything that sets `data-theme` directly will fade. Re-run
+`mix shadcn_daisyui.install` (idempotent) to patch Phoenix's stock theme script,
+or switch your toggle to `setTheme` from `shadcn-daisyui.js`. A hand-written
+script needs the same wrap:
+
+```js
+const setTheme = (theme) => {
+  document.documentElement.classList.add("theme-transition");
+  // ... set or remove data-theme as before ...
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => document.documentElement.classList.remove("theme-transition"))
+  );
+};
+```
 
 ### AI agents
 

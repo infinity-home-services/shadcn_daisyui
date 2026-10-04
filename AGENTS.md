@@ -28,17 +28,21 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   `--border-color`. Don't confuse them.
 - **Components are thin.** Styling belongs in the theme CSS, not in long class
   lists inside components. A component exists to encode structure/ARIA/hook markup.
-- **Theme toggle is INSTANT (pure CSS, no JS).** Fading between light and dark
-  inherently flickers - a fading background sweeps through the lightness of the
-  text/borders in front of it, so they cross at a gray midpoint and lose
-  contrast. No fade survives that, so one `:not(...)` rule at the bottom of
-  `shadcn-daisyui.css` forces `transition-duration: 0` on every non-excluded
-  element; the theme just switches. The `:not(...)` exclusion list (dialog,
+- **Theme toggle is INSTANT (scoped CSS guard + `setTheme`).** Fading between
+  light and dark inherently flickers - a fading background sweeps through the
+  lightness of the text/borders in front of it, so they cross at a gray midpoint
+  and lose contrast. No fade survives that, so one `html.theme-transition
+  :not(...)` rule at the bottom of `shadcn-daisyui.css` forces
+  `transition-duration: 0` on every non-excluded element, but only while `<html>`
+  has the `theme-transition` class. `setTheme(theme)` (exported from
+  `shadcn-daisyui.js`) adds the class, swaps `data-theme`, and removes the class
+  on the next frame, so the swap is instant while hover/focus/micro transitions
+  stay live the rest of the time. The `:not(...)` exclusion list (dialog,
   drawer, tooltip, carousel, skeleton, countdown) keeps those components' own
-  enter/exit animations. Don't reintroduce a color fade for theme changes (it
-  brings the flicker back). Bringing back animated hover/focus while keeping the
-  toggle instant would need a small JS "disable transitions during the swap"
-  guard - intentionally omitted.
+  enter/exit animations. Anything that sets `data-theme` must go through this
+  guard (the demo's root layout and the installer-patched Phoenix theme script
+  both do); don't reintroduce a color fade for theme changes or make the rule
+  global again (that kills consumer transitions).
 - **The demo never copies package assets.** `demo/assets` imports
   `../../../priv/static/shadcn-daisyui.{css,js}` directly - copies drift.
 - **Every interactive component needs `id`** and renders the exact markup its JS

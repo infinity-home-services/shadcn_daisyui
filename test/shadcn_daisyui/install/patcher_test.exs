@@ -116,7 +116,78 @@ defmodule ShadcnDaisyui.Install.PatcherTest do
       assert Patcher.patch_root_layout(heex) == heex
     end
 
-    test "leaves Phoenix 1.8 stock layouts alone (client-side theme script)" do
+    @stock_layout """
+    <html lang="en">
+      <head>
+        <script>
+          (() => {
+            const setTheme = (theme) => {
+              if (theme === "system") {
+                localStorage.removeItem("phx:theme");
+                document.documentElement.removeAttribute("data-theme");
+              } else {
+                localStorage.setItem("phx:theme", theme);
+                document.documentElement.setAttribute("data-theme", theme);
+              }
+            };
+            if (!document.documentElement.hasAttribute("data-theme")) {
+              setTheme(localStorage.getItem("phx:theme") || "system");
+            }
+            window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+            window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+          })();
+        </script>
+      </head>
+    </html>
+    """
+
+    test "wraps the Phoenix 1.8 stock theme script in the theme-transition guard" do
+      assert Patcher.patch_root_layout(@stock_layout) == """
+             <html lang="en">
+               <head>
+                 <script>
+                   (() => {
+                     const setTheme = (theme) => {
+                       document.documentElement.classList.add("theme-transition");
+                       if (theme === "system") {
+                         localStorage.removeItem("phx:theme");
+                         document.documentElement.removeAttribute("data-theme");
+                       } else {
+                         localStorage.setItem("phx:theme", theme);
+                         document.documentElement.setAttribute("data-theme", theme);
+                       }
+                       requestAnimationFrame(() =>
+                         requestAnimationFrame(() => document.documentElement.classList.remove("theme-transition"))
+                       );
+                     };
+                     if (!document.documentElement.hasAttribute("data-theme")) {
+                       setTheme(localStorage.getItem("phx:theme") || "system");
+                     }
+                     window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+                     window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+                   })();
+                 </script>
+               </head>
+             </html>
+             """
+    end
+
+    test "stock theme script patch is idempotent and adds no data-theme" do
+      patched = Patcher.patch_root_layout(@stock_layout)
+      assert Patcher.patch_root_layout(patched) == patched
+      refute patched =~ ~s(<html data-theme)
+    end
+
+    test "leaves an already-guarded theme script alone (e.g. the demo's)" do
+      heex =
+        File.read!("demo/lib/shadcn_daisyui_demo_web/components/layouts/root.html.heex")
+
+      assert Patcher.patch_root_layout(heex) == heex
+    end
+
+    test "leaves an unrecognized phx:set-theme script alone" do
       heex = """
       <html lang="en">
         <script>

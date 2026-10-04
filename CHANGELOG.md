@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-04
+
+### Upgrading from 0.3
+
+The theme-toggle transition guard is now scoped to theme swaps (see Changed), so
+anything that sets `data-theme` directly will fade-flicker on light/dark swap.
+Re-run `mix shadcn_daisyui.install` (idempotent) - it now wraps Phoenix 1.8's
+stock theme script in the guard - or switch your toggle to `setTheme` from
+`shadcn-daisyui.js`. A hand-written theme script needs the same wrap:
+
+```js
+const setTheme = (theme) => {
+  document.documentElement.classList.add("theme-transition");
+  // ... set or remove data-theme as before ...
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => document.documentElement.classList.remove("theme-transition"))
+  );
+};
+```
+
 ### Added
 
 - **`priv/tokens.json`** - a machine-readable single source of truth for the
@@ -81,6 +101,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of a swap by `setTheme`), so the toggle stays flicker-free while ordinary
   transitions work again. Apps that switch the theme by setting `data-theme`
   directly should move to `setTheme` to keep the swap from fading.
+- **`mix shadcn_daisyui.install` patches Phoenix's stock theme script.** For root
+  layouts using Phoenix 1.8's inline `phx:set-theme` script, the installer now
+  wraps its `setTheme` in the `theme-transition` guard (add the class, swap
+  `data-theme`, remove it after the next frame) instead of leaving the layout
+  untouched. Already-guarded scripts are left alone.
 - **Form controls no longer hard-set `background-color: transparent`.** `.input`,
   `.textarea`, `.select`, and `.file-input` (plus the custom `<.select>` /
   `<.combobox>` triggers) now use `var(--input-background)`, which defaults to

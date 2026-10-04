@@ -135,15 +135,62 @@ defmodule ShadcnDaisyui.Install.Patcher do
 
   Phoenix 1.8's stock layout manages data-theme client-side (the phx:set-theme
   script, values "light"/"dark"/"system") - the theme CSS aliases those values,
-  so such layouts are left untouched.
+  so no data-theme is added. Instead its inline `setTheme` is wrapped in the
+  `theme-transition` guard so the swap stays instant (see `setTheme` in
+  shadcn-daisyui.js).
   """
   def patch_root_layout(heex) do
-    if heex =~ "phx:set-theme" or Regex.match?(~r/<html[^>]*data-theme/, heex) do
-      heex
-    else
-      Regex.replace(~r/<html/, heex, ~s(<html data-theme="shadcn"), global: false)
+    cond do
+      heex =~ "phx:set-theme" -> ensure_theme_transition_guard(heex)
+      Regex.match?(~r/<html[^>]*data-theme/, heex) -> heex
+      true -> Regex.replace(~r/<html/, heex, ~s(<html data-theme="shadcn"), global: false)
     end
   end
+
+  # Wrap the body of the stock `const setTheme = (theme) => { ... };` in
+  # add/remove of the `theme-transition` class (removed two frames later, after
+  # the new theme has painted). Untouched if already guarded or not found.
+  defp ensure_theme_transition_guard(heex) do
+    with false <- heex =~ "theme-transition",
+         [{start, len}, {ind_start, ind_len}] <-
+           Regex.run(~r/^([ \t]*)const setTheme = \(theme\) => \{[ \t]*\n/m, heex, return: :index),
+         body_start = start + len,
+         {:ok, close} <- matching_brace(heex, body_start, 1) do
+      body = binary_part(heex, ind_start, ind_len) <> "  "
+
+      add = ~s|#{body}document.documentElement.classList.add("theme-transition");\n|
+
+      remove = """
+      #{body}requestAnimationFrame(() =>
+      #{body}  requestAnimationFrame(() => document.documentElement.classList.remove("theme-transition"))
+      #{body});
+      """
+
+      # insert before the line holding the closing brace
+      {newline, 1} = heex |> binary_part(0, close) |> :binary.matches("\n") |> List.last()
+      close_line = newline + 1
+
+      binary_part(heex, 0, body_start) <>
+        add <>
+        binary_part(heex, body_start, close_line - body_start) <>
+        remove <>
+        binary_part(heex, close_line, byte_size(heex) - close_line)
+    else
+      _ -> heex
+    end
+  end
+
+  # Byte index of the `}` closing a block whose body starts at `i` (`depth` open).
+  defp matching_brace(string, i, depth) when i < byte_size(string) do
+    case :binary.at(string, i) do
+      ?{ -> matching_brace(string, i + 1, depth + 1)
+      ?} when depth == 1 -> {:ok, i}
+      ?} -> matching_brace(string, i + 1, depth - 1)
+      _ -> matching_brace(string, i + 1, depth)
+    end
+  end
+
+  defp matching_brace(_string, _i, _depth), do: :error
 
   @doc """
   Adds `use ShadcnDaisyui.Components` to the `html_helpers` block of

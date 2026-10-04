@@ -154,7 +154,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           screen_reader:
             "Associated label is announced; placeholder is supplementary, never a label substitute. Errors surface via the rendered error text.",
           touch_target: "Resizable text region; comfortably exceeds the 44pt minimum.",
-          reduced_motion: "Focus transition is instant under the theme; no animation to suppress."
+          reduced_motion: "Focus is a short color/ring transition only; nothing moves."
         },
         swiftui: %{
           code: ~S"""
@@ -306,7 +306,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             "Checked state is announced. Wrapping the input in a label row gives it an accessible name.",
           touch_target:
             "Visual box is 16px; wrap it in the full label row so the effective hit area reaches 44pt on touch.",
-          reduced_motion: "Checkmark appears instantly under the theme."
+          reduced_motion: "Checking is a short color transition only; nothing moves."
         },
         swiftui: %{
           code: ~S"""
@@ -351,7 +351,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           screen_reader:
             "Legend is announced as the group name; each radio announces its label and position in the set.",
           touch_target: "Each option is a full label row, giving a 44pt-friendly hit area.",
-          reduced_motion: "Selection dot appears instantly under the theme."
+          reduced_motion: "Selecting is a short color transition only; nothing moves."
         },
         swiftui: %{
           code: ~S"""
@@ -396,7 +396,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           screen_reader:
             "On/off state is announced via the checkbox semantics; the wrapping label supplies the name. For a literal switch role add role=switch.",
           touch_target: "Wrap in the label row for a 44pt-friendly hit area on touch.",
-          reduced_motion: "Theme forces an instant switch; the knob does not animate its slide."
+          reduced_motion:
+            "The knob change is a brief state cue, not decorative motion; add nothing on top."
         },
         swiftui: %{
           code: ~S"""
@@ -568,7 +569,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             "Table semantics let users navigate by row and column. Provide a caption or surrounding heading for context.",
           touch_target:
             "Interactive cell content (action buttons/links) should meet the 44pt minimum on touch.",
-          reduced_motion: "Row hover tint is instant under the theme."
+          reduced_motion: "Row hover is a short color transition only; nothing moves."
         },
         swiftui: %{
           code: ~S"""

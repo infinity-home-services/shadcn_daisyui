@@ -282,8 +282,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.MorePrimitives do
             "The nav landmark and link text are announced; this hover-driven menu does not expose full menu semantics.",
           touch_target:
             "btn-sm triggers are compact; ensure 2.75rem effective area where the bar is used on touch.",
-          reduced_motion:
-            "Panels appear without animated transitions under the instant-theme rule."
+          reduced_motion: "Panels appear without entrance animation; nothing to suppress."
         },
         swiftui: %{
           code: ~S"""
