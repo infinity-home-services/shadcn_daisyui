@@ -1167,41 +1167,74 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
         },
         ios_status: :partial
       },
-      "toast" => %{
+      "sonner" => %{
         specs: %{
           anatomy: [
             %{
-              part: "Host",
+              part: "Toaster",
               description:
-                "Fixed bottom-end container (toast-host) with role=status and aria-live=polite."
+                "<.toaster> section (aria-label \"Notifications alt+T\", aria-live=polite) holding one <ol> stack per screen position."
             },
             %{
               part: "Toast",
-              description: "Alert/card injected by showToast(), animated in and out."
+              description:
+                "<li role=status>: optional type icon, title + description, optional cancel/action buttons and close button."
+            },
+            %{
+              part: "Stack",
+              description:
+                "Newest toast in front; up to 3 visible, the ones behind peek out scaled down. Hover or focus expands the stack."
             }
           ],
           measurements: [
-            %{property: "Position", value: "toast-end toast-bottom, z-60"},
-            %{property: "Toast shadow", value: "var(--shadow-sm)"},
-            %{property: "Enter", value: "shadcn-toast-in keyframe (~slide + fade)"},
-            %{property: "Exit", value: "shadcn-toast-out keyframe"}
+            %{property: "Width", value: "356px (full width minus 16px gutters under 600px)"},
+            %{property: "Padding / radius", value: "16px / var(--radius-lg)"},
+            %{property: "Viewport offset", value: "24px (16px on phones)"},
+            %{property: "Stack gap", value: "14px; collapsed toasts scale 5% per step"},
+            %{
+              property: "Title / description",
+              value: "13px, 500 / 400 weight; description muted-foreground"
+            },
+            %{property: "Action button", value: "24px tall, primary fill, 12px / 500"},
+            %{
+              property: "Duration",
+              value: "4000ms default; paused while hovered, focused, or tab hidden"
+            },
+            %{property: "Motion", value: "400ms transform/opacity/height; swipe 45px to dismiss"}
           ],
-          tokens: ["popover", "popover-foreground", "card", "border-color"]
+          tokens: [
+            "popover",
+            "popover-foreground",
+            "border-color",
+            "muted-foreground",
+            "primary",
+            "primary-foreground",
+            "color-success",
+            "color-info",
+            "color-warning",
+            "destructive"
+          ]
         },
         accessibility: %{
           roles:
-            "The host is role=status with aria-live=polite, so appended toasts are announced without stealing focus. Use an assertive live region only for truly urgent messages.",
+            "The toaster is a labeled polite live region; each toast is role=status (aria-live=assertive only when sent with important: true), so toasts are announced without stealing focus.",
           keyboard: [
-            %{keys: "Tab", action: "Reach an action/close control inside a toast (if present)"}
+            %{keys: "Alt + T", action: "Move focus to the toasts and expand the stack"},
+            %{
+              keys: "Tab / Shift+Tab",
+              action: "Move between toasts and their action, cancel, and close buttons"
+            },
+            %{keys: "Enter / Space", action: "Activate the focused action or close button"},
+            %{keys: "Escape", action: "Leave the toaster and collapse the stack"}
           ],
           focus:
-            "Toasts do not steal focus; any close/action button inside is reachable in normal tab order.",
+            "Toasts never take focus on their own; a focused or hovered stack pauses its timers so keyboard and screen-reader users have time to act.",
           screen_reader:
-            "The polite live region reads new toasts after the current utterance. Keep messages short and self-contained.",
+            "Title and description are read as one atomic message. Keep them short and self-contained; never put the only copy of important information in a toast.",
           touch_target:
-            "Any dismiss/action control inside the toast should meet the 44pt minimum.",
+            "Swipe a toast toward its screen edge to dismiss. The action button is 24px tall; on touch-first screens prefer an in-page control for anything critical.",
           reduced_motion:
-            "The slide/fade keyframes should be reduced to a plain appearance under prefers-reduced-motion."
+            "Under prefers-reduced-motion, toasts appear and leave without sliding or scaling, and the loading spinner slows down."
         },
         swiftui: %{
           code: ~S"""

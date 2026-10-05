@@ -155,6 +155,45 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assert html =~ "data-calendar-range"
       assert html =~ "Pick a date range"
     end
+
+    test "range_calendar renders the hook, an ignored grid mount, and months" do
+      assigns = %{}
+      html = render(~H|<.range_calendar id="stay" months={2} />|)
+
+      assert html =~ ~s(id="stay")
+      assert html =~ ~s(phx-hook="ShadcnRangeCalendar")
+      assert html =~ "data-range-calendar"
+      assert html =~ ~s(data-months="2")
+      assert html =~ ~s(id="stay-grid" phx-update="ignore" data-range-calendar-grid)
+      refute html =~ ~s(type="hidden")
+    end
+
+    test "range_calendar emits named hidden inputs with ISO dates when form-bound" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.range_calendar
+          id="booking"
+          start_name="booking[check_in]"
+          end_name="booking[check_out]"
+          start={~D[2026-10-04]}
+          end="2026-10-11"
+        />
+        """)
+
+      assert html =~ ~s(name="booking[check_in]" value="2026-10-04" data-range-start)
+      assert html =~ ~s(name="booking[check_out]" value="2026-10-11" data-range-end)
+      assert html =~ ~s(data-start="2026-10-04")
+      assert html =~ ~s(data-end="2026-10-11")
+    end
+
+    test "range_calendar ignores blank preselected values" do
+      assigns = %{}
+      html = render(~H|<.range_calendar id="r" start_name="s" start="" />|)
+      assert html =~ ~s(name="s" data-range-start)
+      refute html =~ "data-start="
+    end
   end
 
   describe "combobox/1" do

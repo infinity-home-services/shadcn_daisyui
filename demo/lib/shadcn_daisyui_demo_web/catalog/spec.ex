@@ -7,7 +7,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Spec do
   `validate!/1`. This is the "bulletproof editing" guarantee: a missing required
   field, an unknown/typo'd key, or a malformed `guidance`/`props`/`examples`
   shape raises loudly (named by slug) instead of silently rendering a broken
-  page. The catalog test suite exercises `new!/1` for all 77 components, so any
+  page. The catalog test suite exercises `new!/1` for every component, so any
   drift fails CI.
 
   ## Fields

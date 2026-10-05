@@ -145,20 +145,227 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
     end
   end
 
-  describe "toast_host/1" do
-    test "renders the polite status region with the default id" do
+  describe "toaster/1" do
+    test "renders the sonner section wired to the ShadcnToaster hook" do
       assigns = %{}
-      html = render(~H|<.toast_host />|)
+      html = render(~H|<.toaster />|)
 
-      assert html =~ ~s(id="toast-host")
-      assert html =~ ~s(role="status")
+      assert html =~ ~s(id="toaster")
+      assert html =~ ~s(phx-hook="ShadcnToaster")
+      assert html =~ ~s(phx-update="ignore")
+      assert html =~ "data-sonner-section"
+      assert html =~ ~s(data-position="bottom-right")
+      assert html =~ ~s(aria-label="Notifications alt+T")
       assert html =~ ~s(aria-live="polite")
-      assert html =~ "toast toast-end toast-bottom"
     end
 
-    test "id is configurable" do
+    test "options become data attributes the JS reads" do
       assigns = %{}
-      assert render(~H|<.toast_host id="my-toasts" />|) =~ ~s(id="my-toasts")
+
+      html =
+        render(~H"""
+        <.toaster position="top-center" rich_colors close_button expand duration={6000} />
+        """)
+
+      assert html =~ ~s(data-position="top-center")
+      assert html =~ ~s(data-rich-colors="true")
+      assert html =~ ~s(data-close-button="true")
+      assert html =~ ~s(data-expand="true")
+      assert html =~ ~s(data-duration="6000")
+    end
+
+    test "toast_host/1 (deprecated) still renders a toaster with the old id" do
+      assigns = %{}
+      html = render(~H|<.toast_host />|)
+      assert html =~ ~s(id="toast-host")
+      assert html =~ "data-sonner-section"
+    end
+  end
+
+  describe "push_toast/3" do
+    defp pushed(socket) do
+      [[event, payload]] = socket.private.live_temp.push_events
+      {event, payload}
+    end
+
+    defp socket do
+      %Phoenix.LiveView.Socket{private: %{live_temp: %{}}}
+    end
+
+    test "pushes a shadcn:toast event with message, type, and options" do
+      {event, payload} =
+        socket()
+        |> push_toast("Saved",
+          type: :success,
+          description: "All changes stored",
+          action: %{label: "Undo", event: "undo", value: %{id: 1}, extra: :dropped}
+        )
+        |> pushed()
+
+      assert event == "shadcn:toast"
+      assert payload.message == "Saved"
+      assert payload.type == "success"
+      assert payload.description == "All changes stored"
+      assert payload.action == %{label: "Undo", event: "undo", value: %{id: 1}}
+      refute Map.has_key?(payload, :cancel)
+    end
+
+    test "type defaults to default" do
+      {_, payload} = socket() |> push_toast("Hello") |> pushed()
+      assert payload.type == "default"
+    end
+
+    test "dismiss one or all" do
+      assert {_, %{dismiss: true, id: 7}} = socket() |> push_toast(nil, dismiss: 7) |> pushed()
+      assert {_, %{dismiss: true} = all} = socket() |> push_toast(nil, dismiss: true) |> pushed()
+      refute Map.has_key?(all, :id)
+    end
+  end
+
+  describe "item/1" do
+    test "renders slots into shadcn data-slot parts" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.item variant="outline" size="sm">
+          <:media variant="icon"><span class="hero-shield-check"></span></:media>
+          <:title>Two-factor authentication</:title>
+          <:description>Verify via email.</:description>
+          <:actions><button>Enable</button></:actions>
+        </.item>
+        """)
+
+      assert html =~ ~s(<div data-slot="item" data-variant="outline" data-size="sm")
+      assert html =~ ~s(data-slot="item-media" data-variant="icon")
+      assert html =~ ~s(data-slot="item-content")
+      assert html =~ ~s(data-slot="item-title">Two-factor authentication)
+      assert html =~ ~s(<p data-slot="item-description">Verify via email.)
+      assert html =~ ~s(data-slot="item-actions")
+      refute html =~ "item-header"
+      refute html =~ "item-footer"
+    end
+
+    test "defaults to the default variant and size, and omits empty parts" do
+      assigns = %{}
+      html = render(~H|<.item><:title>Only a title</:title></.item>|)
+
+      assert html =~ ~s(data-variant="default" data-size="default")
+      refute html =~ "item-media"
+      refute html =~ "item-description"
+      refute html =~ "item-actions"
+    end
+
+    test "becomes a link with href/navigate/patch" do
+      assigns = %{}
+      html = render(~H|<.item navigate="/settings"><:title>Settings</:title></.item>|)
+
+      assert html =~ ~s(<a href="/settings")
+      assert html =~ ~s(data-phx-link="redirect")
+      assert html =~ ~s(data-slot="item")
+    end
+
+    test "header and footer render full-width rows" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.item>
+          <:header>Header</:header>
+          <:title>T</:title>
+          <:footer>Footer</:footer>
+        </.item>
+        """)
+
+      assert html =~ ~s(data-slot="item-header">Header)
+      assert html =~ ~s(data-slot="item-footer">Footer)
+    end
+
+    test "item_group is a list and item_separator a separator" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.item_group>
+          <.item role="listitem"><:title>A</:title></.item>
+          <.item_separator />
+          <.item role="listitem"><:title>B</:title></.item>
+        </.item_group>
+        """)
+
+      assert html =~ ~s(role="list" data-slot="item-group")
+      assert count(html, ~s(role="listitem")) == 2
+      assert html =~ ~s(role="separator")
+      assert html =~ ~s(data-slot="item-separator")
+    end
+  end
+
+  describe "attachment/1" do
+    test "renders state, size, orientation and parts" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.attachment state="uploading" size="sm">
+          <:media><span class="loading loading-spinner"></span></:media>
+          <:title>design-system.zip</:title>
+          <:description>Uploading · 64%</:description>
+          <:actions>
+            <.attachment_action label="Cancel upload">x</.attachment_action>
+          </:actions>
+        </.attachment>
+        """)
+
+      assert html =~
+               ~s(data-slot="attachment" data-state="uploading" data-size="sm" data-orientation="horizontal")
+
+      assert html =~ ~s(data-slot="attachment-media" data-variant="icon")
+      assert html =~ ~s(data-slot="attachment-title">design-system.zip)
+      assert html =~ ~s(data-slot="attachment-description")
+      assert html =~ ~s(data-slot="attachment-actions")
+      assert html =~ ~s(data-slot="attachment-action")
+      assert html =~ ~s(aria-label="Cancel upload")
+      assert html =~ ~s(title="Cancel upload")
+      assert html =~ ~s(type="button")
+    end
+
+    test "defaults to a done, horizontal, default-size tile" do
+      assigns = %{}
+      html = render(~H|<.attachment><:title>a.pdf</:title></.attachment>|)
+
+      assert html =~ ~s(data-state="done" data-size="default" data-orientation="horizontal")
+      refute html =~ "attachment-actions"
+      refute html =~ "attachment-trigger"
+    end
+
+    test "image media and a labeled full-tile trigger" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.attachment orientation="vertical">
+          <:media variant="image"><img src="/a.png" alt="Workspace" /></:media>
+          <:trigger label="Preview workspace.png" phx-click="preview" />
+        </.attachment>
+        """)
+
+      assert html =~ ~s(data-orientation="vertical")
+      assert html =~ ~s(data-slot="attachment-media" data-variant="image")
+      assert html =~ ~s(data-slot="attachment-trigger")
+      assert html =~ ~s(aria-label="Preview workspace.png")
+      assert html =~ ~s(phx-click="preview")
+      refute html =~ ~s( label="Preview)
+    end
+
+    test "attachment_group wraps tiles" do
+      assigns = %{}
+
+      html =
+        render(
+          ~H|<.attachment_group><.attachment><:title>a</:title></.attachment></.attachment_group>|
+        )
+
+      assert html =~ ~s(data-slot="attachment-group")
     end
   end
 end

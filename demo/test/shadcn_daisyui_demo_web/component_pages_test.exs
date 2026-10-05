@@ -1,7 +1,7 @@
 defmodule ShadcnDaisyuiDemoWeb.ComponentPagesTest do
   @moduledoc """
   Render-every-page smoke test: a broken example, guidance shape, or template
-  reference for any of the 77 components fails CI here instead of in production.
+  reference for any of the catalog components fails CI here instead of in production.
   """
   use ShadcnDaisyuiDemoWeb.ConnCase, async: true
 

@@ -130,6 +130,34 @@ And the component library:
 </.combobox>
 ```
 
+Toasts (shadcn's Sonner): put `<.toaster />` in your root layout once, then
+
+```elixir
+# from a LiveView
+{:noreply, push_toast(socket, "Event has been created", type: :success,
+  action: %{label: "Undo", event: "undo", value: %{id: event.id}})}
+```
+
+```js
+// or from JS
+import { toast } from "shadcn_daisyui"
+toast.promise(save(), { loading: "Saving…", success: "Saved", error: "Could not save" })
+```
+
+Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
+`<.attachment>`:
+
+```heex
+<.message_group role="log" aria-label="Conversation">
+  <.message align="end"><.bubble>Deploying to prod real quick.</.bubble></.message>
+  <.message>
+    <:avatar><.avatar fallback="R" class="w-8" /></:avatar>
+    <.bubble variant="muted">It's 4:55 PM. On a Friday.</.bubble>
+  </.message>
+  <.marker status shimmer>Oliver is typing...</.marker>
+</.message_group>
+```
+
 Interactive components need an `id` (LiveView hook requirement) and the `Hooks`
 registered (the installer does this).
 
@@ -146,9 +174,11 @@ See `usage-rules/theming.md` and the interactive theme creator on the docs site.
 
 ## What's included
 
-All 58 shadcn/ui components are reproducible with this theme - function-component
-wrappers exist for the common primitives, forms, overlays, navigation, and the
-interactive components; everything else is raw daisyUI classes that the theme
+Every component in shadcn-svelte's catalog (61 as of October 2026, including Item,
+the Message / Bubble / Marker / Attachment chat set, Sonner, and Range Calendar) is
+reproducible with this theme - function-component wrappers exist for the common
+primitives, forms, overlays, navigation, conversation, and the interactive
+components; everything else is raw daisyUI classes that the theme
 styles (recipes in `usage-rules.md`). See the docs site for a live gallery of
 every component, and `/llms.txt` there for the AI-readable index.
 

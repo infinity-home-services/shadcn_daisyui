@@ -24,38 +24,395 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   })
 }
 
-function showToast(variant) {
-  const host = document.getElementById("toast-host")
-  if (!host) return
-  const el = document.createElement("div")
-  el.className =
-    "alert flex w-80 max-w-[90vw] items-center justify-between gap-4 border border-base-300 bg-popover shadow-lg"
-  el.style.animation = "shadcn-toast-in .28s cubic-bezier(.21,1.02,.73,1)"
+// ---- Sonner (toast) --------------------------------------------------------
+// A dependency-free port of sonner's behaviour (the toast shadcn/ui ships):
+// typed toasts with icons, description, action / cancel buttons, promise
+// toasts, per-toast position, a collapsed stack that expands on hover/focus,
+// pause-on-hover timers, swipe to dismiss, and the Alt+T hotkey.
+//
+//   import { toast } from "shadcn-daisyui"
+//   toast("Event has been created", { description: "Sunday at 9:00 AM", action: { label: "Undo", onClick: undo } })
+//   toast.success("Saved")  ·  toast.error("Failed")  ·  toast.info(…)  ·  toast.warning(…)
+//   const id = toast.loading("Uploading…"); toast.success("Uploaded", { id })
+//   toast.promise(fetch("/api"), { loading: "Saving…", success: "Saved", error: "Could not save" })
+//   toast.dismiss(id)   // or toast.dismiss() for all
+//
+// Render one <.toaster /> (ShadcnDaisyui.Components) in the root layout to set
+// position and options; toast() creates a default bottom-right toaster if none
+// exists. From LiveView: ShadcnDaisyui.Components.push_toast(socket, "Saved").
 
-  const body = document.createElement("div")
-  body.className = "space-y-0.5"
-  const title = document.createElement("p")
-  title.className = "text-sm font-medium"
-  title.textContent = variant === "success" ? "Changes saved" : "Event has been created"
-  const desc = document.createElement("p")
-  desc.className = "text-sm text-muted-foreground"
-  desc.textContent = "Sunday, December 03 at 9:00 AM"
-  body.appendChild(title)
-  body.appendChild(desc)
+const TOAST_SVG = (paths) =>
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>"
+const TOAST_ICONS = {
+  success: TOAST_SVG('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
+  info: TOAST_SVG('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
+  warning: TOAST_SVG('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
+  error: TOAST_SVG('<path d="m15 9-6 6"/><path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/><path d="m9 9 6 6"/>'),
+  loading: TOAST_SVG('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'),
+}
+const TOAST_CLOSE = TOAST_SVG('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')
+const TOAST_GAP = 14
+const TOAST_UNMOUNT_MS = 400
+const SWIPE_THRESHOLD = 45
 
-  const action = document.createElement("button")
-  action.className = "btn btn-sm btn-outline"
-  action.textContent = "Undo"
+const sonner = { toasts: [], seq: 0, hotkey: false }
 
-  const dismiss = () => {
-    el.style.animation = "shadcn-toast-out .2s ease forwards"
-    setTimeout(() => el.remove(), 200)
+function toasterSection() {
+  let section = document.querySelector("[data-sonner-section]")
+  if (!section) {
+    section = document.createElement("section")
+    section.setAttribute("data-sonner-section", "")
+    document.body.appendChild(section)
   }
-  action.onclick = dismiss
-  el.appendChild(body)
-  el.appendChild(action)
-  host.appendChild(el)
-  setTimeout(dismiss, 3500)
+  if (!section.dataset.sonnerInit) {
+    section.dataset.sonnerInit = "1"
+    section.setAttribute("aria-label", "Notifications alt+T")
+    section.setAttribute("tabindex", "-1")
+    section.setAttribute("aria-live", "polite")
+    section.setAttribute("aria-relevant", "additions text")
+    section.setAttribute("aria-atomic", "false")
+  }
+  if (!sonner.hotkey) {
+    sonner.hotkey = true
+    document.addEventListener("keydown", (e) => {
+      if (e.altKey && e.code === "KeyT") {
+        const ol = document.querySelector("[data-sonner-toaster]")
+        if (ol) { setExpanded(ol, true); ol.focus() }
+      } else if (e.key === "Escape") {
+        const ol = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-sonner-toaster]")
+        if (ol) { ol.blur(); setExpanded(ol, false) }
+      }
+    })
+    document.addEventListener("visibilitychange", () => {
+      sonner.toasts.forEach((t) => (document.hidden ? pauseToast(t) : resumeToast(t)))
+    })
+  }
+  return section
+}
+
+function toasterOptions() {
+  const d = toasterSection().dataset
+  return {
+    position: d.position || "bottom-right",
+    expand: d.expand === "true",
+    richColors: d.richColors === "true",
+    closeButton: d.closeButton === "true",
+    duration: d.duration ? Number(d.duration) : 4000,
+    visibleToasts: d.visibleToasts ? Number(d.visibleToasts) : 3,
+  }
+}
+
+function toasterList(position) {
+  const section = toasterSection()
+  let ol = section.querySelector('[data-sonner-toaster][data-position="' + position + '"]')
+  if (ol) return ol
+  const [y, x] = position.split("-")
+  const opts = toasterOptions()
+  ol = document.createElement("ol")
+  ol.setAttribute("data-sonner-toaster", "")
+  ol.dataset.position = position
+  ol.dataset.yPosition = y
+  ol.dataset.xPosition = x
+  ol.dataset.richColors = String(opts.richColors)
+  ol.dataset.expanded = String(opts.expand)
+  ol.setAttribute("tabindex", "-1")
+  ol.dir = document.documentElement.dir || "ltr"
+  ol.addEventListener("mouseenter", () => setExpanded(ol, true))
+  ol.addEventListener("mousemove", () => setExpanded(ol, true))
+  ol.addEventListener("mouseleave", () => { if (!ol.contains(document.activeElement)) setExpanded(ol, false) })
+  ol.addEventListener("focusin", () => setExpanded(ol, true))
+  ol.addEventListener("focusout", (e) => { if (!ol.contains(e.relatedTarget)) setExpanded(ol, false) })
+  section.appendChild(ol)
+  return ol
+}
+
+function setExpanded(ol, on) {
+  const pinned = toasterOptions().expand
+  const next = String(on || pinned)
+  const hovering = on && !pinned
+  if (ol.dataset.expanded === next && ol.dataset.hovering === String(hovering)) return
+  ol.dataset.expanded = next
+  ol.dataset.hovering = String(hovering)
+  sonner.toasts.filter((t) => t.ol === ol).forEach((t) => (on ? pauseToast(t) : resumeToast(t)))
+  layoutToasts(ol)
+}
+
+function layoutToasts(ol) {
+  const list = sonner.toasts.filter((t) => t.ol === ol) // newest first
+  const max = toasterOptions().visibleToasts
+  const expanded = ol.dataset.expanded === "true"
+  let offset = 0
+  list.forEach((t, i) => {
+    const el = t.el
+    el.dataset.front = String(i === 0)
+    el.dataset.visible = String(i < max)
+    el.dataset.expanded = String(expanded)
+    el.dataset.index = String(i)
+    el.style.setProperty("--toasts-before", String(i))
+    el.style.setProperty("--z-index", String(list.length - i))
+    el.style.setProperty("--offset", offset + "px")
+    el.style.setProperty("--initial-height", t.height + "px")
+    offset += t.height + TOAST_GAP
+  })
+  if (list[0]) ol.style.setProperty("--front-toast-height", list[0].height + "px")
+}
+
+function measureToast(t) {
+  const el = t.el
+  const prev = el.style.height
+  el.style.height = "auto"
+  t.height = el.getBoundingClientRect().height
+  el.style.height = prev
+}
+
+function startToastTimer(t) {
+  clearTimeout(t.timer)
+  if (t.type === "loading" || t.duration === Infinity || t.removed) return
+  t.remaining = t.remaining == null ? t.duration : t.remaining
+  t.startedAt = Date.now()
+  t.timer = setTimeout(() => dismissToast(t.id), t.remaining)
+}
+function pauseToast(t) {
+  if (!t.timer || t.paused) return
+  clearTimeout(t.timer)
+  t.paused = true
+  t.remaining = Math.max(0, t.remaining - (Date.now() - t.startedAt))
+}
+function resumeToast(t) {
+  if (!t.paused || document.hidden) return
+  if (t.ol && t.ol.dataset.hovering === "true") return
+  t.paused = false
+  startToastTimer(t)
+}
+
+function renderToast(t) {
+  const el = t.el
+  el.replaceChildren()
+  el.dataset.type = t.type
+  el.setAttribute("aria-live", t.important ? "assertive" : "polite")
+  if (t.closeButton && t.dismissible) {
+    const close = document.createElement("button")
+    close.type = "button"
+    close.setAttribute("data-close-button", "")
+    close.setAttribute("aria-label", "Close toast")
+    close.innerHTML = TOAST_CLOSE
+    close.addEventListener("click", () => dismissToast(t.id))
+    el.appendChild(close)
+  }
+  const iconHTML = t.icon || TOAST_ICONS[t.type]
+  if (iconHTML) {
+    const icon = document.createElement("div")
+    icon.setAttribute("data-icon", "")
+    icon.innerHTML = iconHTML
+    el.appendChild(icon)
+  }
+  const content = document.createElement("div")
+  content.setAttribute("data-content", "")
+  const title = document.createElement("div")
+  title.setAttribute("data-title", "")
+  title.textContent = t.title
+  content.appendChild(title)
+  if (t.description) {
+    const desc = document.createElement("div")
+    desc.setAttribute("data-description", "")
+    desc.textContent = t.description
+    content.appendChild(desc)
+  }
+  el.appendChild(content)
+  const button = (spec, cancel) => {
+    const b = document.createElement("button")
+    b.type = "button"
+    b.setAttribute("data-button", "")
+    if (cancel) b.setAttribute("data-cancel", "")
+    b.textContent = spec.label
+    b.addEventListener("click", (e) => {
+      if (spec.onClick) spec.onClick(e)
+      if (!e.defaultPrevented) dismissToast(t.id)
+    })
+    return b
+  }
+  if (t.cancel) el.appendChild(button(t.cancel, true))
+  if (t.action) el.appendChild(button(t.action, false))
+}
+
+function bindSwipe(t) {
+  const el = t.el
+  const [y, x] = t.position.split("-")
+  let start = null
+  el.addEventListener("pointerdown", (e) => {
+    if (!t.dismissible || e.button !== 0 || e.target.closest("button")) return
+    start = { x: e.clientX, y: e.clientY, at: Date.now() }
+    el.setPointerCapture(e.pointerId)
+  })
+  el.addEventListener("pointermove", (e) => {
+    if (!start) return
+    let dx = e.clientX - start.x
+    let dy = e.clientY - start.y
+    // only toward the screen edge the stack is anchored to; resist the other way
+    dy = y === "bottom" ? Math.max(0, dy) : Math.min(0, dy)
+    dx = x === "left" ? Math.min(0, dx) : x === "right" ? Math.max(0, dx) : 0
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return
+    el.dataset.swiping = "true"
+    el.style.setProperty("--swipe-x", dx + "px")
+    el.style.setProperty("--swipe-y", dy + "px")
+  })
+  const end = () => {
+    if (!start) return
+    const dx = parseFloat(el.style.getPropertyValue("--swipe-x")) || 0
+    const dy = parseFloat(el.style.getPropertyValue("--swipe-y")) || 0
+    const dist = Math.max(Math.abs(dx), Math.abs(dy))
+    const velocity = dist / Math.max(1, Date.now() - start.at)
+    start = null
+    el.dataset.swiping = "false"
+    if (dist >= SWIPE_THRESHOLD || velocity > 0.11) {
+      el.dataset.swipeOut = "true"
+      el.style.setProperty("--swipe-x", dx * 2.5 + "px")
+      el.style.setProperty("--swipe-y", dy * 2.5 + "px")
+      dismissToast(t.id)
+    } else {
+      el.style.setProperty("--swipe-x", "0px")
+      el.style.setProperty("--swipe-y", "0px")
+    }
+  }
+  el.addEventListener("pointerup", end)
+  el.addEventListener("pointercancel", end)
+}
+
+function createToast(message, data) {
+  data = data || {}
+  const opts = toasterOptions()
+  const existing = data.id != null && sonner.toasts.find((t) => t.id === data.id && !t.removed)
+  if (existing) {
+    const wasLoading = existing.type === "loading"
+    Object.assign(existing, {
+      title: message,
+      type: data.type || "default",
+      description: data.description,
+      action: data.action,
+      cancel: data.cancel,
+      icon: data.icon,
+      important: !!data.important,
+      duration: data.duration != null ? data.duration : opts.duration,
+      remaining: null,
+    })
+    renderToast(existing)
+    measureToast(existing)
+    layoutToasts(existing.ol)
+    if (wasLoading || existing.type !== "loading") startToastTimer(existing)
+    return existing.id
+  }
+  const position = data.position || opts.position
+  const ol = toasterList(position)
+  const t = {
+    id: data.id != null ? data.id : ++sonner.seq,
+    title: message,
+    type: data.type || "default",
+    description: data.description,
+    action: data.action,
+    cancel: data.cancel,
+    icon: data.icon,
+    important: !!data.important,
+    duration: data.duration != null ? data.duration : opts.duration,
+    dismissible: data.dismissible !== false,
+    closeButton: data.closeButton != null ? data.closeButton : opts.closeButton,
+    position,
+    ol,
+    remaining: null,
+  }
+  const el = document.createElement("li")
+  el.setAttribute("data-sonner-toast", "")
+  el.setAttribute("role", "status")
+  el.setAttribute("aria-atomic", "true")
+  el.setAttribute("tabindex", "0")
+  el.dataset.mounted = "false"
+  el.dataset.removed = "false"
+  el.dataset.swiping = "false"
+  el.dataset.swipeOut = "false"
+  el.dataset.yPosition = position.split("-")[0]
+  el.dataset.xPosition = position.split("-")[1]
+  t.el = el
+  renderToast(t)
+  ol.appendChild(el)
+  sonner.toasts.unshift(t)
+  measureToast(t)
+  layoutToasts(ol)
+  bindSwipe(t)
+  // next frame: flip data-mounted so the enter transition runs
+  requestAnimationFrame(() => requestAnimationFrame(() => { el.dataset.mounted = "true" }))
+  if (ol.dataset.hovering === "true") { t.paused = true; t.remaining = t.duration } else startToastTimer(t)
+  return t.id
+}
+
+function dismissToast(id) {
+  const targets = id == null ? sonner.toasts.slice() : sonner.toasts.filter((t) => t.id === id)
+  targets.forEach((t) => {
+    if (t.removed) return
+    t.removed = true
+    clearTimeout(t.timer)
+    t.el.dataset.removed = "true"
+    sonner.toasts = sonner.toasts.filter((x) => x !== t)
+    layoutToasts(t.ol)
+    setTimeout(() => {
+      t.el.remove()
+      if (!t.ol.children.length) t.ol.remove()
+    }, TOAST_UNMOUNT_MS)
+  })
+}
+
+function toast(message, data) { return createToast(message, data) }
+;["success", "info", "warning", "error", "loading"].forEach((type) => {
+  toast[type] = (message, data) => createToast(message, Object.assign({}, data, { type }))
+})
+toast.message = (message, data) => createToast(message, data)
+toast.dismiss = dismissToast
+toast.promise = (promise, msgs) => {
+  msgs = msgs || {}
+  const pick = (v, arg) => (typeof v === "function" ? v(arg) : v)
+  const id = createToast(msgs.loading || "Loading…", { type: "loading", id: msgs.id, position: msgs.position })
+  Promise.resolve(typeof promise === "function" ? promise() : promise)
+    .then((data) => {
+      if (msgs.success == null) return dismissToast(id)
+      createToast(pick(msgs.success, data), { id, type: "success", description: pick(msgs.description, data) })
+    })
+    .catch((err) => {
+      if (msgs.error == null) return dismissToast(id)
+      createToast(pick(msgs.error, err), { id, type: "error" })
+    })
+    .finally(() => { if (msgs.finally) msgs.finally() })
+  return id
+}
+
+// LiveView: ShadcnDaisyui.Components.push_toast/3 sends "shadcn:toast" to the
+// <.toaster> hook. An action with an `event` pushes that event back to the view.
+function toastFromServer(payload, hook) {
+  const p = payload || {}
+  const wrap = (spec) =>
+    spec && {
+      label: spec.label,
+      onClick: () => { if (spec.event && hook) hook.pushEvent(spec.event, spec.value || {}) },
+    }
+  if (p.dismiss) return dismissToast(p.id != null ? p.id : undefined)
+  return createToast(p.message, {
+    id: p.id,
+    type: p.type,
+    description: p.description,
+    duration: p.duration,
+    position: p.position,
+    important: p.important,
+    closeButton: p.close_button,
+    action: wrap(p.action),
+    cancel: wrap(p.cancel),
+  })
+}
+
+// Deprecated (0.4): the docs-demo toast. Use toast() instead.
+function showToast(variant) {
+  const success = variant === "success"
+  return toast(success ? "Changes saved" : "Event has been created", {
+    type: success ? "success" : "default",
+    description: "Sunday, December 03 at 9:00 AM",
+    action: { label: "Undo" },
+  })
 }
 
 function initResizable(root) {
@@ -391,17 +748,23 @@ function initDock(scope) {
     container.dataset.built = "1"
     const range = opts.mode === "range"
     const monthCount = opts.months || 1
-    let view = opts.selected ? new Date(opts.selected) : new Date()
+    let view = new Date(opts.selected || opts.start || new Date())
     view.setDate(1)
     let selected = opts.selected || null     // single mode
     const rng = { start: opts.start || null, end: opts.end || null } // range mode
     let hover = null                         // tentative end while picking a range
     let cells = []                           // { el, date } for in-place repaint
+    let focusDate = opts.selected || opts.start || null // roving-tabindex target
     const today = new Date()
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
     const same = (a, b) =>
       a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
     const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1)
+    const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+    const shiftMonths = (d, n) => {
+      const last = new Date(d.getFullYear(), d.getMonth() + n + 1, 0).getDate()
+      return new Date(d.getFullYear(), d.getMonth() + n, Math.min(d.getDate(), last))
+    }
 
     // returns null, or { endpoint, roundL, roundR } describing the range band at `date`
     const bandInfo = (date) => {
@@ -432,12 +795,54 @@ function initDock(scope) {
         }
         el.setAttribute("aria-selected", el.classList.contains("is-selected") ? "true" : "false")
       })
+      // one tab stop per calendar: the focused date, else the selection, else today
+      const stop =
+        cells.find((c) => same(c.date, focusDate)) ||
+        cells.find((c) => c.el.classList.contains("is-selected")) ||
+        cells.find((c) => same(c.date, today)) ||
+        cells[0]
+      cells.forEach((c) => { c.el.tabIndex = c === stop ? 0 : -1 })
     }
+
+    // Arrow keys move a day/week, Home/End to week edges, PageUp/PageDown a
+    // month (Shift: a year); the view follows focus across months.
+    const moveFocus = (nd) => {
+      focusDate = nd
+      const first = view
+      const lastEnd = new Date(view.getFullYear(), view.getMonth() + monthCount, 0)
+      if (nd < first) { view = new Date(nd.getFullYear(), nd.getMonth(), 1); render() }
+      else if (nd > lastEnd) { view = addMonths(new Date(nd.getFullYear(), nd.getMonth(), 1), -(monthCount - 1)); render() }
+      if (range && rng.start && !rng.end) hover = nd
+      paint()
+      const cell = cells.find((c) => same(c.date, nd))
+      if (cell) cell.el.focus()
+    }
+    container.addEventListener("keydown", (e) => {
+      const cell = cells.find((c) => c.el === e.target)
+      if (!cell) return
+      const d = cell.date
+      const rtl = getComputedStyle(container).direction === "rtl"
+      let nd = null
+      switch (e.key) {
+        case "ArrowLeft": nd = addDays(d, rtl ? 1 : -1); break
+        case "ArrowRight": nd = addDays(d, rtl ? -1 : 1); break
+        case "ArrowUp": nd = addDays(d, -7); break
+        case "ArrowDown": nd = addDays(d, 7); break
+        case "Home": nd = addDays(d, -d.getDay()); break
+        case "End": nd = addDays(d, 6 - d.getDay()); break
+        case "PageUp": nd = shiftMonths(d, e.shiftKey ? -12 : -1); break
+        case "PageDown": nd = shiftMonths(d, e.shiftKey ? 12 : 1); break
+        default: return
+      }
+      e.preventDefault()
+      moveFocus(nd)
+    })
 
     const navBtn = (glyph, step, pos) => {
       const b = document.createElement("button")
       b.type = "button"
       b.className = "btn btn-ghost btn-square btn-sm absolute top-0 z-10 " + pos
+      b.setAttribute("aria-label", step < 0 ? "Previous month" : "Next month")
       b.textContent = glyph
       b.addEventListener("click", (e) => {
         // stopPropagation so a parent popover's outside-click handler doesn't fire
@@ -476,6 +881,7 @@ function initDock(scope) {
         cell.setAttribute("role", "gridcell")
         cell.setAttribute("aria-label", date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" }))
         cell.addEventListener("click", () => {
+          focusDate = date
           if (range) {
             if (!rng.start || rng.end) { rng.start = date; rng.end = null; hover = null }
             else if (date < rng.start) { rng.end = rng.start; rng.start = date }
@@ -542,6 +948,40 @@ function initDock(scope) {
     sync()
     trigger.addEventListener("click", () => { panel.classList.toggle("hidden"); sync() })
     document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
+  }
+
+  // Inline range calendar (<.range_calendar>). Optional hidden inputs
+  // [data-range-start] / [data-range-end] carry ISO dates (YYYY-MM-DD) for
+  // forms; they dispatch input + change so LiveView phx-change fires. A
+  // "range-change" event with { start, end } bubbles from the root as well.
+  function initRangeCalendar(root) {
+    if (root.dataset.rcInit) return
+    root.dataset.rcInit = "1"
+    const mount = root.querySelector("[data-range-calendar-grid]") || root
+    const startIn = root.querySelector("[data-range-start]")
+    const endIn = root.querySelector("[data-range-end]")
+    const parse = (v) => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || "")
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null
+    }
+    const iso = (d) =>
+      d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : ""
+    const set = (input, value) => {
+      if (!input || input.value === value) return
+      input.value = value
+      ;["input", "change"].forEach((t) => input.dispatchEvent(new Event(t, { bubbles: true })))
+    }
+    buildCalendar(mount, {
+      mode: "range",
+      months: Number(root.dataset.months) || 1,
+      start: parse((startIn && startIn.value) || root.dataset.start),
+      end: parse((endIn && endIn.value) || root.dataset.end),
+      onSelect: (sel) => {
+        set(startIn, iso(sel.start))
+        set(endIn, iso(sel.end))
+        root.dispatchEvent(new CustomEvent("range-change", { bubbles: true, detail: { start: iso(sel.start), end: iso(sel.end) } }))
+      },
+    })
   }
 
   function initDatepicker(root) {
@@ -748,6 +1188,7 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-otp]").forEach(initOtp)
   root.querySelectorAll("[data-datepicker]").forEach(initDatepicker)
   root.querySelectorAll("[data-daterange]").forEach(initDaterange)
+  root.querySelectorAll("[data-range-calendar]").forEach(initRangeCalendar)
   root.querySelectorAll("[data-calendar]").forEach((el) => { if (!el.dataset.built) buildCalendar(el) })
   root.querySelectorAll("[data-datatable]").forEach(initDataTable)
   root.querySelectorAll("[data-carousel]").forEach(initCarousel)
@@ -766,9 +1207,16 @@ export const Hooks = {
   ShadcnCalendar: { mounted() { if (!this.el.dataset.built) buildCalendar(this.el) } },
   ShadcnDatePicker: { mounted() { initDatepicker(this.el) } },
   ShadcnDateRange: { mounted() { initDaterange(this.el) } },
+  ShadcnRangeCalendar: { mounted() { initRangeCalendar(this.el) } },
+  ShadcnToaster: {
+    mounted() {
+      toasterSection()
+      this.handleEvent("shadcn:toast", (payload) => toastFromServer(payload, this))
+    },
+  },
   ShadcnDataTable: { mounted() { initDataTable(this.el) } },
   ShadcnCarousel: { mounted() { initCarousel(this.el) } },
   ShadcnResizable: { mounted() { initResizable(this.el) } },
 }
 
-export { showToast }
+export { toast, showToast }

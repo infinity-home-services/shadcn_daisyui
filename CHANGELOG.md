@@ -8,7 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+
+Seven components shadcn-svelte added since this package was set up, matching its
+default ("vega") style. The composition components are styled by `data-slot` /
+`data-variant` attributes like upstream (zero-specificity selectors, so a utility
+class on the element always wins), and each has a docs page with Specs,
+Accessibility, and SwiftUI sections.
+
+- **Item** - `<.item>`, `<.item_group>`, `<.item_separator>`: a row with media
+  (`icon` / `image`), title, description, actions, and optional header/footer;
+  `variant="default|outline|muted"`, `size="default|sm|xs"`, `href`/`navigate`/
+  `patch` turn the row into a link.
+- **Attachment** - `<.attachment>`, `<.attachment_group>`, `<.attachment_action>`:
+  a file or image tile with `state="idle|uploading|processing|error|done"` (dashed,
+  shimmering, dimmed, or destructive-tinted), three sizes, horizontal/vertical
+  orientation, labeled icon actions, and an optional full-tile `<:trigger>`.
+- **Message** - `<.message>`, `<.message_group>`: a conversation turn with avatar,
+  header, content, footer, and `align="start|end"`.
+- **Bubble** - `<.bubble>`, `<.bubble_group>`: seven variants (default, secondary,
+  muted, tinted, outline, ghost, destructive), alignment, edge reactions, and
+  `as="button"` / `as="a"` for suggested replies.
+- **Marker** - `<.marker>`: an inline transcript line (default, separator, border)
+  with an icon slot, `status` (role=status), and `shimmer`. Also ships a `.shimmer`
+  utility class (respects reduced motion).
+- **Sonner** - a real toast system replacing the docs-only `showToast()` stub:
+  `toast()` / `toast.success|info|warning|error|loading()` / `toast.promise()` /
+  `toast.dismiss()` exported from `shadcn-daisyui.js`, with descriptions, action
+  and cancel buttons, per-toast position, a collapsed stack that expands on hover or
+  focus, pause-on-hover timers, swipe to dismiss, and the Alt+T hotkey. Render
+  `<.toaster />` (options: `position`, `rich_colors`, `close_button`, `expand`,
+  `duration`) once in the root layout; from a LiveView use
+  `push_toast(socket, "Saved", type: :success, action: %{label: "Undo", event: "undo"})`
+  (needs the new `ShadcnToaster` hook).
+- **Range Calendar** - `<.range_calendar>`: an inline date-range calendar (1 or 2
+  months) that binds to two form fields via `start_name` / `end_name` (ISO dates in
+  hidden inputs that dispatch `input` + `change`) and emits a `range-change` event.
+  New `ShadcnRangeCalendar` hook.
+
 
 - **Surface-color guidance now matches shadcn and the theme CSS.** The rules said
   `bg-base-100` was for "page and cards", but in `shadcn-dark` `--background`
@@ -22,6 +59,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   table header has no fill of its own. The token → SwiftUI table gains `sdCard` and
   `sdPopover` rows, and the docs-site examples that used `bg-base-100` for cards
   and dialog mocks now use `bg-card` / `bg-popover`.
+- **Every calendar is keyboard navigable.** `<.calendar>`, `<.date_picker>`,
+  `<.date_range>`, and `<.range_calendar>` now use a single roving tab stop with
+  Arrow keys (day/week), Home/End (week edges), and PageUp/PageDown (month; Shift
+  for year), the view following focus across months; day cells get the 3px focus
+  ring and the month buttons get `aria-label`s.
+- **Deprecated: `<.toast_host>` and `showToast()`.** `toast_host/1` now renders a
+  `<.toaster>` (keeping the `toast-host` id) and `showToast(variant)` calls
+  `toast()`, so existing layouts and calls keep working; move to `<.toaster />` and
+  `toast()`. The docs-site Toast page is now Sonner (`/docs/components/toast`
+  redirects).
 - **`.drawer-side` panels use the popover surface.** `.drawer-side > .menu` and
   `.drawer-side > :where(aside, nav, div)` now paint `--popover` /
   `--popover-foreground` (was `--background` / `--foreground`), matching

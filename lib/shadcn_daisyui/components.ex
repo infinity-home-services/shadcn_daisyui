@@ -25,6 +25,7 @@ defmodule ShadcnDaisyui.Components do
       import(ShadcnDaisyui.Components.Overlay)
       import(ShadcnDaisyui.Components.Navigation)
       import(ShadcnDaisyui.Components.Display)
+      import(ShadcnDaisyui.Components.Conversation)
       import(ShadcnDaisyui.FormComponents)
     end
   end
@@ -185,6 +186,64 @@ defmodule ShadcnDaisyui.Components do
     </div>
     """
   end
+
+  @doc """
+  An inline calendar for picking a date range (shadcn's Range Calendar). Click a
+  start day, then an end day; the band between them is highlighted. Arrow keys,
+  Home/End, and PageUp/PageDown move focus.
+
+      <.range_calendar id="stay" months={2} class="rounded-md border border-base-300 p-3" />
+
+  To bind it to a form, name the two hidden inputs it emits (ISO
+  `YYYY-MM-DD`; the JS hook keeps them in sync and dispatches `input` +
+  `change`, so `phx-change` fires):
+
+      <.range_calendar
+        id="booking-dates"
+        start_name="booking[check_in]"
+        end_name="booking[check_out]"
+        start={@form[:check_in].value}
+        end={@form[:check_out].value}
+      />
+
+  A `range-change` DOM event with `%{start, end}` also bubbles from the root.
+  """
+  attr(:id, :string, required: true)
+  attr(:months, :integer, default: 1, doc: "months shown side by side (1 or 2)")
+  attr(:start, :any, default: nil, doc: "preselected start (Date or ISO string)")
+  attr(:end, :any, default: nil, doc: "preselected end (Date or ISO string)")
+  attr(:start_name, :string, default: nil, doc: "form name for the start date input")
+  attr(:end_name, :string, default: nil, doc: "form name for the end date input")
+  attr(:class, :any, default: "w-fit")
+  attr(:rest, :global)
+
+  def range_calendar(assigns) do
+    assigns =
+      assigns
+      |> assign(:start_iso, iso_date(assigns.start))
+      |> assign(:end_iso, iso_date(assigns.end))
+
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="ShadcnRangeCalendar"
+      data-range-calendar
+      data-months={@months}
+      data-start={@start_iso}
+      data-end={@end_iso}
+      class={@class}
+      {@rest}
+    >
+      <input :if={@start_name} type="hidden" name={@start_name} value={@start_iso} data-range-start />
+      <input :if={@end_name} type="hidden" name={@end_name} value={@end_iso} data-range-end />
+      <div id={"#{@id}-grid"} phx-update="ignore" data-range-calendar-grid></div>
+    </div>
+    """
+  end
+
+  defp iso_date(%Date{} = date), do: Date.to_iso8601(date)
+  defp iso_date(value) when is_binary(value) and value != "", do: value
+  defp iso_date(_), do: nil
 
   @doc """
   A combobox (searchable select). Provide options as `:option` slots.

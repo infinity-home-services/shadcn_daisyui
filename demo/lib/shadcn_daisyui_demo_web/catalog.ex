@@ -16,6 +16,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   fails loudly (named by slug) rather than rendering a broken page.
   """
 
+  alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
   alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
@@ -26,7 +27,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       title: "Forms & inputs",
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
-                date-picker rating filter validator)
+                date-picker range-calendar rating filter validator)
     },
     %{
       title: "Actions",
@@ -43,12 +44,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     %{
       title: "Feedback & status",
       slugs:
-        ~w(alert toast progress radial-progress skeleton spinner badge indicator status countdown)
+        ~w(alert sonner progress radial-progress skeleton spinner badge indicator status countdown)
     },
     %{
       title: "Data display",
-      slugs: ~w(table data-table card avatar stat chart timeline chat list kbd accordion
-                collapsible carousel)
+      slugs: ~w(table data-table card avatar item attachment stat chart timeline list kbd
+                accordion collapsible carousel)
+    },
+    %{
+      title: "Conversation",
+      slugs: ~w(message bubble marker chat)
     },
     %{
       title: "Layout",
@@ -60,7 +65,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   @doc "Sidebar groups in order, each with its components sorted alphabetically by title."
   def groups do
     # Build the spec map once and reuse it for every slug; resolving each slug
-    # through `components/0` individually would rebuild + revalidate all 77 specs
+    # through `components/0` individually would rebuild + revalidate every spec
     # per slug (O(n^2) per page render).
     comps = components()
 
@@ -79,6 +84,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     if "button" in slugs, do: "button", else: hd(slugs)
   end
 
+  # Old slug => new slug, for components whose page moved. Both the live
+  # site and the static export redirect the old URL.
+  @renamed %{"toast" => "sonner"}
+
+  @doc "Map of renamed component slugs (old => new)."
+  def renamed, do: @renamed
+
   @doc "Look up a component by slug, or nil."
   def component(slug), do: Map.get(components(), slug)
 
@@ -86,7 +98,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   def components do
     enrichment = Enrichment.all()
 
-    for c <- all(), into: %{} do
+    for c <- all() ++ Composition.all(), into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
       {c.slug, Spec.new!(spec)}
     end
@@ -1371,37 +1383,108 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         ]
       },
       %{
-        slug: "toast",
-        title: "Toast",
-        description: "A brief, auto-dismissing notification.",
+        slug: "sonner",
+        title: "Sonner",
+        description:
+          "An opinionated toast component: stacked, swipeable, auto-dismissing notifications.",
+        hook: true,
         guidance: %{
           use_when: [
             "Confirming a completed action the user doesn't need to act on (\"Saved\")",
-            "Background results (export finished, message sent)"
+            "Background results (export finished, message sent), optionally with an Undo action",
+            "Long-running work: a loading toast that resolves to success or error (toast.promise)"
           ],
           avoid_when: [
             "Errors that need action - show inline errors or an alert in place",
-            "Anything the user must read - toasts disappear"
+            "Anything the user must read - toasts disappear",
+            "Form validation - use field errors"
           ],
-          sizing: "One line, optional action link; status variant matches the event.",
-          responsive: "Bottom-center on compact (thumb zone), bottom-right on expanded.",
+          sizing:
+            "356px wide, 16px padding, 14px between stacked toasts; one-line title, optional description and one action.",
+          responsive:
+            "Full width minus 16px gutters under 600px. Bottom-center keeps toasts in the thumb zone on compact screens; bottom-right on expanded.",
           ios:
-            "No system toast: prefer in-place state change; if needed, a brief overlay with VoiceOver announcement (UIAccessibility.post)."
+            "No system toast: prefer an in-place state change; if needed, a brief overlay announced with UIAccessibility.post(notification: .announcement)."
         },
+        props: [
+          %{
+            name: "position",
+            type:
+              "top-left | top-center | top-right | bottom-left | bottom-center | bottom-right",
+            default: "bottom-right"
+          },
+          %{name: "rich_colors", type: "boolean", default: "false"},
+          %{name: "close_button", type: "boolean", default: "false"},
+          %{name: "expand", type: "boolean", default: "false"},
+          %{name: "duration", type: "integer (ms)", default: "4000"},
+          %{name: "visible_toasts", type: "integer", default: "3"}
+        ],
+        notes:
+          "Render one <.toaster /> in the root layout (it needs the ShadcnToaster hook for push_toast/3). From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success(), toast.promise(), toast.dismiss(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}).",
         examples: [
           %{
             title: "Default",
             heex: ~S"""
-            <%!-- Put one toast host in your root layout; the bundled showToast() appends to it.
-                 For server-driven notices use <.flash> instead. --%>
-            <.toast_host />
+            <%!-- once, in root.html.heex --%>
+            <.toaster />
+
+            <%!-- from a LiveView event handler --%>
+            {:noreply,
+             push_toast(socket, "Event has been created",
+               description: "Sunday, December 03, 2023 at 9:00 AM",
+               action: %{label: "Undo", event: "undo-create", value: %{id: event.id}}
+             )}
             """,
             code: ~S"""
-            <div class="flex flex-wrap items-center gap-3">
-              <button class="btn btn-outline" onclick="window.showToast()">Show toast</button>
-              <button class="btn btn-outline" onclick="window.showToast('success')">Show success</button>
+            <button class="btn btn-outline" onclick="window.toast('Event has been created', { description: 'Sunday, December 03, 2023 at 9:00 AM', action: { label: 'Undo', onClick: () => {} } })">Show Toast</button>
+            """
+          },
+          %{
+            title: "Types",
+            heex: ~S"""
+            push_toast(socket, "Event has been created", type: :success)
+            push_toast(socket, "Be at the area 10 minutes before the event time", type: :info)
+            push_toast(socket, "Event start time cannot be earlier than 8am", type: :warning)
+            push_toast(socket, "Event has not been created", type: :error)
+            """,
+            code: ~S"""
+            <div class="flex flex-wrap justify-center gap-2">
+              <button class="btn btn-outline" onclick="window.toast('Event has been created')">Default</button>
+              <button class="btn btn-outline" onclick="window.toast.success('Event has been created')">Success</button>
+              <button class="btn btn-outline" onclick="window.toast.info('Be at the area 10 minutes before the event time')">Info</button>
+              <button class="btn btn-outline" onclick="window.toast.warning('Event start time cannot be earlier than 8am')">Warning</button>
+              <button class="btn btn-outline" onclick="window.toast.error('Event has not been created')">Error</button>
+              <button class="btn btn-outline" onclick="window.toast.promise(() => new Promise((r) => setTimeout(() => r({ name: 'Event' }), 2000)), { loading: 'Loading...', success: (d) => d.name + ' has been created', error: 'Error' })">Promise</button>
             </div>
-            <div id="toast-host" class="toast toast-end toast-bottom z-[60]" role="status" aria-live="polite"></div>
+            """
+          },
+          %{
+            title: "Description",
+            heex: ~S"""
+            push_toast(socket, "Event has been created", description: "Monday, January 3rd at 6:00pm")
+            """,
+            code: ~S"""
+            <button class="btn btn-outline" onclick="window.toast('Event has been created', { description: 'Monday, January 3rd at 6:00pm' })">Show Toast</button>
+            """
+          },
+          %{
+            title: "Position",
+            heex: ~S"""
+            <%!-- toaster-wide --%>
+            <.toaster position="top-center" />
+
+            <%!-- or per toast --%>
+            push_toast(socket, "Event has been created", position: "top-left")
+            """,
+            code: ~S"""
+            <div class="flex flex-wrap justify-center gap-2">
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-left' })">Top Left</button>
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-center' })">Top Center</button>
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-right' })">Top Right</button>
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-left' })">Bottom Left</button>
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-center' })">Bottom Center</button>
+              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-right' })">Bottom Right</button>
+            </div>
             """
           }
         ]

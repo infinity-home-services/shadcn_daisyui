@@ -51,6 +51,15 @@ defmodule Mix.Tasks.Site.Export do
     # /docs is a redirect route → emit a meta-refresh to the first component.
     write(out, "/docs", redirect_html(@endpoint.path("/docs/components/#{Catalog.first_slug()}")))
 
+    # Renamed component pages keep their old URL as a redirect.
+    for {old, new} <- Catalog.renamed() do
+      write(
+        out,
+        "/docs/components/#{old}",
+        redirect_html(@endpoint.path("/docs/components/#{new}"))
+      )
+    end
+
     # AI-consumable endpoints: written as plain files (not dir/index.html pairs).
     # Their bodies are rendered through the endpoint, so any URL_PATH prefix is
     # already baked into the links they contain.

@@ -21,8 +21,9 @@ like shadcn/ui. **Every UI decision goes through this package.**
 - Never use raw color utilities (`bg-white`, `text-gray-500`, `bg-zinc-900`,
   `border-neutral-200`, hex/oklch literals) in templates. Use semantic tokens only
   (see Theme tokens).
-- Interactive components (combobox, select, date picker, calendar, OTP, carousel,
-  resizable, command, context-menu) REQUIRE a unique `id` attribute and the JS hooks
+- Interactive components (combobox, select, date picker, calendar, range calendar,
+  OTP, carousel, resizable, command, context-menu, toaster) REQUIRE a unique `id`
+  attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
 
@@ -63,9 +64,15 @@ Decision order:
 | `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple` |
 | `<.avatar>` / `<.avatar_group>` | `src` or `fallback="JD"`, `shape`, size via `class` |
 | `<.progress>` / `<.skeleton>` / `<.spinner>` | sized via `class` |
-| `<.toast_host>` | once in root layout; pairs with JS `showToast()` |
+| `<.toaster>` | once in root layout (`position`, `rich_colors`, `close_button`); toasts via JS `toast()` / `toast.success()` / `toast.promise()` or LiveView `push_toast(socket, msg, type: :success)` |
 | `<.calendar>` | `id` required (hook) |
 | `<.date_picker>` / `<.date_range>` | `id` required (hook), `placeholder` |
+| `<.range_calendar>` | `id` (hook), inline range picker; `months`, `start`/`end`; form-bind with `start_name`/`end_name` (ISO dates) |
+| `<.item>` / `<.item_group>` / `<.item_separator>` | row with `<:media variant="icon\|image">` `<:title>` `<:description>` `<:actions>` (`<:header>`/`<:footer>`); `variant="default\|outline\|muted"`, `size="default\|sm\|xs"`, `href`/`navigate` makes it a link |
+| `<.attachment>` / `<.attachment_group>` / `<.attachment_action>` | file tile: `state="idle\|uploading\|processing\|error\|done"`, `size`, `orientation`, `<:media>` `<:title>` `<:description>` `<:actions>` `<:trigger label>` |
+| `<.message>` / `<.message_group>` | chat turn: `align="start\|end"`, `<:avatar>` `<:header>` `<:footer>`; `role="log"` on the group for live transcripts |
+| `<.bubble>` / `<.bubble_group>` | `variant="default\|secondary\|muted\|tinted\|outline\|ghost\|destructive"`, `align`, `as="button"` for suggested replies, `<:reactions label>` |
+| `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
 | `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="...">` slots; optional `name`/`value` to form-bind (emits a synced hidden input) |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
@@ -122,7 +129,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Page hero | `<div class="hero">`, navbar `<div class="navbar">`, footer `<footer class="footer">` |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (77 components) in the docs site (`demo/`) or
+Browse the full gallery (83 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

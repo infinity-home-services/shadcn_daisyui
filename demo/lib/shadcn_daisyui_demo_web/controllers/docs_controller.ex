@@ -22,7 +22,10 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
   defp component_html(conn, slug) do
     case Catalog.component(slug) do
       nil ->
-        not_found(conn)
+        case Catalog.renamed()[slug] do
+          nil -> not_found(conn)
+          new_slug -> redirect(conn, to: ~p"/docs/components/#{new_slug}")
+        end
 
       spec ->
         conn

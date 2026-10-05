@@ -86,7 +86,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.SpecTest do
 
   describe "the real catalog" do
     test "every component builds into a valid %Spec{}" do
-      # Catalog.components/0 runs Spec.new!/1 on all 77 entries; an invalid spec
+      # Catalog.components/0 runs Spec.new!/1 on every entry; an invalid spec
       # raises here, named by slug.
       for {slug, spec} <- Catalog.components() do
         assert %Spec{} = spec

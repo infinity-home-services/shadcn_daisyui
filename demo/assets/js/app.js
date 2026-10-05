@@ -25,7 +25,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/shadcn_daisyui_demo"
 import topbar from "../vendor/topbar"
 // interactive components from the shadcn_daisyui package (copied by its install task)
-import { initShadcnDaisyui, showToast } from "../../../priv/static/shadcn-daisyui.js"
+import { initShadcnDaisyui, Hooks as ShadcnHooks, toast, showToast } from "../../../priv/static/shadcn-daisyui.js"
 // docs-site only: the interactive theme creator on /docs/themes
 import { initThemeCreator } from "./theme_creator"
 
@@ -33,7 +33,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, ...ShadcnHooks},
 })
 
 // Show progress bar on live navigation and form submits
@@ -85,7 +85,8 @@ if (process.env.NODE_ENV === "development") {
   })
 }
 
-// shadcn_daisyui interactive components
+// shadcn_daisyui interactive components (the catalog previews call these inline)
+window.toast = toast
 window.showToast = showToast
 
 // Keep the docs sidebar's scroll position across full-page navigations, while the

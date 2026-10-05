@@ -12,7 +12,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment do
   worked examples; everything else is enriched here.
   """
 
-  alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment.{Core, MorePrimitives, Interactive, Extras}
+  alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment.{
+    Core,
+    MorePrimitives,
+    Interactive,
+    Extras,
+    Composition
+  }
 
   @doc "Map of slug => enrichment fields (a partial spec map merged onto the base)."
   def all do
@@ -21,5 +27,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment do
     |> Map.merge(MorePrimitives.specs())
     |> Map.merge(Interactive.specs())
     |> Map.merge(Extras.specs())
+    |> Map.merge(Composition.specs())
   end
 end
