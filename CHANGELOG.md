@@ -49,6 +49,8 @@ Accessibility, and SwiftUI sections.
   New `ShadcnRangeCalendar` hook.
 
 
+### Changed
+
 - **Surface-color guidance now matches shadcn and the theme CSS.** The rules said
   `bg-base-100` was for "page and cards", but in `shadcn-dark` `--background`
   (oklch 0.145) is darker than `--card` / `--popover` (oklch 0.205), so apps
