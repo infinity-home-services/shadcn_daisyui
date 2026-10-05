@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Surface-color guidance now matches shadcn and the theme CSS.** The rules said
+  `bg-base-100` was for "page and cards", but in `shadcn-dark` `--background`
+  (oklch 0.145) is darker than `--card` / `--popover` (oklch 0.205), so apps
+  following them painted card-level surfaces darker than cards. `usage-rules.md`
+  and `usage-rules/styles-color.md` now give each surface one role: page
+  `bg-base-100` / `bg-background`; cards and opaque fills inside a card `bg-card`;
+  overlays (sheets, dialogs, popovers, dropdown/command content) `bg-popover` +
+  `text-popover-foreground`; subtle insets `bg-base-200` / `bg-muted`. New rule: a
+  sticky `<thead>` (or sticky footer bar) inside a card uses `bg-card`, since the
+  table header has no fill of its own. The token → SwiftUI table gains `sdCard` and
+  `sdPopover` rows, and the docs-site examples that used `bg-base-100` for cards
+  and dialog mocks now use `bg-card` / `bg-popover`.
+- **`.drawer-side` panels use the popover surface.** `.drawer-side > .menu` and
+  `.drawer-side > :where(aside, nav, div)` now paint `--popover` /
+  `--popover-foreground` (was `--background` / `--foreground`), matching
+  `dialog.sheet`, since a drawer slides over content. A persistent app sidebar
+  should use `<.sidebar_layout>`, which stays on the page surface.
+
 ## [0.4.0] - 2026-10-04
 
 ### Upgrading from 0.3

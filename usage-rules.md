@@ -129,8 +129,14 @@ Browse the full gallery (77 components) in the docs site (`demo/`) or
 
 - Theme activation: `<html data-theme="shadcn">` (light) / `"shadcn-dark"` (dark).
   Brand themes (e.g. `data-theme="acme"`) override the same tokens - never bypass them.
-- Surfaces: `bg-base-100` (page/card), `bg-base-200` (subtle), `border-base-300` (borders).
-  Also available: `bg-card`, `bg-popover`, `bg-muted`, `border-border`, `bg-background`.
+- Surfaces (one role each, as in shadcn): page `bg-base-100` / `bg-background`;
+  cards and opaque fills inside a card (sticky table header, sticky footer bar)
+  `bg-card`; overlays (sheets, dialogs, popovers, dropdown/command content)
+  `bg-popover` + `text-popover-foreground`; subtle insets `bg-base-200` / `bg-muted`;
+  borders `border-base-300` / `border-border`. Never paint a card or overlay
+  `bg-base-100` - in dark mode the page is darker than cards and popovers.
+- A sticky `<thead>` inside a card needs `bg-card` (the table header has no fill
+  of its own).
 - Text: default foreground inherits; secondary text `text-muted-foreground`;
   destructive `text-destructive` / `text-error`.
 - Action colors: `btn-primary`, `btn-secondary`, `badge-error`, etc. - daisyUI semantic

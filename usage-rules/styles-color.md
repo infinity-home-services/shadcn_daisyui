@@ -16,9 +16,21 @@ How to *use* the semantic color tokens. The palette itself lives in the theme
 - Status colors (`info`, `success`, `warning`, `error`) are the only non-neutral
   accents, and they always mean status - never decoration. Don't reach for raw
   green/yellow/red utilities.
-- Surfaces step subtly: `base-100` page and cards, `base-200` subtle insets
-  (wells, code blocks, hover), `base-300` for borders. Separation comes from
+- Each surface has one role, matching shadcn. Page: `bg-base-100` /
+  `bg-background`. Cards, plus anything inside a card that needs an opaque
+  fill (a sticky table header, a sticky footer bar): `bg-card`. Overlays
+  (sheets, dialogs, popovers, dropdown and command content): `bg-popover` with
+  `text-popover-foreground`. Subtle insets (wells, code blocks, hover):
+  `bg-base-200` / `bg-muted`. Borders: `border-base-300`. Separation comes from
   1px borders, not from color blocks.
+- `bg-base-100` is the page, never a card or overlay. The tokens only look the
+  same in light mode; in dark mode `--background` is darker than `--card` and
+  `--popover`, so a card-level surface painted `bg-base-100` reads as a hole.
+- A sticky `<thead>` inside a card uses `bg-card`. shadcn's table header has no
+  background of its own, so a sticky one needs an opaque fill that matches the
+  card behind it (the same goes for a sticky footer bar in a card).
+- A persistent app sidebar is page chrome (`bg-base-100`, as `<.sidebar_layout>`
+  renders it). A drawer that slides over content is an overlay (`bg-popover`).
 - Secondary text is `text-muted-foreground`; body text inherits the foreground.
   No other text colors except status and destructive.
 - **Brand splash rule**: a brand recolors by overriding theme tokens in its own
@@ -44,7 +56,9 @@ How to *use* the semantic color tokens. The palette itself lives in the theme
 
 | Role | Web | Swift |
 |---|---|---|
-| Page / card surface | `bg-base-100`, `bg-card` | `sdBackground` / `sdCard` |
+| Page | `bg-base-100`, `bg-background` | `sdBackground` |
+| Card (and opaque fills inside one: sticky thead, sticky footer) | `bg-card` | `sdCard` |
+| Overlay (sheet, dialog, popover, dropdown, command) | `bg-popover` + `text-popover-foreground` | `sdPopover` / `sdPopoverForeground` |
 | Subtle inset | `bg-base-200`, `bg-muted` | `sdMuted` |
 | Border | `border-base-300`, `border-border` | `sdBorder` |
 | Body text | inherits foreground | `sdForeground` |

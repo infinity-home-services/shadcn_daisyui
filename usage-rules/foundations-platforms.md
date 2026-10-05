@@ -39,6 +39,8 @@ conventions.
 | Web token | Swift token | iOS system analogue |
 |---|---|---|
 | `--background` / `bg-base-100` | `Color.sdBackground` | `systemBackground` |
+| `--card` / `bg-card` | `Color.sdCard` | `secondarySystemGroupedBackground` |
+| `--popover` / `bg-popover` | `Color.sdPopover` | elevated `systemBackground` (sheets, popovers) |
 | `--foreground` | `Color.sdForeground` | `label` |
 | `--muted` / `bg-base-200` | `Color.sdMuted` | `secondarySystemBackground` |
 | `--muted-foreground` | `Color.sdMutedForeground` | `secondaryLabel` |

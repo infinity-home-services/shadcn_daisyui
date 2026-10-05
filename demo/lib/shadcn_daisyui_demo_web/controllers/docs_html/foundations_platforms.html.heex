@@ -98,6 +98,8 @@
           <tr :for={
             {web, swift, sys} <- [
               {"--background", "Color.sdBackground", "systemBackground"},
+              {"--card", "Color.sdCard", "secondarySystemGroupedBackground"},
+              {"--popover", "Color.sdPopover", "elevated systemBackground"},
               {"--foreground", "Color.sdForeground", "label"},
               {"--muted-foreground", "Color.sdMutedForeground", "secondaryLabel"},
               {"--primary", "Color.sdPrimary", "accent color role"},

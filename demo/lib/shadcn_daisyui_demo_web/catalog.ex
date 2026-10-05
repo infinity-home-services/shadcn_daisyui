@@ -1095,7 +1095,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           do: %{
             label: "Short, focused confirmation",
             code: ~S"""
-            <div class="w-64 rounded-lg border border-base-300 bg-base-100 p-5 text-left shadow-sm">
+            <div class="w-64 rounded-lg border border-base-300 bg-popover p-5 text-left text-popover-foreground shadow-sm">
               <h3 class="text-base font-semibold">Delete file?</h3>
               <p class="py-2 text-sm text-muted-foreground">This can't be undone.</p>
               <div class="flex justify-end gap-2">
@@ -1108,7 +1108,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           dont: %{
             label: "A long form that belongs on a page",
             code: ~S"""
-            <div class="w-64 space-y-2 rounded-lg border border-base-300 bg-base-100 p-5 text-left shadow-sm">
+            <div class="w-64 space-y-2 rounded-lg border border-base-300 bg-popover p-5 text-left text-popover-foreground shadow-sm">
               <h3 class="text-base font-semibold">New customer</h3>
               <input class="input input-sm w-full" placeholder="Name" />
               <input class="input input-sm w-full" placeholder="Address" />
@@ -2687,7 +2687,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             <div class="stack size-20">
               <div class="card bg-primary text-primary-foreground"><div class="card-body items-center justify-center p-0">A</div></div>
               <div class="card bg-secondary text-secondary-foreground"><div class="card-body items-center justify-center p-0">B</div></div>
-              <div class="card border border-base-300 bg-base-100"><div class="card-body items-center justify-center p-0">C</div></div>
+              <div class="card border border-base-300 bg-card"><div class="card-body items-center justify-center p-0">C</div></div>
             </div>
             """
           }

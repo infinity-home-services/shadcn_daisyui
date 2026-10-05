@@ -26,13 +26,21 @@
     <h2 class="text-lg font-medium tracking-tight">
       Surfaces separate with borders, not color blocks
     </h2>
-    <div class="grid gap-4 sm:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
       <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-        <p class="text-sm font-medium">base-100</p>
-        <p class="text-xs text-muted-foreground">page &amp; cards</p>
+        <p class="text-sm font-medium">base-100 / background</p>
+        <p class="text-xs text-muted-foreground">page</p>
+      </div>
+      <div class="rounded-lg border border-base-300 bg-card p-4 text-card-foreground">
+        <p class="text-sm font-medium">card</p>
+        <p class="text-xs text-muted-foreground">cards, sticky thead/footer in a card</p>
+      </div>
+      <div class="rounded-lg border border-base-300 bg-popover p-4 text-popover-foreground">
+        <p class="text-sm font-medium">popover</p>
+        <p class="text-xs text-muted-foreground">sheets, dialogs, menus, command</p>
       </div>
       <div class="rounded-lg border border-base-300 bg-base-200 p-4">
-        <p class="text-sm font-medium">base-200</p>
+        <p class="text-sm font-medium">base-200 / muted</p>
         <p class="text-xs text-muted-foreground">subtle insets, wells, hover</p>
       </div>
       <div class="rounded-lg border-2 border-base-300 bg-base-100 p-4">
@@ -40,6 +48,10 @@
         <p class="text-xs text-muted-foreground">borders (1px)</p>
       </div>
     </div>
+    <p class="text-sm text-muted-foreground">
+      In dark mode the page is darker than cards and popovers, so a card or overlay
+      painted <code class="font-mono text-xs">bg-base-100</code> reads as a hole.
+    </p>
   </section>
 
   <section class="mt-12 space-y-4">

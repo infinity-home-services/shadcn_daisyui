@@ -552,11 +552,12 @@
   .menu.menu-horizontal { font-size: 0.875rem; }
   .navbar { min-height: 3.5rem; }
 
-  /* Drawer / sheet / sidebar side panel */
+  /* Drawer side panel - an overlay, so popover surface (matches dialog.sheet).
+     A persistent app sidebar is <.sidebar_layout> (page surface), not this. */
   .drawer-side > .menu,
   .drawer-side > :where(aside, nav, div) {
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
     border-inline-end: 1px solid var(--border-color);
   }
 

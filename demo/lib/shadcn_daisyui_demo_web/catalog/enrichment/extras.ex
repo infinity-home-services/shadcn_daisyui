@@ -567,7 +567,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Extras do
           measurements: [
             %{property: "Layout", value: "Children overlap in the same box with a small offset"},
             %{property: "Size", value: "Sized via utilities (size-20 in the example)"},
-            %{property: "Surfaces", value: "Cards use primary / secondary / base-100 fills"}
+            %{property: "Surfaces", value: "Cards use primary / secondary / card fills"}
           ],
           tokens: [
             "primary",
