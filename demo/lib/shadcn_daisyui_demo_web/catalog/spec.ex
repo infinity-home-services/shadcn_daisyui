@@ -119,6 +119,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Spec do
       nil -> :ok
       r -> check!(is_boolean(r), "#{ctx}: example #{inspect(title)} :resizable must be a boolean")
     end
+
+    case Map.get(example, :width) do
+      nil ->
+        :ok
+
+      w ->
+        check!(
+          Map.get(example, :resizable) == true and is_integer(w) and w in 20..100,
+          "#{ctx}: example #{inspect(title)} :width must be 20..100 on a :resizable example"
+        )
+    end
   end
 
   defp validate_example!(_other, ctx), do: check!(false, "#{ctx}: each example must be a map")

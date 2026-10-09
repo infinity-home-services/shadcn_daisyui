@@ -319,10 +319,44 @@ defmodule ShadcnDaisyui.Components.NavigationTest do
         </.tab_nav>
         """)
 
-      assert html =~ ~s(<span class="sr-only">Views: </span>)
-      assert html =~ ~r/<span class="tab-nav-label">\s*Open bugs\s*<\/span>/
+      assert html =~ ~s(<span class="sr-only" data-tab-nav-default>Views: </span>)
+      assert html =~ ~r/<span class="tab-nav-label" data-tab-nav-default>\s*Open bugs\s*<\/span>/
       assert html =~ "hero-check"
       assert count(html, "tab-active") == 1
+      # no active tab: nothing for a collapsed trigger to name
+      refute html =~ "data-tab-nav-current"
+    end
+
+    test "the trigger carries the active tab's name and count for the collapsed state" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.tab_nav id="queue" aria_label="Call queue">
+          <:tab href="/all" count={240}>All calls</:tab>
+          <:tab href="/needs-call" active count={17}>Needs a call</:tab>
+          <:tab href="/closed">Closed</:tab>
+        </.tab_nav>
+        """)
+
+      [trigger] = Regex.run(~r/<button[^>]*data-tab-nav-trigger.*?<\/button>/s, html)
+      # More stays the default label; CSS swaps in the active tab when collapsed
+      assert trigger =~ ~r/<span class="tab-nav-label" data-tab-nav-default>\s*More\s*<\/span>/
+
+      assert trigger =~
+               ~r/<span class="tab-nav-label" data-tab-nav-current>\s*Needs a call\s*<\/span>/
+
+      assert trigger =~ ~r/<span class="tab-count" data-tab-nav-current>\s*17\s*<\/span>/
+      # the label truncates, the count is a separate element that never does
+      assert count(trigger, "data-tab-nav-current") == 2
+      # the hook's collapsed flag survives patches
+      assert html =~ "data-collapsed"
+
+      # the active tab's menu copy is checked; the others aren't
+      copies = Regex.scan(~r/<a[^>]*data-tab-nav-copy.*?<\/a>/s, html) |> List.flatten()
+      assert length(copies) == 3
+      assert [_] = Enum.filter(copies, &(&1 =~ "hero-check"))
+      assert Enum.at(copies, 1) =~ "hero-check"
     end
   end
 end

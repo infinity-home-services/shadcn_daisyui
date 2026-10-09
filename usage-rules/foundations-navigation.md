@@ -19,7 +19,9 @@ Where navigation lives at each window size class, and how deep structures travel
   content views, not navigation - and never nest tab bars.
 - In-page rows of link tabs (saved views, filters, settings sections) are
   `<.tab_nav>`: tabs that don't fit move, in order, into a trailing More menu,
-  and the current tab always stays visible. Never wrap a tab row to two lines
+  and the current tab always stays visible (when even it and More don't fit,
+  every tab folds into the menu and the trigger names the current tab, label
+  truncated, count kept). Never wrap a tab row to two lines
   or scroll it sideways. [ios] A segmented `Picker` for 2-4 views, else one
   `Menu` labelled with the current view.
 - Breadcrumbs appear at medium and expanded only, never on compact.

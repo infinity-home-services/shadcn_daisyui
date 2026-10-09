@@ -665,13 +665,15 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   "Code".
 
   Pass `resizable` for width-aware components (tab nav, chip row): the preview
-  gets a width slider (outside the copyable code; wired in `app.js`).
+  gets a width slider (outside the copyable code; wired in `app.js`), starting
+  at `width` percent.
   """
   attr :id, :string, required: true
   attr :code, :string, required: true
   attr :heex, :string, default: nil
   attr :center, :boolean, default: true
   attr :resizable, :boolean, default: false
+  attr :width, :integer, default: 100
 
   def preview_code(assigns) do
     ~H"""
@@ -696,12 +698,12 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                 class="range range-xs w-40"
                 min="20"
                 max="100"
-                value="100"
+                value={@width}
                 data-demo-width
               />
-              <span class="w-10 font-mono" data-demo-width-out>100%</span>
+              <span class="w-10 font-mono" data-demo-width-out>{@width}%</span>
             </label>
-            <div class="w-full" data-demo-resize>{raw(@code)}</div>
+            <div class="w-full" style={"width: #{@width}%"} data-demo-resize>{raw(@code)}</div>
           <% else %>
             {raw(@code)}
           <% end %>

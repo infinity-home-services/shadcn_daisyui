@@ -456,7 +456,8 @@
   .tabs-box > :is(label:has(:checked)),
   .tabs-box .tab:checked,
   .tabs-box .tab-active,
-  .tabs-box .tab[aria-selected="true"] {
+  .tabs-box .tab[aria-selected="true"],
+  .tab-nav[data-collapsed] [data-tab-nav-trigger] {
     background-color: var(--background);
     color: var(--foreground);
     box-shadow: var(--shadow-sm);
@@ -897,7 +898,9 @@
      The boxed tabs look on links. ShadcnTabNav hides the tabs that don't fit
      and un-hides their copies in the More menu. Until it has measured (no
      data-ready yet) the tabs clip instead of wrapping, so the row never
-     changes height. */
+     changes height. data-collapsed: the active tab and More don't fit side by
+     side, so every tab is in the menu and the trigger (styled active) names
+     the active tab and its count; its label truncates, the count never. */
   .tab-nav { display: block; min-width: 0; }
   .tab-nav-list { width: fit-content; max-width: 100%; flex-wrap: nowrap; }
   .tab-nav-tabs { display: flex; min-width: 0; }
@@ -914,6 +917,13 @@
   .tab-nav[data-squeezed] [data-tab-nav-item] { flex-shrink: 1; min-width: 0; }
   .tab-nav-more { position: relative; display: flex; flex-shrink: 0; }
   .tab-nav [data-tab-nav-trigger][aria-expanded="true"] { color: var(--foreground); }
+  .tab-nav[data-collapsed] [data-tab-nav-default],
+  .tab-nav:not([data-collapsed]) [data-tab-nav-current] { display: none; }
+  .tab-nav:is([data-collapsed], [data-squeezed]) :is(.tab-nav-more, [data-tab-nav-trigger]) {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .tab-nav .tab-count, .tab-nav .tab > [class*="hero-"] { flex-shrink: 0; }
   .tab-count {
     display: inline-flex;
     min-width: 1.25rem;

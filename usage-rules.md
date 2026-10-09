@@ -72,7 +72,7 @@ Decision order:
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"` |
 | `<.command>` | `id` req. (hook), `<:trigger_label>`, `<:item group icon shortcut>` slots, ⌘K |
 | `<.tabs>` | `id` req., `<:tab label="..." checked>` slots with panel content |
-| `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible |
+| `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible (too narrow for it + More: every tab folds into the menu and More names the active tab + count) |
 | `<.breadcrumb>` | `<:item navigate={...}>` slots; last item without link = current page |
 | `<.pagination>` | `page` `total_pages` + `path={fn p -> ... end}` or `event="..."` |
 | `<.sidebar_layout>` / `<.sidebar_group>` | app shell; `<:sidebar>` slot; items with `active` |

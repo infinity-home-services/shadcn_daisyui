@@ -53,8 +53,11 @@ defmodule ShadcnDaisyui.Components.Navigation do
   Tabs show while they fit; the ones that would be squeezed move, in order,
   into a trailing More menu, which also holds any `:menu_item`s. The `active`
   tab always stays visible (it swaps out the last visible one), and when an
-  active `:menu_item` is in the menu the More trigger shows its name. The row
-  re-fits on resize and after LiveView patches.
+  active `:menu_item` is in the menu the More trigger shows its name. When
+  even the active tab and More don't fit side by side, every tab folds into
+  the menu (the active one checked) and the trigger names the active tab with
+  its count, truncating the label, never the count. The row re-fits on resize
+  and after LiveView patches.
 
       <.tab_nav id="views" aria-label="Views">
         <:tab patch={~p"/issues"} active={@view == "all"} count={@counts.all}>All issues</:tab>
@@ -97,13 +100,14 @@ defmodule ShadcnDaisyui.Components.Navigation do
       assigns
       |> assign(:tabs, Enum.with_index(assigns.tab))
       |> assign(:active_item, Enum.find(assigns.menu_item, & &1[:active]))
+      |> assign(:active_tab, Enum.find(assigns.tab, & &1[:active]))
       |> assign(:groups, menu_groups(assigns.menu_item))
 
     ~H"""
     <nav
       id={@id}
       phx-hook="ShadcnTabNav"
-      phx-mounted={keep_client_attrs(["data-ready", "data-squeezed"])}
+      phx-mounted={keep_client_attrs(["data-ready", "data-squeezed", "data-collapsed"])}
       data-tab-nav
       aria-label={@aria_label}
       class={["tab-nav", @class]}
@@ -142,11 +146,22 @@ defmodule ShadcnDaisyui.Components.Navigation do
             phx-mounted={keep_client_attrs(["aria-expanded"])}
           >
             <%= if @active_item do %>
-              <span class="sr-only">{@more_label}: </span>
-              <span class="tab-nav-label">{render_slot(@active_item)}</span>
+              <span class="sr-only" data-tab-nav-default>{@more_label}: </span>
+              <span class="tab-nav-label" data-tab-nav-default>{render_slot(@active_item)}</span>
             <% else %>
-              <span class="tab-nav-label">{@more_label}</span>
+              <span class="tab-nav-label" data-tab-nav-default>{@more_label}</span>
             <% end %>
+            <%!-- collapsed (every tab in the menu): the trigger names the active tab --%>
+            <span :if={@active_tab} class="tab-nav-label" data-tab-nav-current>
+              {render_slot(@active_tab)}
+            </span>
+            <span
+              :if={@active_tab && @active_tab[:count] != nil}
+              class="tab-count"
+              data-tab-nav-current
+            >
+              {@active_tab.count}
+            </span>
             <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
           </button>
           <div
@@ -173,6 +188,12 @@ defmodule ShadcnDaisyui.Components.Navigation do
                 <span class="truncate">{render_slot(tab)}</span>
                 <span :if={tab[:count] != nil} class="ml-auto font-mono text-xs text-muted-foreground">
                   {tab.count}
+                </span>
+                <span
+                  :if={tab[:active]}
+                  class={["hero-check size-4", tab[:count] == nil && "ml-auto"]}
+                  aria-hidden="true"
+                >
                 </span>
               </.link>
             </div>

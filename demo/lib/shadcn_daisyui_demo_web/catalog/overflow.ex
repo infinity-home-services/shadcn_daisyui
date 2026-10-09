@@ -57,7 +57,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         }
       ],
       notes:
-        "Needs the ShadcnTabNav hook (or initShadcnDaisyui() in dead views). Every tab renders twice, once in the row and once hidden in the menu, and the hook only flips hidden on the two copies, so LiveView patches never fight it; it re-fits on resize (ResizeObserver), after web fonts load, and in updated(), all before the browser paints. The active tab always stays in the row, swapping out the last visible one. When an active :menu_item lives in the menu, More shows its name.",
+        "Needs the ShadcnTabNav hook (or initShadcnDaisyui() in dead views). Every tab renders twice, once in the row and once hidden in the menu, and the hook only flips hidden on the two copies, so LiveView patches never fight it; it re-fits on resize (ResizeObserver), after web fonts load, and in updated(), all before the browser paints. The active tab always stays in the row, swapping out the last visible one. When an active :menu_item lives in the menu, More shows its name. When even the active tab and More don't fit side by side, every tab folds into the menu (the active one checked) and the trigger names the active tab with its count, e.g. \"Needs a call 17\"; the label truncates with an ellipsis, the count never does.",
       specs: %{
         anatomy: [
           %{
@@ -204,12 +204,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
               </div>
               <div class="tab-nav-more" data-tab-nav-more>
                 <button type="button" class="tab" aria-expanded="false" aria-controls="issue-views-menu" data-tab-nav-trigger>
-                  <span class="tab-nav-label">More</span>
+                  <span class="tab-nav-label" data-tab-nav-default>More</span>
+                  <span class="tab-nav-label" data-tab-nav-current>All issues</span><span class="tab-count" data-tab-nav-current>128</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
                 <div id="issue-views-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
                   <div data-tab-nav-overflow hidden>
-                    <a href="#all" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All issues</span><span class="ml-auto font-mono text-xs text-muted-foreground">128</span></a>
+                    <a href="#all" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All issues</span><span class="ml-auto font-mono text-xs text-muted-foreground">128</span><span class="hero-check size-4" aria-hidden="true"></span></a>
                     <a href="#active" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Active</span><span class="ml-auto font-mono text-xs text-muted-foreground">24</span></a>
                     <a href="#backlog" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="2" hidden><span class="truncate">Backlog</span><span class="ml-auto font-mono text-xs text-muted-foreground">61</span></a>
                     <a href="#triage" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="3" hidden><span class="truncate">Triage</span><span class="ml-auto font-mono text-xs text-muted-foreground">7</span></a>
@@ -263,7 +264,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
               </div>
               <div class="tab-nav-more" data-tab-nav-more>
                 <button type="button" class="tab tab-active" aria-expanded="false" aria-controls="issue-views-shared-menu" data-tab-nav-trigger>
-                  <span class="sr-only">More: </span><span class="tab-nav-label">Open bugs</span>
+                  <span class="sr-only" data-tab-nav-default>More: </span><span class="tab-nav-label" data-tab-nav-default>Open bugs</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
                 <div id="issue-views-shared-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
@@ -320,7 +321,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
               </div>
               <div class="tab-nav-more" data-tab-nav-more hidden>
                 <button type="button" class="tab" aria-expanded="false" aria-controls="settings-nav-menu" data-tab-nav-trigger>
-                  <span class="tab-nav-label">More</span>
+                  <span class="tab-nav-label" data-tab-nav-default>More</span>
+                  <span class="tab-nav-label" data-tab-nav-current>Billing</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
                 <div id="settings-nav-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
@@ -330,7 +332,56 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                     <a href="#reports" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="2" hidden><span class="truncate">Reports</span></a>
                     <a href="#notifications" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="3" hidden><span class="truncate">Notifications</span></a>
                     <a href="#integrations" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="4" hidden><span class="truncate">Integrations</span></a>
-                    <a href="#billing" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="5" hidden><span class="truncate">Billing</span></a>
+                    <a href="#billing" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="5" hidden><span class="truncate">Billing</span><span class="hero-check ml-auto size-4" aria-hidden="true"></span></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </nav>
+          """
+        },
+        %{
+          title: "Narrow: everything in the menu",
+          center: false,
+          resizable: true,
+          width: 25,
+          heex: ~S"""
+          <%!-- too narrow for the active tab and More side by side: every tab
+               folds into the menu and the trigger names the active one --%>
+          <.tab_nav id="call-queue" aria-label="Call queue">
+            <:tab
+              :for={q <- @queues}
+              patch={~p"/calls?queue=#{q.slug}"}
+              active={@queue == q.slug}
+              count={q.count}
+            >
+              {q.title}
+            </:tab>
+          </.tab_nav>
+          """,
+          code: ~S"""
+          <nav id="call-queue" data-tab-nav aria-label="Call queue" class="tab-nav">
+            <div class="tabs tabs-box tab-nav-list">
+              <div class="tab-nav-tabs" data-tab-nav-tabs>
+                <a href="#all" class="tab" data-tab-nav-item data-index="0"><span class="tab-nav-label">All calls</span><span class="tab-count">240</span></a>
+                <a href="#needs-call" class="tab tab-active" aria-current="page" data-tab-nav-item data-index="1"><span class="tab-nav-label">Needs a call</span><span class="tab-count">17</span></a>
+                <a href="#scheduled" class="tab" data-tab-nav-item data-index="2"><span class="tab-nav-label">Scheduled</span><span class="tab-count">52</span></a>
+                <a href="#voicemail" class="tab" data-tab-nav-item data-index="3"><span class="tab-nav-label">Voicemail</span><span class="tab-count">9</span></a>
+                <a href="#closed" class="tab" data-tab-nav-item data-index="4"><span class="tab-nav-label">Closed</span><span class="tab-count">1,204</span></a>
+              </div>
+              <div class="tab-nav-more" data-tab-nav-more>
+                <button type="button" class="tab" aria-expanded="false" aria-controls="call-queue-menu" data-tab-nav-trigger>
+                  <span class="tab-nav-label" data-tab-nav-default>More</span>
+                  <span class="tab-nav-label" data-tab-nav-current>Needs a call</span><span class="tab-count" data-tab-nav-current>17</span>
+                  <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
+                </button>
+                <div id="call-queue-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+                  <div data-tab-nav-overflow hidden>
+                    <a href="#all" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All calls</span><span class="ml-auto font-mono text-xs text-muted-foreground">240</span></a>
+                    <a href="#needs-call" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Needs a call</span><span class="ml-auto font-mono text-xs text-muted-foreground">17</span><span class="hero-check size-4" aria-hidden="true"></span></a>
+                    <a href="#scheduled" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="2" hidden><span class="truncate">Scheduled</span><span class="ml-auto font-mono text-xs text-muted-foreground">52</span></a>
+                    <a href="#voicemail" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="3" hidden><span class="truncate">Voicemail</span><span class="ml-auto font-mono text-xs text-muted-foreground">9</span></a>
+                    <a href="#closed" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="4" hidden><span class="truncate">Closed</span><span class="ml-auto font-mono text-xs text-muted-foreground">1,204</span></a>
                   </div>
                 </div>
               </div>

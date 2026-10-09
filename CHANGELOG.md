@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-09
+
+`<.tab_nav>` degrades cleanly on very narrow widths.
+
+### Added
+
+- **Collapsed `<.tab_nav>`.** When the active tab and the More trigger don't
+  fit side by side, every tab now folds into the menu and the trigger names
+  the active tab with its count (e.g. "Needs a call 17 ▾"), styled as the
+  active tab. If even that is too wide the label truncates with an ellipsis;
+  the count and chevron never clip. The menu lists every tab in order with
+  the active one checked. The hook sets `data-collapsed` on the root (kept
+  across LiveView patches); wider rows behave exactly as before. Plain-HTML
+  recipes: the trigger's default label spans carry `data-tab-nav-default` and
+  the active tab's label and count are added as `data-tab-nav-current` spans.
+- Docs: a "Narrow: everything in the menu" Tab Nav example whose preview
+  starts at 25% width (examples can now set a starting slider `width`).
+
+### Fixed
+
+- A More trigger wider than the row (no active tab, long active menu item)
+  now truncates its label instead of overflowing the row.
+
 ## [0.9.0] - 2026-10-09
 
 Dropdown menu fixes: icon-only triggers and a consistent stacking order for

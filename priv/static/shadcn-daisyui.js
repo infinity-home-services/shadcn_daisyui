@@ -1537,6 +1537,7 @@ function initTabNav(root) {
     const focused = document.activeElement
     // measure everything at its natural width (same task, nothing paints)
     root.removeAttribute("data-squeezed")
+    root.removeAttribute("data-collapsed")
     items.forEach((el) => { el.hidden = false })
     more.hidden = false
     const cs = getComputedStyle(list)
@@ -1547,7 +1548,12 @@ function initTabNav(root) {
     const widths = items.map(outerW)
     const moreW = outerW(more)
     const pinned = items.findIndex((el) => el.classList.contains("tab-active"))
-    const vis = fitRow({ widths, avail, gap, moreW, moreAlways: extras, pinned })
+    let vis = fitRow({ widths, avail, gap, moreW, moreAlways: extras, pinned })
+    // the active tab and More don't fit side by side: fold every tab into the
+    // menu, and the trigger names the active tab (CSS swaps its label)
+    const needsMore = extras || items.length > 1
+    const collapsed = pinned >= 0 && needsMore && widths[pinned] + gap + moreW > avail + 0.5
+    if (collapsed) vis = []
     const shown = new Set(vis)
     // apply
     items.forEach((el, i) => { el.hidden = !shown.has(i) })
@@ -1560,7 +1566,8 @@ function initTabNav(root) {
     more.hidden = !(overflowed || extras)
     const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
       (more.hidden ? 0 : moreW + (vis.length ? gap : 0))
-    root.toggleAttribute("data-squeezed", used > avail + 0.5)
+    root.toggleAttribute("data-collapsed", collapsed)
+    root.toggleAttribute("data-squeezed", !collapsed && used > avail + 0.5)
     root.setAttribute("data-ready", "")
     if (more.hidden && menu.isOpen()) menu.set(false)
     menu.sync()
@@ -1636,7 +1643,8 @@ function initChipRow(root) {
     more.hidden = rest === 0
     const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
       (rest ? moreW + (vis.length ? gap : 0) : 0)
-    root.toggleAttribute("data-squeezed", used > avail + 0.5)
+    root.toggleAttribute("data-collapsed", collapsed)
+    root.toggleAttribute("data-squeezed", !collapsed && used > avail + 0.5)
     root.setAttribute("data-ready", "")
     if (more.hidden && pop.isOpen()) pop.set(false)
     pop.sync()
