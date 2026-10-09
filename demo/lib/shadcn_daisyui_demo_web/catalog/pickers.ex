@@ -167,7 +167,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Pickers do
               <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-select-label>Status</span>
               <span class="hero-chevron-down size-4 shrink-0 opacity-50" aria-hidden="true"></span>
             </button>
-            <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" data-select-panel>
+            <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
               <div role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
                 <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="backlog"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Backlog</span></button>
                 <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="todo"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Todo</span></button>
@@ -202,7 +202,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Pickers do
               <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-combobox-label>Labels</span>
               <span class="hero-chevron-up-down size-4 shrink-0 opacity-50" aria-hidden="true"></span>
             </button>
-            <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" data-combobox-panel>
+            <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-combobox-panel>
               <input data-combobox-search class="input mb-1 w-full" placeholder="Filter labels…" autocomplete="off" />
               <ul role="listbox" aria-multiselectable="true" class="max-h-60 overflow-auto" data-combobox-list>
                 <li><button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-value="bug"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Bug</span><span class="ml-auto font-mono text-xs text-muted-foreground">12</span></button></li>
@@ -243,7 +243,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Pickers do
                 <span class="flex min-w-0 items-center gap-1" data-select-label><span class="truncate">Editor</span></span>
                 <span class="hero-chevron-down size-4 shrink-0 opacity-50" aria-hidden="true"></span>
               </button>
-              <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" data-select-panel>
+              <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
                 <div role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
                   <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="viewer"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Viewer</span></button>
                   <button type="button" tabindex="-1" role="option" aria-selected="true" class="combo-item" data-select-item data-value="editor" data-selected><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Editor</span></button>
@@ -400,7 +400,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Pickers do
               <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
               <span data-daterange-label class="truncate text-muted-foreground">Pick a date range</span>
             </button>
-            <div data-daterange-panel role="dialog" aria-label="Pick a date range" class="popover-panel absolute z-30 mt-1 hidden p-3">
+            <div data-daterange-panel role="dialog" aria-label="Pick a date range" class="popover-panel absolute z-50 mt-1 hidden p-3">
               <div class="flex flex-col gap-3 sm:flex-row">
                 <div class="flex flex-wrap gap-1 border-border sm:w-36 sm:flex-col sm:flex-nowrap sm:border-e sm:pe-3">
                   <button type="button" class="btn btn-ghost btn-sm justify-start font-normal" data-daterange-preset data-days="1">Today</button>
@@ -439,7 +439,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Pickers do
                 <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
                 <span data-daterange-label class="truncate">Oct 1 – Oct 9, 2026</span>
               </button>
-              <div data-daterange-panel role="dialog" aria-label="Pick a date range" class="popover-panel absolute z-30 mt-1 hidden p-3">
+              <div data-daterange-panel role="dialog" aria-label="Pick a date range" class="popover-panel absolute z-50 mt-1 hidden p-3">
                 <div class="flex flex-col gap-3 sm:flex-row">
                   <div class="flex flex-wrap gap-1 border-border sm:w-36 sm:flex-col sm:flex-nowrap sm:border-e sm:pe-3">
                     <button type="button" class="btn btn-ghost btn-sm justify-start font-normal" data-daterange-preset data-days="7">Last 7 days</button>

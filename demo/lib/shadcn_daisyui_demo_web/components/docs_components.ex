@@ -186,7 +186,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
                 <span>{mobile_summary(@groups, @active, @active_guide)}</span>
                 <span class="hero-chevron-down size-4" aria-hidden="true"></span>
               </summary>
-              <div class="dropdown-content z-30 mt-1 max-h-[70vh] w-full overflow-y-auto">
+              <div class="dropdown-content z-50 mt-1 max-h-[70vh] w-full overflow-y-auto">
                 <div class="p-2">
                   <div class="mb-2 space-y-0.5">
                     <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">

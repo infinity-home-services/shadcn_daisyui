@@ -208,6 +208,35 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ "dropdown-content menu"
     end
 
+    test "the menu sits on the floating layer (z-50)" do
+      assigns = %{}
+
+      html =
+        render(~H|<.dropdown_menu><:trigger>Open</:trigger><:item>A</:item></.dropdown_menu>|)
+
+      assert html =~ "dropdown-content menu z-50"
+      refute html =~ "z-10"
+    end
+
+    test "chevron={false} + aria-label for an icon-only trigger" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu trigger_class="btn btn-ghost btn-square" chevron={false} aria-label="More actions">
+          <:trigger><span class="hero-ellipsis-horizontal size-4"></span></:trigger>
+          <:item>Edit</:item>
+        </.dropdown_menu>
+        """)
+
+      refute html =~ "hero-chevron-down"
+
+      assert html =~
+               ~r/role="button"[^>]*aria-label="More actions"|aria-label="More actions"[^>]*role="button"/
+
+      assert html =~ "btn btn-ghost btn-square"
+    end
+
     test "align end adds dropdown-end" do
       assigns = %{}
 

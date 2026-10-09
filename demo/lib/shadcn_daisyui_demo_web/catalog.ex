@@ -577,7 +577,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <span data-select-label class="text-muted-foreground">Select a fruit</span>
                 <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
               </button>
-              <div data-select-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
+              <div data-select-panel class="popover-panel absolute z-50 mt-1 hidden w-full p-1">
                 <button type="button" class="combo-item" data-select-item data-value="Apple"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Apple</button>
                 <button type="button" class="combo-item" data-select-item data-value="Banana"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Banana</button>
                 <button type="button" class="combo-item" data-select-item data-value="Blueberry"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Blueberry</button>
@@ -603,7 +603,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-select-label>Select fruits</span>
                 <span class="hero-chevron-down size-4 shrink-0 opacity-50" aria-hidden="true"></span>
               </button>
-              <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" data-select-panel>
+              <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
                 <div role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
                   <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Apple"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Apple</span></button>
                   <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Banana"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Banana</span></button>
@@ -1065,6 +1065,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             "Menus are fine on touch (items are full-width rows); ensure the trigger itself meets the 44pt floor.",
           ios: "Menu attached to a button (or context menu on long-press); destructive role last."
         },
+        props: [
+          %{name: "trigger_class", type: "classes", default: ~s("btn btn-outline")},
+          %{name: "chevron", type: "boolean", default: "true"},
+          %{name: "aria-label", type: "string (icon-only triggers)", default: "nil"},
+          %{name: "align", type: "start | end", default: "start"},
+          %{name: "class", type: "menu panel classes", default: ~s("w-48")},
+          %{name: ":item class / phx-click / phx-value-id", type: "slot attrs", default: "-"}
+        ],
+        notes:
+          "The menu is floating content at z-50, so it opens above sticky table headers, toolbars and bottom bars (z-10). Dialogs and sheets render in the browser's top layer, above both.",
         examples: [
           %{
             title: "Default",
@@ -1083,12 +1093,41 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <div tabindex="0" role="button" class="btn btn-outline">
                 Open menu <span class="hero-chevron-down size-4" aria-hidden="true"></span>
               </div>
-              <ul tabindex="0" class="dropdown-content menu z-10 mt-2 w-48">
+              <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-48">
                 <li class="menu-title">My Account</li>
                 <li><a>Profile</a></li>
                 <li><a>Billing</a></li>
                 <li><a>Settings</a></li>
                 <li><a class="text-destructive">Log out</a></li>
+              </ul>
+            </div>
+            """
+          },
+          %{
+            title: "Icon-only trigger (row actions)",
+            heex: ~S"""
+            <.dropdown_menu
+              trigger_class="btn btn-ghost btn-square btn-sm"
+              chevron={false}
+              aria-label="More actions"
+              align="end"
+              class="w-40"
+            >
+              <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+              <:item phx-click="edit" phx-value-id={@row.id}>Edit</:item>
+              <:item phx-click="duplicate" phx-value-id={@row.id}>Duplicate</:item>
+              <:item phx-click="delete" phx-value-id={@row.id} class="text-destructive">Delete</:item>
+            </.dropdown_menu>
+            """,
+            code: ~S"""
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm" aria-label="More actions">
+                <span class="hero-ellipsis-horizontal size-4" aria-hidden="true"></span>
+              </div>
+              <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40">
+                <li><a>Edit</a></li>
+                <li><a>Duplicate</a></li>
+                <li><a class="text-destructive">Delete</a></li>
               </ul>
             </div>
             """
@@ -1413,7 +1452,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <div class="dropdown">
               <div tabindex="0" role="button" class="btn btn-outline">Open popover</div>
-              <div tabindex="0" class="dropdown-content z-10 mt-2 w-72 p-4">
+              <div tabindex="0" class="dropdown-content z-50 mt-2 w-72 p-4">
                 <div class="space-y-3">
                   <div class="space-y-1">
                     <h4 class="text-sm font-medium leading-none">Dimensions</h4>
@@ -1644,7 +1683,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
                   Getting started <span class="hero-chevron-down size-4" aria-hidden="true"></span>
                 </div>
-                <div tabindex="0" class="dropdown-content z-20 mt-1.5 w-80 p-2">
+                <div tabindex="0" class="dropdown-content z-50 mt-1.5 w-80 p-2">
                   <a class="block rounded-md p-3 hover:bg-accent">
                     <div class="text-sm font-medium">Introduction</div>
                     <p class="mt-0.5 text-sm text-muted-foreground">Components styled to match shadcn/ui.</p>
@@ -1659,7 +1698,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1">
                   Components <span class="hero-chevron-down size-4" aria-hidden="true"></span>
                 </div>
-                <div tabindex="0" class="dropdown-content z-20 mt-1.5 grid w-[26rem] grid-cols-2 gap-1 p-2">
+                <div tabindex="0" class="dropdown-content z-50 mt-1.5 grid w-[26rem] grid-cols-2 gap-1 p-2">
                   <a class="rounded-md p-2 hover:bg-accent">
                     <div class="text-sm font-medium">Alert Dialog</div>
                     <p class="text-xs text-muted-foreground">Modal confirmation.</p>
@@ -1694,7 +1733,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <div class="dropdown dropdown-hover">
               <div tabindex="0" role="button" class="link link-primary">@shadcn</div>
-              <div tabindex="0" class="dropdown-content z-10 mt-2 w-72 p-4">
+              <div tabindex="0" class="dropdown-content z-50 mt-2 w-72 p-4">
                 <div class="flex items-start gap-3">
                   <div class="avatar avatar-placeholder shrink-0">
                     <div class="size-12 rounded-full"><span>SC</span></div>
@@ -2065,7 +2104,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <span data-combobox-label class="text-muted-foreground">Select framework…</span>
                 <span class="hero-chevron-up-down size-4 opacity-50" aria-hidden="true"></span>
               </button>
-              <div data-combobox-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
+              <div data-combobox-panel class="popover-panel absolute z-50 mt-1 hidden w-full p-1">
                 <input data-combobox-search class="input mb-1 w-full" placeholder="Search framework…" />
                 <ul data-combobox-list class="max-h-52 overflow-auto">
                   <li><button type="button" class="combo-item" data-value="Next.js"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Next.js</button></li>
@@ -2181,7 +2220,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                     Status
                     <span data-dt-facet-badges class="hidden"></span>
                   </button>
-                  <div data-dt-facet-panel class="popover-panel absolute z-30 mt-1 hidden w-52 p-1">
+                  <div data-dt-facet-panel class="popover-panel absolute z-50 mt-1 hidden w-52 p-1">
                     <ul data-dt-facet-list></ul>
                     <div data-dt-facet-clear class="hidden">
                       <div class="my-1 border-t border-base-300"></div>
@@ -2267,7 +2306,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                     <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
                     <span data-datepicker-label class="text-muted-foreground">Pick a date</span>
                   </button>
-                  <div data-datepicker-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
+                  <div data-datepicker-panel class="popover-panel absolute z-50 mt-1 hidden p-3">
                     <div data-calendar></div>
                   </div>
                 </div>
@@ -2279,7 +2318,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                     <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
                     <span data-daterange-label class="text-muted-foreground">Pick a date range</span>
                   </button>
-                  <div data-daterange-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
+                  <div data-daterange-panel class="popover-panel absolute z-50 mt-1 hidden p-3">
                     <div data-calendar-range></div>
                   </div>
                 </div>

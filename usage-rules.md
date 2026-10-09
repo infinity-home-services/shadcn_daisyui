@@ -69,7 +69,7 @@ Decision order:
 | `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` + content (right panel / bottom panel) |
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
-| `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"` |
+| `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"` |
 | `<.command>` | `id` req. (hook), `<:trigger_label>`, `<:item group icon shortcut>` slots, ⌘K |
 | `<.tabs>` | `id` req., `<:tab label="..." checked>` slots with panel content |
 | `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible |
@@ -127,7 +127,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Data table (sortable/faceted/paged) | Build with `<.table>` + LiveView `phx-click` sort/filter/page events. The `ShadcnDataTable` JS hook is docs-demo only (fixed dataset) - do not wire it in apps. |
 | Modal/dialog | native `<dialog id="d" class="modal"><div class="modal-box">…`, opened by `<button commandfor="d" command="show-modal">` (no inline JS); backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
 | Tooltip | `<div class="tooltip" data-tip="…">` wrapping the trigger |
-| Dropdown | `<div class="dropdown">` + `tabindex="0"` trigger + `<ul class="dropdown-content menu …">` |
+| Dropdown | `<div class="dropdown">` + `tabindex="0"` trigger + `<ul class="dropdown-content menu z-50 …">` |
 | Context menu | trigger `<div data-context-menu-trigger>` + `<ul data-context-menu class="context-menu hidden">`; needs `id` + `phx-hook="ShadcnContextMenu"` (one per page) |
 | Progress | `<progress class="progress w-full" value="60" max="100">` |
 | Skeleton | `<div class="skeleton h-4 w-48">` |
@@ -166,6 +166,9 @@ Browse the full gallery (88 components) in the docs site (`demo/`) or
   darker than cards and popovers.
 - A sticky `<thead>` inside a card needs `bg-card` (the table header has no fill
   of its own).
+- Stacking: sticky headers / toolbars / bottom bars `z-10`, floating content
+  (menus, popovers, picker panels) `z-50`, modals in the top layer. Never use
+  arbitrary z values (see `usage-rules/styles-shape-elevation.md`).
 - Text: default foreground inherits; secondary text `text-muted-foreground`;
   destructive `text-destructive` / `text-error`.
 - Action colors: `btn-primary`, `btn-secondary`, `badge-error`, etc. - daisyUI semantic

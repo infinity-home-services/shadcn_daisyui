@@ -161,7 +161,7 @@ defmodule ShadcnDaisyui.Components do
         <span class="size-4 opacity-70 hero-calendar" aria-hidden="true"></span>
         <span data-datepicker-label class="text-muted-foreground">{@placeholder}</span>
       </button>
-      <div data-datepicker-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
+      <div data-datepicker-panel class="popover-panel absolute z-50 mt-1 hidden p-3">
         <div id={"#{@id}-calendar"} phx-update="ignore" data-calendar></div>
       </div>
     </div>
@@ -252,7 +252,7 @@ defmodule ShadcnDaisyui.Components do
         data-daterange-panel
         role="dialog"
         aria-label={@placeholder}
-        class="popover-panel absolute z-30 mt-1 hidden p-3"
+        class="popover-panel absolute z-50 mt-1 hidden p-3"
       >
         <div class={@preset != [] && "flex flex-col gap-3 sm:flex-row"}>
           <div
@@ -580,7 +580,7 @@ defmodule ShadcnDaisyui.Components do
         >
         </span>
       </button>
-      <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" {pd(@kind, "panel")}>
+      <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" {pd(@kind, "panel")}>
         <%= if @kind == "combobox" do %>
           <input data-combobox-search class="input mb-1 w-full" placeholder={@search_placeholder} autocomplete="off" />
           <ul

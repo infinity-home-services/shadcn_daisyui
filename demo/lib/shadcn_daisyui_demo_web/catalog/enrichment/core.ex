@@ -777,7 +777,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{
               part: "Trigger",
               description:
-                "Button (with chevron) that opens the menu on click via tabindex/focus."
+                "Button (with a chevron unless chevron={false}) that opens the menu on click via tabindex/focus. Icon-only triggers use btn-square and aria-label."
             },
             %{
               part: "Menu",
@@ -794,7 +794,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{property: "Panel radius", value: "var(--radius-md)"},
             %{property: "Panel padding", value: "0.25rem"},
             %{property: "Item radius", value: "var(--radius-sm)"},
-            %{property: "Item hover", value: "var(--accent) / var(--accent-foreground)"}
+            %{property: "Item hover", value: "var(--accent) / var(--accent-foreground)"},
+            %{property: "Layer", value: "z-50 (floating), above sticky headers and bars (z-10)"}
           ],
           tokens: [
             "popover",
@@ -816,7 +817,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           focus:
             "Trigger and items show focus styling; the open menu closes when focus leaves it (CSS :focus-within mechanism).",
           screen_reader:
-            "Trigger needs an accessible name; add aria-haspopup / aria-expanded for a complete menu-button pattern.",
+            "Trigger needs an accessible name: its text, or aria-label for an icon-only trigger (\"More actions\"). Add aria-haspopup / aria-expanded for a complete menu-button pattern.",
           touch_target:
             "Item rows are comfortably tappable; ensure 44pt on touch-primary surfaces.",
           reduced_motion: "Menu shows/hides without a color fade under the theme."

@@ -475,6 +475,21 @@
     --menu-active-bg: var(--accent);            /* shadcn active = subtle accent, not dark neutral */
     --menu-active-fg: var(--accent-foreground);
   }
+  /* Layering: in-page sticky layers (table headers, toolbars, bottom bars)
+     sit at z-10; every floating surface (menus, popovers, picker panels, the
+     context menu, the tab-nav / chip-row panels) at z-50, above them; modals
+     (<dialog>) render in the browser's top layer, above everything. The
+     components and recipes put z-50 in their markup. daisyUI pins
+     `.dropdown .dropdown-content` to z-index 999 at a specificity no z-*
+     utility beats, so the theme sets that selector to the floating layer
+     (override it with the same selector to change it). The :where() default
+     (zero specificity, so a z-* utility still wins) covers a .popover-panel
+     written without one. z-index only competes inside one stacking context:
+     an ancestor with z-index + position, transform, filter or isolation
+     traps the menu below later siblings. */
+  .dropdown .dropdown-content { z-index: 50; }
+  :where(.popover-panel) { z-index: 50; }
+
   /* floating content (menu, popover, select/combobox panels, context menu):
      shadcn's `shadow-md ring-1 ring-foreground/10`. The ring replaces the
      border, so it adds no layout width. */
@@ -918,7 +933,7 @@
     position: absolute;
     top: calc(100% + 3px + 0.25rem);
     inset-inline-end: 0;
-    z-index: 30;
+    z-index: 50;
     min-width: 12rem;
     max-width: min(18rem, calc(100vw - 2rem));
     max-height: 20rem;
@@ -971,7 +986,7 @@
     position: absolute;
     top: calc(100% + 0.25rem);
     inset-inline-start: 0;
-    z-index: 30;
+    z-index: 50;
     width: max-content;
     max-width: min(18rem, calc(100vw - 2rem));
     max-height: 16rem;

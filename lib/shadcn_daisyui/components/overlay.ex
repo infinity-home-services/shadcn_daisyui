@@ -173,7 +173,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
     ~H"""
     <div class="dropdown" {@rest}>
       <div tabindex="0" role="button" class={@trigger_class}>{render_slot(@trigger)}</div>
-      <div tabindex="0" class={["dropdown-content z-10 mt-2 p-4", @class]}>
+      <div tabindex="0" class={["dropdown-content z-50 mt-2 p-4", @class]}>
         {render_slot(@inner_block)}
       </div>
     </div>
@@ -220,10 +220,38 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   Items containing a link/button render it as-is; plain content gets wrapped in
   an `<a>` so the menu styling applies.
+
+  An icon-only trigger (a ⋯ row-actions menu) drops the chevron and needs an
+  accessible name:
+
+      <.dropdown_menu
+        trigger_class="btn btn-ghost btn-square btn-sm"
+        chevron={false}
+        aria-label="More actions"
+        align="end"
+      >
+        <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+        <:item phx-click="edit" phx-value-id={@row.id}>Edit</:item>
+        <:item phx-click="delete" phx-value-id={@row.id} class="text-destructive">Delete</:item>
+      </.dropdown_menu>
+
+  The menu is floating content (`z-50`), so it opens above sticky table
+  headers and toolbars (`z-10`).
   """
   attr(:class, :any, default: "w-48", doc: "menu panel classes")
   attr(:trigger_class, :any, default: "btn btn-outline")
   attr(:align, :string, default: "start", values: ~w(start end))
+
+  attr(:chevron, :boolean,
+    default: true,
+    doc: "false drops the trailing chevron (icon-only triggers)"
+  )
+
+  attr(:"aria-label", :string,
+    default: nil,
+    doc: "names the trigger; required when it shows only an icon"
+  )
+
   attr(:rest, :global)
 
   slot(:trigger, required: true)
@@ -238,11 +266,11 @@ defmodule ShadcnDaisyui.Components.Overlay do
   def dropdown_menu(assigns) do
     ~H"""
     <div class={["dropdown", @align == "end" && "dropdown-end"]} {@rest}>
-      <div tabindex="0" role="button" class={@trigger_class}>
+      <div tabindex="0" role="button" class={@trigger_class} aria-label={assigns[:"aria-label"]}>
         {render_slot(@trigger)}
-        <span class="hero-chevron-down size-4" aria-hidden="true"></span>
+        <span :if={@chevron} class="hero-chevron-down size-4" aria-hidden="true"></span>
       </div>
-      <ul tabindex="0" class={["dropdown-content menu z-10 mt-2", @class]}>
+      <ul tabindex="0" class={["dropdown-content menu z-50 mt-2", @class]}>
         <li :if={@label != []} class="menu-title">{render_slot(@label)}</li>
         <li :for={item <- @item}>
           <a class={item[:class]} phx-click={item[:"phx-click"]} phx-value-id={item[:"phx-value-id"]}>

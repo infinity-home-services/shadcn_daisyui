@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-09
+
+Dropdown menu fixes: icon-only triggers and a consistent stacking order for
+floating content.
+
+### Added
+
+- **`chevron` on `<.dropdown_menu>`** (default `true`): `chevron={false}` drops
+  the trailing chevron for icon-only triggers such as a ⋯ row-actions button.
+  New **`aria-label`** attr names the trigger itself (it previously fell
+  through to the wrapper). Documented with
+  `trigger_class="btn btn-ghost btn-square btn-sm"`; the docs page gains an
+  "Icon-only trigger" example and a props table.
+- **Stacking layers** in `usage-rules/styles-shape-elevation.md` (and
+  `usage-rules.md`): in-page sticky layers (table headers, toolbars, bottom
+  bars) `z-10`, floating content `z-50`, modals in the browser's top layer.
+
+### Fixed
+
+- **One floating layer, `z-50`, above sticky layers.** Floating surfaces sat
+  at mixed levels: `<.dropdown_menu>` and `<.popover>` carried a `z-10` class
+  that never applied (daisyUI pins `.dropdown .dropdown-content` to `z-999` at
+  a higher specificity), and the select / combobox / date-picker / date-range
+  panels, the tab-nav More menu and the chip-row popover used `z-30`. All of
+  them, like the context menu, now use `z-50`: the components' markup says
+  `z-50`, the theme sets `.dropdown .dropdown-content` to 50 (down from
+  daisyUI's 999), and `.popover-panel` gets a zero-specificity `z-index: 50`
+  default for plain-HTML recipes. Docs recipes updated to match. The
+  elevation rules also explain the usual real cause of a menu hidden under a
+  sticky header: an ancestor that creates a stacking context.
+
 ## [0.8.0] - 2026-10-09
 
 Width-aware rows and a sanctioned collapsing-row animation. New docs pages:
