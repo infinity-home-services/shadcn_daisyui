@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs
+
+- The docs site no longer uses inline event handlers anywhere except the
+  deliberate canary on `/docs/dark-mode`. Sonner, Attachment, Message, Bubble
+  and Marker previews use `data-toast*` attributes, the Range Calendar booking
+  form uses `data-demo-booking`, and the motion guide's replay buttons use
+  `data-motion-play`, each handled by a delegated listener in the demo's
+  `app.js`. A test sweeps every exported page for `on*=` attributes.
+
 ## [0.6.0] - 2026-10-09
 
 Dark-mode and CSP parity with shadcn-svelte's neutral dark theme

@@ -70,7 +70,7 @@
         <button
           type="button"
           class="btn btn-outline btn-sm w-full"
-          onclick={"const b=this.closest('div').querySelector('[data-motion-box]');const t=b.closest('.relative');b.animate([{transform:'translateX(0)'},{transform:'translateX('+(t.offsetWidth-b.offsetWidth-8)+'px)'}],{duration:#{dur},easing:'cubic-bezier(0.4,0,0.2,1)',fill:'forwards'})"}
+          data-motion-play={dur}
         >
           Replay {dur}ms
         </button>

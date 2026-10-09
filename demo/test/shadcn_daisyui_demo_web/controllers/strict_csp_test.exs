@@ -63,6 +63,23 @@ defmodule ShadcnDaisyuiDemoWeb.StrictCSPTest do
     end
   end
 
+  describe "every docs page" do
+    test "renders no inline event handler (the dark-mode canary aside)", %{conn: conn} do
+      pages =
+        ["/", "/docs/installation", "/docs/adopt", "/docs/themes", "/docs/tokens"] ++
+          Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.path) ++
+          Enum.map(ShadcnDaisyuiDemoWeb.Catalog.slugs(), &"/docs/components/#{&1}")
+
+      offenders =
+        for path <- pages,
+            html = conn |> get(path) |> html_response(200),
+            [tag] <- Regex.scan(~r/<[a-z][^>]*\son[a-z]+\s*=[^>]*>/i, html),
+            do: {path, tag}
+
+      assert offenders == []
+    end
+  end
+
   describe "/lab/csp LiveView" do
     test "renders the overlays under the strict policy and keeps patching", %{conn: conn} do
       conn = get(conn, ~p"/lab/csp")

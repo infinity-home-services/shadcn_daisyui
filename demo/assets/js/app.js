@@ -85,7 +85,7 @@ if (process.env.NODE_ENV === "development") {
   })
 }
 
-// shadcn_daisyui interactive components (the catalog previews call these inline)
+// shadcn_daisyui toast API on window, for poking at it from the console
 window.toast = toast
 window.showToast = showToast
 
@@ -123,8 +123,54 @@ const initPlatformToggle = () => {
   })
 }
 
-// Copy buttons on code blocks. Delegated (no inline onclick) so the docs work
-// under a strict script-src CSP.
+// Docs previews carry no inline handlers (so the site works under a strict
+// script-src CSP); these delegated listeners do what onclick= used to.
+
+// Toast previews: <button data-toast="Saved" data-toast-type="success"
+// data-toast-description="…" data-toast-position="top-left"
+// data-toast-action="Undo">. data-toast-promise="Event" runs the promise demo.
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-toast], [data-toast-promise]")
+  if (!b) return
+  const d = b.dataset
+  if (d.toastPromise !== undefined) {
+    toast.promise(() => new Promise((r) => setTimeout(() => r({name: d.toastPromise}), 2000)), {
+      loading: "Loading...",
+      success: (x) => `${x.name} has been created`,
+      error: "Error",
+    })
+    return
+  }
+  const opts = {}
+  if (d.toastDescription) opts.description = d.toastDescription
+  if (d.toastPosition) opts.position = d.toastPosition
+  if (d.toastAction) opts.action = {label: d.toastAction, onClick: () => {}}
+  ;(d.toastType ? toast[d.toastType] : toast)(d.toast, opts)
+})
+
+// Range-calendar booking preview: show the submitted range instead of posting.
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("[data-demo-booking]")
+  if (!form) return
+  e.preventDefault()
+  const f = new FormData(form)
+  toast("Booked", {description: `${f.get("booking[check_in]")} → ${f.get("booking[check_out]")}`})
+})
+
+// Motion guide: replay a duration sample with the Web Animations API (not
+// affected by the theme-swap transition-duration override).
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-motion-play]")
+  if (!btn) return
+  const box = btn.closest("div").querySelector("[data-motion-box]")
+  const track = box.closest(".relative")
+  box.animate(
+    [{transform: "translateX(0)"}, {transform: `translateX(${track.offsetWidth - box.offsetWidth - 8}px)`}],
+    {duration: Number(btn.dataset.motionPlay), easing: "cubic-bezier(0.4,0,0.2,1)", fill: "forwards"},
+  )
+})
+
+// Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")
   if (!btn) return

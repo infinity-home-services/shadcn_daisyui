@@ -1436,7 +1436,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
              )}
             """,
             code: ~S"""
-            <button class="btn btn-outline" onclick="window.toast('Event has been created', { description: 'Sunday, December 03, 2023 at 9:00 AM', action: { label: 'Undo', onClick: () => {} } })">Show Toast</button>
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Sunday, December 03, 2023 at 9:00 AM" data-toast-action="Undo">Show Toast</button>
             """
           },
           %{
@@ -1448,13 +1450,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             push_toast(socket, "Event has not been created", type: :error)
             """,
             code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
             <div class="flex flex-wrap justify-center gap-2">
-              <button class="btn btn-outline" onclick="window.toast('Event has been created')">Default</button>
-              <button class="btn btn-outline" onclick="window.toast.success('Event has been created')">Success</button>
-              <button class="btn btn-outline" onclick="window.toast.info('Be at the area 10 minutes before the event time')">Info</button>
-              <button class="btn btn-outline" onclick="window.toast.warning('Event start time cannot be earlier than 8am')">Warning</button>
-              <button class="btn btn-outline" onclick="window.toast.error('Event has not been created')">Error</button>
-              <button class="btn btn-outline" onclick="window.toast.promise(() => new Promise((r) => setTimeout(() => r({ name: 'Event' }), 2000)), { loading: 'Loading...', success: (d) => d.name + ' has been created', error: 'Error' })">Promise</button>
+              <button class="btn btn-outline" data-toast="Event has been created">Default</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-type="success">Success</button>
+              <button class="btn btn-outline" data-toast="Be at the area 10 minutes before the event time" data-toast-type="info">Info</button>
+              <button class="btn btn-outline" data-toast="Event start time cannot be earlier than 8am" data-toast-type="warning">Warning</button>
+              <button class="btn btn-outline" data-toast="Event has not been created" data-toast-type="error">Error</button>
+              <button class="btn btn-outline" data-toast-promise="Event">Promise</button>
             </div>
             """
           },
@@ -1464,7 +1468,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             push_toast(socket, "Event has been created", description: "Monday, January 3rd at 6:00pm")
             """,
             code: ~S"""
-            <button class="btn btn-outline" onclick="window.toast('Event has been created', { description: 'Monday, January 3rd at 6:00pm' })">Show Toast</button>
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Monday, January 3rd at 6:00pm">Show Toast</button>
             """
           },
           %{
@@ -1477,13 +1483,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             push_toast(socket, "Event has been created", position: "top-left")
             """,
             code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
             <div class="flex flex-wrap justify-center gap-2">
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-left' })">Top Left</button>
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-center' })">Top Center</button>
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'top-right' })">Top Right</button>
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-left' })">Bottom Left</button>
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-center' })">Bottom Center</button>
-              <button class="btn btn-outline" onclick="window.toast('Event has been created', { position: 'bottom-right' })">Bottom Right</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="top-left">Top Left</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="top-center">Top Center</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="top-right">Top Right</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-left">Bottom Left</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-center">Bottom Center</button>
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-right">Bottom Right</button>
             </div>
             """
           }

@@ -492,10 +492,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
               <div data-slot="attachment-media" data-variant="icon"><span class="hero-document-magnifying-glass" aria-hidden="true"></span></div>
               <div data-slot="attachment-content"><span data-slot="attachment-title">research-summary.pdf</span><span data-slot="attachment-description">Open preview dialog</span></div>
               <div data-slot="attachment-actions">
-                <button type="button" data-slot="attachment-action" class="btn btn-square btn-xs btn-ghost" aria-label="Copy link" title="Copy link" onclick="window.toast('Link copied')"><span class="hero-link size-3.5" aria-hidden="true"></span></button>
-                <button type="button" data-slot="attachment-action" class="btn btn-square btn-xs btn-ghost" aria-label="Remove research-summary.pdf" title="Remove research-summary.pdf" onclick="window.toast('Removed research-summary.pdf')"><span class="hero-x-mark size-3.5" aria-hidden="true"></span></button>
+                <button type="button" data-slot="attachment-action" class="btn btn-square btn-xs btn-ghost" aria-label="Copy link" title="Copy link" data-toast="Link copied"><span class="hero-link size-3.5" aria-hidden="true"></span></button>
+                <button type="button" data-slot="attachment-action" class="btn btn-square btn-xs btn-ghost" aria-label="Remove research-summary.pdf" title="Remove research-summary.pdf" data-toast="Removed research-summary.pdf"><span class="hero-x-mark size-3.5" aria-hidden="true"></span></button>
               </div>
-              <button type="button" data-slot="attachment-trigger" aria-label="Preview research-summary.pdf" onclick="window.toast('Opening preview…')"></button>
+              <button type="button" data-slot="attachment-trigger" aria-label="Preview research-summary.pdf" data-toast="Opening preview…"></button>
             </div>
           </div>
           """
@@ -690,7 +690,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
               <div data-slot="message-content">
                 <div data-slot="bubble" data-variant="muted" data-align="start"><div data-slot="bubble-content">The install failure is coming from the workspace package.</div></div>
                 <div data-slot="message-footer">
-                  <button class="btn btn-ghost btn-square btn-sm" aria-label="Copy" title="Copy" onclick="window.toast('Copied to clipboard')"><span class="hero-clipboard size-4" aria-hidden="true"></span></button>
+                  <button class="btn btn-ghost btn-square btn-sm" aria-label="Copy" title="Copy" data-toast="Copied to clipboard"><span class="hero-clipboard size-4" aria-hidden="true"></span></button>
                   <button class="btn btn-ghost btn-square btn-sm" aria-label="Like" title="Like"><span class="hero-hand-thumb-up size-4" aria-hidden="true"></span></button>
                   <button class="btn btn-ghost btn-square btn-sm" aria-label="Dislike" title="Dislike"><span class="hero-hand-thumb-down size-4" aria-hidden="true"></span></button>
                 </div>
@@ -818,9 +818,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
           <div class="flex w-full max-w-sm flex-col gap-8">
             <div data-slot="bubble" data-variant="muted" data-align="start"><div data-slot="bubble-content">How can I help you today?</div></div>
             <div data-slot="bubble-group">
-              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" onclick="window.toast('You clicked forgot password')">I forgot my password</button></div>
-              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" onclick="window.toast('You clicked help with subscription')">I need help with my subscription</button></div>
-              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" onclick="window.toast('Connecting you to a human…')">Something else. Talk to a human.</button></div>
+              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" data-toast="You clicked forgot password">I forgot my password</button></div>
+              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" data-toast="You clicked help with subscription">I need help with my subscription</button></div>
+              <div data-slot="bubble" data-variant="tinted" data-align="end"><button type="button" data-slot="bubble-content" data-toast="Connecting you to a human…">Something else. Talk to a human.</button></div>
             </div>
           </div>
           """
@@ -1001,7 +1001,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
               <span data-slot="marker-icon" aria-hidden="true"><span class="hero-arrows-right-left"></span></span>
               <span data-slot="marker-content">View the pull request</span>
             </a>
-            <button type="button" data-slot="marker" data-variant="default" onclick="window.toast('You clicked the revert button')">
+            <button type="button" data-slot="marker" data-variant="default" data-toast="You clicked the revert button">
               <span data-slot="marker-icon" aria-hidden="true"><span class="hero-arrow-uturn-left"></span></span>
               <span data-slot="marker-content">Revert this change</span>
             </button>
@@ -1081,7 +1081,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
           </.form>
           """,
           code: ~S"""
-          <form class="flex flex-col items-start gap-3" onsubmit="event.preventDefault(); const d = new FormData(this); window.toast('Booked', { description: d.get('booking[check_in]') + ' → ' + d.get('booking[check_out]') })">
+          <form class="flex flex-col items-start gap-3" data-demo-booking>
             <div data-range-calendar data-months="1" class="w-fit rounded-md border border-base-300 p-3">
               <input type="hidden" name="booking[check_in]" data-range-start />
               <input type="hidden" name="booking[check_out]" data-range-end />
