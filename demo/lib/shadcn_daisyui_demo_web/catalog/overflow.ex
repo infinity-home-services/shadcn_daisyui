@@ -32,7 +32,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           "Two to four fixed peers that always fit - plain tabs are simpler"
         ],
         sizing:
-          "The boxed tabs look: h-7 text-sm triggers in a p-[3px] muted list (h-10 on touch). Counts are a 20px muted pill. The More menu is floating content: rounded-md, p-1, ring-1 ring-foreground/10, shadow-md, 32px rows (44px on touch).",
+          "The boxed tabs look: an h-9 p-[3px] muted list with 29px text-sm triggers (h-10 on touch); the active tab is the white box in light, bg-input/30 with an input border in dark. Counts are a 20px muted pill. The More menu is floating content: rounded-md, p-1, ring-1 ring-foreground/10, shadow-md, 32px rows (44px on touch).",
         responsive:
           "Never wraps or scrolls: on compact the row keeps the active tab and as many neighbours as fit, and the rest move into More. On phones prefer three to five short labels; long tails live in the menu.",
         ios:

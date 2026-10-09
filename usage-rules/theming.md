@@ -32,10 +32,14 @@ Rules:
 - Override only bridge vars (`--primary`, `--radius`, fonts, chart colors…). Never
   fork or edit the base CSS file.
 - To tint form fields, override `--input-background` (light defaults to
-  `--background`; dark to shadcn's `color-mix(in oklab, var(--input) 30%, transparent)`);
+  `transparent`, so fields take the card or muted surface under them, as in shadcn;
+  dark to shadcn's `color-mix(in oklab, var(--input) 30%, transparent)`);
   it drives `.input`/`.select`/`.textarea`/`.file-input` and the custom
   `<.select>`/`<.combobox>` triggers together. A one-off `bg-*` utility on a single
   control still needs the `!` modifier (the base rule lives in `@layer utilities`).
+- Outline buttons and tab triggers derive their light/dark fills (`--outline-*`,
+  `--tab-*`) from the bridge vars and the theme name (`*-dark`); a brand theme
+  doesn't restate them.
 - Always provide BOTH light and dark blocks; unset vars inherit from the base theme.
 - The dark `@custom-variant` in `app.css` must list every `*-dark` theme name.
 - A brand shared by several apps belongs in one theme package they all depend on -

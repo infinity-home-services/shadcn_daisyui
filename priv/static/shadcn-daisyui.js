@@ -700,10 +700,9 @@ function initDock(scope) {
       if (!lab) return
       const chosen = items().filter((it) => selected.includes(it.dataset.value))
       lab.classList.toggle("text-muted-foreground", chosen.length === 0)
-      if (!chosen.length) { lab.textContent = placeholder; return }
       const t = document.createElement("span")
       t.className = "truncate"
-      t.textContent = chosen.slice(0, multiple ? 2 : 1).map(text).join(", ")
+      t.textContent = chosen.length ? chosen.slice(0, multiple ? 2 : 1).map(text).join(", ") : placeholder
       lab.replaceChildren(t)
       if (multiple && chosen.length > 2) {
         const more = document.createElement("span")

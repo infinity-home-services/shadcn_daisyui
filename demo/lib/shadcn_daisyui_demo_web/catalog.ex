@@ -806,7 +806,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             "Sequential steps - use steps + explicit next/back actions",
             "Tabs that are links (views, settings sections) or may not fit - use <.tab_nav>, which overflows into a More menu"
           ],
-          sizing: "Tab triggers are h-7 text-sm inside the boxed list; don't restyle.",
+          sizing:
+            "An h-9 muted list with p-[3px]; triggers fill it less 1px (29px), text-sm. Active is the white box in light, bg-input/30 with an input border in dark. Don't restyle.",
           responsive:
             "Tabs stay horizontal at all widths; if labels crowd on compact, shorten the labels - never wrap to two rows or scroll. A row that can outgrow its width is <.tab_nav>.",
           ios:
@@ -2432,7 +2433,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <div data-datepicker class="relative w-64">
                   <button type="button" data-datepicker-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
                     <span class="hero-calendar size-4 opacity-70" aria-hidden="true"></span>
-                    <span data-datepicker-label class="text-muted-foreground">Pick a date</span>
+                    <span data-datepicker-label class="truncate text-muted-foreground">Pick a date</span>
                   </button>
                   <div data-datepicker-panel class="popover-panel absolute z-50 mt-1 hidden p-3">
                     <div data-calendar></div>

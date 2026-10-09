@@ -159,7 +159,7 @@ defmodule ShadcnDaisyui.Components do
     <div id={@id} phx-hook="ShadcnDatePicker" data-datepicker class={["relative", @class]}>
       <button type="button" data-datepicker-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
         <span class="size-4 opacity-70 hero-calendar" aria-hidden="true"></span>
-        <span data-datepicker-label class="text-muted-foreground">{@placeholder}</span>
+        <span data-datepicker-label class="truncate text-muted-foreground">{@placeholder}</span>
       </button>
       <div data-datepicker-panel class="popover-panel absolute z-50 mt-1 hidden p-3">
         <div id={"#{@id}-calendar"} phx-update="ignore" data-calendar></div>
@@ -568,7 +568,7 @@ defmodule ShadcnDaisyui.Components do
       >
         <span class={["flex min-w-0 items-center gap-1", @selected == [] && "text-muted-foreground"]} {pd(@kind, "label")}>
           <%= if @selected == [] do %>
-            {@placeholder}
+            <span class="truncate">{@placeholder}</span>
           <% else %>
             <span class="truncate"><%= for {opt, i} <- Enum.with_index(Enum.take(@selected, if(@multiple, do: 2, else: 1))) do %>{if i > 0, do: ", "}{render_slot(opt)}<% end %></span>
             <span :if={length(@selected) > 2} class="shrink-0 text-muted-foreground">+{length(@selected) - 2}<span class="sr-only"> more</span></span>

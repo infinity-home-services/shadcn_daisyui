@@ -8,6 +8,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-09
+
+Tabs, outline buttons and fields follow shadcn's default (Vega) style, so a
+toolbar of them reads as one family in light and dark.
+
+### Changed
+
+- **Tabs** (`.tabs-box` / `.tab`, so `<.tabs>`, `<.tab_nav>` and the recipe):
+  the list is `h-9 p-[3px] rounded-lg bg-muted` and triggers fill it less 1px
+  (29px, was 28px) with a transparent 1px border. Inactive text is
+  `foreground/60` in light and `muted-foreground` in dark, hover `foreground`.
+  The active tab stays `bg-background` + `shadow-sm` in light; in dark it is
+  `bg-input/30` with a `border-input` border (it was `bg-background`, darker
+  than the list). The tab nav's More trigger follows the same rules. A
+  `<.tabs>` list holding its panels still grows to fit them.
+- **`btn-outline`** (and every trigger using it, e.g. `<.dropdown_menu>`): dark
+  is `bg-input/30 border-input`, hover `bg-input/50`, matching fields. Light
+  stays `bg-background border-border shadow-xs`; hover is now `bg-muted` with
+  `text-foreground` (was `accent` / `accent-foreground`, the same colors in
+  the default theme).
+- **Light field fill is transparent.** `--input-background` defaults to
+  `transparent` in light (was `var(--background)`), so `.input`, `.select`,
+  `.textarea`, `.file-input`, OTP slots and the `<.select>` / `<.combobox>` /
+  date triggers take the card or muted surface under them, like shadcn's.
+  Override `--input-background` to tint fields as before. Dark is unchanged
+  (`input/30`).
+- The light/dark fills for outline buttons and tabs come from new derived
+  variables (`--outline-background`, `--outline-border`, `--outline-hover`,
+  `--tab-foreground`, `--tab-active-background`, `--tab-active-border`), keyed
+  on the theme name (`*-dark`). Brand themes get them without restating, and a
+  light panel inside a dark page (or the reverse) resolves its own theme. The
+  field-trigger hover uses `--outline-hover` (dark is still `input/50`).
+
+### Fixed
+
+- `<.select>` / `<.combobox>` placeholders and the date picker label truncate
+  on one line instead of wrapping in a narrow trigger (which made it taller
+  than the fields beside it). Field-style triggers never wrap.
+- The docs' "Fields on every surface" panels: the pickers are `full_width`,
+  so they no longer overflow their grid cells.
+
+### Added
+
+- Docs: a toolbar (tabs, search, outline button, outline dropdown, primary
+  button) side by side in light and dark, on the page and on a card, on the
+  Dark mode page.
+- A headless-Chrome test that compares the toolbar's computed colors with the
+  shadcn recipe values in both themes, including a light panel inside a dark
+  page and the reverse.
+
 ## [0.12.0] - 2026-10-09
 
 Toasts and flashes show above sheets, dialogs, drawers and the command

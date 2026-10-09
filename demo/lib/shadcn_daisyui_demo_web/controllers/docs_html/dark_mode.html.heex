@@ -90,11 +90,11 @@
               <option>Free</option>
               <option>Pro</option>
             </select>
-            <.select id={"dm-select-page-#{theme}"} placeholder="Select a fruit">
+            <.select id={"dm-select-page-#{theme}"} full_width placeholder="Select a fruit">
               <:option value="Apple">Apple</:option>
               <:option value="Banana">Banana</:option>
             </.select>
-            <.combobox id={"dm-combo-page-#{theme}"} placeholder="Select framework…">
+            <.combobox id={"dm-combo-page-#{theme}"} full_width placeholder="Select framework…">
               <:option value="Phoenix">Phoenix</:option>
               <:option value="SvelteKit">SvelteKit</:option>
             </.combobox>
@@ -113,7 +113,7 @@
             <p class="text-xs text-muted-foreground">Card</p>
             <div class="grid gap-3 sm:grid-cols-2">
               <input class="input w-full" placeholder="Email" aria-label="Email on card" />
-              <.select id={"dm-select-card-#{theme}"} placeholder="Select a fruit">
+              <.select id={"dm-select-card-#{theme}"} full_width placeholder="Select a fruit">
                 <:option value="Apple">Apple</:option>
                 <:option value="Banana">Banana</:option>
               </.select>
@@ -125,6 +125,63 @@
         <div class="popover-panel space-y-3 p-4">
           <p class="text-xs text-muted-foreground">Popover surface</p>
           <input class="input w-full" placeholder="Width" aria-label="Width in popover" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ============================= TOOLBAR ============================= --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Toolbar: tabs, fields and outline buttons</h2>
+    <p class="text-sm text-muted-foreground">
+      shadcn's default style, side by side. In dark, the active tab, outline buttons and
+      fields share one fill,
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-input/30</code>
+      with an <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">border-input</code>
+      border, so they read as one family. In light, fields are transparent and take the
+      surface under them, outline buttons are <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-background</code>,
+      and the active tab is the white box.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div
+        :for={{label, theme} <- theme_panels()}
+        data-theme={theme}
+        data-toolbar-panel={theme}
+        class="space-y-4 rounded-xl border border-base-300 bg-base-100 p-4 text-base-content"
+      >
+        <p class="text-sm font-medium">{label}</p>
+        <div
+          :for={{surface, class} <- [{"Page", nil}, {"Card", "card p-3"}]}
+          class={["space-y-2", class]}
+        >
+          <p class="text-xs text-muted-foreground">{surface}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <div role="tablist" class="tabs tabs-box w-fit">
+              <input
+                :for={{tab, i} <- Enum.with_index(~w(All Active Archived))}
+                type="radio"
+                name={"dm-toolbar-#{theme}-#{surface}"}
+                class="tab"
+                aria-label={tab}
+                checked={i == 0}
+              />
+            </div>
+            <label class="input w-48">
+              <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+              <input type="search" placeholder="Search…" aria-label="Search" />
+            </label>
+            <button type="button" class="btn btn-outline">
+              <span class="hero-adjustments-horizontal size-4" aria-hidden="true"></span> Filter
+            </button>
+            <.dropdown_menu>
+              <:trigger>View</:trigger>
+              <:item>Table</:item>
+              <:item>Board</:item>
+            </.dropdown_menu>
+            <button type="button" class="btn btn-primary">
+              <span class="hero-plus size-4" aria-hidden="true"></span> New
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -241,7 +298,7 @@
             <:description>Fields inside a sheet use the same fill.</:description>
             <div class="space-y-3">
               <input class="input w-full" value="@peduarte" aria-label="Username" />
-              <.select id={"dm-select-sheet-#{theme}"} placeholder="Select a role">
+              <.select id={"dm-select-sheet-#{theme}"} full_width placeholder="Select a role">
                 <:option value="Admin">Admin</:option>
                 <:option value="Member">Member</:option>
               </.select>

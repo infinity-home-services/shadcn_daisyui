@@ -73,7 +73,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(0.922 0 0);   /* shadcn `--border` colour (daisyUI reserves --border for width) */
   --input: oklch(0.922 0 0);
-  --input-background: var(--background);   /* form-control fill; override to tint fields */
+  --input-background: transparent;   /* form-control fill (shadcn bg-transparent: takes the card / muted surface); override to tint fields */
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -195,6 +195,32 @@
   --color-error-content: var(--destructive-foreground);
 }
 
+/* ---------------------------------------------------------------------------
+   2b. LIGHT/DARK STATE FILLS  (shadcn's `dark:` variants for outline buttons,
+   tab triggers and field triggers). Derived from the bridge tokens, keyed on
+   the theme NAME rather than a theme block, so every brand theme (`acme`,
+   `acme-dark`) gets them without restating, and a light island inside a dark
+   page (or the reverse) resolves against its own theme.
+   --------------------------------------------------------------------------- */
+:root,
+[data-theme]:not([data-theme*="dark"]) {
+  --outline-background: var(--background);                                /* bg-background */
+  --outline-border: var(--border-color);                                  /* border-border */
+  --outline-hover: var(--muted);                                          /* hover:bg-muted */
+  --tab-foreground: color-mix(in oklab, var(--foreground) 60%, transparent); /* text-foreground/60 */
+  --tab-active-background: var(--background);                             /* data-active:bg-background */
+  --tab-active-border: transparent;
+}
+[data-theme*="dark"],
+.dark {
+  --outline-background: color-mix(in oklab, var(--input) 30%, transparent);  /* dark:bg-input/30 */
+  --outline-border: var(--input);                                             /* dark:border-input */
+  --outline-hover: color-mix(in oklab, var(--input) 50%, transparent);       /* dark:hover:bg-input/50 */
+  --tab-foreground: var(--muted-foreground);                                  /* dark:text-muted-foreground */
+  --tab-active-background: color-mix(in oklab, var(--input) 30%, transparent); /* dark:data-active:bg-input/30 */
+  --tab-active-border: var(--input);                                          /* dark:data-active:border-input */
+}
+
 /* ===========================================================================
    3. COMPONENT OVERRIDE LAYER — shadcn metrics on daisyUI components
 
@@ -238,7 +264,7 @@
   .btn-error:not(.btn-ghost):disabled,
   .btn-error:not(.btn-ghost)[disabled] { background-color: var(--destructive); color: #fff; }
   .btn-outline:not(.btn-ghost):disabled,
-  .btn-outline:not(.btn-ghost)[disabled] { background-color: var(--background); color: var(--foreground); border-color: var(--border-color); }
+  .btn-outline:not(.btn-ghost)[disabled] { background-color: var(--outline-background); color: var(--foreground); border-color: var(--outline-border); }
 
   /* sizes */
   .btn-xs { height: 1.5rem;  padding-inline: 0.5rem;  font-size: 0.75rem; }
@@ -254,9 +280,12 @@
   .btn-neutral   { background-color: var(--primary); color: var(--primary-foreground); box-shadow: var(--shadow-xs); }
   .btn-secondary { background-color: var(--secondary); color: var(--secondary-foreground); box-shadow: var(--shadow-xs); }
   .btn-secondary:hover { background-color: color-mix(in oklab, var(--secondary) 80%, var(--foreground)); }
+  /* shadcn outline: light bg-background border-border, hover bg-muted; dark
+     bg-input/30 border-input, hover bg-input/50 - so outline buttons and fields
+     read as one family side by side (fills in section 2b) */
   .btn-outline,
-  .btn.btn-outline { background-color: var(--background); color: var(--foreground); border-color: var(--border-color); box-shadow: var(--shadow-xs); }
-  .btn-outline:hover { background-color: var(--accent); color: var(--accent-foreground); }
+  .btn.btn-outline { background-color: var(--outline-background); color: var(--foreground); border-color: var(--outline-border); box-shadow: var(--shadow-xs); }
+  .btn-outline:hover { background-color: var(--outline-hover); color: var(--foreground); }
   .btn-ghost     { background-color: transparent; border-color: transparent; color: var(--foreground); box-shadow: none; }
   .btn-ghost:hover { background-color: var(--accent); color: var(--accent-foreground); }
   .btn-link      { background-color: transparent; border-color: transparent; color: var(--primary); box-shadow: none; text-underline-offset: 4px; }
@@ -437,28 +466,39 @@
   .alert-error .text-muted-foreground { color: color-mix(in oklab, var(--destructive) 80%, transparent); }
 
   /* ---- Tabs (boxed/segmented, shadcn style) ------------------------------ */
+  /* shadcn TabsList h-9 p-[3px] rounded-lg bg-muted. A list holding its
+     panels (<.tabs>, daisyUI .tab-content) grows to fit them instead. */
   .tabs-box {
     background-color: var(--muted);
     border-radius: var(--radius-lg);
-    padding: 3px;                       /* shadcn TabsList p-[3px] */
+    padding: 3px;
     color: var(--muted-foreground);
     box-shadow: none;
   }
+  .tabs-box:not(:has(> .tab-content)) { height: 2.25rem; align-items: center; }
+  /* TabsTrigger: h-[calc(100%-1px)] of that list, border border-transparent,
+     text-foreground/60 (dark: text-muted-foreground), hover text-foreground */
   .tabs-box .tab {
-    height: 1.75rem;
+    height: calc(2.25rem - 7px);
+    border: 1px solid transparent;
     border-radius: var(--radius-md);    /* rounded-md trigger */
     font-size: 0.875rem;
     font-weight: 500;
     --tab-p: 0.75rem;                   /* px-3 */
   }
-  /* active selector: white box + subtle shadow (depth-independent) */
+  /* beats daisyUI's inactive `.tab:not(…)` base-content/50 (0,2,1) */
+  .tabs-box .tab:not(:checked, .tab-active, [aria-selected="true"]) { color: var(--tab-foreground); }
+  .tabs-box .tab:hover { color: var(--foreground); }
+  /* active: light bg-background + shadow-sm; dark bg-input/30 border-input
+     (fills in section 2b). The tab nav's collapsed trigger reads as active. */
   .tabs-box > :is(input:checked),
   .tabs-box > :is(label:has(:checked)),
   .tabs-box .tab:checked,
   .tabs-box .tab-active,
   .tabs-box .tab[aria-selected="true"],
   .tab-nav[data-collapsed] [data-tab-nav-trigger] {
-    background-color: var(--background);
+    background-color: var(--tab-active-background);
+    border-color: var(--tab-active-border);
     color: var(--foreground);
     box-shadow: var(--shadow-sm);
   }
@@ -759,19 +799,18 @@
   }
 
   /* The custom select/combobox triggers are btn-outline (already
-     --background); pin them to --input-background so they track the form-field
+     --outline-background); pin them to --input-background so they track the form-field
      fill when a consumer overrides it, matching .input/.select/.textarea. The
      `.btn[...]` specificity (0,2,0) matches `.btn.btn-outline` and wins on source
      order; re-assert the outline hover so it isn't flattened by the same. */
   .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]) {
     background-color: var(--input-background);
     border-color: var(--input);
+    flex-wrap: nowrap;              /* one line at any width: the label truncates, like a field */
+    white-space: nowrap;
   }
-  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover { background-color: var(--accent); }
-  /* dark: shadcn's `dark:hover:bg-input/50` (after the light rule, same specificity) */
-  :where([data-theme*="dark"], .dark) .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover {
-    background-color: color-mix(in oklab, var(--input) 50%, transparent);
-  }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover { background-color: var(--outline-hover); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):disabled { background-color: var(--input-background); border-color: var(--input); }
 
   /* shadcn `aria-invalid:border-destructive aria-invalid:ring-destructive/20` */
   .btn:is([data-select-trigger], [data-combobox-trigger])[aria-invalid="true"] { border-color: var(--destructive); }
@@ -957,6 +996,7 @@
   .tab-nav-sep { height: 1px; margin: 0.25rem -0.25rem; background-color: var(--border-color); }
   .tab-nav-group { margin: 0.25rem -0.25rem 0; padding: 0.25rem 0.25rem 0; border-top: 1px solid var(--border-color); }
   @media (pointer: coarse) {
+    .tab-nav .tabs-box { height: auto; }
     .tab-nav .tab { height: 2.5rem; }
   }
 

@@ -67,7 +67,8 @@ How to *use* the semantic color tokens. The palette itself lives in the theme
 | Subtle inset | `bg-muted` (alias `bg-base-200`) | `sdMuted` |
 | Hover / selected | `bg-accent`, `bg-muted` | `sdMuted` |
 | Border | `border-border` (alias `border-base-300`) | `sdBorder` |
-| Form field fill | automatic: `--input-background` (light = page, dark = `input/30`) | - |
+| Form field fill | automatic: `--input-background` (light = transparent, dark = `input/30`) | - |
+| Outline button, active tab | automatic: `--outline-*`, `--tab-*` (light = `bg-background`, dark = `input/30` + `border-input`, same family as fields) | - |
 | Body text | inherits foreground | `sdForeground` |
 | Secondary text | `text-muted-foreground` | `sdMutedForeground` |
 | Status | `alert-info/success/warning/error`, `text-warning`, … | `sdInfo/…` |
