@@ -89,15 +89,27 @@ defmodule ShadcnDaisyui.CoreComponents do
     end
   end
 
+  @toast_positions ~w(top-left top-center top-right bottom-left bottom-center bottom-right)
+
   @doc """
-  Renders flash notices.
+  Renders a flash notice as a Sonner toast.
 
       <.flash kind={:info} flash={@flash} />
+      <.flash kind={:error} title="Upload failed" flash={@flash} position="top-center" />
+
+  With `shadcn-daisyui.js` loaded the notice shows in the toast layer (the
+  browser's top layer), so it stays visible and clickable above an open sheet,
+  dialog, drawer or command palette. `:info` shows a success check and clears
+  after `duration` ms (paused on hover or focus); `:error` stays until closed.
+  Closing or timing out pushes `lv:clear-flash`. On compact screens a bottom
+  toast sits above the page's `dock`. Without the JS it renders in place.
   """
   attr(:id, :string, doc: "the optional id of flash container")
   attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
   attr(:title, :string, default: nil)
   attr(:kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup")
+  attr(:position, :string, default: "bottom-right", values: @toast_positions)
+  attr(:duration, :integer, default: 5000, doc: "ms before an info flash clears itself")
   attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
   slot(:inner_block, doc: "the optional inner block that renders the flash message")
 
@@ -108,25 +120,26 @@ defmodule ShadcnDaisyui.CoreComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
-      role="alert"
-      class="toast toast-top toast-end z-50"
+      data-flash
+      data-type={if @kind == :error, do: "error", else: "success"}
+      data-position={@position}
+      data-duration={@duration}
       {@rest}
     >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
+      <div role={if @kind == :error, do: "alert", else: "status"} aria-atomic="true">
+        <.icon :if={@kind == :info} name="hero-check-circle-solid" class="size-4 shrink-0" />
+        <.icon :if={@kind == :error} name="hero-x-circle-solid" class="size-4 shrink-0" />
+        <div class="flash-content">
+          <p :if={@title} data-flash-title>{@title}</p>
+          <p data-flash-message>{msg}</p>
         </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label="close">
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
+        <button
+          type="button"
+          data-flash-close
+          aria-label="Close"
+          phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+        >
+          <.icon name="hero-x-mark" class="size-3" />
         </button>
       </div>
     </div>
@@ -136,17 +149,21 @@ defmodule ShadcnDaisyui.CoreComponents do
   @doc """
   Shows the flash group with standard titles and content.
 
+      <.flash_group flash={@flash} position="top-center" />
+
   Phoenix 1.8 defines this in your `Layouts` module - keep that one if you have
-  it; this is provided for apps that don't.
+  it (its flashes default to `bottom-right`); this is provided for apps that
+  don't.
   """
   attr(:flash, :map, required: true, doc: "the map of flash messages")
   attr(:id, :string, default: "flash-group", doc: "the optional id of flash container")
+  attr(:position, :string, default: "bottom-right", values: @toast_positions)
 
   def flash_group(assigns) do
     ~H"""
     <div id={@id} aria-live="polite">
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:error} flash={@flash} />
+      <.flash kind={:info} flash={@flash} position={@position} />
+      <.flash kind={:error} flash={@flash} position={@position} />
     </div>
     """
   end

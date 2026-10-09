@@ -81,6 +81,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
         </div>
       </div>
       <form method="dialog" class="modal-backdrop"><button>close</button></form>
+      <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
   end
@@ -133,6 +134,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
         {render_slot(@description)}
       </p>
       <div class="mt-5">{render_slot(@inner_block)}</div>
+      <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
   end
@@ -159,6 +161,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <dialog id={@id} class={["drawer-bottom", @class]} phx-mounted={keep_open()} {@rest}>
       <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted"></div>
       {render_slot(@inner_block)}
+      <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
   end
@@ -359,6 +362,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
       <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
         No results found.
       </p>
+      <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
   end

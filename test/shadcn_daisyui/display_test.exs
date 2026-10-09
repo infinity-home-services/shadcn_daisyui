@@ -146,7 +146,7 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
   end
 
   describe "toaster/1" do
-    test "renders the sonner section wired to the ShadcnToaster hook" do
+    test "renders the hidden options section wired to the ShadcnToaster hook" do
       assigns = %{}
       html = render(~H|<.toaster />|)
 
@@ -155,8 +155,9 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~ ~s(phx-update="ignore")
       assert html =~ "data-sonner-section"
       assert html =~ ~s(data-position="bottom-right")
-      assert html =~ ~s(aria-label="Notifications alt+T")
-      assert html =~ ~s(aria-live="polite")
+      # the JS-built top-layer toast region carries the label and live region
+      assert html =~ ~r/<section[^>]* hidden/
+      refute html =~ "aria-live"
     end
 
     test "options become data attributes the JS reads" do

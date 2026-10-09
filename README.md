@@ -145,6 +145,10 @@ import { toast } from "shadcn_daisyui"
 toast.promise(save(), { loading: "Saving…", success: "Saved", error: "Could not save" })
 ```
 
+Toasts and Phoenix flashes (`put_flash`) show above an open sheet, dialog,
+drawer or command palette and stay clickable there. Flashes render as Sonner
+toasts too: info clears itself after 5 seconds, errors stay until closed.
+
 Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
 `<.attachment>`:
 

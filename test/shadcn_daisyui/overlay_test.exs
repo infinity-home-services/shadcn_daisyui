@@ -348,6 +348,26 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
     end
   end
 
+  describe "toast host" do
+    # toasts move into the topmost open modal (outside it they'd be inert);
+    # each package dialog gives them a slot LiveView patches leave alone
+    test "every modal renders an ignored [data-toast-host] slot" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dialog id="dlg">body</.dialog>
+        <.sheet id="sht">body</.sheet>
+        <.drawer id="drw">body</.drawer>
+        <.command id="cmd"><:item>One</:item></.command>
+        """)
+
+      for id <- ~w(dlg sht drw cmd) do
+        assert html =~ ~s(<div id="#{id}-toasts" data-toast-host phx-update="ignore"></div>)
+      end
+    end
+  end
+
   describe "strict CSP" do
     # every overlay, fully slotted; none may emit an inline event handler
     # (onclick=, onsubmit=, …) - those are blocked by `script-src 'self' 'nonce-…'`

@@ -136,6 +136,10 @@ defmodule ShadcnDaisyui.Components.Display do
   `ShadcnToaster` hook for server-pushed toasts (`push_toast/3`); client-only
   `toast()` calls work without it.
 
+  The section only carries the options. Toasts render in the browser's top
+  layer and move into an open modal (sheet, dialog, drawer, command palette),
+  so they show above it and stay clickable.
+
       <.toaster />
       <.toaster position="top-center" rich_colors close_button />
 
@@ -169,11 +173,7 @@ defmodule ShadcnDaisyui.Components.Display do
       data-close-button={to_string(@close_button)}
       data-duration={@duration}
       data-visible-toasts={@visible_toasts}
-      aria-label="Notifications alt+T"
-      aria-live="polite"
-      aria-relevant="additions text"
-      aria-atomic="false"
-      tabindex="-1"
+      hidden
       class={@class}
     >
     </section>

@@ -24,7 +24,10 @@ the separation work, shadows are garnish.
   toolbars, sticky footers / bottom bars) `z-10`; **floating content** (menus,
   popovers, select / combobox / date panels, the context menu, the tab-nav and
   chip-row panels) `z-50`; **modals** (dialog, sheet, drawer, command) are
-  native `<dialog>`s in the browser's top layer, above every z-index. The
+  native `<dialog>`s in the browser's top layer, above every z-index;
+  **toasts and flashes** sit in the top layer above any open modal (the JS
+  moves them into the topmost one, since everything outside a modal is
+  inert). The
   components already use these; in your own markup use only `z-10` and
   `z-50`, never an arbitrary value (`z-[999]`) to win a fight. z-index only
   competes inside one stacking context: don't give an ancestor of a menu
@@ -67,6 +70,7 @@ the separation work, shadows are garnish.
 | sticky | `z-10` | sticky table headers, toolbars, sticky footer / bottom bars |
 | floating | `z-50` | dropdown menus, popovers, select / combobox / date panels, context menu, tab-nav More menu, chip-row popover |
 | modal | top layer | dialog, sheet, drawer, command palette (`<dialog>.showModal()`) |
+| toast | top layer, above the topmost modal | `<.toaster>` toasts, `<.flash>` |
 
 ## iOS / SwiftUI notes
 

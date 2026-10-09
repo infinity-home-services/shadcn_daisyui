@@ -8,6 +8,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-09
+
+Toasts and flashes show above sheets, dialogs, drawers and the command
+palette, and stay clickable there.
+
+### Added
+
+- **Toasts in the top layer, above open modals.** Toasts render in a
+  `popover="manual"` layer in the browser's top layer (UA popover styles
+  cleared, placement unchanged). A modal `<dialog>` makes everything outside
+  it inert, even a popover painted above it, so while a modal is open the
+  layer moves into the topmost one and is shown again (re-raised). It follows
+  `shadcn:show-modal`, the dialog `toggle` / `close` events, and any
+  `showModal()` call (via the `open` attribute). Toasts stay clickable and
+  swipeable above the backdrop, never take focus, and Esc still closes the
+  modal, not the toast.
+- `<.dialog>`, `<.sheet>`, `<.drawer>` and `<.command>` render an empty
+  `<div id="…-toasts" data-toast-host phx-update="ignore">` slot, so LiveView
+  patches inside an open modal leave the toasts alone.
+- **Flash as Sonner.** `<.flash>` (`ShadcnDaisyui.CoreComponents`) renders as
+  a Sonner toast, so apps keep Phoenix's generated `Layouts.flash_group` and
+  don't override `flash/1`. Info shows a success check and clears after
+  5 seconds (`duration`), paused on hover or focus; errors stay until closed.
+  Closing or timing out pushes `lv:clear-flash`. The reconnect flashes
+  (`hidden` toggled by `phx-disconnected` / `phx-connected`) show and hide as
+  toasts. Without the JS, the flash renders in place.
+- `position` on `<.flash>` and `<.flash_group>`, same values as `<.toaster>`
+  (default `bottom-right`).
+- On compact screens (under 640px), bottom toasts and flashes sit above the
+  page's bottom `dock`.
+- Sonner's `onDismiss` / `onAutoClose` toast options.
+
+### Changed
+
+- Each toast carries its role: `role="alert"` (assertive) for error toasts,
+  `role="status"` otherwise. The JS-built layer is the labelled
+  "Notifications alt+T" live region; the `<.toaster>` section is now a hidden
+  options holder.
+- `<.flash>` markup: the role is on the notice inside, not the positioned
+  container, and the close button (`data-flash-close`) carries the
+  `phx-click`, not the whole flash. Info uses `hero-check-circle-solid`,
+  error `hero-x-circle-solid`.
+- The `ShadcnToaster` hook is optional: server toasts arrive through a
+  `phx:shadcn:toast` window listener.
+
+### Fixed
+
+- `push_toast/3` toasts could silently never appear on LiveView pages. The
+  toaster sits in the root layout, outside every LiveView, where LiveView
+  often doesn't mount its hook.
+- A `push_toast/3` `action` / `cancel` `event` never reached the server
+  ("unable to push hook event. LiveView not connected"). It is now pushed to
+  the page's main LiveView.
+
 ## [0.11.0] - 2026-10-09
 
 Sheet width is settable, and matches shadcn's Sheet.

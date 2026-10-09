@@ -15,13 +15,18 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   `?view=` tab visible and keep its More menu open), and a `<.chip_row>` of
   the active filters inside a `<.reveal>` (removing a chip is a server event;
   focus lands on its neighbour).
+
+  Toasts and flashes must show above an open sheet or dialog and stay
+  clickable: the buttons inside them `put_flash` and `push_toast` while the
+  patches keep running (the toast layer sits in the dialog's ignored
+  `[data-toast-host]`, so patches must not drop it).
   """
   use ShadcnDaisyuiDemoWeb, :live_view
 
   import ShadcnDaisyui.Components.Overlay, only: [dialog: 1, sheet: 1, show_modal: 1]
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1, date_range: 1]
   import ShadcnDaisyui.Components.Navigation, only: [tab_nav: 1]
-  import ShadcnDaisyui.Components.Display, only: [chip_row: 1, reveal: 1]
+  import ShadcnDaisyui.Components.Display, only: [chip_row: 1, reveal: 1, push_toast: 3]
 
   @empty %{"status" => [], "labels" => [], "from" => "", "to" => ""}
   @labels ~w(bug docs feature perf security ui)
@@ -50,6 +55,24 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
 
   def handle_event("reset", _params, socket), do: {:noreply, assign_filters(socket, @empty)}
 
+  def handle_event("flash", %{"kind" => kind}, socket) do
+    msg = if kind == "info", do: "Profile saved", else: "Could not save the profile"
+
+    {:noreply,
+     put_flash(socket, String.to_existing_atom(kind), "#{msg} (tick #{socket.assigns.ticks})")}
+  end
+
+  def handle_event("toast", _params, socket) do
+    {:noreply,
+     push_toast(socket, "Event has been created",
+       description: "Pushed from the LiveView at tick #{socket.assigns.ticks}",
+       action: %{label: "Undo", event: "undo"}
+     )}
+  end
+
+  def handle_event("undo", _params, socket),
+    do: {:noreply, put_flash(socket, :info, "Undone from the toast")}
+
   def handle_event("remove_chip", %{"field" => field, "value" => value}, socket) do
     params = Map.update!(socket.assigns.params, field, &List.delete(&1, value))
     {:noreply, assign_filters(socket, params)}
@@ -67,9 +90,31 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   @impl true
   def handle_info(:tick, socket), do: {:noreply, update(socket, :ticks, &(&1 + 1))}
 
+  # Phoenix 1.8's generated Layouts.flash_group, calling the package flash/1
+  # (the demo's own CoreComponents is the stock generated one).
+  defp lab_flash_group(assigns) do
+    ~H"""
+    <div id="flash-group" aria-live="polite">
+      <ShadcnDaisyui.CoreComponents.flash kind={:info} flash={@flash} />
+      <ShadcnDaisyui.CoreComponents.flash kind={:error} flash={@flash} />
+      <ShadcnDaisyui.CoreComponents.flash
+        id="client-error"
+        kind={:error}
+        title="We can't find the internet"
+        phx-disconnected={show(".phx-client-error #client-error") |> JS.remove_attribute("hidden")}
+        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
+        hidden
+      >
+        Attempting to reconnect
+      </ShadcnDaisyui.CoreComponents.flash>
+    </div>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
+    <.lab_flash_group flash={@flash} />
     <main class="mx-auto max-w-2xl space-y-6 px-4 py-12 sm:px-6">
       <div class="space-y-1">
         <h1 class="text-3xl font-bold tracking-tight">CSP + LiveView patches</h1>
@@ -94,6 +139,29 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
           <:trigger><button type="button" class="btn btn-outline">Open sheet</button></:trigger>
           <:title>Sheet</:title>
           <p class="text-sm">Patches while open: <span id="sheet-ticks">{@ticks}</span></p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              id="sheet-flash-info"
+              type="button"
+              class="btn btn-outline btn-sm"
+              phx-click="flash"
+              phx-value-kind="info"
+            >
+              Flash info
+            </button>
+            <button
+              id="sheet-flash-error"
+              type="button"
+              class="btn btn-outline btn-sm"
+              phx-click="flash"
+              phx-value-kind="error"
+            >
+              Flash error
+            </button>
+            <button id="sheet-toast" type="button" class="btn btn-outline btn-sm" phx-click="toast">
+              push_toast
+            </button>
+          </div>
         </.sheet>
 
         <%!-- a custom trigger wired with the show_modal/1 JS command --%>

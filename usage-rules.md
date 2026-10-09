@@ -79,7 +79,8 @@ Decision order:
 | `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple` |
 | `<.avatar>` / `<.avatar_group>` | `src` or `fallback="JD"`, `shape`, size via `class` |
 | `<.progress>` / `<.skeleton>` / `<.spinner>` | sized via `class` |
-| `<.toaster>` | once in root layout (`position`, `rich_colors`, `close_button`); toasts via JS `toast()` / `toast.success()` / `toast.promise()` or LiveView `push_toast(socket, msg, type: :success)` |
+| `<.toaster>` | once in root layout (`position`, `rich_colors`, `close_button`); toasts via JS `toast()` / `toast.success()` / `toast.promise()` or LiveView `push_toast(socket, msg, type: :success)`; toasts render in the top layer and follow into an open sheet/dialog/drawer/command, so they show above it and stay clickable - never raise them with z-index |
+| `<.flash>` / `<.flash_group>` | CoreComponents; renders as a Sonner toast (info = success check, clears after 5s, paused on hover/focus; error stays until closed), above open modals; `position` same values as `<.toaster>` (default `bottom-right`); keep Phoenix's `Layouts.flash_group`, don't override `flash/1` |
 | `<.calendar>` | `id` required (hook) |
 | `<.date_picker>` | `id` required (hook), `placeholder` |
 | `<.date_range>` | `id` (hook), popover range; form-bind with `start_name`/`end_name` + `start`/`end` (ISO dates); `<:preset label start end>` or `<:preset label days={7}>` |
@@ -167,7 +168,8 @@ Browse the full gallery (88 components) in the docs site (`demo/`) or
 - A sticky `<thead>` inside a card needs `bg-card` (the table header has no fill
   of its own).
 - Stacking: sticky headers / toolbars / bottom bars `z-10`, floating content
-  (menus, popovers, picker panels) `z-50`, modals in the top layer. Never use
+  (menus, popovers, picker panels) `z-50`, modals in the top layer, toasts and
+  flashes in the top layer above modals (the package handles it). Never use
   arbitrary z values (see `usage-rules/styles-shape-elevation.md`).
 - Text: default foreground inherits; secondary text `text-muted-foreground`;
   destructive `text-destructive` / `text-error`.

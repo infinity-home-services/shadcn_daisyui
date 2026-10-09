@@ -1509,7 +1509,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{name: "visible_toasts", type: "integer", default: "3"}
         ],
         notes:
-          "Render one <.toaster /> in the root layout (it needs the ShadcnToaster hook for push_toast/3). From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success(), toast.promise(), toast.dismiss(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}).",
+          "Render one <.toaster /> in the root layout. From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success(), toast.promise(), toast.dismiss(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}). Toasts live in the browser's top layer and follow into an open sheet, dialog, drawer or command palette, so they show above it and stay clickable without taking focus; Esc still closes the modal. Phoenix flashes (<.flash> / put_flash) render through the same toaster: info shows a success check and clears after 5 seconds, errors stay until closed.",
         examples: [
           %{
             title: "Default",
@@ -1582,6 +1582,49 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-center">Bottom Center</button>
               <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-right">Bottom Right</button>
             </div>
+            """
+          },
+          %{
+            title: "Over an open sheet",
+            heex: ~S"""
+            <%!-- nothing to configure: toasts and flashes follow into the open
+                 sheet / dialog / drawer / command palette, above its backdrop --%>
+            <.sheet id="edit-profile">
+              <:trigger><.button variant="outline">Open sheet</.button></:trigger>
+              <:title>Edit profile</:title>
+              <.button phx-click="save">Save changes</.button>
+            </.sheet>
+
+            def handle_event("save", _params, socket) do
+              {:noreply,
+               socket
+               |> put_flash(:info, "Profile saved")
+               |> push_toast("Event has been created", action: %{label: "Undo", event: "undo"})}
+            end
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" commandfor="toast_sheet" command="show-modal">Open sheet</button>
+            <dialog id="toast_sheet" class="sheet">
+              <button
+                class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                aria-label="Close"
+                commandfor="toast_sheet"
+                command="close"
+              >
+                <span class="hero-x-mark size-4" aria-hidden="true"></span>
+              </button>
+              <h3 class="text-lg font-semibold">Edit profile</h3>
+              <p class="mt-1 text-sm text-muted-foreground">
+                The toast shows above the sheet and its backdrop. Its buttons work and focus stays here; Esc closes the sheet.
+              </p>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button class="btn btn-primary" data-toast="Profile saved" data-toast-type="success">Save changes</button>
+                <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Sunday, December 03, 2023 at 9:00 AM" data-toast-action="Undo">Show toast</button>
+                <button class="btn btn-outline" data-toast="Could not save the profile" data-toast-type="error">Show error</button>
+              </div>
+            </dialog>
             """
           }
         ]

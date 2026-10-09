@@ -17,6 +17,7 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   window.addEventListener("shadcn:show-modal", (e) => {
     const el = e.target
     if (el && typeof el.showModal === "function" && !el.open) el.showModal()
+    hostToasts() // toasts follow into the new modal, above it
   })
   window.addEventListener("shadcn:hide-modal", (e) => {
     const el = e.target
@@ -87,22 +88,23 @@ const TOAST_GAP = 14
 const TOAST_UNMOUNT_MS = 400
 const SWIPE_THRESHOLD = 45
 
-const sonner = { toasts: [], seq: 0, hotkey: false }
+const sonner = { toasts: [], seq: 0, hotkey: false, layer: null, modals: [] }
 
+// <.toaster> renders a <section data-sonner-section> that only carries the
+// options (and the LiveView hook). The toasts live in a JS-owned
+// <div popover="manual" data-sonner-layer> in the browser's top layer, so no
+// z-index can cover them. An open modal <dialog> makes everything outside it
+// inert (unclickable, unfocusable) - even a popover painted above it - so
+// while a modal is open the layer moves INSIDE the topmost one (into its
+// [data-toast-host], which is phx-update="ignore" so LiveView patches leave it
+// alone) and is shown again, which also re-raises it above that modal.
 function toasterSection() {
   let section = document.querySelector("[data-sonner-section]")
   if (!section) {
     section = document.createElement("section")
     section.setAttribute("data-sonner-section", "")
+    section.hidden = true
     document.body.appendChild(section)
-  }
-  if (!section.dataset.sonnerInit) {
-    section.dataset.sonnerInit = "1"
-    section.setAttribute("aria-label", "Notifications alt+T")
-    section.setAttribute("tabindex", "-1")
-    section.setAttribute("aria-live", "polite")
-    section.setAttribute("aria-relevant", "additions text")
-    section.setAttribute("aria-atomic", "false")
   }
   if (!sonner.hotkey) {
     sonner.hotkey = true
@@ -122,6 +124,46 @@ function toasterSection() {
   return section
 }
 
+function toasterLayer() {
+  if (!sonner.layer) {
+    const layer = document.createElement("div")
+    layer.setAttribute("data-sonner-layer", "")
+    layer.setAttribute("popover", "manual")
+    layer.setAttribute("role", "region")
+    layer.setAttribute("aria-label", "Notifications alt+T")
+    layer.setAttribute("aria-live", "polite")
+    layer.setAttribute("aria-relevant", "additions text")
+    layer.setAttribute("aria-atomic", "false")
+    // Clicking a toast never moves focus (it stays in the page or the open
+    // modal, so Esc still closes the modal). Swipe uses pointer events.
+    layer.addEventListener("mousedown", (e) => e.preventDefault())
+    sonner.layer = layer
+  }
+  hostToasts()
+  return sonner.layer
+}
+
+// Track open modal dialogs in the order they opened (the last is on top).
+function syncModals() {
+  const open = [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal"))
+  sonner.modals = sonner.modals.filter((d) => open.includes(d))
+  open.forEach((d) => { if (!sonner.modals.includes(d)) sonner.modals.push(d) })
+}
+
+// Put the layer in the topmost modal (or <body>) and keep it showing. Moving
+// a popover hides it, and showing it again puts it on top of the top layer.
+function hostToasts() {
+  const layer = sonner.layer
+  if (!layer || typeof layer.showPopover !== "function") return
+  syncModals()
+  const top = sonner.modals[sonner.modals.length - 1]
+  const host = top
+    ? [...top.querySelectorAll("[data-toast-host]")].find((h) => h.closest("dialog") === top) || top
+    : document.body
+  if (layer.parentNode !== host) host.appendChild(layer)
+  if (!layer.matches(":popover-open")) layer.showPopover()
+}
+
 function toasterOptions() {
   const d = toasterSection().dataset
   return {
@@ -135,8 +177,7 @@ function toasterOptions() {
 }
 
 function toasterList(position) {
-  const section = toasterSection()
-  let ol = section.querySelector('[data-sonner-toaster][data-position="' + position + '"]')
+  let ol = toasterLayer().querySelector('[data-sonner-toaster][data-position="' + position + '"]')
   if (ol) return ol
   const [y, x] = position.split("-")
   const opts = toasterOptions()
@@ -154,7 +195,7 @@ function toasterList(position) {
   ol.addEventListener("mouseleave", () => { if (!ol.contains(document.activeElement)) setExpanded(ol, false) })
   ol.addEventListener("focusin", () => setExpanded(ol, true))
   ol.addEventListener("focusout", (e) => { if (!ol.contains(e.relatedTarget)) setExpanded(ol, false) })
-  section.appendChild(ol)
+  toasterLayer().appendChild(ol)
   return ol
 }
 
@@ -202,7 +243,7 @@ function startToastTimer(t) {
   if (t.type === "loading" || t.duration === Infinity || t.removed) return
   t.remaining = t.remaining == null ? t.duration : t.remaining
   t.startedAt = Date.now()
-  t.timer = setTimeout(() => dismissToast(t.id), t.remaining)
+  t.timer = setTimeout(() => dismissToast(t.id, "auto"), t.remaining)
 }
 function pauseToast(t) {
   if (!t.timer || t.paused) return
@@ -221,7 +262,8 @@ function renderToast(t) {
   const el = t.el
   el.replaceChildren()
   el.dataset.type = t.type
-  el.setAttribute("aria-live", t.important ? "assertive" : "polite")
+  el.setAttribute("role", t.type === "error" ? "alert" : "status")
+  el.setAttribute("aria-live", t.type === "error" || t.important ? "assertive" : "polite")
   if (t.closeButton && t.dismissible) {
     const close = document.createElement("button")
     close.type = "button"
@@ -325,6 +367,9 @@ function createToast(message, data) {
       icon: data.icon,
       important: !!data.important,
       duration: data.duration != null ? data.duration : opts.duration,
+      closeButton: data.closeButton != null ? data.closeButton : existing.closeButton,
+      onDismiss: data.onDismiss,
+      onAutoClose: data.onAutoClose,
       remaining: null,
     })
     renderToast(existing)
@@ -347,13 +392,14 @@ function createToast(message, data) {
     duration: data.duration != null ? data.duration : opts.duration,
     dismissible: data.dismissible !== false,
     closeButton: data.closeButton != null ? data.closeButton : opts.closeButton,
+    onDismiss: data.onDismiss,
+    onAutoClose: data.onAutoClose,
     position,
     ol,
     remaining: null,
   }
   const el = document.createElement("li")
   el.setAttribute("data-sonner-toast", "")
-  el.setAttribute("role", "status")
   el.setAttribute("aria-atomic", "true")
   el.setAttribute("tabindex", "0")
   el.dataset.mounted = "false"
@@ -375,12 +421,16 @@ function createToast(message, data) {
   return t.id
 }
 
-function dismissToast(id) {
+// `how`: "auto" (timer ran out -> onAutoClose), "silent" (no callback), or
+// omitted (closed by the user or toast.dismiss() -> onDismiss), as in sonner.
+function dismissToast(id, how) {
   const targets = id == null ? sonner.toasts.slice() : sonner.toasts.filter((t) => t.id === id)
   targets.forEach((t) => {
     if (t.removed) return
     t.removed = true
     clearTimeout(t.timer)
+    const cb = how === "auto" ? t.onAutoClose : how === "silent" ? null : t.onDismiss
+    if (cb) cb(t)
     t.el.dataset.removed = "true"
     sonner.toasts = sonner.toasts.filter((x) => x !== t)
     layoutToasts(t.ol)
@@ -396,7 +446,7 @@ function toast(message, data) { return createToast(message, data) }
   toast[type] = (message, data) => createToast(message, Object.assign({}, data, { type }))
 })
 toast.message = (message, data) => createToast(message, data)
-toast.dismiss = dismissToast
+toast.dismiss = (id) => dismissToast(id)
 toast.promise = (promise, msgs) => {
   msgs = msgs || {}
   const pick = (v, arg) => (typeof v === "function" ? v(arg) : v)
@@ -414,14 +464,28 @@ toast.promise = (promise, msgs) => {
   return id
 }
 
-// LiveView: ShadcnDaisyui.Components.push_toast/3 sends "shadcn:toast" to the
-// <.toaster> hook. An action with an `event` pushes that event back to the view.
-function toastFromServer(payload, hook) {
+// LiveView: ShadcnDaisyui.Components.push_toast/3 pushes "shadcn:toast",
+// which LiveView dispatches on window as "phx:shadcn:toast"; one window
+// listener renders it. (The <.toaster> sits in the root layout, outside every
+// LiveView, where LiveView may never mount its hook and a hook's pushEvent has
+// no view to reach.) An action with an `event` is pushed to the main view.
+function pushToastEvent(event, value) {
+  const main = document.querySelector("[data-phx-main]") || document.querySelector("[data-phx-session]")
+  const socket = sonner.liveSocket || window.liveSocket
+  if (main && socket) socket.execJS(main, JSON.stringify([["push", { event, value }]]))
+}
+
+if (typeof window !== "undefined" && !window.__shadcnServerToasts) {
+  window.__shadcnServerToasts = true
+  window.addEventListener("phx:shadcn:toast", (e) => toastFromServer(e.detail))
+}
+
+function toastFromServer(payload) {
   const p = payload || {}
   const wrap = (spec) =>
     spec && {
       label: spec.label,
-      onClick: () => { if (spec.event && hook) hook.pushEvent(spec.event, spec.value || {}) },
+      onClick: () => { if (spec.event) pushToastEvent(spec.event, spec.value || {}) },
     }
   if (p.dismiss) return dismissToast(p.id != null ? p.id : undefined)
   return createToast(p.message, {
@@ -435,6 +499,87 @@ function toastFromServer(payload, hook) {
     action: wrap(p.action),
     cancel: wrap(p.cancel),
   })
+}
+
+// ---- Flash as Sonner ---------------------------------------------------------
+// <.flash> (ShadcnDaisyui.CoreComponents) renders a [data-flash] element that
+// stays the source of truth: LiveView owns it, so it can't move into an open
+// modal. While this module is loaded it is hidden (html[data-sonner-flash])
+// and shown as a toast instead - in the toast layer, so it sits above sheets
+// and dialogs and stays clickable. Info flashes clear after their duration
+// (paused on hover/focus), errors stay. Closing or timing out clicks the
+// flash's own close button, whose phx-click pushes lv:clear-flash.
+const flashes = new Map() // el -> { key, observer }
+
+function flashVisible(el) {
+  return el.isConnected && !el.hidden && el.style.display !== "none"
+}
+
+function syncFlash(el) {
+  let f = flashes.get(el)
+  if (!f) {
+    f = { key: null }
+    f.observer = new MutationObserver(() => syncFlash(el))
+    f.observer.observe(el, { attributes: true, attributeFilter: ["hidden", "style"], childList: true, subtree: true, characterData: true })
+    flashes.set(el, f)
+  }
+  const id = "flash:" + el.id
+  if (!flashVisible(el)) {
+    if (!el.isConnected) { f.observer.disconnect(); flashes.delete(el) }
+    if (f.key != null) dismissToast(id, "silent")
+    f.key = null
+    return
+  }
+  const text = (sel) => { const n = el.querySelector(sel); return n ? n.textContent.trim() : "" }
+  const title = text("[data-flash-title]")
+  const message = text("[data-flash-message]")
+  const type = el.dataset.type === "error" ? "error" : "success"
+  const key = [type, title, message].join("\u0000")
+  if (key === f.key) return
+  f.key = key
+  const close = () => { const b = el.querySelector("[data-flash-close]"); if (b) b.click() }
+  createToast(title || message, {
+    id,
+    type,
+    description: title ? message : undefined,
+    duration: type === "error" ? Infinity : Number(el.dataset.duration) || 5000,
+    position: el.dataset.position,
+    closeButton: true,
+    onDismiss: close,
+    onAutoClose: close,
+  })
+}
+
+function syncFlashes() {
+  flashes.forEach((_f, el) => { if (!el.isConnected) syncFlash(el) })
+  document.querySelectorAll("[data-flash][id]").forEach(syncFlash)
+}
+
+// One observer keeps both in step with the page: a dialog opening or closing
+// (the `open` attribute flips before the next paint, whoever called
+// showModal) re-hosts the toast layer; LiveView patches add/remove flashes
+// or drop a layer that sat in a dialog without a toast host.
+if (typeof window !== "undefined" && typeof MutationObserver !== "undefined" && !window.__shadcnToastLayer) {
+  window.__shadcnToastLayer = true
+  const start = () => {
+    document.documentElement.setAttribute("data-sonner-flash", "")
+    syncFlashes()
+    new MutationObserver((records) => {
+      let dialogs = false
+      let nodes = false
+      for (const r of records) {
+        if (r.type === "attributes") dialogs = true
+        else nodes = true
+      }
+      if (sonner.layer && (dialogs || !sonner.layer.isConnected || !sonner.layer.matches(":popover-open"))) hostToasts()
+      if (nodes) syncFlashes()
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["open"] })
+    // dialog toggle/close don't bubble; listen in the capture phase
+    document.addEventListener("toggle", (e) => { if (e.target instanceof HTMLDialogElement) hostToasts() }, true)
+    document.addEventListener("close", (e) => { if (e.target instanceof HTMLDialogElement) hostToasts() }, true)
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start)
+  else start()
 }
 
 // Deprecated (0.4): the docs-demo toast. Use toast() instead.
@@ -1768,12 +1913,8 @@ export const Hooks = {
   ShadcnDatePicker: { mounted() { this.api = initDatepicker(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnDateRange: { mounted() { this.api = initDaterange(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnRangeCalendar: { mounted() { initRangeCalendar(this.el) } },
-  ShadcnToaster: {
-    mounted() {
-      toasterSection()
-      this.handleEvent("shadcn:toast", (payload) => toastFromServer(payload, this))
-    },
-  },
+  // Optional since 0.12: server toasts arrive through a window listener.
+  ShadcnToaster: { mounted() { toasterSection() } },
   ShadcnDataTable: { mounted() { initDataTable(this.el) } },
   ShadcnCarousel: { mounted() { initCarousel(this.el) } },
   ShadcnResizable: { mounted() { initResizable(this.el) } },
@@ -1790,5 +1931,14 @@ export const Hooks = {
     destroyed() { this.api && this.api.destroy() },
   },
 }
+
+// Any mounted package hook hands over the LiveSocket (toast action events use it).
+Object.values(Hooks).forEach((hook) => {
+  const mounted = hook.mounted
+  hook.mounted = function () {
+    if (!sonner.liveSocket) sonner.liveSocket = this.liveSocket
+    return mounted.call(this)
+  }
+})
 
 export { toast, showToast }

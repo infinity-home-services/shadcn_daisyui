@@ -365,11 +365,29 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
       html = render(~H|<.flash kind={:info} flash={@flash} />|)
 
       assert html =~ ~s(id="flash-info")
-      assert html =~ ~s(role="alert")
-      assert html =~ "alert-info"
-      assert html =~ "hero-information-circle"
-      assert html =~ "Saved successfully"
+      assert html =~ "data-flash"
+      assert html =~ ~s(data-type="success")
+      assert html =~ ~s(data-position="bottom-right")
+      assert html =~ ~s(data-duration="5000")
+      assert html =~ ~s(role="status")
+      assert html =~ "hero-check-circle-solid"
+      assert html =~ ~r/data-flash-message>Saved successfully</
+      assert html =~ "data-flash-close"
       assert html =~ "lv:clear-flash"
+    end
+
+    test "the role is on the notice, not the positioned container" do
+      assigns = %{flash: %{"info" => "Saved"}}
+      html = render(~H|<.flash kind={:info} flash={@flash} />|)
+
+      assert html =~ ~r/<div id="flash-info"(?:(?!role=)[^>])*>/
+    end
+
+    test "takes a position" do
+      assigns = %{flash: %{"info" => "Saved"}}
+      html = render(~H|<.flash kind={:info} flash={@flash} position="top-center" />|)
+
+      assert html =~ ~s(data-position="top-center")
     end
 
     test "renders an error flash with title" do
@@ -377,9 +395,10 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
       html = render(~H|<.flash kind={:error} title="Error!" flash={@flash} />|)
 
       assert html =~ ~s(id="flash-error")
-      assert html =~ "alert-error"
-      assert html =~ "hero-exclamation-circle"
-      assert html =~ "Error!"
+      assert html =~ ~s(data-type="error")
+      assert html =~ ~s(role="alert")
+      assert html =~ "hero-x-circle-solid"
+      assert html =~ ~r/data-flash-title>Error!</
       assert html =~ "Something went wrong"
     end
 
@@ -387,7 +406,7 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
       assigns = %{}
       html = render(~H|<.flash kind={:info} flash={%{}} />|)
 
-      refute html =~ "alert"
+      refute html =~ "data-flash"
     end
 
     test "renders the inner block regardless of the flash map" do
@@ -407,6 +426,13 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
       assert html =~ ~s(aria-live="polite")
       assert html =~ "Up"
       assert html =~ "Down"
+    end
+
+    test "passes position to both flashes" do
+      assigns = %{flash: %{"info" => "Up", "error" => "Down"}}
+      html = render(~H|<.flash_group flash={@flash} position="top-left" />|)
+
+      assert length(String.split(html, ~s(data-position="top-left"))) == 3
     end
   end
 
