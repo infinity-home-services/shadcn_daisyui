@@ -369,7 +369,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.MorePrimitives do
             }
           ],
           measurements: [
-            %{property: "Width", value: "20rem, capped at max-width 90vw"},
+            %{
+              property: "Width",
+              value:
+                "75% on phones; from sm, --sheet-width (sm 20rem, default 24rem, lg 32rem, xl 40rem); max-width 90vw"
+            },
             %{property: "Height", value: "100dvh, anchored to the inline-end edge"},
             %{
               property: "Padding",

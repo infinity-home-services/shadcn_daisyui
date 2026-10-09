@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-09
+
+Sheet width is settable, and matches shadcn's Sheet.
+
+### Added
+
+- `<.sheet size="sm|default|lg|xl">` (20rem, 24rem, 32rem, 40rem from the `sm`
+  breakpoint), via `sheet-sm` / `sheet-lg` / `sheet-xl` classes that set the
+  new `--sheet-width` variable. Width classes (`sm:w-[28rem]`, `max-w-*`) and
+  `[--sheet-width:…]` on the sheet also work now.
+
+### Changed
+
+- `dialog.sheet` is 75% wide on phones and 24rem from `sm` (shadcn's
+  `w-3/4 sm:max-w-sm`), was a fixed 20rem. Pass `size="sm"` for the old
+  width. Still capped at 90vw, slide animation unchanged.
+
+### Fixed
+
+- `<.sheet class="sm:w-96">` (any width class) had no effect, because the
+  sheet's width was set outside any CSS layer and beat every utility. The
+  width now lives in `@layer components`.
+
 ## [0.10.1] - 2026-10-09
 
 Fixes a 0.10.0 regression that broke every `<.chip_row>`.

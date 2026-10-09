@@ -94,8 +94,17 @@ defmodule ShadcnDaisyui.Components.Overlay do
         <:description>Make changes to your profile here.</:description>
         …form…
       </.sheet>
+
+  Width matches shadcn: 75% on phones, then `size` from `sm` (`sm` 20rem,
+  `default` 24rem, `lg` 32rem, `xl` 40rem), capped at 90vw. A width class
+  (`class="sm:w-[28rem]"`) or `class="[--sheet-width:28rem]"` also works.
+
+      <.sheet id="filters" size="lg">…</.sheet>
   """
+  @sheet_sizes %{"sm" => "sheet-sm", "default" => nil, "lg" => "sheet-lg", "xl" => "sheet-xl"}
+
   attr(:id, :string, required: true)
+  attr(:size, :string, default: "default", values: Map.keys(@sheet_sizes))
   attr(:class, :any, default: nil)
   attr(:rest, :global)
   slot(:trigger)
@@ -104,11 +113,13 @@ defmodule ShadcnDaisyui.Components.Overlay do
   slot(:inner_block)
 
   def sheet(assigns) do
+    assigns = assign(assigns, :size_class, @sheet_sizes[assigns.size])
+
     ~H"""
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["sheet", @class]} phx-mounted={keep_open()} {@rest}>
+    <dialog id={@id} class={["sheet", @size_class, @class]} phx-mounted={keep_open()} {@rest}>
       <button
         type="button"
         class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"

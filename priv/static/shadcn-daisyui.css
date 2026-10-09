@@ -1606,8 +1606,6 @@ dialog.sheet {
   margin: 0;
   height: 100dvh;
   max-height: 100dvh;
-  width: 20rem;
-  max-width: 90vw;
   flex-direction: column;
   border: 0;
   border-inline-start: 1px solid var(--border-color);
@@ -1622,6 +1620,23 @@ dialog.sheet {
 dialog.sheet[open] {
   display: flex;
   translate: 0 0;
+}
+/* Sheet width - in `components` so any width utility (`w-*`, `sm:w-*`,
+   `max-w-*`, `[--sheet-width:…]`) or the size attr can set it; the unlayered
+   rules above would beat every utility. shadcn metrics: 75% on phones, then
+   --sheet-width from sm (default 24rem = sm:max-w-sm), always capped at 90vw. */
+@layer components {
+  dialog.sheet {
+    --sheet-width: 24rem;
+    width: 75%;
+    max-width: 90vw;
+  }
+  dialog.sheet.sheet-sm { --sheet-width: 20rem; }
+  dialog.sheet.sheet-lg { --sheet-width: 32rem; }
+  dialog.sheet.sheet-xl { --sheet-width: 40rem; }
+  @media (width >= 40rem) {
+    dialog.sheet { width: var(--sheet-width); }
+  }
 }
 /* lock background scroll while the sheet is open (scroll stays in the sheet) */
 html:has(dialog.sheet[open]) { overflow: hidden; }

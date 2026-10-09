@@ -66,7 +66,7 @@ Decision order:
 | `<.card>` / `<.card_body>` / `<.card_title>` / `<.card_description>` | compose |
 | `<.separator>` | `orientation="horizontal\|vertical"` |
 | `<.dialog>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:actions>`; open via `show_modal(id)` |
-| `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` + content (right panel / bottom panel) |
+| `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` + content (right panel / bottom panel); sheet `size="sm\|default\|lg\|xl"` (20/24/32/40rem from `sm`, 75% on phones, ≤90vw), or a width class (`sm:w-[28rem]`) |
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"` |

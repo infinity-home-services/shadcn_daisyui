@@ -1762,7 +1762,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             "Blocking confirmations - use dialog",
             "Primary navigation on compact - that's the dock's job"
           ],
-          sizing: "Right side panel on expanded; content follows form/card rules inside.",
+          sizing:
+            "75% wide on phones; from sm, size sets the width (sm 20rem, default 24rem, lg 32rem, xl 40rem), capped at 90vw. A width class overrides it.",
           responsive: "On compact, side sheets become bottom drawers (more thumb-reachable).",
           ios:
             ".sheet with .medium/.large detents; swipe-down to dismiss, confirm if input would be lost."
@@ -1811,6 +1812,90 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <button class="btn btn-primary" commandfor="sheet_dialog" command="close">Save changes</button>
               </div>
             </dialog>
+            """
+          },
+          %{
+            title: "Sizes",
+            heex: ~S"""
+            <%!-- size="sm|default|lg|xl": 20/24/32/40rem from sm, 75% on phones, max 90vw --%>
+            <.sheet id="filters" size="lg">
+              <:trigger><.button variant="outline">Filters</.button></:trigger>
+              <:title>Filters</:title>
+              …
+            </.sheet>
+
+            <%!-- or set the width yourself; a width class beats the size --%>
+            <.sheet id="details" class="sm:w-[28rem]">…</.sheet>
+            <.sheet id="preview" class="[--sheet-width:28rem]">…</.sheet>
+            """,
+            code: ~S"""
+            <div class="flex flex-wrap gap-3">
+              <button class="btn btn-outline" commandfor="sheet_size_sm" command="show-modal">sm</button>
+              <dialog id="sheet_size_sm" class="sheet sheet-sm">
+                <button
+                  class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                  aria-label="Close"
+                  commandfor="sheet_size_sm"
+                  command="close"
+                >
+                  <span class="hero-x-mark size-4" aria-hidden="true"></span>
+                </button>
+                <h3 class="text-lg font-semibold">Small sheet</h3>
+                <p class="mt-1 text-sm text-muted-foreground">20rem from sm, 75% on phones.</p>
+              </dialog>
+              <button class="btn btn-outline" commandfor="sheet_size_default" command="show-modal">default</button>
+              <dialog id="sheet_size_default" class="sheet">
+                <button
+                  class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                  aria-label="Close"
+                  commandfor="sheet_size_default"
+                  command="close"
+                >
+                  <span class="hero-x-mark size-4" aria-hidden="true"></span>
+                </button>
+                <h3 class="text-lg font-semibold">Default sheet</h3>
+                <p class="mt-1 text-sm text-muted-foreground">24rem from sm, 75% on phones.</p>
+              </dialog>
+              <button class="btn btn-outline" commandfor="sheet_size_lg" command="show-modal">lg</button>
+              <dialog id="sheet_size_lg" class="sheet sheet-lg">
+                <button
+                  class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                  aria-label="Close"
+                  commandfor="sheet_size_lg"
+                  command="close"
+                >
+                  <span class="hero-x-mark size-4" aria-hidden="true"></span>
+                </button>
+                <h3 class="text-lg font-semibold">Large sheet</h3>
+                <p class="mt-1 text-sm text-muted-foreground">32rem from sm, 75% on phones.</p>
+              </dialog>
+              <button class="btn btn-outline" commandfor="sheet_size_xl" command="show-modal">xl</button>
+              <dialog id="sheet_size_xl" class="sheet sheet-xl">
+                <button
+                  class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                  aria-label="Close"
+                  commandfor="sheet_size_xl"
+                  command="close"
+                >
+                  <span class="hero-x-mark size-4" aria-hidden="true"></span>
+                </button>
+                <h3 class="text-lg font-semibold">Extra-large sheet</h3>
+                <p class="mt-1 text-sm text-muted-foreground">40rem from sm, capped at 90vw.</p>
+              </dialog>
+              <button class="btn btn-outline" commandfor="sheet_size_custom" command="show-modal">sm:w-[28rem]</button>
+              <dialog id="sheet_size_custom" class="sheet sm:w-[28rem]">
+                <button
+                  class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+                  aria-label="Close"
+                  commandfor="sheet_size_custom"
+                  command="close"
+                >
+                  <span class="hero-x-mark size-4" aria-hidden="true"></span>
+                </button>
+                <h3 class="text-lg font-semibold">Custom width</h3>
+                <p class="mt-1 text-sm text-muted-foreground">Any width class overrides the size.</p>
+              </dialog>
+            </div>
             """
           }
         ]

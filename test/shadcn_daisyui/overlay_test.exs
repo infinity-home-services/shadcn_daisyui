@@ -50,6 +50,7 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
 
       assert html =~ "phx-click="
       assert html =~ "shadcn:show-modal"
+      refute html =~ "sheet-lg"
       assert html =~ "#confirm"
       assert html =~ "Open"
       refute html =~ "showModal"
@@ -82,6 +83,28 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
   end
 
   describe "sheet/1" do
+    test "size adds a width class; default adds none" do
+      for {size, class} <- [{"sm", "sheet-sm"}, {"lg", "sheet-lg"}, {"xl", "sheet-xl"}] do
+        assigns = %{size: size}
+
+        html =
+          render(~H"""
+          <.sheet id="s" size={@size} class="extra">body</.sheet>
+          """)
+
+        assert html =~ ~s(class="sheet #{class} extra")
+      end
+
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.sheet id="s" class="sm:w-96">body</.sheet>
+        """)
+
+      assert html =~ ~s(class="sheet sm:w-96")
+    end
+
     test "renders a dialog with the sheet class and a close button" do
       assigns = %{}
 
