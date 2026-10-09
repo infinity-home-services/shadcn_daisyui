@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-09
+
+Fixes a 0.10.0 regression that broke every `<.chip_row>`.
+
+### Fixed
+
+- `<.chip_row>` threw `ReferenceError: collapsed is not defined` on mount,
+  resize and every LiveView patch (aborting the rest of the patch), so rows
+  never fit and "+N" never appeared. The chip row's fit referenced the tab
+  nav's new collapsed state; a chip row never collapses, so it now only sets
+  `data-squeezed`. `<.tab_nav>` is unaffected.
+
+### Added
+
+- A browser test (`test/shadcn_daisyui/js/`) that mounts the real chip row and
+  tab nav markup with the real JS in headless Chrome, driven by a small
+  dependency-free Node script; it is skipped when Node or Chrome is missing.
+
 ## [0.10.0] - 2026-10-09
 
 `<.tab_nav>` degrades cleanly on very narrow widths.

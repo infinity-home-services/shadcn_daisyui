@@ -1643,8 +1643,7 @@ function initChipRow(root) {
     more.hidden = rest === 0
     const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
       (rest ? moreW + (vis.length ? gap : 0) : 0)
-    root.toggleAttribute("data-collapsed", collapsed)
-    root.toggleAttribute("data-squeezed", !collapsed && used > avail + 0.5)
+    root.toggleAttribute("data-squeezed", used > avail + 0.5)
     root.setAttribute("data-ready", "")
     if (more.hidden && pop.isOpen()) pop.set(false)
     pop.sync()
