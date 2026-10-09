@@ -91,6 +91,8 @@
   /* --- shadcn shadows (Tailwind v4 scale) --- */
   --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0 oklch(0 0 0 / 0.1), 0 1px 2px -1px oklch(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
   --ring-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
   --destructive-ring: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
 
@@ -156,7 +158,9 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border-color: oklch(1 0 0 / 10%);   /* shadcn `--border` colour; --border (width) inherits 1px from :root */
   --input: oklch(1 0 0 / 15%);
-  --input-background: var(--background);   /* form-control fill; override to tint fields */
+  /* form-control fill: shadcn's `dark:bg-input/30`, a translucent lift that
+     reads on the page, on cards and inside overlays alike. Override to tint fields. */
+  --input-background: color-mix(in oklab, var(--input) 30%, transparent);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -164,9 +168,12 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
 
+  /* base-200 = shadcn muted/accent (hover + selected fills that show on cards
+     and popovers); base-300 = shadcn's translucent border colour. var() refs so
+     a generated brand-dark theme follows its own --muted / --border-color. */
   --color-base-100: var(--background);
-  --color-base-200: oklch(0.205 0 0);
-  --color-base-300: oklch(0.269 0 0);
+  --color-base-200: var(--muted);
+  --color-base-300: var(--border-color);
   --color-base-content: var(--foreground);
 
   --color-primary: var(--primary);
@@ -302,6 +309,8 @@
   .input, .select, .file-input { height: 2.25rem; padding-inline: 0.75rem; }
   .textarea { padding: 0.5rem 0.75rem; }
   .input::placeholder, .textarea::placeholder { color: var(--muted-foreground); }
+  /* the dark field fill is translucent; give the native option list an opaque surface */
+  .select option { background-color: var(--popover); color: var(--popover-foreground); }
   .input:focus, .input:focus-within,
   .textarea:focus, .textarea:focus-within,
   .select:focus, .select:focus-within,
@@ -412,12 +421,15 @@
     --menu-active-bg: var(--accent);            /* shadcn active = subtle accent, not dark neutral */
     --menu-active-fg: var(--accent-foreground);
   }
+  /* floating content (menu, popover, select/combobox panels, context menu):
+     shadcn's `shadow-md ring-1 ring-foreground/10`. The ring replaces the
+     border, so it adds no layout width. */
   .dropdown-content.menu,
   .menu.dropdown-content {
     background-color: var(--popover);
     color: var(--popover-foreground);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
+    border: 0;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
     padding: 0.25rem;
   }
   .menu li > * { border-radius: var(--radius-sm); }
@@ -426,12 +438,16 @@
 
   /* ---- Modal ------------------------------------------------------------- */
   .modal-box {
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);                  /* rounded-xl */
+    border: 0;
     background-color: var(--popover);
     color: var(--popover-foreground);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-lg);   /* ring-1 ring-foreground/10 shadow-lg */
   }
+  /* one backdrop for every modal surface: shadcn/ui's bg-black/50 (daisyUI
+     ships 0.4 on .modal; the <dialog> ::backdrop rules below use the same value) */
+  .modal:is([open], .modal-open, :target),
+  .modal-toggle:checked + .modal { background-color: oklch(0 0 0 / 0.5); }
 
   /* ---- Progress / range / tooltip / divider ------------------------------ */
   .progress { border-radius: 9999px; background-color: var(--muted); color: var(--primary); }
@@ -439,8 +455,8 @@
   .progress::-moz-progress-bar { background-color: var(--primary); }
   .range { color: var(--primary); }
   .divider { color: var(--muted-foreground); }
-  .tooltip { --tt-bg: var(--primary); --tt-tail-offset: 0; }
-  .tooltip:before { background-color: var(--primary); color: var(--primary-foreground); border-radius: var(--radius-md); font-size: 0.75rem; }
+  .tooltip { --tt-bg: var(--foreground); --tt-tail-offset: 0; }
+  .tooltip:before { background-color: var(--foreground); color: var(--background); border-radius: var(--radius-md); font-size: 0.75rem; }
   .kbd {
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
@@ -477,6 +493,9 @@
   /* ---- Avatar ------------------------------------------------------------ */
   .avatar-placeholder > div { background-color: var(--muted); color: var(--muted-foreground); }
   .avatar-group :where(.avatar) { border-color: var(--background); }
+  /* daisyUI paints the offline dot with base-300, which is a translucent
+     border colour in dark mode - keep the dot opaque */
+  :where([data-theme*="dark"], .dark) .avatar-offline:before { background-color: var(--muted); }
 
   /* ---- Breadcrumbs ------------------------------------------------------- */
   .breadcrumbs { font-size: 0.875rem; color: var(--muted-foreground); }
@@ -509,9 +528,9 @@
   .dropdown-content:not(.menu) {
     background-color: var(--popover);
     color: var(--popover-foreground);
-    border: 1px solid var(--border-color);
+    border: 0;
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
   }
 
   /* ---- Toast (sonner-style) --------------------------------------------- */
@@ -658,8 +677,9 @@
     font-size: 0.875rem;
     border: 1px solid var(--input);
     border-radius: var(--radius-md);
-    background-color: transparent;
+    background-color: var(--input-background);
     color: var(--foreground);
+    box-shadow: var(--shadow-xs);
     outline: none;
   }
   .otp-slot:focus {
@@ -673,10 +693,15 @@
      fill when a consumer overrides it, matching .input/.select/.textarea. The
      `.btn[...]` specificity (0,2,0) matches `.btn.btn-outline` and wins on source
      order; re-assert the outline hover so it isn't flattened by the same. */
-  .btn[data-select-trigger],
-  .btn[data-combobox-trigger] { background-color: var(--input-background); }
-  .btn[data-select-trigger]:hover,
-  .btn[data-combobox-trigger]:hover { background-color: var(--accent); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]) {
+    background-color: var(--input-background);
+    border-color: var(--input);
+  }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover { background-color: var(--accent); }
+  /* dark: shadcn's `dark:hover:bg-input/50` (after the light rule, same specificity) */
+  :where([data-theme*="dark"], .dark) .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover {
+    background-color: color-mix(in oklab, var(--input) 50%, transparent);
+  }
 
   /* ---- Command list / Combobox / Date-picker panels ---------------------- */
   .command-item,
@@ -702,11 +727,11 @@
     color: var(--muted-foreground);
   }
   .popover-panel {
-    border: 1px solid var(--border-color);
+    border: 0;
     border-radius: var(--radius-md);
     background-color: var(--popover);
     color: var(--popover-foreground);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
   }
 
   /* ---- Context menu ------------------------------------------------------ */
@@ -715,11 +740,11 @@
     z-index: 50;
     min-width: 12rem;
     padding: 0.25rem;
-    border: 1px solid var(--border-color);
+    border: 0;
     border-radius: var(--radius-md);
     background-color: var(--popover);
     color: var(--popover-foreground);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
   }
   .context-menu button {
     display: flex;
@@ -1345,7 +1370,7 @@ dialog.sheet {
   padding: 1.5rem;
   background-color: var(--popover);
   color: var(--popover-foreground);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
   overflow-y: auto;                 /* the sheet itself scrolls if its content is tall */
   translate: 100% 0;
   transition: translate 0.3s ease, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
@@ -1360,12 +1385,12 @@ html:has(dialog.sheet[open]) { overflow: hidden; }
   dialog.sheet[open] { translate: 100% 0; }
 }
 dialog.sheet::backdrop {
-  background-color: rgb(0 0 0 / 0);
+  background-color: oklch(0 0 0 / 0);
   transition: background-color 0.3s;
 }
-dialog.sheet[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
+dialog.sheet[open]::backdrop { background-color: oklch(0 0 0 / 0.5); }   /* the one overlay value, = .modal */
 @starting-style {
-  dialog.sheet[open]::backdrop { background-color: rgb(0 0 0 / 0); }
+  dialog.sheet[open]::backdrop { background-color: oklch(0 0 0 / 0); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1380,11 +1405,11 @@ dialog.command-dialog {
   width: 40rem;
   max-width: 90vw;
   padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border: 0;
+  border-radius: var(--radius-xl);
   background-color: var(--popover);
   color: var(--popover-foreground);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-lg);
   opacity: 0;
   transform: scale(0.97);
   transition: opacity 0.18s ease, transform 0.18s ease, overlay 0.18s allow-discrete,
@@ -1394,9 +1419,9 @@ dialog.command-dialog[open] { opacity: 1; transform: none; }
 @starting-style {
   dialog.command-dialog[open] { opacity: 0; transform: scale(0.97); }
 }
-dialog.command-dialog::backdrop { background-color: rgb(0 0 0 / 0); transition: background-color 0.18s; }
-dialog.command-dialog[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
-@starting-style { dialog.command-dialog[open]::backdrop { background-color: rgb(0 0 0 / 0); } }
+dialog.command-dialog::backdrop { background-color: oklch(0 0 0 / 0); transition: background-color 0.18s; }
+dialog.command-dialog[open]::backdrop { background-color: oklch(0 0 0 / 0.5); }   /* the one overlay value, = .modal */
+@starting-style { dialog.command-dialog[open]::backdrop { background-color: oklch(0 0 0 / 0); } }
 html:has(dialog.command-dialog[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------
@@ -1418,15 +1443,15 @@ dialog.drawer-bottom {
   padding: 1.5rem;
   background-color: var(--popover);
   color: var(--popover-foreground);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
   translate: 0 100%;
   transition: translate 0.3s ease, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
 }
 dialog.drawer-bottom[open] { display: flex; translate: 0 0; }
 @starting-style { dialog.drawer-bottom[open] { translate: 0 100%; } }
-dialog.drawer-bottom::backdrop { background-color: rgb(0 0 0 / 0); transition: background-color 0.3s; }
-dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0.5); }
-@starting-style { dialog.drawer-bottom[open]::backdrop { background-color: rgb(0 0 0 / 0); } }
+dialog.drawer-bottom::backdrop { background-color: oklch(0 0 0 / 0); transition: background-color 0.3s; }
+dialog.drawer-bottom[open]::backdrop { background-color: oklch(0 0 0 / 0.5); }   /* the one overlay value, = .modal */
+@starting-style { dialog.drawer-bottom[open]::backdrop { background-color: oklch(0 0 0 / 0); } }
 html:has(dialog.drawer-bottom[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------

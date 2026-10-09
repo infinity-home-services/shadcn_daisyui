@@ -22,6 +22,19 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
     const el = e.target
     if (el && typeof el.close === "function" && el.open) el.close()
   })
+  // Backdrop click closes a sheet / drawer / command dialog. These <dialog>s ARE
+  // the panel, so a click on the ::backdrop and one on the panel's own padding
+  // both target the dialog - tell them apart by the click point. One delegated
+  // listener instead of inline onclick handlers keeps the markup CSP-safe.
+  // (.modal dialogs close via their <form method="dialog" class="modal-backdrop">.)
+  document.addEventListener("click", (e) => {
+    const d = e.target
+    if (!(d instanceof HTMLDialogElement) || !d.open || e.detail === 0) return
+    if (!d.matches(".sheet, .drawer-bottom, .command-dialog")) return
+    const r = d.getBoundingClientRect()
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+    if (!inside) d.close()
+  })
 }
 
 // ---- Sonner (toast) --------------------------------------------------------
@@ -675,7 +688,7 @@ function initDock(scope) {
       empty.classList.toggle("hidden", total > 0)
       setActive(0)
     }
-    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close() })
+    // backdrop click is handled by the module-level dialog listener at the top
     new MutationObserver(() => {
       if (dialog.open) { search.value = ""; filter(""); search.focus() }
     }).observe(dialog, { attributes: true, attributeFilter: ["open"] })
@@ -1078,7 +1091,7 @@ function initDock(scope) {
       facetBadges.replaceChildren()
       if (facet.size === 0) { facetBadges.className = "hidden"; return }
       facetBadges.className = "flex items-center gap-1"
-      facetBadges.appendChild(el("span", "mx-1 h-4 w-px bg-base-300"))
+      facetBadges.appendChild(el("span", "mx-1 h-4 w-px bg-border"))
       if (facet.size > 2) {
         facetBadges.appendChild(el("span", "badge badge-secondary rounded-sm px-1 font-normal", facet.size + " selected"))
       } else {

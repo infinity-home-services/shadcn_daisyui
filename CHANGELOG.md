@@ -8,6 +8,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-09
+
+Dark-mode and CSP parity with shadcn-svelte's neutral dark theme
+(`registry-base-colors.ts`, `style-vega.css` and its popover, dropdown-menu,
+dialog, sheet, select, tooltip and command components). The shadcn token values
+themselves are unchanged - they already matched. See the new **Dark mode & CSP**
+docs page (`/docs/dark-mode`) for every change side by side in light and dark.
+
+### Breaking
+
+- **Requires `phoenix_live_view ~> 1.1`** (was `~> 1.0`). The overlay components
+  now open/close through `Phoenix.LiveView.JS` and keep `open` with
+  `JS.ignore_attributes/1`, both of which need 1.1. The page must call
+  `liveSocket.connect()` (Phoenix's default `app.js` does; LiveView 1.1 runs JS
+  commands on dead views too). Without a LiveSocket, open dialogs with
+  `el.showModal()` or invoker commands (`<button commandfor="id" command="show-modal">`).
+- **Brand themes generated before 0.6.0** carry a copy of the old dark block, so
+  they keep the old dark field fill and base-200/base-300. To adopt the fixes,
+  replace these three lines in your `[data-theme="<brand>-dark"]` block:
+  `--input-background: color-mix(in oklab, var(--input) 30%, transparent);`,
+  `--color-base-200: var(--muted);`, `--color-base-300: var(--border-color);`
+  (or regenerate with `mix shadcn_daisyui.gen.theme`).
+
+### Changed
+
+- **Dark form fields** use shadcn's `dark:bg-input/30`.
+  `--input-background` (dark): `var(--background)` (oklch 0.145, darker than
+  cards and popovers) → `color-mix(in oklab, var(--input) 30%, transparent)`.
+  Applies to `.input`, `.select`, `.textarea`, `.file-input`, the
+  `<.select>` / `<.combobox>` / date-picker / date-range triggers and the OTP
+  slots, on the page, on cards and inside sheets, dialogs and popovers. Light
+  mode is unchanged.
+- **Custom select / combobox / date-picker / date-range triggers**: border
+  `var(--border-color)` → `var(--input)` (the field border; identical in light,
+  white/10% → white/15% in dark); dark hover `var(--accent)` →
+  `color-mix(in oklab, var(--input) 50%, transparent)` (shadcn `dark:hover:bg-input/50`).
+- **OTP slot**: background `transparent` → `var(--input-background)`, and it now
+  carries `shadow-xs` like the other fields.
+- **`--color-base-200` (dark)**: `oklch(0.205 0 0)` → `var(--muted)` (0.269).
+  It equalled `--card`/`--popover`, so `bg-base-200` hover and selected fills were
+  invisible on cards and in popovers. Side effects: daisyUI's plain `.btn`,
+  zebra rows, pinned table columns and disabled fields step up to 0.269 too.
+- **`--color-base-300` (dark)**: `oklch(0.269 0 0)` → `var(--border-color)`
+  (`oklch(1 0 0 / 10%)`), so `border-base-300` matches shadcn's translucent
+  border. Nothing in the package uses base-300 as a fill except daisyUI's
+  `.avatar-offline` dot, which is now pinned to `var(--muted)` in dark (it would
+  have gone see-through), and the drawer grab handle, now `bg-muted`. Zebra-row
+  hover and daisyUI tab borders become translucent, as intended.
+- **One modal backdrop**: `.modal` `oklch(0 0 0 / 0.4)` and the `dialog.sheet`,
+  `dialog.drawer-bottom`, `dialog.command-dialog` `::backdrop`s
+  `rgb(0 0 0 / 0.5)` → all `oklch(0 0 0 / 0.5)`. This follows shadcn/ui's
+  `bg-black/50` rather than vega's `bg-black/10` + `backdrop-blur-xs`: blur
+  repaints everything behind the overlay on every frame of the 300ms
+  sheet/drawer slide, and black/10 leaves too little separation for the flat
+  surfaces this package uses elsewhere.
+- **Floating content** (`.dropdown-content.menu`, non-menu `.dropdown-content`
+  popovers, `.popover-panel` select/combobox/date panels, `.context-menu`):
+  `1px solid var(--border-color)` + `shadow-sm` → no border, a 1px
+  `ring-foreground/10` (`0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent)`)
+  + `shadow-md` (`0 4px 6px -1px / 0 2px 4px -2px`, 10% black).
+- **`.modal-box`**: `rounded-lg` + 1px border + `shadow-sm` → `rounded-xl`, the
+  same 1px ring, `shadow-lg`.
+- **Command dialog**: `rounded-lg` + 1px border + `shadow-sm` → `rounded-xl`,
+  ring, `shadow-lg` (vega's `rounded-xl` command dialog).
+- **Sheet and drawer**: `shadow-sm` → `shadow-lg` (shadcn's sheet).
+- **Tooltip**: background `var(--primary)` / text `var(--primary-foreground)` →
+  `var(--foreground)` / `var(--background)` (`bg-foreground text-background`).
+- New shadow tokens `--shadow-md` and `--shadow-lg` (Tailwind v4 values) beside
+  `--shadow-xs`/`--shadow-sm`.
+- Usage rules: the elevation ladder (`styles-shape-elevation.md`) now has a
+  floating level (`shadow-md` + ring) and an overlay level (`bg-black/50` +
+  `shadow-lg`); popovers and menus are `rounded-md` and dialogs `rounded-xl`, as
+  the CSS already rendered. `styles-color.md`, the main Theme tokens section and
+  the recipes now say `border-border` for borders, `bg-muted`/`bg-accent` for
+  hover and selected states, and never `bg-base-300` as a fill.
+
+### Fixed
+
+- **Strict CSP**: no component renders an inline event handler any more, so they
+  work under `script-src 'self' 'nonce-…'`. `<.dialog>`, `<.sheet>`, `<.drawer>`
+  and `<.command>` triggers use `phx-click={show_modal(id)}`, the sheet's close
+  button `hide_modal(id)`, and backdrop-click closing moved from per-element
+  `onclick` into one delegated listener in `shadcn-daisyui.js` (for `.sheet`,
+  `.drawer-bottom`, `.command-dialog`). Esc still closes natively.
+- Clicking a sheet's or drawer's own padding no longer closes it. The old inline
+  check (`event.target === this`) treated the panel's padding as backdrop; the
+  listener now compares the click point with the panel rect.
+- Every modal `<dialog>` carries `phx-mounted={JS.ignore_attributes(["open"])}`,
+  so an open dialog stays open when a LiveView patch re-renders it.
+- Docs recipes for dialog, alert dialog, sheet, drawer and command open/close
+  with invoker commands (`commandfor` / `command`) instead of `onclick`.
+- Docs site: the theme toggle no longer reverts to light on every page load (the
+  root layout hardcoded `data-theme`, which made the stored choice unreachable).
+
+### Docs
+
+- New `/docs/dark-mode` page: the before/after table above, fields on page / card
+  / popover, hover and selected fills, floating surfaces and all four overlays in
+  light and dark, served under a strict nonce CSP (header + meta tag) with a live
+  violation counter and an inline-handler canary that must be blocked.
+- New `/lab/csp` LiveView (not part of the static export): overlays under the
+  same policy, re-rendered every 500ms, to show an open dialog survives patches.
+
 ## [0.5.0] - 2026-10-04
 
 ### Added

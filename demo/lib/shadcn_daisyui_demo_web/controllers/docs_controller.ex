@@ -5,6 +5,10 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
   alias ShadcnDaisyuiDemoWeb.Guides
   alias ShadcnDaisyuiDemoWeb.Markdown
 
+  # The dark-mode page doubles as the CSP proof: it renders every overlay
+  # component under `script-src 'self' 'nonce-…'`.
+  plug ShadcnDaisyuiDemoWeb.StrictCSP when action in [:dark_mode]
+
   # /docs -> first component page
   def index(conn, _params) do
     redirect(conn, to: ~p"/docs/components/#{Catalog.first_slug()}")
@@ -105,6 +109,12 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
     conn
     |> assign(:page_title, "Adopt the design system")
     |> render(:adopt)
+  end
+
+  def dark_mode(conn, _params) do
+    conn
+    |> assign(:page_title, "Dark mode & CSP")
+    |> render(:dark_mode)
   end
 
   def tokens(conn, _params) do

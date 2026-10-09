@@ -51,7 +51,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           <button
             type="button"
             class="btn btn-outline btn-sm gap-2 font-normal text-muted-foreground sm:w-[264px] sm:justify-start"
-            onclick="document.getElementById('docs-search-palette').showModal()"
+            phx-click={JS.dispatch("shadcn:show-modal", to: "#docs-search-palette")}
             aria-label="Search components"
           >
             <.icon name="hero-magnifying-glass" class="size-4" />
@@ -253,7 +253,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       %{slug: "installation", title: "Installation"},
       %{slug: "adopt", title: "Adopt the design system"},
       %{slug: "themes", title: "Themes"},
-      %{slug: "tokens", title: "Tokens"}
+      %{slug: "tokens", title: "Tokens"},
+      %{slug: "dark-mode", title: "Dark mode & CSP"}
     ]
   end
 
@@ -309,7 +310,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       type="button"
       aria-label="Copy code"
       class={["btn btn-ghost btn-xs btn-square", @class]}
-      onclick="navigator.clipboard.writeText(this.closest('[data-code-block]').querySelector('pre').innerText); this.classList.add('text-success')"
+      data-copy-code
     >
       <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
     </button>

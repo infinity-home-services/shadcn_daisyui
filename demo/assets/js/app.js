@@ -123,6 +123,30 @@ const initPlatformToggle = () => {
   })
 }
 
+// Copy buttons on code blocks. Delegated (no inline onclick) so the docs work
+// under a strict script-src CSP.
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-copy-code]")
+  if (!btn) return
+  navigator.clipboard.writeText(btn.closest("[data-code-block]").querySelector("pre").innerText)
+  btn.classList.add("text-success")
+})
+
+// /docs/dark-mode is served under `script-src 'self' 'nonce-…'`. Report every
+// CSP violation on the page into [data-csp-violations] so the proof is visible:
+// the components should produce none; the deliberate onclick canary should
+// produce exactly one when clicked.
+document.addEventListener("securitypolicyviolation", (e) => {
+  const out = document.querySelector("[data-csp-violations]")
+  if (!out) return
+  const n = (parseInt(out.dataset.count || "0", 10) || 0) + 1
+  out.dataset.count = n
+  out.querySelector("[data-csp-count]").textContent = n
+  const li = document.createElement("li")
+  li.textContent = `${e.effectiveDirective} blocked ${e.blockedURI || "inline"}${e.sample ? ` (${e.sample})` : ""}`
+  out.querySelector("[data-csp-log]").appendChild(li)
+})
+
 const bootShadcn = () => { initShadcnDaisyui(); initThemeCreator(); persistSidebarScroll(); initPlatformToggle() }
 if (document.readyState !== "loading") bootShadcn()
 else document.addEventListener("DOMContentLoaded", bootShadcn)

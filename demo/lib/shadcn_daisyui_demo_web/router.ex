@@ -10,6 +10,10 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :strict_csp do
+    plug ShadcnDaisyuiDemoWeb.StrictCSP
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -24,9 +28,20 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/docs/adopt", DocsController, :adopt
     get "/docs/themes", DocsController, :themes
     get "/docs/tokens", DocsController, :tokens
+    get "/docs/dark-mode", DocsController, :dark_mode
     get "/docs/foundations/:guide", DocsController, :guide
     get "/docs/styles/:guide", DocsController, :guide
     get "/docs/components/:component", DocsController, :component
+  end
+
+  # LiveView half of the CSP proof (/docs/dark-mode is the static half; the
+  # GitHub Pages export can't host a LiveView, so this isn't exported): the
+  # overlays under `script-src 'self' 'nonce-…'`, re-rendered twice a second to
+  # show an open dialog survives patches.
+  scope "/lab", ShadcnDaisyuiDemoWeb do
+    pipe_through [:browser, :strict_csp]
+
+    live "/csp", CspLive
   end
 
   # AI-consumable plain-text/JSON endpoints. No browser pipeline: these are

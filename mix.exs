@@ -1,7 +1,7 @@
 defmodule ShadcnDaisyui.MixProject do
   use Mix.Project
 
-  @version "0.5.0"
+  @version "0.6.0"
   @source_url "https://github.com/infinity-home-services/shadcn_daisyui"
 
   def project do
@@ -27,7 +27,7 @@ defmodule ShadcnDaisyui.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_live_view, "~> 1.1"},
       {:phoenix_html, "~> 4.1"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]

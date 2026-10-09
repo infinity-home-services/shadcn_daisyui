@@ -1,0 +1,271 @@
+<.docs_layout active_guide="dark-mode">
+  <.doc_heading
+    title="Dark mode & CSP"
+    description="Fields, fills, borders, floating surfaces and overlays in light and dark, side by side. This page is served under a strict script policy, so every overlay here also proves it needs no inline JavaScript."
+  />
+
+  <%!-- ============================== CSP ============================== --%>
+  <section class="mt-10 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Strict Content-Security-Policy</h2>
+    <p class="text-sm text-muted-foreground">
+      This response carries the policy below (as a header and a matching meta tag). Inline
+      event handlers are blocked, so the dialog, sheet, drawer and command palette further
+      down open, close on backdrop click and close on Esc through
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">phx-click</code>
+      JS commands and the package script alone.
+    </p>
+    <div data-csp-violations data-count="0" class="card">
+      <div class="card-body gap-3">
+        <code class="block break-all rounded bg-muted px-2 py-1.5 font-mono text-xs">
+          {ShadcnDaisyuiDemoWeb.StrictCSP.policy("…")}
+        </code>
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <span>
+            Violations on this page: <span data-csp-count class="font-semibold">0</span>
+          </span>
+          <%!-- Deliberately inline: the one handler on the page, to show the policy bites.
+               Clicking it must log one violation and do nothing else. --%>
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            data-csp-canary
+            onclick="document.body.dataset.inlineRan = 'yes'"
+          >
+            Click the inline-onclick canary
+          </button>
+        </div>
+        <ul data-csp-log class="list-inside list-disc text-xs text-muted-foreground"></ul>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ============================ CHANGES ============================ --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">What changed in 0.6.0</h2>
+    <div class="card w-full overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Before</th>
+            <th>After</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={c <- dark_mode_changes()}>
+            <td class="align-top">
+              <p class="font-medium">{c.area}</p>
+              <p class="font-mono text-xs text-muted-foreground">{c.token}</p>
+            </td>
+            <td class="align-top text-muted-foreground">{c.before}</td>
+            <td class="align-top">{c.after}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <%!-- ============================= FIELDS ============================= --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Fields on every surface</h2>
+    <p class="text-sm text-muted-foreground">
+      Dark fields use shadcn's translucent
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-input/30</code>
+      fill with an <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">--input</code>
+      border, so they lift off the page, a card and a popover alike. Light is unchanged.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div
+        :for={{label, theme} <- theme_panels()}
+        data-theme={theme}
+        class="space-y-4 rounded-xl border border-base-300 bg-base-100 p-4 text-base-content"
+      >
+        <p class="text-sm font-medium">{label}</p>
+
+        <div class="space-y-3">
+          <p class="text-xs text-muted-foreground">Page</p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <input class="input w-full" placeholder="Email" aria-label="Email" />
+            <select class="select w-full" aria-label="Plan">
+              <option>Free</option>
+              <option>Pro</option>
+            </select>
+            <.select id={"dm-select-page-#{theme}"} placeholder="Select a fruit">
+              <:option value="Apple">Apple</:option>
+              <:option value="Banana">Banana</:option>
+            </.select>
+            <.combobox id={"dm-combo-page-#{theme}"} placeholder="Select framework…">
+              <:option value="Phoenix">Phoenix</:option>
+              <:option value="SvelteKit">SvelteKit</:option>
+            </.combobox>
+            <textarea
+              class="textarea w-full sm:col-span-2"
+              placeholder="Message"
+              aria-label="Message"
+            ></textarea>
+            <input type="file" class="file-input w-full sm:col-span-2" aria-label="Attachment" />
+          </div>
+          <.input_otp id={"dm-otp-page-#{theme}"} length={6} />
+        </div>
+
+        <div class="card">
+          <div class="card-body gap-3">
+            <p class="text-xs text-muted-foreground">Card</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <input class="input w-full" placeholder="Email" aria-label="Email on card" />
+              <.select id={"dm-select-card-#{theme}"} placeholder="Select a fruit">
+                <:option value="Apple">Apple</:option>
+                <:option value="Banana">Banana</:option>
+              </.select>
+            </div>
+            <.input_otp id={"dm-otp-card-#{theme}"} length={4} group={0} />
+          </div>
+        </div>
+
+        <div class="popover-panel space-y-3 p-4">
+          <p class="text-xs text-muted-foreground">Popover surface</p>
+          <input class="input w-full" placeholder="Width" aria-label="Width in popover" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ========================= FILLS + BORDERS ========================= --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Hover, selected and border on a card</h2>
+    <p class="text-sm text-muted-foreground">
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-base-200</code>
+      is now the muted/accent role in dark mode, so hover and selected rows show on a card
+      (it used to equal the card colour).
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">border-base-300</code>
+      is now shadcn's translucent white/10% border. Hover the rows.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div
+        :for={{label, theme} <- theme_panels()}
+        data-theme={theme}
+        class="rounded-xl border border-base-300 bg-base-100 p-4 text-base-content"
+      >
+        <p class="mb-3 text-sm font-medium">{label}</p>
+        <div class="card overflow-hidden">
+          <ul class="divide-y divide-base-300">
+            <li
+              :for={{name, selected} <- [{"Inbox", false}, {"Drafts", true}, {"Sent", false}]}
+              class={[
+                "flex items-center justify-between px-4 py-2.5 text-sm hover:bg-base-200",
+                selected && "bg-base-200 font-medium"
+              ]}
+            >
+              {name}
+              <span :if={selected} class="text-xs text-muted-foreground">selected</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ======================== FLOATING SURFACES ======================== --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Popover, menu and tooltip</h2>
+    <p class="text-sm text-muted-foreground">
+      Floating content takes shadcn's
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">shadow-md</code>
+      plus a 1px
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">ring-foreground/10</code>
+      instead of a border. Tooltips are <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+        bg-foreground text-background
+      </code>.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div
+        :for={{label, theme} <- theme_panels()}
+        data-theme={theme}
+        class="rounded-xl border border-base-300 bg-base-100 p-4 pb-48 text-base-content"
+      >
+        <p class="mb-3 text-sm font-medium">{label}</p>
+        <div class="flex flex-wrap items-start gap-3">
+          <.popover>
+            <:trigger>Popover</:trigger>
+            <div class="space-y-2">
+              <p class="text-sm font-medium">Dimensions</p>
+              <input class="input w-full" placeholder="Width" aria-label="Popover width" />
+            </div>
+          </.popover>
+          <.dropdown_menu>
+            <:trigger>Menu</:trigger>
+            <:label>My Account</:label>
+            <:item>Profile</:item>
+            <:item>Billing</:item>
+            <:item class="text-destructive">Log out</:item>
+          </.dropdown_menu>
+          <.tooltip tip="Add to library" position="bottom">
+            <button type="button" class="btn btn-outline">Tooltip</button>
+          </.tooltip>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ============================= OVERLAYS ============================= --%>
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Overlays</h2>
+    <p class="text-sm text-muted-foreground">
+      One backdrop, shadcn/ui's <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-black/50</code>,
+      for all four. Each opens from a
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">phx-click</code>
+      JS command and closes on Esc or a backdrop click, with no inline handler.
+    </p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div
+        :for={{label, theme} <- theme_panels()}
+        data-theme={theme}
+        class="rounded-xl border border-base-300 bg-base-100 p-4 text-base-content"
+      >
+        <p class="mb-3 text-sm font-medium">{label}</p>
+        <div class="flex flex-wrap gap-3">
+          <.dialog id={"dm-dialog-#{theme}"}>
+            <:trigger><button type="button" class="btn btn-outline">Dialog</button></:trigger>
+            <:title>Edit profile</:title>
+            <:description>Make changes to your profile here.</:description>
+            <input class="input w-full" value="Pedro Duarte" aria-label="Name" />
+            <:actions>
+              <form method="dialog"><button class="btn btn-outline">Cancel</button></form>
+              <form method="dialog"><button class="btn btn-primary">Save</button></form>
+            </:actions>
+          </.dialog>
+
+          <.sheet id={"dm-sheet-#{theme}"}>
+            <:trigger><button type="button" class="btn btn-outline">Sheet</button></:trigger>
+            <:title>Edit profile</:title>
+            <:description>Fields inside a sheet use the same fill.</:description>
+            <div class="space-y-3">
+              <input class="input w-full" value="@peduarte" aria-label="Username" />
+              <.select id={"dm-select-sheet-#{theme}"} placeholder="Select a role">
+                <:option value="Admin">Admin</:option>
+                <:option value="Member">Member</:option>
+              </.select>
+              <textarea class="textarea w-full" aria-label="Bio">Hello</textarea>
+            </div>
+          </.sheet>
+
+          <.drawer id={"dm-drawer-#{theme}"}>
+            <:trigger><button type="button" class="btn btn-outline">Drawer</button></:trigger>
+            <div class="mx-auto w-full max-w-sm space-y-3">
+              <p class="text-lg font-semibold">Move goal</p>
+              <input class="input w-full" value="350" aria-label="Calories" />
+            </div>
+          </.drawer>
+
+          <%!-- one palette only: every [data-command] dialog listens for ⌘K --%>
+          <.command :if={theme == "shadcn-dark"} id="dm-command">
+            <:trigger_label>Search…</:trigger_label>
+            <:item group="Suggestions" icon="hero-calendar">Calendar</:item>
+            <:item group="Suggestions" icon="hero-calculator">Calculator</:item>
+            <:item group="Settings" icon="hero-user" shortcut="⌘P">Profile</:item>
+          </.command>
+        </div>
+      </div>
+    </div>
+  </section>
+</.docs_layout>

@@ -1181,7 +1181,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </.dialog>
             """,
             code: ~S"""
-            <button class="btn btn-primary" onclick="dialog_demo.showModal()">Open dialog</button>
+            <button class="btn btn-primary" commandfor="dialog_demo" command="show-modal">Open dialog</button>
             <dialog id="dialog_demo" class="modal">
               <div class="modal-box space-y-2">
                 <h3 class="text-lg font-semibold">Are you absolutely sure?</h3>
@@ -1683,14 +1683,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </.sheet>
             """,
             code: ~S"""
-            <button class="btn btn-outline" onclick="document.getElementById('sheet_dialog').showModal()">
+            <button class="btn btn-outline" commandfor="sheet_dialog" command="show-modal">
               Open sheet →
             </button>
-            <dialog id="sheet_dialog" class="sheet" onclick="if(event.target===this)this.close()">
+            <dialog id="sheet_dialog" class="sheet">
               <button
                 class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
                 aria-label="Close"
-                onclick="this.closest('dialog').close()"
+                commandfor="sheet_dialog"
+                command="close"
               >
                 <span class="hero-x-mark size-4" aria-hidden="true"></span>
               </button>
@@ -1709,8 +1710,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 </label>
               </div>
               <div class="mt-6 flex justify-end gap-3">
-                <button class="btn btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
-                <button class="btn btn-primary" onclick="this.closest('dialog').close()">Save changes</button>
+                <button class="btn btn-outline" commandfor="sheet_dialog" command="close">Cancel</button>
+                <button class="btn btn-primary" commandfor="sheet_dialog" command="close">Save changes</button>
               </div>
             </dialog>
             """
@@ -1918,7 +1919,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{
             title: "Default",
             code: ~S"""
-            <button class="btn btn-outline" onclick="alert_dialog_demo.showModal()">Delete account</button>
+            <button class="btn btn-outline" commandfor="alert_dialog_demo" command="show-modal">Delete account</button>
             <dialog id="alert_dialog_demo" class="modal">
               <div class="modal-box space-y-2">
                 <h3 class="text-lg font-semibold">Are you absolutely sure?</h3>
@@ -2040,7 +2041,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </.command>
             """,
             code: ~S"""
-            <button class="btn btn-outline w-64 justify-between" onclick="document.getElementById('command_dialog').showModal()">
+            <button class="btn btn-outline w-64 justify-between" commandfor="command_dialog" command="show-modal">
               <span class="text-muted-foreground">Search commands…</span>
               <kbd class="kbd">⌘K</kbd>
             </button>
@@ -2304,11 +2305,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </.drawer>
             """,
             code: ~S"""
-            <button class="btn btn-outline" onclick="document.getElementById('drawer_bottom').showModal()">
+            <button class="btn btn-outline" commandfor="drawer_bottom" command="show-modal">
               Open drawer
             </button>
-            <dialog id="drawer_bottom" class="drawer-bottom" onclick="if(event.target===this)this.close()">
-              <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-base-300"></div>
+            <dialog id="drawer_bottom" class="drawer-bottom">
+              <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted"></div>
               <div class="mx-auto w-full max-w-md text-center">
                 <h3 class="text-lg font-semibold">Move goal</h3>
                 <p class="mt-1 text-sm text-muted-foreground">Set your daily activity goal.</p>
@@ -2317,7 +2318,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   <span class="text-4xl font-bold tabular-nums">350</span>
                   <button class="btn btn-outline btn-circle">+</button>
                 </div>
-                <button class="btn btn-primary w-full" onclick="this.closest('dialog').close()">Submit</button>
+                <button class="btn btn-primary w-full" commandfor="drawer_bottom" command="close">Submit</button>
               </div>
             </dialog>
             """

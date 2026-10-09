@@ -37,7 +37,7 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ "modal-backdrop"
     end
 
-    test "trigger slot wires an onclick that calls showModal" do
+    test "trigger slot opens the dialog with a JS dispatch, not an inline handler" do
       assigns = %{}
 
       html =
@@ -48,18 +48,28 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
         </.dialog>
         """)
 
-      assert html =~ "showModal"
-      assert html =~ "getElementById"
-      assert html =~ "confirm"
+      assert html =~ "phx-click="
+      assert html =~ "shadcn:show-modal"
+      assert html =~ "#confirm"
       assert html =~ "Open"
+      refute html =~ "showModal"
     end
 
-    test "without trigger no onclick span is rendered" do
+    test "without trigger no trigger span is rendered" do
       assigns = %{}
       html = render(~H|<.dialog id="d">content</.dialog>|)
 
-      refute html =~ "showModal"
+      refute html =~ "shadcn:show-modal"
       refute html =~ "<span"
+    end
+
+    test "the dialog keeps its browser-owned open attribute across patches" do
+      assigns = %{}
+      html = render(~H|<.dialog id="d">content</.dialog>|)
+
+      assert html =~ "phx-mounted="
+      assert html =~ "ignore_attrs"
+      assert html =~ "open"
     end
 
     test "omits title, description, and actions when slots are absent" do
@@ -92,7 +102,8 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ "form goes here"
       assert html =~ ~s(aria-label="Close")
       assert html =~ "hero-x-mark"
-      assert html =~ "showModal"
+      assert html =~ "shadcn:show-modal"
+      assert html =~ "shadcn:hide-modal"
     end
   end
 
@@ -111,7 +122,7 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ ~s(id="goal")
       assert html =~ ~s(class="drawer-bottom )
       assert html =~ "drawer content"
-      assert html =~ "rounded-full bg-base-300"
+      assert html =~ "rounded-full bg-muted"
     end
   end
 
@@ -282,6 +293,48 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
 
       refute html =~ "command-group-label"
       assert count(html, "data-command-item") == 2
+    end
+  end
+
+  describe "strict CSP" do
+    # every overlay, fully slotted; none may emit an inline event handler
+    # (onclick=, onsubmit=, …) - those are blocked by `script-src 'self' 'nonce-…'`
+    test "no overlay component renders an inline event handler" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dialog id="dlg">
+          <:trigger><button>Open</button></:trigger>
+          <:title>T</:title>
+          <:description>D</:description>
+          body
+          <:actions><button>OK</button></:actions>
+        </.dialog>
+        <.sheet id="sht">
+          <:trigger><button>Open</button></:trigger>
+          <:title>T</:title>
+          <:description>D</:description>
+          body
+        </.sheet>
+        <.drawer id="drw">
+          <:trigger><button>Open</button></:trigger>
+          body
+        </.drawer>
+        <.popover><:trigger>P</:trigger>body</.popover>
+        <.tooltip tip="t">x</.tooltip>
+        <.dropdown_menu><:trigger>M</:trigger><:label>L</:label><:item>I</:item></.dropdown_menu>
+        <.command id="cmd">
+          <:trigger_label>Search</:trigger_label>
+          <:item group="G" icon="hero-calendar" shortcut="⌘P">Calendar</:item>
+        </.command>
+        """)
+
+      assert Regex.scan(~r/<[^>]*\son[a-z]+\s*=/i, html) == []
+      refute html =~ "javascript:"
+      # every modal dialog keeps `open` across LiveView patches
+      assert count(html, "<dialog") == 4
+      assert count(html, "ignore_attrs") == 4
     end
   end
 

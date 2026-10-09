@@ -31,7 +31,8 @@ Rules:
 
 - Override only bridge vars (`--primary`, `--radius`, fonts, chart colors…). Never
   fork or edit the base CSS file.
-- To tint form fields, override `--input-background` (defaults to `--background`);
+- To tint form fields, override `--input-background` (light defaults to
+  `--background`; dark to shadcn's `color-mix(in oklab, var(--input) 30%, transparent)`);
   it drives `.input`/`.select`/`.textarea`/`.file-input` and the custom
   `<.select>`/`<.combobox>` triggers together. A one-off `bg-*` utility on a single
   control still needs the `!` modifier (the base rule lives in `@layer utilities`).

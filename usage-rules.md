@@ -26,6 +26,11 @@ like shadcn/ui. **Every UI decision goes through this package.**
   attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
+- Never write inline event handlers (`onclick=`, `onsubmit=`, …) or `javascript:`
+  URLs - they break under a strict `script-src` CSP. Open/close overlays with
+  `phx-click={show_modal("id")}` / `hide_modal("id")` (the components do this
+  for you), or in plain HTML with invoker commands
+  (`<button commandfor="id" command="show-modal">`, `command="close"`).
 
 ## Picking a component
 
@@ -37,8 +42,9 @@ Decision order:
 2. **No function component → use the documented daisyUI class recipe** (table below).
    The theme styles every daisyUI class automatically.
 3. **Neither exists → compose from tokens + primitives.** Match shadcn/ui metrics:
-   `text-sm`, `rounded-md` fields / `rounded-lg` boxes, 1px `border-base-300` borders,
-   flat surfaces with `shadow-sm` at most, `text-muted-foreground` for secondary text.
+   `text-sm`, `rounded-md` fields and floating content / `rounded-xl` cards and dialogs,
+   1px `border-border` borders, flat surfaces (`shadow-sm` on cards, the overlay
+   recipes carry their own elevation), `text-muted-foreground` for secondary text.
    Do not invent new colors, radii, or shadows.
 
 ### Function components
@@ -107,7 +113,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Tabs | `<div role="tablist" class="tabs tabs-box w-fit">` + `<input type="radio" name="…" class="tab" aria-label="…">` |
 | Static table | `<div class="card w-full overflow-hidden"><table class="table">…` |
 | Data table (sortable/faceted/paged) | Build with `<.table>` + LiveView `phx-click` sort/filter/page events. The `ShadcnDataTable` JS hook is docs-demo only (fixed dataset) - do not wire it in apps. |
-| Modal/dialog | native `<dialog class="modal"><div class="modal-box">…` + `id.showModal()`; backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
+| Modal/dialog | native `<dialog id="d" class="modal"><div class="modal-box">…`, opened by `<button commandfor="d" command="show-modal">` (no inline JS); backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
 | Tooltip | `<div class="tooltip" data-tip="…">` wrapping the trigger |
 | Dropdown | `<div class="dropdown">` + `tabindex="0"` trigger + `<ul class="dropdown-content menu …">` |
 | Context menu | trigger `<div data-context-menu-trigger>` + `<ul data-context-menu class="context-menu hidden">`; needs `id` + `phx-hook="ShadcnContextMenu"` (one per page) |
@@ -124,7 +130,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Radio | `<input type="radio" class="radio">` |
 | Range slider | `<input type="range" class="range">` |
 | Inline code | `<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">` |
-| Headings | `text-3xl font-bold tracking-tight` (h1), `text-xl font-semibold tracking-tight` (h2, often with `border-b border-base-300 pb-2`) |
+| Headings | `text-3xl font-bold tracking-tight` (h1), `text-xl font-semibold tracking-tight` (h2, often with `border-b border-border pb-2`) |
 | Secondary text | `text-sm text-muted-foreground` |
 | Page hero | `<div class="hero">`, navbar `<div class="navbar">`, footer `<footer class="footer">` |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
@@ -139,9 +145,12 @@ Browse the full gallery (83 components) in the docs site (`demo/`) or
 - Surfaces (one role each, as in shadcn): page `bg-base-100` / `bg-background`;
   cards and opaque fills inside a card (sticky table header, sticky footer bar)
   `bg-card`; overlays (sheets, dialogs, popovers, dropdown/command content)
-  `bg-popover` + `text-popover-foreground`; subtle insets `bg-base-200` / `bg-muted`;
-  borders `border-base-300` / `border-border`. Never paint a card or overlay
-  `bg-base-100` - in dark mode the page is darker than cards and popovers.
+  `bg-popover` + `text-popover-foreground`; subtle insets `bg-muted`; hover and
+  selected rows/items `bg-accent` (or `bg-muted`); borders `border-border`.
+  `bg-base-200` is an alias of muted and `border-base-300` of the border colour -
+  in dark mode base-300 is translucent (white/10%), so never use `bg-base-300` as
+  a fill. Never paint a card or overlay `bg-base-100` - in dark mode the page is
+  darker than cards and popovers.
 - A sticky `<thead>` inside a card needs `bg-card` (the table header has no fill
   of its own).
 - Text: default foreground inherits; secondary text `text-muted-foreground`;

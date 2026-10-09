@@ -467,7 +467,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             }
           ],
           measurements: [
-            %{property: "Grab handle", value: "1.5px tall x 12 wide, rounded-full bg-base-300"},
+            %{property: "Grab handle", value: "1.5px tall x 12 wide, rounded-full bg-muted"},
             %{property: "Content width", value: "max-w-md, centered"},
             %{property: "Surface", value: "var(--popover) over the modal backdrop"}
           ],

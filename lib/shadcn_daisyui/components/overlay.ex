@@ -10,6 +10,14 @@ defmodule ShadcnDaisyui.Components.Overlay do
     * `show_modal/2` / `hide_modal/2` from LiveView (`phx-click={show_modal("confirm")}`),
     * plain JS: `document.getElementById("confirm").showModal()`.
 
+  No component renders an inline event handler, so they all work under a
+  strict `script-src 'self' 'nonce-…'` Content-Security-Policy. Open/close is a
+  `Phoenix.LiveView.JS` dispatch handled by `shadcn-daisyui.js`; that needs
+  `liveSocket.connect()` on the page (LiveView >= 1.1 also runs JS commands on
+  dead views). Esc closes natively, backdrop clicks are handled by the package
+  JS, and each `<dialog>` ignores the browser-owned `open` attribute so an open
+  dialog survives LiveView patches.
+
   Imported by `use ShadcnDaisyui.Components`.
   """
   use Phoenix.Component
@@ -58,10 +66,10 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   def dialog(assigns) do
     ~H"""
-    <span :if={@trigger != []} onclick={"document.getElementById('#{@id}').showModal()"}>
+    <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["modal", @class]} {@rest}>
+    <dialog id={@id} class={["modal", @class]} phx-mounted={keep_open()} {@rest}>
       <div class="modal-box space-y-2">
         <h3 :if={@title != []} class="text-lg font-semibold">{render_slot(@title)}</h3>
         <p :if={@description != []} class="text-sm text-muted-foreground">
@@ -97,15 +105,15 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   def sheet(assigns) do
     ~H"""
-    <span :if={@trigger != []} onclick={"document.getElementById('#{@id}').showModal()"}>
+    <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["sheet", @class]} onclick="if(event.target===this)this.close()" {@rest}>
+    <dialog id={@id} class={["sheet", @class]} phx-mounted={keep_open()} {@rest}>
       <button
         type="button"
         class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
         aria-label="Close"
-        onclick="this.closest('dialog').close()"
+        phx-click={hide_modal(@id)}
       >
         <span class="hero-x-mark size-4" aria-hidden="true"></span>
       </button>
@@ -134,16 +142,11 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   def drawer(assigns) do
     ~H"""
-    <span :if={@trigger != []} onclick={"document.getElementById('#{@id}').showModal()"}>
+    <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog
-      id={@id}
-      class={["drawer-bottom", @class]}
-      onclick="if(event.target===this)this.close()"
-      {@rest}
-    >
-      <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-base-300"></div>
+    <dialog id={@id} class={["drawer-bottom", @class]} phx-mounted={keep_open()} {@rest}>
+      <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted"></div>
       {render_slot(@inner_block)}
     </dialog>
     """
@@ -280,12 +283,18 @@ defmodule ShadcnDaisyui.Components.Overlay do
       :if={@trigger_label != []}
       type="button"
       class="btn btn-outline w-64 justify-between"
-      onclick={"document.getElementById('#{@id}').showModal()"}
+      phx-click={show_modal(@id)}
     >
       <span class="text-muted-foreground">{render_slot(@trigger_label)}</span>
       <kbd class="kbd">⌘K</kbd>
     </button>
-    <dialog id={@id} phx-hook="ShadcnCommand" data-command class={["command-dialog", @class]}>
+    <dialog
+      id={@id}
+      phx-hook="ShadcnCommand"
+      phx-mounted={keep_open()}
+      data-command
+      class={["command-dialog", @class]}
+    >
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
         <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
         <input
@@ -314,6 +323,10 @@ defmodule ShadcnDaisyui.Components.Overlay do
     </dialog>
     """
   end
+
+  # The browser owns a <dialog>'s `open` attribute (showModal/close); without
+  # this a LiveView patch would strip it and close an open dialog.
+  defp keep_open, do: JS.ignore_attributes(["open"])
 
   # Groups consecutive items by their :group attr, preserving order.
   defp command_groups(items) do

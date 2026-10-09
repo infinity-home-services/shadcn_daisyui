@@ -115,9 +115,22 @@ defmodule ShadcnDaisyuiDemoWeb.TokensTest do
         flunk("no CSS block found for selector #{selector}")
 
       block ->
-        ~r/--([a-z0-9-]+):\s*([^;]+);/
-        |> Regex.scan(block)
-        |> Map.new(fn [_, name, value] -> {name, String.trim(value)} end)
+        vars =
+          ~r/--([a-z0-9-]+):\s*([^;]+);/
+          |> Regex.scan(block)
+          |> Map.new(fn [_, name, value] -> {name, String.trim(value)} end)
+
+        Map.new(vars, fn {name, value} -> {name, resolve(value, vars)} end)
+    end
+  end
+
+  # A mapping token that is exactly `var(--other)` (e.g. the dark
+  # `--color-base-200: var(--muted)`) is compared by the value it resolves to in
+  # the same block - tokens.json records resolved colours for its consumers.
+  defp resolve(value, vars) do
+    case Regex.run(~r/^var\(--([a-z0-9-]+)\)$/, value) do
+      [_, ref] when is_map_key(vars, ref) -> resolve(vars[ref], vars)
+      _ -> value
     end
   end
 end
