@@ -170,6 +170,16 @@ document.addEventListener("click", (e) => {
   )
 })
 
+// Resizable previews (tab nav, chip row): the width slider narrows the
+// preview so the overflow is visible without resizing the window.
+document.addEventListener("input", (e) => {
+  const range = e.target.closest("[data-demo-width]")
+  if (!range) return
+  const frame = range.closest("label").nextElementSibling
+  frame.style.width = `${range.value}%`
+  range.parentElement.querySelector("[data-demo-width-out]").textContent = `${range.value}%`
+})
+
 // Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")

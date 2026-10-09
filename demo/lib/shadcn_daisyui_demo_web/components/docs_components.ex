@@ -663,11 +663,15 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   Pass `heex` (a function-component usage snippet) to add a HEEx tab between the
   preview and the raw markup - the raw tab is then labeled "HTML" instead of
   "Code".
+
+  Pass `resizable` for width-aware components (tab nav, chip row): the preview
+  gets a width slider (outside the copyable code; wired in `app.js`).
   """
   attr :id, :string, required: true
   attr :code, :string, required: true
   attr :heex, :string, default: nil
   attr :center, :boolean, default: true
+  attr :resizable, :boolean, default: false
 
   def preview_code(assigns) do
     ~H"""
@@ -684,7 +688,23 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
           "flex min-h-[20rem] w-full gap-4 p-8",
           if(@center, do: "flex-wrap items-center justify-center", else: "flex-col")
         ]}>
-          {raw(@code)}
+          <%= if @resizable do %>
+            <label class="flex items-center gap-3 text-xs text-muted-foreground">
+              Preview width
+              <input
+                type="range"
+                class="range range-xs w-40"
+                min="20"
+                max="100"
+                value="100"
+                data-demo-width
+              />
+              <span class="w-10 font-mono" data-demo-width-out>100%</span>
+            </label>
+            <div class="w-full" data-demo-resize>{raw(@code)}</div>
+          <% else %>
+            {raw(@code)}
+          <% end %>
         </div>
       </div>
 

@@ -235,4 +235,94 @@ defmodule ShadcnDaisyui.Components.NavigationTest do
       refute html =~ "menu-title"
     end
   end
+
+  describe "tab_nav/1" do
+    test "renders link tabs with the hook, active state and counts" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.tab_nav id="views" aria_label="Views">
+          <:tab patch="/issues" active count={128}>All issues</:tab>
+          <:tab patch="/issues?view=active">Active</:tab>
+        </.tab_nav>
+        """)
+
+      assert html =~ ~s(<nav id="views")
+      assert html =~ ~s(phx-hook="ShadcnTabNav")
+      assert html =~ ~s(aria-label="Views")
+      assert html =~ "tabs tabs-box tab-nav-list"
+      assert count(html, "data-tab-nav-item") == 2
+      assert html =~ ~s(href="/issues?view=active")
+      assert html =~ ~s(data-phx-link="patch")
+      assert count(html, ~s(aria-current="page")) == 2
+      assert html =~ "tab tab-active"
+      assert html =~ ~s(<span class="tab-count">128</span>)
+    end
+
+    test "renders a hidden copy of every tab in the More menu, keyed by index" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.tab_nav id="views">
+          <:tab href="/a">A</:tab>
+          <:tab href="/b">B</:tab>
+          <:tab href="/c">C</:tab>
+        </.tab_nav>
+        """)
+
+      assert count(html, "data-tab-nav-copy") == 3
+      assert html =~ ~s(data-index="2")
+      assert html =~ ~s(aria-controls="views-menu")
+      assert html =~ ~s(id="views-menu")
+      # no extra entries: the More slot starts hidden, the separator isn't rendered
+      assert html =~ ~r/data-tab-nav-more\s+hidden/
+      refute html =~ "data-tab-nav-sep"
+      # the hook owns visibility; patches must not reset it
+      assert html =~ "ignore_attrs"
+    end
+
+    test "menu items render grouped sections after a separator" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.tab_nav id="views">
+          <:tab href="/a" active>A</:tab>
+          <:menu_item group="Mine" href="/m1">Assigned to me</:menu_item>
+          <:menu_item group="Mine" href="/m2">Created by me</:menu_item>
+          <:menu_item group="Shared" href="/s1">Open bugs</:menu_item>
+          <:menu_item href="/views" icon="hero-cog-6-tooth">Manage views…</:menu_item>
+        </.tab_nav>
+        """)
+
+      assert html =~ "data-tab-nav-sep"
+      assert count(html, "data-tab-nav-entry") == 4
+      assert count(html, ~s(role="group")) == 3
+      assert count(html, "command-group-label") == 2
+      assert html =~ ~s(aria-labelledby="views-group-0")
+      assert html =~ "hero-cog-6-tooth"
+      # extra entries: More is always shown
+      refute html =~ ~r/data-tab-nav-more\s+hidden/
+      assert html =~ ">More<"
+    end
+
+    test "an active menu item names the More trigger" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.tab_nav id="views" more_label="Views">
+          <:tab href="/a">A</:tab>
+          <:menu_item href="/bugs" active>Open bugs</:menu_item>
+        </.tab_nav>
+        """)
+
+      assert html =~ ~s(<span class="sr-only">Views: </span>)
+      assert html =~ ~r/<span class="tab-nav-label">\s*Open bugs\s*<\/span>/
+      assert html =~ "hero-check"
+      assert count(html, "tab-active") == 1
+    end
+  end
 end

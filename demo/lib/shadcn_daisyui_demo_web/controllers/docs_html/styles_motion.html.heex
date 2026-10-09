@@ -25,6 +25,8 @@
               {"micro", "150ms", "color, bg, border, shadow", "button hover / active"},
               {"small surface", "180ms", "opacity, transform", "popover, tooltip, ⌘K palette"},
               {"large surface", "300ms", "translate, backdrop", "sheet, drawer"},
+              {"row reveal", "180ms", "grid-template-rows, opacity",
+               "filter chip row, inline alert, accordion"},
               {"theme switch", "0ms", "-", "instant by design"}
             ]
           }>
@@ -97,11 +99,49 @@
     </div>
     <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
       <li>No entrance animations for page content - skeletons cover loading.</li>
-      <li>Never animate layout properties (width, height, top/left, margin).</li>
+      <li>
+        Never animate layout properties (width, height, top/left, margin) - except the
+        row reveal below.
+      </li>
       <li>
         Gate any added animation behind <code class="font-mono text-xs">prefers-reduced-motion</code>.
       </li>
     </ul>
+  </section>
+
+  <section class="mt-12 space-y-4">
+    <h2 class="text-lg font-medium tracking-tight">Collapsing rows</h2>
+    <p class="text-sm text-muted-foreground">
+      A row that appears and disappears in the page flow (active filter chips, an inline
+      alert, a bulk-action bar) may slide open and closed:
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">grid-template-rows</code>
+      0fr ↔ 1fr plus opacity, 180ms ease-out, instant under reduced motion. It's the one
+      sanctioned layout animation, and what the accordion already does. Use <a
+        href={~p"/docs/components/reveal"}
+        class="link link-primary"
+      >&lt;.reveal open&gt;</a>; never
+      hand-animate height or max-height.
+    </p>
+    <div class="space-y-3 rounded-lg border border-base-300 p-4">
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        data-reveal-toggle="motion-reveal"
+        aria-expanded="false"
+      >
+        Toggle row
+      </button>
+      <div id="motion-reveal" class="reveal">
+        <div class="reveal-track">
+          <div class="flex flex-wrap gap-2 pb-1">
+            <span class="badge badge-secondary">Status: Todo</span>
+            <span class="badge badge-secondary">Label: Bug</span>
+            <span class="badge badge-secondary">Assignee: Me</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-sm text-muted-foreground">Content below moves with the row.</p>
+    </div>
   </section>
 
   <section class="mt-12 space-y-3" data-platform="ios">

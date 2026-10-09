@@ -1,10 +1,13 @@
 defmodule ShadcnDaisyui.Components.Navigation do
   @moduledoc """
-  Navigation components: tabs, breadcrumb, pagination, and the sidebar app shell.
+  Navigation components: tabs, link tabs with overflow (`tab_nav`), breadcrumb,
+  pagination, and the sidebar app shell.
 
   Imported by `use ShadcnDaisyui.Components`.
   """
   use Phoenix.Component
+
+  alias Phoenix.LiveView.JS
 
   @doc """
   Tabs with content panels (CSS-only, radio-based).
@@ -41,6 +44,185 @@ defmodule ShadcnDaisyui.Components.Navigation do
       <% end %>
     </div>
     """
+  end
+
+  @doc """
+  A row of link tabs (views, saved filters, sections of a page) that fits its
+  width. Needs the `ShadcnTabNav` hook.
+
+  Tabs show while they fit; the ones that would be squeezed move, in order,
+  into a trailing More menu, which also holds any `:menu_item`s. The `active`
+  tab always stays visible (it swaps out the last visible one), and when an
+  active `:menu_item` is in the menu the More trigger shows its name. The row
+  re-fits on resize and after LiveView patches.
+
+      <.tab_nav id="views" aria-label="Views">
+        <:tab patch={~p"/issues"} active={@view == "all"} count={@counts.all}>All issues</:tab>
+        <:tab patch={~p"/issues?view=active"} active={@view == "active"}>Active</:tab>
+        <:tab patch={~p"/issues?view=backlog"} active={@view == "backlog"}>Backlog</:tab>
+        <:menu_item group="Mine" patch={~p"/issues?view=triage"} active={@view == "triage"}>Triage</:menu_item>
+        <:menu_item group="Shared" patch={~p"/issues?view=bugs"}>Open bugs</:menu_item>
+        <:menu_item navigate={~p"/views"} icon="hero-cog-6-tooth">Manage views…</:menu_item>
+      </.tab_nav>
+
+  The root fills its container; inside a flex row give it `min-w-0 flex-1`.
+  Consecutive `:menu_item`s with the same `group` share a labelled section.
+  """
+  attr(:id, :string, required: true)
+  attr(:aria_label, :string, default: "Tabs", doc: "names the <nav> landmark")
+  attr(:more_label, :string, default: "More")
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+
+  slot :tab, required: true do
+    attr(:navigate, :any)
+    attr(:patch, :any)
+    attr(:href, :any)
+    attr(:active, :boolean)
+    attr(:count, :any, doc: "a number shown in a muted pill after the label")
+  end
+
+  slot :menu_item, doc: "extra entries at the end of the More menu" do
+    attr(:navigate, :any)
+    attr(:patch, :any)
+    attr(:href, :any)
+    attr(:active, :boolean)
+    attr(:group, :string, doc: "section label; consecutive items with the same group share it")
+    attr(:icon, :string, doc: "heroicon class, e.g. \"hero-cog-6-tooth\"")
+    attr(:"phx-click", :any)
+  end
+
+  def tab_nav(assigns) do
+    assigns =
+      assigns
+      |> assign(:tabs, Enum.with_index(assigns.tab))
+      |> assign(:active_item, Enum.find(assigns.menu_item, & &1[:active]))
+      |> assign(:groups, menu_groups(assigns.menu_item))
+
+    ~H"""
+    <nav
+      id={@id}
+      phx-hook="ShadcnTabNav"
+      phx-mounted={keep_client_attrs(["data-ready", "data-squeezed"])}
+      data-tab-nav
+      aria-label={@aria_label}
+      class={["tab-nav", @class]}
+      {@rest}
+    >
+      <div class="tabs tabs-box tab-nav-list">
+        <div class="tab-nav-tabs" data-tab-nav-tabs>
+          <.link
+            :for={{tab, i} <- @tabs}
+            navigate={tab[:navigate]}
+            patch={tab[:patch]}
+            href={tab[:href]}
+            class={["tab", tab[:active] && "tab-active"]}
+            aria-current={tab[:active] && "page"}
+            data-tab-nav-item
+            data-index={i}
+            phx-mounted={keep_client_attrs(["hidden"])}
+          >
+            <span class="tab-nav-label">{render_slot(tab)}</span>
+            <span :if={tab[:count] != nil} class="tab-count">{tab.count}</span>
+          </.link>
+        </div>
+        <div
+          class="tab-nav-more"
+          data-tab-nav-more
+          hidden={@menu_item == []}
+          phx-mounted={keep_client_attrs(["hidden"])}
+        >
+          <button
+            type="button"
+            id={"#{@id}-more"}
+            class={["tab", @active_item && "tab-active"]}
+            aria-expanded="false"
+            aria-controls={"#{@id}-menu"}
+            data-tab-nav-trigger
+            phx-mounted={keep_client_attrs(["aria-expanded"])}
+          >
+            <%= if @active_item do %>
+              <span class="sr-only">{@more_label}: </span>
+              <span class="tab-nav-label">{render_slot(@active_item)}</span>
+            <% else %>
+              <span class="tab-nav-label">{@more_label}</span>
+            <% end %>
+            <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
+          </button>
+          <div
+            id={"#{@id}-menu"}
+            class="popover-panel tab-nav-menu"
+            data-tab-nav-menu
+            hidden
+            phx-mounted={keep_client_attrs(["hidden"])}
+          >
+            <div data-tab-nav-overflow hidden phx-mounted={keep_client_attrs(["hidden"])}>
+              <.link
+                :for={{tab, i} <- @tabs}
+                navigate={tab[:navigate]}
+                patch={tab[:patch]}
+                href={tab[:href]}
+                class="combo-item"
+                aria-current={tab[:active] && "page"}
+                tabindex="-1"
+                data-tab-nav-copy
+                data-index={i}
+                hidden
+                phx-mounted={keep_client_attrs(["hidden"])}
+              >
+                <span class="truncate">{render_slot(tab)}</span>
+                <span :if={tab[:count] != nil} class="ml-auto font-mono text-xs text-muted-foreground">
+                  {tab.count}
+                </span>
+              </.link>
+            </div>
+            <div
+              :if={@menu_item != []}
+              class="tab-nav-sep"
+              data-tab-nav-sep
+              hidden
+              phx-mounted={keep_client_attrs(["hidden"])}
+            >
+            </div>
+            <div
+              :for={{{group, items}, gi} <- Enum.with_index(@groups)}
+              role="group"
+              aria-labelledby={group && "#{@id}-group-#{gi}"}
+              class={gi > 0 && "tab-nav-group"}
+            >
+              <div :if={group} id={"#{@id}-group-#{gi}"} class="command-group-label">{group}</div>
+              <.link
+                :for={item <- items}
+                navigate={item[:navigate]}
+                patch={item[:patch]}
+                href={item[:href]}
+                phx-click={item[:"phx-click"]}
+                class="combo-item"
+                aria-current={item[:active] && "page"}
+                tabindex="-1"
+                data-tab-nav-entry
+              >
+                <span :if={item[:icon]} class={[item.icon, "size-4"]} aria-hidden="true"></span>
+                <span class="truncate">{render_slot(item)}</span>
+                <span :if={item[:active]} class="hero-check ml-auto size-4" aria-hidden="true"></span>
+              </.link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+    """
+  end
+
+  # Attributes the hook owns (visibility, measured state, open/closed). A
+  # LiveView patch would otherwise reset them to the server render for a frame.
+  defp keep_client_attrs(attrs), do: JS.ignore_attributes(attrs)
+
+  # Consecutive menu items with the same :group share a section, in order.
+  defp menu_groups(items) do
+    items
+    |> Enum.chunk_by(& &1[:group])
+    |> Enum.map(fn [first | _] = chunk -> {first[:group], chunk} end)
   end
 
   @doc """

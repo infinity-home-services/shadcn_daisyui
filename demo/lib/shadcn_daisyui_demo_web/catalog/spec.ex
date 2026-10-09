@@ -114,6 +114,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Spec do
       nil -> :ok
       c -> check!(is_boolean(c), "#{ctx}: example #{inspect(title)} :center must be a boolean")
     end
+
+    case Map.get(example, :resizable) do
+      nil -> :ok
+      r -> check!(is_boolean(r), "#{ctx}: example #{inspect(title)} :resizable must be a boolean")
+    end
   end
 
   defp validate_example!(_other, ctx), do: check!(false, "#{ctx}: each example must be a map")

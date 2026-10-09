@@ -24,9 +24,14 @@ like shadcn/ui. **Every UI decision goes through this package.**
 - Multi-value pickers and filters (status, labels, the data-table faceted filter) are
   `<.select multiple>` (short lists) or `<.combobox multiple>` (long lists, search).
   Never build a checkbox-dropdown by hand.
+- Rows that can outgrow their width are `<.tab_nav>` (link tabs → More menu)
+  and `<.chip_row>` (removable chips → "+N" popover). Never let a tab or chip
+  row wrap or scroll sideways, and never hand-roll an overflow menu.
+- Rows that appear and disappear in place (filter chips, inline alerts) slide
+  with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`.
 - Interactive components (combobox, select, date picker, calendar, range calendar,
-  OTP, carousel, resizable, command, context-menu, toaster) REQUIRE a unique `id`
-  attribute and the JS hooks
+  OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row)
+  REQUIRE a unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
 - Never write inline event handlers (`onclick=`, `onsubmit=`, …) or `javascript:`
@@ -67,6 +72,7 @@ Decision order:
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"` |
 | `<.command>` | `id` req. (hook), `<:trigger_label>`, `<:item group icon shortcut>` slots, ⌘K |
 | `<.tabs>` | `id` req., `<:tab label="..." checked>` slots with panel content |
+| `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible |
 | `<.breadcrumb>` | `<:item navigate={...}>` slots; last item without link = current page |
 | `<.pagination>` | `page` `total_pages` + `path={fn p -> ... end}` or `event="..."` |
 | `<.sidebar_layout>` / `<.sidebar_group>` | app shell; `<:sidebar>` slot; items with `active` |
@@ -83,6 +89,8 @@ Decision order:
 | `<.message>` / `<.message_group>` | chat turn: `align="start\|end"`, `<:avatar>` `<:header>` `<:footer>`; `role="log"` on the group for live transcripts |
 | `<.bubble>` / `<.bubble_group>` | `variant="default\|secondary\|muted\|tinted\|outline\|ghost\|destructive"`, `align`, `as="button"` for suggested replies, `<:reactions label>` |
 | `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
+| `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"` |
+| `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class` |
 | `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
@@ -137,9 +145,10 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Headings | `text-3xl font-bold tracking-tight` (h1), `text-xl font-semibold tracking-tight` (h2, often with `border-b border-border pb-2`) |
 | Secondary text | `text-sm text-muted-foreground` |
 | Page hero | `<div class="hero">`, navbar `<div class="navbar">`, footer `<footer class="footer">` |
+| Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (85 components) in the docs site (`demo/`) or
+Browse the full gallery (88 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens
@@ -188,7 +197,8 @@ Platform-portable rules (web + native iOS/iPadOS). Load-bearing values:
   prose, `text-sm` controls/UI (default), `text-xs` labels. Weights: 500 controls,
   600 titles, 700 page title only.
 - Motion: 150ms micro states, ~180ms small surfaces, 300ms sheets/drawers;
-  opacity/transform only; respect reduced motion.
+  opacity/transform only, except the 180ms row reveal (`<.reveal>`); respect
+  reduced motion.
 - Hover is an enhancement, never a requirement. Disabled = variant colors at 50%
   opacity (never grey-washed).
 

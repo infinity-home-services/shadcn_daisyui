@@ -37,6 +37,25 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   })
 }
 
+// <.reveal>: `<button data-reveal-toggle="id">` opens/closes the reveal with that
+// id (flips its data-open, mirrors aria-expanded on every toggle for it). One
+// delegated listener, so it is CSP-safe and works in dead views and LiveView.
+if (typeof window !== "undefined" && !window.__shadcnRevealToggle) {
+  window.__shadcnRevealToggle = true
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-reveal-toggle]")
+    const el = btn && document.getElementById(btn.dataset.revealToggle)
+    if (!el) return
+    const open = !el.hasAttribute("data-open")
+    el.toggleAttribute("data-open", open)
+    document.querySelectorAll("[data-reveal-toggle]").forEach((b) => {
+      if (b.dataset.revealToggle !== el.id) return
+      b.setAttribute("aria-expanded", String(open))
+      if (!b.hasAttribute("aria-controls")) b.setAttribute("aria-controls", el.id)
+    })
+  })
+}
+
 // ---- Sonner (toast) --------------------------------------------------------
 // A dependency-free port of sonner's behaviour (the toast shadcn/ui ships):
 // typed toasts with icons, description, action / cancel buttons, promise
@@ -1388,6 +1407,300 @@ function initDock(scope) {
   }
 
 
+// ---- Width-aware overflow: tab nav + chip row ------------------------------
+// Both rows render every item twice: once in the row and once (hidden) in the
+// overflow panel. Fitting only flips `hidden` on the two copies and never
+// moves server-rendered nodes, so LiveView patches stay safe (the components
+// mark those attributes with JS.ignore_attributes so a patch doesn't reset
+// them, and the hooks re-fit in updated()). Measuring and applying run in one
+// synchronous pass inside the ResizeObserver callback or updated(), before the
+// browser paints, so the row never visibly jumps.
+
+const outerW = (el) => el.getBoundingClientRect().width
+function contentW(el) {
+  const cs = getComputedStyle(el)
+  return el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+}
+const rowGap = (el) => parseFloat(getComputedStyle(el).columnGap) || 0
+
+// Which items stay in the row (indexes, ascending). Items keep their order
+// while they fit; once some don't, the overflow control (moreW wide) takes
+// their place. `pinned` (the active tab) always stays: it swaps out the last
+// visible items until it fits. `moreAlways`: the overflow control shows anyway
+// (it holds extra entries), so it always takes its space.
+function fitRow({ widths, avail, gap, moreW, moreAlways, pinned }) {
+  const span = (idx) => idx.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, idx.length - 1)
+  const withMore = (idx) => span(idx) + (idx.length ? gap : 0) + moreW
+  const fits = (w) => w <= avail + 0.5 // sub-pixel widths
+  const all = widths.map((_, i) => i)
+  if (fits(moreAlways ? withMore(all) : span(all))) return all
+  const vis = []
+  for (const i of all) {
+    if (!fits(withMore([...vis, i]))) break
+    vis.push(i)
+  }
+  if (pinned >= 0 && !vis.includes(pinned)) {
+    while (vis.length && !fits(withMore([...vis, pinned]))) vis.pop()
+    vis.push(pinned)
+  }
+  return vis
+}
+
+// A trigger + panel inside `root` (the More menu, the +N popover). Listeners
+// are delegated and nodes are looked up on use, so a patch that replaces them
+// keeps working; sync() re-applies the open state after a patch.
+function disclosure(root, sel, { flipTo, horizontal, pick }) {
+  let isOpen = false
+  const get = (s) => root.querySelector(s)
+  const items = () => [...root.querySelectorAll(sel.item)].filter((el) => el.offsetParent !== null)
+  const sync = () => {
+    const t = get(sel.trigger)
+    const p = get(sel.panel)
+    if (!t || !p) return
+    t.setAttribute("aria-expanded", String(isOpen))
+    p.hidden = !isOpen
+    if (!isOpen) return
+    // keep the panel on screen: flip its alignment when it would overflow
+    p.removeAttribute("data-align")
+    const r = p.getBoundingClientRect()
+    if (r.left < 8 || r.right > document.documentElement.clientWidth - 8) p.setAttribute("data-align", flipTo)
+  }
+  const set = (open, focus) => {
+    isOpen = open
+    sync()
+    if (!open || !focus) return
+    const list = items()
+    const el = focus === "last" ? list[list.length - 1] : list[0]
+    if (el) el.focus()
+  }
+  // e.detail === 0: keyboard activation (Enter / Space) - move into the panel.
+  // Choosing a `pick` entry (a menu link; patch links don't reload) closes it.
+  root.addEventListener("click", (e) => {
+    if (e.target.closest(sel.trigger)) set(!isOpen, e.detail === 0 && "first")
+    else if (isOpen && pick && e.target.closest(sel.panel) && e.target.closest(pick)) {
+      set(false)
+      if (e.detail === 0) { const t = get(sel.trigger); if (t) t.focus() }
+    }
+  })
+  root.addEventListener("keydown", (e) => {
+    if (e.target.closest(sel.trigger)) {
+      if (e.key === "ArrowDown") { e.preventDefault(); set(true, "first") }
+      else if (e.key === "ArrowUp") { e.preventDefault(); set(true, "last") }
+      else if (e.key === "Escape" && isOpen) { e.preventDefault(); e.stopPropagation(); set(false) }
+      return
+    }
+    if (!isOpen || !e.target.closest(sel.panel)) return
+    const list = items()
+    const i = list.indexOf(document.activeElement)
+    const go = (j) => { e.preventDefault(); if (list.length) list[(j + list.length) % list.length].focus() }
+    if (e.key === "ArrowDown" || (horizontal && e.key === "ArrowRight")) go(i + 1)
+    else if (e.key === "ArrowUp" || (horizontal && e.key === "ArrowLeft")) go(i < 0 ? list.length - 1 : i - 1)
+    else if (e.key === "Home") go(0)
+    else if (e.key === "End") go(list.length - 1)
+    else if (e.key === "Escape") {
+      // stopPropagation: don't also close a surrounding sheet / dialog
+      e.preventDefault(); e.stopPropagation(); set(false)
+      const t = get(sel.trigger)
+      if (t) t.focus()
+    }
+  })
+  root.addEventListener("focusout", (e) => {
+    if (isOpen && e.relatedTarget && !e.relatedTarget.closest(sel.wrap)) set(false)
+  })
+  // composedPath: a click that removes its own target (a chip's ×) still counts as inside
+  document.addEventListener("click", (e) => {
+    const wrap = get(sel.wrap)
+    if (isOpen && !(wrap && e.composedPath().includes(wrap))) set(false)
+  })
+  return { sync, set, isOpen: () => isOpen }
+}
+
+// <.tab_nav>: link tabs; the ones that don't fit move into the More menu.
+function initTabNav(root) {
+  if (root.__sdTabNav) return root.__sdTabNav
+  const q = (s) => root.querySelector(s)
+  const qa = (s) => [...root.querySelectorAll(s)]
+  const menu = disclosure(root, {
+    wrap: "[data-tab-nav-more]",
+    trigger: "[data-tab-nav-trigger]",
+    panel: "[data-tab-nav-menu]",
+    item: "[data-tab-nav-menu] a",
+  }, { flipTo: "start", pick: "a" })
+
+  function fit() {
+    const list = q(".tab-nav-list")
+    const tabsEl = q("[data-tab-nav-tabs]")
+    const more = q("[data-tab-nav-more]")
+    if (!list || !tabsEl || !more || !root.offsetWidth) return
+    const items = qa("[data-tab-nav-item]")
+    const extras = !!q("[data-tab-nav-entry]")
+    const focused = document.activeElement
+    // measure everything at its natural width (same task, nothing paints)
+    root.removeAttribute("data-squeezed")
+    items.forEach((el) => { el.hidden = false })
+    more.hidden = false
+    const cs = getComputedStyle(list)
+    const chrome = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) +
+      parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth)
+    const avail = contentW(root) - chrome
+    const gap = rowGap(tabsEl)
+    const widths = items.map(outerW)
+    const moreW = outerW(more)
+    const pinned = items.findIndex((el) => el.classList.contains("tab-active"))
+    const vis = fitRow({ widths, avail, gap, moreW, moreAlways: extras, pinned })
+    const shown = new Set(vis)
+    // apply
+    items.forEach((el, i) => { el.hidden = !shown.has(i) })
+    qa("[data-tab-nav-copy]").forEach((el) => { el.hidden = shown.has(Number(el.dataset.index)) })
+    const overflowed = vis.length < items.length
+    const ov = q("[data-tab-nav-overflow]")
+    if (ov) ov.hidden = !overflowed
+    const sep = q("[data-tab-nav-sep]")
+    if (sep) sep.hidden = !(overflowed && extras)
+    more.hidden = !(overflowed || extras)
+    const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
+      (more.hidden ? 0 : moreW + (vis.length ? gap : 0))
+    root.toggleAttribute("data-squeezed", used > avail + 0.5)
+    root.setAttribute("data-ready", "")
+    if (more.hidden && menu.isOpen()) menu.set(false)
+    menu.sync()
+    // a focused tab that just moved into the menu hands focus to More
+    if (focused && focused.matches("[data-tab-nav-item]") && focused.hidden && !more.hidden) {
+      q("[data-tab-nav-trigger]").focus()
+    }
+  }
+
+  // arrows across the visible tabs and the More trigger (Tab works as usual)
+  root.addEventListener("keydown", (e) => {
+    const cur = e.target.closest("[data-tab-nav-item], [data-tab-nav-trigger]")
+    if (!cur || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return
+    const stops = qa("[data-tab-nav-item], [data-tab-nav-trigger]").filter((el) => !el.closest("[hidden]"))
+    const rtl = getComputedStyle(root).direction === "rtl"
+    const i = stops.indexOf(cur)
+    const step = (e.key === "ArrowRight") !== rtl ? 1 : -1
+    const j = e.key === "Home" ? 0 : e.key === "End" ? stops.length - 1 : (i + step + stops.length) % stops.length
+    e.preventDefault()
+    stops[j].focus()
+  })
+
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => fit()) : null
+  if (ro) ro.observe(root)
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit)
+  fit()
+  const api = { refresh: fit, destroy() { if (ro) ro.disconnect() } }
+  root.__sdTabNav = api
+  return api
+}
+
+// <.chip_row>: removable chips; the ones that don't fit collapse into "+N".
+function initChipRow(root) {
+  if (root.__sdChipRow) return root.__sdChipRow
+  const q = (s) => root.querySelector(s)
+  const qa = (s) => [...root.querySelectorAll(s)]
+  const pop = disclosure(root, {
+    wrap: "[data-chip-row-more]",
+    trigger: "[data-chip-row-trigger]",
+    panel: "[data-chip-row-panel]",
+    item: "[data-chip-row-panel] [data-chip-remove]",
+  }, { flipTo: "end", horizontal: true })
+  // where focus goes after a removal: { copy, pos } (position among the visible chips)
+  let refocus = null
+
+  const setCount = (trigger, n) => {
+    trigger.setAttribute("data-count", "+" + n)
+    trigger.setAttribute("aria-label", (trigger.dataset.moreLabel || "Show {count} more").replace("{count}", n))
+  }
+  const visible = (sel) => qa(sel).filter((el) => !el.closest("[hidden]"))
+
+  function fit() {
+    const more = q("[data-chip-row-more]")
+    const trigger = q("[data-chip-row-trigger]")
+    if (!more || !trigger || !root.offsetWidth) return
+    const chips = qa("[data-chip]")
+    const actions = q("[data-chip-row-actions]")
+    root.removeAttribute("data-squeezed")
+    chips.forEach((el) => { el.hidden = false })
+    more.hidden = false
+    setCount(trigger, chips.length) // the widest label this row can need
+    const gap = rowGap(root)
+    const avail = contentW(root) - (actions ? outerW(actions) + gap : 0)
+    const widths = chips.map(outerW)
+    const moreW = outerW(more)
+    const vis = fitRow({ widths, avail, gap, moreW, moreAlways: false, pinned: -1 })
+    const shown = new Set(vis)
+    chips.forEach((el, i) => { el.hidden = !shown.has(i) })
+    const visibleIdx = new Set(vis.map((i) => chips[i].dataset.index))
+    qa("[data-chip-copy]").forEach((el) => { el.hidden = visibleIdx.has(el.dataset.index) })
+    const rest = chips.length - vis.length
+    setCount(trigger, rest)
+    more.hidden = rest === 0
+    const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
+      (rest ? moreW + (vis.length ? gap : 0) : 0)
+    root.toggleAttribute("data-squeezed", used > avail + 0.5)
+    root.setAttribute("data-ready", "")
+    if (more.hidden && pop.isOpen()) pop.set(false)
+    pop.sync()
+    restoreFocus()
+  }
+
+  // After a removal, focus the chip that took the removed one's place (or the
+  // one before it), else +N, else the last chip, else the first action.
+  function restoreFocus() {
+    if (!refocus) return
+    const a = document.activeElement
+    if (a && a !== document.body && root.contains(a)) { refocus = null; return }
+    const { copy, pos } = refocus
+    refocus = null
+    const pick = (list) => list[Math.min(pos, list.length - 1)]
+    const rowBtns = visible("[data-chip] [data-chip-remove]")
+    const copyBtns = pop.isOpen() ? visible("[data-chip-copy] [data-chip-remove]") : []
+    const trigger = q("[data-chip-row-trigger]")
+    const target = (copy ? pick(copyBtns) : pick(rowBtns)) ||
+      (trigger && !trigger.closest("[hidden]") && trigger) ||
+      rowBtns[rowBtns.length - 1] ||
+      q("[data-chip-row-actions] :is(button, a[href], input, select)")
+    if (target) target.focus()
+  }
+
+  root.addEventListener("click", (e) => {
+    // data-chip-row-clear (e.g. a "Clear all" action): cancelable chip-clear
+    const clear = e.target.closest("[data-chip-row-clear]")
+    if (clear) {
+      const allowed = root.dispatchEvent(new CustomEvent("chip-clear", { bubbles: true, cancelable: true }))
+      if (clear.hasAttribute("phx-click") || !allowed) return
+      qa("[data-chip], [data-chip-copy]").forEach((el) => el.remove())
+      fit()
+      return
+    }
+    const btn = e.target.closest("[data-chip-remove]")
+    if (!btn) return
+    const chip = btn.closest("[data-chip], [data-chip-copy]")
+    const copy = chip.hasAttribute("data-chip-copy")
+    refocus = { copy, pos: visible(copy ? "[data-chip-copy]" : "[data-chip]").indexOf(chip) }
+    const ev = new CustomEvent("chip-remove", {
+      bubbles: true,
+      cancelable: true,
+      detail: { value: chip.dataset.value == null ? null : chip.dataset.value, index: Number(chip.dataset.index) },
+    })
+    const allowed = root.dispatchEvent(ev)
+    // LiveView (phx-click) removes it on the server; the patch re-fits via updated()
+    if (btn.hasAttribute("phx-click")) return
+    if (!allowed) { refocus = null; return }
+    qa("[data-chip], [data-chip-copy]")
+      .filter((el) => el.dataset.index === chip.dataset.index)
+      .forEach((el) => el.remove())
+    fit()
+  })
+
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => fit()) : null
+  if (ro) ro.observe(root)
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit)
+  fit()
+  const api = { refresh: fit, destroy() { if (ro) ro.disconnect() } }
+  root.__sdChipRow = api
+  return api
+}
+
 // ---- Public API -----------------------------------------------------------
 
 // Switch the active theme without the light↔dark colour fade flickering.
@@ -1429,6 +1742,8 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-datatable]").forEach(initDataTable)
   root.querySelectorAll("[data-carousel]").forEach(initCarousel)
   root.querySelectorAll("[data-resizable]").forEach(initResizable)
+  root.querySelectorAll("[data-tab-nav]").forEach(initTabNav)
+  root.querySelectorAll("[data-chip-row]").forEach(initChipRow)
   initContextMenu()
   initDock(root)
 }
@@ -1455,6 +1770,18 @@ export const Hooks = {
   ShadcnDataTable: { mounted() { initDataTable(this.el) } },
   ShadcnCarousel: { mounted() { initCarousel(this.el) } },
   ShadcnResizable: { mounted() { initResizable(this.el) } },
+  // updated(): re-fit after a patch (labels, counts, the active tab or the
+  // chips may have changed); destroyed(): stop observing the row's width.
+  ShadcnTabNav: {
+    mounted() { this.api = initTabNav(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  ShadcnChipRow: {
+    mounted() { this.api = initChipRow(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
 }
 
 export { toast, showToast }

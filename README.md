@@ -8,7 +8,8 @@ It bundles:
 - **Theme CSS** - one self-contained Tailwind v4 / daisyUI v5 file. Import it and every
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
 - **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
-  stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable, …).
+  stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable,
+  tab nav, chip row, …).
 - **Function components** - `ShadcnDaisyui.Components` (`<.badge>`, `<.card>`,
   `<.dialog>`, `<.combobox>`, `<.tabs>`, `<.sidebar_layout>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,

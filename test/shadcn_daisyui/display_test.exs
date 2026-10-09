@@ -368,4 +368,92 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~ ~s(data-slot="attachment-group")
     end
   end
+
+  describe "chip_row/1" do
+    test "renders removable chips with the hook and a hidden copy each" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.chip_row id="filters" aria_label="Active filters">
+          <:chip value="status:todo" on_remove="remove">Status: Todo</:chip>
+          <:chip value="label:bug">Label: Bug</:chip>
+        </.chip_row>
+        """)
+
+      assert html =~ ~s(phx-hook="ShadcnChipRow")
+      assert html =~ ~s(role="group")
+      assert html =~ ~s(aria-label="Active filters")
+      assert length(Regex.scan(~r/data-chip[\s>]/, html)) == 2
+      assert count(html, "data-chip-copy") == 2
+      assert count(html, "badge chip badge-secondary") == 4
+      assert html =~ ~s(data-value="status:todo")
+      assert html =~ ~s(phx-click="remove")
+      assert count(html, "data-chip-remove") == 4
+      # the remove button is named "Remove" + the chip label
+      assert html =~ ~s(aria-labelledby="filters-chip-0-remove filters-chip-0-label")
+      assert html =~ ~s(id="filters-chip-0-label")
+      assert html =~ ~s(aria-controls="filters-overflow")
+      assert html =~ ~s(data-more-label="Show {count} more")
+    end
+
+    test "remove_label, removable and variant" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.chip_row id="r" variant="outline">
+          <:chip remove_label="Remove Olivia">olivia@example.com</:chip>
+          <:chip removable={false}>Locked</:chip>
+        </.chip_row>
+        """)
+
+      assert html =~ ~s(aria-label="Remove Olivia")
+      refute html =~ ~s(aria-labelledby="r-chip-0-remove)
+      # chip 1 has no remove button in the row or the copy
+      refute html =~ "r-chip-1-remove"
+      refute html =~ "r-copy-1-remove"
+      assert html =~ "badge chip badge-outline"
+    end
+
+    test "actions render in a trailing container" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.chip_row id="f">
+          <:chip>A</:chip>
+          <:action><button type="button" data-chip-row-clear>Clear all</button></:action>
+        </.chip_row>
+        """)
+
+      assert html =~ "data-chip-row-actions"
+      assert html =~ "Clear all"
+    end
+  end
+
+  describe "reveal/1" do
+    test "closed by default, data-open when open, content in the track" do
+      assigns = %{}
+      closed = render(~H|<.reveal>Row</.reveal>|)
+      open = render(~H|<.reveal open class="pt-3">Row</.reveal>|)
+
+      assert closed =~ ~s(class="reveal")
+      refute closed =~ "data-open"
+      assert closed =~ ~s(class="reveal-track")
+      refute closed =~ "phx-mounted"
+      assert open =~ "data-open"
+      assert open =~ ~s(<div class="pt-3">Row</div>)
+    end
+
+    test "client reveals keep the browser-owned data-open across patches" do
+      assigns = %{}
+      html = render(~H|<.reveal id="more" client>Row</.reveal>|)
+
+      assert html =~ ~s(id="more")
+      assert html =~ "phx-mounted"
+      assert html =~ "ignore_attrs"
+      assert html =~ "data-open"
+    end
+  end
 end

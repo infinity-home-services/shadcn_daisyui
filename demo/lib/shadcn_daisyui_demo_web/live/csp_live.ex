@@ -9,14 +9,23 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   a multiple combobox whose counts change on every tick, and a date range with
   presets. Each must stay open across patches, fire `phx-change` on every
   toggle, and adopt a server-side reset.
+
+  The width-aware rows ride the same patches: a `<.tab_nav>` whose counts
+  change width on every tick (it must re-fit without a visible jump, keep the
+  `?view=` tab visible and keep its More menu open), and a `<.chip_row>` of
+  the active filters inside a `<.reveal>` (removing a chip is a server event;
+  focus lands on its neighbour).
   """
   use ShadcnDaisyuiDemoWeb, :live_view
 
   import ShadcnDaisyui.Components.Overlay, only: [dialog: 1, sheet: 1, show_modal: 1]
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1, date_range: 1]
+  import ShadcnDaisyui.Components.Navigation, only: [tab_nav: 1]
+  import ShadcnDaisyui.Components.Display, only: [chip_row: 1, reveal: 1]
 
   @empty %{"status" => [], "labels" => [], "from" => "", "to" => ""}
   @labels ~w(bug docs feature perf security ui)
+  @views ~w(all active backlog triage review done canceled)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -25,7 +34,13 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
     {:ok,
      socket
      |> assign(ticks: 0, changes: 0, page_title: "CSP + LiveView patches", labels: @labels)
+     |> assign(views: @views, view: "all")
      |> assign_filters(@empty)}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, view: Map.get(params, "view", "all"))}
   end
 
   @impl true
@@ -34,6 +49,11 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   end
 
   def handle_event("reset", _params, socket), do: {:noreply, assign_filters(socket, @empty)}
+
+  def handle_event("remove_chip", %{"field" => field, "value" => value}, socket) do
+    params = Map.update!(socket.assigns.params, field, &List.delete(&1, value))
+    {:noreply, assign_filters(socket, params)}
+  end
 
   defp assign_filters(socket, params) do
     params =
@@ -137,7 +157,44 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
         </p>
         <pre id="params" class="rounded-md bg-muted p-3 font-mono text-xs">{inspect(@params)}</pre>
       </.form>
+
+      <.reveal id="chips-reveal" open={chips(@params) != []} class="max-w-sm">
+        <.chip_row id="lab-chips" aria-label="Active filters">
+          <:chip
+            :for={{field, value} <- chips(@params)}
+            value={"#{field}:#{value}"}
+            on_remove={JS.push("remove_chip", value: %{field: field, value: value})}
+          >
+            {String.capitalize(field)}: {value}
+          </:chip>
+          <:action>
+            <button type="button" class="btn btn-ghost btn-sm" phx-click="reset">Clear all</button>
+          </:action>
+        </.chip_row>
+      </.reveal>
+
+      <.tab_nav id="lab-views" aria-label="Views">
+        <:tab
+          :for={{v, i} <- Enum.with_index(@views)}
+          patch={~p"/lab/csp?view=#{v}"}
+          active={@view == v}
+          count={rem(@ticks * (i + 3), 1000)}
+        >
+          {String.capitalize(v)}
+        </:tab>
+        <:menu_item group="Shared" patch={~p"/lab/csp?view=bugs"} active={@view == "bugs"}>
+          Open bugs
+        </:menu_item>
+        <:menu_item patch={~p"/lab/csp"} icon="hero-cog-6-tooth">Manage views…</:menu_item>
+      </.tab_nav>
+      <p class="text-sm text-muted-foreground">
+        View: <span id="current-view" class="font-semibold">{@view}</span>
+      </p>
     </main>
     """
+  end
+
+  defp chips(params) do
+    for field <- ~w(status labels), value <- List.wrap(params[field]), do: {field, value}
   end
 end

@@ -91,7 +91,8 @@ defmodule ShadcnDaisyuiDemoWeb.Guides do
       section: :styles,
       slug: "motion",
       title: "Motion",
-      description: "Three durations, standard easing, opacity and transform only.",
+      description:
+        "Three durations, standard easing, opacity and transform, plus the row reveal.",
       source: "styles-motion.md",
       template: :styles_motion
     }

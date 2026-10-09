@@ -1,11 +1,13 @@
 defmodule ShadcnDaisyui.Components.Display do
   @moduledoc """
-  Display components: accordion, avatar, item, attachment, progress, skeleton,
-  spinner, and the toaster.
+  Display components: accordion, avatar, item, attachment, chip row, reveal,
+  progress, skeleton, spinner, and the toaster.
 
   Imported by `use ShadcnDaisyui.Components`.
   """
   use Phoenix.Component
+
+  alias Phoenix.LiveView.JS
 
   @doc """
   An accordion. One section open at a time by default (radio-based); pass
@@ -508,4 +510,214 @@ defmodule ShadcnDaisyui.Components.Display do
     <div data-slot="attachment-group" class={@class} {@rest}>{render_slot(@inner_block)}</div>
     """
   end
+
+  # ----------------------------------------------------------------------------
+  # Chip row
+  # ----------------------------------------------------------------------------
+  @chip_variants %{"secondary" => "badge-secondary", "outline" => "badge-outline"}
+
+  @doc """
+  One line of removable chips (active filters, recipients, tags) that fits its
+  width. Needs the `ShadcnChipRow` hook.
+
+  Chips that don't fit collapse into a trailing "+N" chip that opens a popover
+  listing them, each still removable. `:action` content (e.g. "Clear all")
+  always stays visible at the end of the row. The row re-fits on resize and
+  after LiveView patches.
+
+      <.chip_row id="active-filters" aria-label="Active filters">
+        <:chip :for={f <- @filters} value={f.id} on_remove={JS.push("remove_filter", value: %{id: f.id})}>
+          {f.label}
+        </:chip>
+        <:action>
+          <button type="button" class="btn btn-ghost btn-sm" phx-click="clear_filters">Clear all</button>
+        </:action>
+      </.chip_row>
+
+  Each remove button is named "Remove" plus the chip's text (override with
+  `remove_label`). Without `on_remove` (dead views, plain HTML) the hook
+  dispatches a cancelable `chip-remove` event (`detail: { value }`) from the
+  root and, unless it is prevented, removes the chip itself. Likewise a button
+  marked `data-chip-row-clear` (e.g. in `:action`) dispatches `chip-clear` and
+  removes every chip; with `phx-click` it is left to the server.
+
+  Put the row inside `reveal/1` to slide it in and out as chips come and go.
+  """
+  attr(:id, :string, required: true)
+  attr(:aria_label, :string, default: "Chips", doc: "names the group of chips")
+  attr(:variant, :string, default: "secondary", values: ~w(secondary outline))
+
+  attr(:more_label, :string,
+    default: "Show {count} more",
+    doc: "accessible name of the +N chip; {count} is replaced"
+  )
+
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+
+  slot :chip, required: true do
+    attr(:value, :any, doc: "identifies the chip in the chip-remove event")
+    attr(:on_remove, :any, doc: "phx-click for the remove button: an event name or a JS command")
+    attr(:remove_label, :string, doc: "accessible name of the remove button")
+    attr(:removable, :boolean, doc: "false hides the remove button")
+  end
+
+  slot(:action, doc: "trailing content that always stays visible, e.g. a Clear all button")
+
+  def chip_row(assigns) do
+    assigns =
+      assigns
+      |> assign(:chips, Enum.with_index(assigns.chip))
+      |> assign(:vclass, @chip_variants[assigns.variant])
+
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="ShadcnChipRow"
+      phx-mounted={keep_client_attrs(["data-ready"])}
+      data-chip-row
+      role="group"
+      aria-label={@aria_label}
+      class={["chip-row", @class]}
+      {@rest}
+    >
+      <ul class="chip-row-chips" data-chip-row-chips>
+        <.chip
+          :for={{chip, i} <- @chips}
+          chip={chip}
+          id={"#{@id}-chip-#{i}"}
+          index={i}
+          vclass={@vclass}
+          data-chip
+        />
+      </ul>
+      <div class="chip-row-more" data-chip-row-more hidden phx-mounted={keep_client_attrs(["hidden"])}>
+        <button
+          type="button"
+          class="badge badge-outline chip chip-more"
+          aria-expanded="false"
+          aria-controls={"#{@id}-overflow"}
+          data-chip-row-trigger
+          data-more-label={@more_label}
+          phx-mounted={keep_client_attrs(["aria-expanded", "aria-label", "data-count"])}
+        >
+        </button>
+        <div
+          id={"#{@id}-overflow"}
+          class="popover-panel chip-row-panel"
+          data-chip-row-panel
+          hidden
+          phx-mounted={keep_client_attrs(["hidden"])}
+        >
+          <ul class="flex flex-wrap gap-2" aria-label={@aria_label}>
+            <.chip
+              :for={{chip, i} <- @chips}
+              chip={chip}
+              id={"#{@id}-copy-#{i}"}
+              index={i}
+              vclass={@vclass}
+              hidden
+              data-chip-copy
+            />
+          </ul>
+        </div>
+      </div>
+      <div :if={@action != []} class="chip-row-actions" data-chip-row-actions>
+        {render_slot(@action)}
+      </div>
+    </div>
+    """
+  end
+
+  attr(:chip, :map, required: true)
+  attr(:id, :string, required: true)
+  attr(:index, :integer, required: true)
+  attr(:vclass, :string, required: true)
+  attr(:hidden, :boolean, default: false)
+  attr(:rest, :global, include: ~w(data-chip data-chip-copy))
+
+  defp chip(assigns) do
+    ~H"""
+    <li
+      class={["badge chip", @vclass]}
+      data-index={@index}
+      data-value={@chip[:value]}
+      hidden={@hidden}
+      phx-mounted={keep_client_attrs(["hidden"])}
+      {@rest}
+    >
+      <span id={"#{@id}-label"} class="chip-label">{render_slot(@chip)}</span>
+      <button
+        :if={@chip[:removable] != false}
+        type="button"
+        id={"#{@id}-remove"}
+        class="chip-remove"
+        aria-label={@chip[:remove_label] || "Remove"}
+        aria-labelledby={!@chip[:remove_label] && "#{@id}-remove #{@id}-label"}
+        phx-click={@chip[:on_remove]}
+        data-chip-remove
+      >
+        <span class="hero-x-mark size-3" aria-hidden="true"></span>
+      </button>
+    </li>
+    """
+  end
+
+  # ----------------------------------------------------------------------------
+  # Reveal
+  # ----------------------------------------------------------------------------
+  @doc """
+  Slides a row open and closed: `grid-template-rows` 0fr ↔ 1fr plus opacity,
+  ~180ms ease-out, instant under reduced motion. For rows that appear and
+  disappear in place (a filter chip row, an inline alert, a bulk-action bar).
+  Closed content is hidden from assistive tech and the tab order.
+
+      <.reveal open={@filters != []}>
+        <.chip_row id="active-filters">…</.chip_row>
+      </.reveal>
+
+  The server owns `open`: flipping it in an assign animates the row. To toggle
+  from the client instead, give the reveal an `id` and point a button at it
+  with `data-reveal-toggle` (handled by `shadcn-daisyui.js`, also sets
+  `aria-expanded`); pass `client` so LiveView patches keep the toggled state.
+
+      <button type="button" class="btn btn-outline" data-reveal-toggle="more-options" aria-expanded="false">
+        More options
+      </button>
+      <.reveal id="more-options" client>…</.reveal>
+
+  Spacing belongs inside (`class="pt-4"`), not on the parent (`space-y-*` /
+  `gap-*` would keep the gap while closed).
+
+  Without the component:
+  `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>`.
+  """
+  attr(:id, :string, default: nil)
+  attr(:open, :boolean, default: false)
+
+  attr(:client, :boolean,
+    default: false,
+    doc: "the browser owns data-open (data-reveal-toggle / JS.toggle_attribute)"
+  )
+
+  attr(:class, :any, default: nil, doc: "classes for the inner content wrapper")
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  def reveal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class="reveal"
+      data-open={@open}
+      phx-mounted={@client && keep_client_attrs(["data-open"])}
+      {@rest}
+    >
+      <div class="reveal-track"><div class={@class}>{render_slot(@inner_block)}</div></div>
+    </div>
+    """
+  end
+
+  # Attributes the hooks own; a LiveView patch would otherwise reset them.
+  defp keep_client_attrs(attrs), do: JS.ignore_attributes(attrs)
 end

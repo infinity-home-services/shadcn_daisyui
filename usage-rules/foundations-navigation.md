@@ -17,6 +17,11 @@ Where navigation lives at each window size class, and how deep structures travel
   may hold secondary items (settings, account) - not the main sections.
 - One primary navigation surface per screen. Tabs within a page are for peer
   content views, not navigation - and never nest tab bars.
+- In-page rows of link tabs (saved views, filters, settings sections) are
+  `<.tab_nav>`: tabs that don't fit move, in order, into a trailing More menu,
+  and the current tab always stays visible. Never wrap a tab row to two lines
+  or scroll it sideways. [ios] A segmented `Picker` for 2-4 views, else one
+  `Menu` labelled with the current view.
 - Breadcrumbs appear at medium and expanded only, never on compact.
 - Keep destination order, icons, and labels identical across platforms - the web
   bottom dock and the iOS tab bar should read the same.

@@ -18,6 +18,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
 
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
+  alias ShadcnDaisyuiDemoWeb.Catalog.Overflow
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
   alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
@@ -28,7 +29,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       title: "Forms & inputs",
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
-                date-picker date-range-picker range-calendar multi-select rating filter validator)
+                date-picker date-range-picker range-calendar multi-select chip-row rating filter
+                validator)
     },
     %{
       title: "Actions",
@@ -36,7 +38,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     },
     %{
       title: "Navigation",
-      slugs: ~w(breadcrumb pagination tabs navigation-menu menubar sidebar dock link steps navbar)
+      slugs:
+        ~w(breadcrumb pagination tabs tab-nav navigation-menu menubar sidebar dock link steps navbar)
     },
     %{
       title: "Overlays",
@@ -58,7 +61,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     },
     %{
       title: "Layout",
-      slugs: ~w(separator aspect-ratio scroll-area resizable empty stack footer hero typography
+      slugs:
+        ~w(separator aspect-ratio scroll-area resizable reveal empty stack footer hero typography
                 mockup mask)
     }
   ]
@@ -99,7 +103,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   def components do
     enrichment = Enrichment.all()
 
-    for c <- all() ++ Composition.all() ++ Pickers.all(), into: %{} do
+    for c <- all() ++ Composition.all() ++ Pickers.all() ++ Overflow.all(), into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
       {c.slug, Spec.new!(spec)}
     end
@@ -799,11 +803,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           ],
           avoid_when: [
             "Primary app navigation - that's the dock/navbar/sidebar's job",
-            "Sequential steps - use steps + explicit next/back actions"
+            "Sequential steps - use steps + explicit next/back actions",
+            "Tabs that are links (views, settings sections) or may not fit - use <.tab_nav>, which overflows into a More menu"
           ],
           sizing: "Tab triggers are h-7 text-sm inside the boxed list; don't restyle.",
           responsive:
-            "Tabs stay horizontal at all widths; if labels crowd on compact, shorten the labels - never wrap to two rows or scroll.",
+            "Tabs stay horizontal at all widths; if labels crowd on compact, shorten the labels - never wrap to two rows or scroll. A row that can outgrow its width is <.tab_nav>.",
           ios:
             "A segmented Picker (.pickerStyle(.segmented)) for 2-4 peers; never a nested TabView."
         },

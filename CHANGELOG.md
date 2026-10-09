@@ -8,6 +8,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-09
+
+Width-aware rows and a sanctioned collapsing-row animation. New docs pages:
+**Tab Nav** (`/docs/components/tab-nav`), **Chip Row** (`/docs/components/chip-row`)
+and **Reveal** (`/docs/components/reveal`), each with specs, accessibility and
+SwiftUI notes. Overflow examples get a preview-width slider.
+
+### Added
+
+- **`<.tab_nav>`** (`ShadcnTabNav` hook): a row of link tabs (`navigate` /
+  `patch` / `href`, optional `count` pill, `active`) in the boxed tabs look.
+  Tabs show while they fit; the ones that would be squeezed move, in order,
+  into a trailing More menu (floating-content panel). `:menu_item` slots add
+  extra entries (`group` sections such as "Mine" / "Shared", `icon`, `active`),
+  e.g. "Manage views…". The active tab always stays visible, swapping out the
+  last visible one; an active `:menu_item` names the More trigger ("More: Open
+  bugs"). Re-fits on resize (ResizeObserver), after web fonts load and after
+  LiveView patches (`updated()`), in one pass before paint, so the row never
+  jumps; until the hook has measured, tabs clip instead of wrapping. Keyboard:
+  Left / Right / Home / End across the tabs and into More, Down / Enter / Space
+  opens the menu and focuses its first link, arrows inside, Esc returns to More
+  (without closing a surrounding sheet). `<nav aria-label>` + `aria-current`,
+  disclosure button (`aria-expanded`, `aria-controls`); 40px tabs and 44px
+  menu rows on touch.
+- **`<.chip_row>`** (`ShadcnChipRow` hook): one line of removable badge chips
+  (`<:chip value on_remove remove_label removable>`, `variant="secondary|outline"`).
+  Chips that don't fit collapse into a "+N" chip (named "Show N more") that
+  opens a popover listing them, each still removable; `<:action>` content (e.g.
+  "Clear all") always keeps its space. Remove buttons are named "Remove" plus
+  the chip text. In LiveView `on_remove` is a `phx-click`; without it the hook
+  dispatches a cancelable `chip-remove` event (`{ value, index }`) and removes
+  the chip itself, and `data-chip-row-clear` buttons do the same for every chip
+  (`chip-clear`). After a removal focus moves to the chip that took its place,
+  then +N, then the last chip. 32px chips and 44px hit areas on touch.
+- **`<.reveal open>`** and the `.reveal` / `.reveal-track` recipe: slides a row
+  open and closed with `grid-template-rows` 0fr ↔ 1fr plus opacity, 180ms
+  ease-out, no transition under reduced motion. Closed content is
+  `visibility: hidden` (out of the tab order and the a11y tree); once open the
+  track stops clipping, so a popover inside (the chip row's +N) isn't cut off.
+  The server owns `open`; for client toggles, `<button data-reveal-toggle="id">`
+  (CSP-safe delegated listener, sets `aria-expanded` / `aria-controls`) with
+  `client` on the reveal so patches keep its state.
+- `/lab/csp` now exercises the tab nav (counts change width every tick, a
+  `?view=` patch per tab) and a chip row of the active filters inside a reveal
+  (server-side removal).
+
+### Changed
+
+- **Motion rules** (`usage-rules/styles-motion.md`): the collapsing-row reveal
+  is the one sanctioned layout animation, for rows that appear and disappear in
+  the page flow (filter chips, inline alerts, bulk-action bars), the way the
+  accordion / collapse already animates. New "row reveal" tier in the table and
+  on the Motion guide page, with a live sample.
+- **Navigation rules**: in-page link-tab rows are `<.tab_nav>`; tab rows never
+  wrap or scroll. `usage-rules.md` gains the three components, the reveal
+  recipe and the non-negotiables for overflowing and collapsing rows.
+
 ## [0.7.0] - 2026-10-09
 
 Multi-select and form-bound date ranges, matching shadcn-svelte (bits-ui
