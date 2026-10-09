@@ -297,6 +297,209 @@ defmodule ShadcnDaisyui.ComponentsTest do
     end
   end
 
+  describe "select/1 and combobox/1 with multiple" do
+    defp form_field(name, value, errors \\ []) do
+      form = Phoenix.Component.to_form(%{name => value}, as: :filters, errors: errors)
+      form[String.to_atom(name)]
+    end
+
+    test "renders checkbox rows, counts, a hidden Clear row and the multiselect listbox" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="status" multiple placeholder="Status">
+          <:option value="todo" count={12}>Todo</:option>
+          <:option value="done">Done</:option>
+        </.select>
+        """)
+
+      assert html =~ "data-multiple"
+      assert html =~ ~s(aria-multiselectable="true")
+      assert count(html, ~s(class="facet-check")) == 2
+      assert html =~ ~s(<span class="ml-auto font-mono text-xs text-muted-foreground">12</span>)
+      assert html =~ "data-select-clear-btn"
+
+      assert html =~
+               ~r/class="-mx-1 mt-1 border-t border-border px-1 pt-1 hidden" data-select-clear/
+
+      assert html =~ "Status"
+      refute html =~ "data-select-sentinel"
+    end
+
+    test "emits a sentinel plus one name[] input per selected value" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="status" name="filters[status]" value={["todo", :done]} multiple>
+          <:option value="todo">Todo</:option>
+          <:option value="done">Done</:option>
+          <:option value="canceled">Canceled</:option>
+        </.select>
+        """)
+
+      assert html =~ ~s(type="hidden" name="filters[status]" value="" data-select-sentinel)
+      assert html =~ ~s(name="filters[status][]" value="todo" data-select-value)
+      assert html =~ ~s(name="filters[status][]" value="done" data-select-value)
+      refute html =~ ~s(value="canceled" data-select-value)
+      assert count(html, "data-selected") == 2
+      assert count(html, ~s(aria-selected="true")) == 2
+      # server-rendered trigger label: both labels, no "+N"
+      assert html =~ ~s(<span class="truncate">Todo, Done</span>)
+      refute html =~ "sr-only"
+    end
+
+    test "trigger shows two labels then +N" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="s" value={~w(a b c d)} multiple>
+          <:option value="a">A</:option>
+          <:option value="b">B</:option>
+          <:option value="c">C</:option>
+          <:option value="d">D</:option>
+        </.select>
+        """)
+
+      assert html =~ ~s(<span class="truncate">A, B</span>)
+      assert html =~ ~r/\+2<span class="sr-only"> more<\/span>/
+    end
+
+    test "a trailing [] in name is normalised" do
+      assigns = %{}
+
+      html =
+        render(
+          ~H|<.select id="s" name="tags[]" multiple><:option value="a">A</:option></.select>|
+        )
+
+      assert html =~ ~s(name="tags" value="" data-select-sentinel)
+    end
+
+    test "field derives name, value and the trigger id" do
+      assigns = %{field: form_field("status", ["done"])}
+
+      html =
+        render(~H"""
+        <.select id="status-select" field={@field} multiple>
+          <:option value="todo">Todo</:option>
+          <:option value="done">Done</:option>
+        </.select>
+        """)
+
+      assert html =~ ~s(name="filters[status]" value="" data-select-sentinel)
+      assert html =~ ~s(name="filters[status][]" value="done" data-select-value)
+      assert html =~ ~s(id="filters_status")
+    end
+
+    test "a field with errors marks the trigger aria-invalid once used" do
+      form =
+        Phoenix.Component.to_form(%{"status" => []},
+          as: :f,
+          errors: [status: {"can't be blank", []}],
+          action: :validate
+        )
+
+      assigns = %{field: form[:status]}
+
+      html =
+        render(
+          ~H|<.select id="s" field={@field} multiple><:option value="a">A</:option></.select>|
+        )
+
+      assert html =~ ~s(aria-invalid="true")
+    end
+
+    test "single-value field binding" do
+      assigns = %{field: form_field("fruit", "Banana")}
+
+      html =
+        render(~H"""
+        <.select id="fruit" field={@field}>
+          <:option value="Apple">Apple</:option>
+          <:option value="Banana">Banana</:option>
+        </.select>
+        """)
+
+      assert html =~ ~s(name="filters[fruit]" value="Banana" data-select-input)
+      assert html =~ ~s(<span class="truncate">Banana</span>)
+      refute html =~ "data-multiple"
+    end
+
+    test "combobox multiple keeps the search box and renders checkbox rows" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.combobox id="labels" name="labels" multiple value={["bug"]} search_placeholder="Filter labels…">
+          <:option value="bug" count={3}>Bug</:option>
+          <:option value="docs">Docs</:option>
+        </.combobox>
+        """)
+
+      assert html =~ ~s(phx-hook="ShadcnCombobox")
+      assert html =~ ~s(placeholder="Filter labels…")
+      assert html =~ "data-combobox-sentinel"
+      assert html =~ ~s(name="labels[]" value="bug" data-combobox-value)
+      assert html =~ "data-combobox-clear-btn"
+      assert count(html, ~s(class="facet-check")) == 2
+    end
+
+    test "full_width replaces the default width" do
+      assigns = %{}
+      html = render(~H|<.select id="s" full_width><:option value="a">A</:option></.select>|)
+      assert html =~ ~s(class="relative w-full")
+      assert html =~ "data-full-width"
+      html = render(~H|<.select id="s"><:option value="a">A</:option></.select>|)
+      assert html =~ ~s(class="relative w-60")
+    end
+  end
+
+  describe "date_range/1 form binding" do
+    test "emits ISO hidden inputs, data-start/end and a server-rendered label" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.date_range
+          id="period"
+          start_name="report[from]"
+          end_name="report[to]"
+          start={~D[2026-10-04]}
+          end="2026-10-11"
+        />
+        """)
+
+      assert html =~ ~s(name="report[from]" value="2026-10-04" data-range-start)
+      assert html =~ ~s(name="report[to]" value="2026-10-11" data-range-end)
+      assert html =~ ~s(data-start="2026-10-04")
+      assert html =~ "Oct 4 – Oct 11, 2026"
+      assert html =~ ~s(id="period-calendar" phx-update="ignore" data-calendar-range)
+    end
+
+    test "renders presets with ISO data attributes" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.date_range id="period">
+          <:preset label="Last 7 days" start={~D[2026-10-03]} end={~D[2026-10-09]} />
+          <:preset label="Last 30 days" days={30} />
+        </.date_range>
+        """)
+
+      assert html =~ ~s(data-days="30")
+
+      assert html =~ "data-daterange-preset"
+      assert html =~ ~s(data-start="2026-10-03")
+      assert html =~ ~s(data-end="2026-10-09")
+      assert html =~ "Last 7 days"
+      refute html =~ "data-range-start"
+    end
+  end
+
   describe "input_otp/1" do
     test "renders default 6 slots with a separator every 3" do
       assigns = %{}

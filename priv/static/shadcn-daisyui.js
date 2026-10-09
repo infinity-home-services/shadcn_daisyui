@@ -465,172 +465,275 @@ function initDock(scope) {
   })
 }
 
-  function initCombobox(root) {
-    const trigger = root.querySelector("[data-combobox-trigger]")
-    const panel = root.querySelector("[data-combobox-panel]")
-    const search = root.querySelector("[data-combobox-search]")
-    const label = root.querySelector("[data-combobox-label]")
-    const empty = root.querySelector("[data-combobox-empty]")
-    const list = root.querySelector("[data-combobox-list]")
-    const items = [...root.querySelectorAll(".combo-item")]
-
-    // a11y: name the widget, expose listbox + option roles and selection state
-    if (!root.id) root.id = "sd-cb-" + (++a11yUid)
-    const listId = root.id + "-list"
-    if (list) { list.id = listId; list.setAttribute("role", "listbox") }
-    trigger.setAttribute("aria-haspopup", "listbox")
-    trigger.setAttribute("aria-expanded", "false")
-    trigger.setAttribute("aria-controls", listId)
-    if (search) {
-      search.setAttribute("role", "combobox")
-      search.setAttribute("aria-controls", listId)
-      search.setAttribute("aria-expanded", "true")
-      search.setAttribute("aria-autocomplete", "list")
-      if (!search.getAttribute("aria-label")) search.setAttribute("aria-label", "Search options")
+  // Server/echo reconciliation for hook-driven form controls. A LiveView patch
+  // re-renders the server's opinion of the value; `changed()` tells a genuine
+  // server change (a reset, a cap) apart from the echo of a value we emitted
+  // ourselves, so fast toggling never snaps back to a stale echo.
+  function serverValue(read) {
+    let last = read()
+    const sent = []
+    return {
+      initial: last,
+      sent(key) { sent.push(key); if (sent.length > 50) sent.shift() },
+      changed() {
+        const now = read()
+        if (now === last) return null
+        last = now
+        const i = sent.indexOf(now)
+        if (i >= 0) { sent.splice(0, i + 1); return null }
+        sent.length = 0
+        return now
+      },
     }
-    items.forEach((it, i) => {
-      it.id = listId + "-opt-" + i
-      it.setAttribute("role", "option")
-      it.setAttribute("aria-selected", "false")
-    })
-
-    let active = -1
-    const visible = () => items.filter((it) => !it.parentElement.classList.contains("hidden"))
-    const setActive = (i) => {
-      const vis = visible()
-      items.forEach((it) => it.classList.remove("bg-accent", "text-accent-foreground"))
-      if (!vis.length) { active = -1; search && search.removeAttribute("aria-activedescendant"); return }
-      active = (i + vis.length) % vis.length
-      const el = vis[active]
-      el.classList.add("bg-accent", "text-accent-foreground")
-      el.scrollIntoView({ block: "nearest" })
-      search && search.setAttribute("aria-activedescendant", el.id)
-    }
-    const open = (o) => {
-      panel.classList.toggle("hidden", !o)
-      trigger.setAttribute("aria-expanded", String(o))
-      if (o) { search.value = ""; filter(""); setActive(0); search.focus() }
-    }
-    const filter = (q) => {
-      const ql = q.toLowerCase()
-      let n = 0
-      items.forEach((it) => {
-        const m = it.dataset.value.toLowerCase().includes(ql)
-        it.parentElement.classList.toggle("hidden", !m)
-        if (m) n++
-      })
-      empty.classList.toggle("hidden", n > 0)
-      setActive(0)
-    }
-    const hidden = root.querySelector("[data-combobox-input]")
-    const apply = (it, emit) => {
-      label.textContent = it.dataset.value
-      label.classList.remove("text-muted-foreground")
-      items.forEach((x) => {
-        x.setAttribute("aria-selected", "false")
-        const c = x.querySelector("span"); if (c) c.classList.add("opacity-0")
-      })
-      it.setAttribute("aria-selected", "true")
-      const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
-      if (hidden) {
-        hidden.value = it.dataset.value
-        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
-      }
-    }
-    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
-    // Reflect a preselected value (e.g. an edit form) on mount — no event.
-    if (hidden && hidden.value) {
-      const match = items.find((it) => it.dataset.value === hidden.value)
-      if (match) apply(match, false)
-    }
-    trigger.addEventListener("click", () => open(panel.classList.contains("hidden")))
-    search.addEventListener("input", () => filter(search.value))
-    search.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
-      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
-      else if (e.key === "Enter") { e.preventDefault(); const v = visible(); if (v[active]) choose(v[active]) }
-      else if (e.key === "Escape") { open(false); trigger.focus() }
-    })
-    items.forEach((it) => it.addEventListener("click", () => choose(it)))
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) open(false) })
   }
 
-  function initSelect(root) {
-    if (!root.id) root.id = "sd-sel-" + (++a11yUid)
-    const trigger = root.querySelector("[data-select-trigger]")
-    const panel = root.querySelector("[data-select-panel]")
-    const label = root.querySelector("[data-select-label]")
-    const items = [...root.querySelectorAll("[data-select-item]")]
-    if (!trigger || !panel) return
+  const emitChange = (input) =>
+    ["input", "change"].forEach((t) => input.dispatchEvent(new Event(t, { bubbles: true })))
 
+  // Select + Combobox, single or multiple (`data-multiple` on the root). `p` is
+  // the data-attribute prefix: "select" | "combobox". All state lives here and
+  // sync() writes it to the DOM, so the hook's updated() can restore an open
+  // list, the label, the checks and the hidden inputs after a LiveView patch
+  // re-renders the server markup. Every listener is delegated on the root, so
+  // options the server adds or replaces keep working.
+  function initPicker(root, p) {
+    if (root.__sdPicker) return root.__sdPicker
+    const q = (part) => root.querySelector("[data-" + p + "-" + part + "]")
+    if (!q("trigger") || !q("panel")) return null
+    const multiple = root.hasAttribute("data-multiple")
+    const itemSel = p === "select" ? "[data-select-item]" : ".combo-item[data-value]"
+    if (!root.id) root.id = "sd-" + p + "-" + (++a11yUid)
     const listId = root.id + "-list"
-    panel.id = listId
-    panel.setAttribute("role", "listbox")
-    trigger.setAttribute("aria-haspopup", "listbox")
-    trigger.setAttribute("aria-expanded", "false")
-    trigger.setAttribute("aria-controls", listId)
-    items.forEach((it, i) => {
-      it.id = listId + "-opt-" + i
-      it.setAttribute("role", "option")
-      it.setAttribute("aria-selected", "false")
-    })
+    const items = () => [...root.querySelectorAll(itemSel)]
+    const text = (it) => ((it.querySelector("[data-label]") || it).textContent || "").trim()
+    const label0 = q("label")
+    const placeholder = root.dataset.placeholder ?? (label0 ? label0.textContent.trim() : "")
+    const row = (it) => (it.parentElement && it.parentElement.tagName === "LI" ? it.parentElement : it)
 
-    let active = -1
-    const isOpen = () => !panel.classList.contains("hidden")
-    const setActive = (i) => {
-      items.forEach((it) => it.classList.remove("bg-accent", "text-accent-foreground"))
-      if (!items.length) { active = -1; return }
-      active = (i + items.length) % items.length
-      const el = items[active]
-      el.classList.add("bg-accent", "text-accent-foreground")
-      el.scrollIntoView({ block: "nearest" })
-      trigger.setAttribute("aria-activedescendant", el.id)
+    // the server's value: options it marked data-selected, else the hidden inputs
+    const readServer = () => {
+      let v = items().filter((it) => it.hasAttribute("data-selected")).map((it) => it.dataset.value)
+      if (!v.length) {
+        v = [...root.querySelectorAll("[data-" + p + "-input], [data-" + p + "-value]")].map((i) => i.value).filter(Boolean)
+      }
+      return JSON.stringify(multiple ? [...new Set(v)].sort() : v.slice(0, 1))
     }
-    const open = (o) => {
-      panel.classList.toggle("hidden", !o)
-      trigger.setAttribute("aria-expanded", String(o))
-      if (o) {
-        const sel = items.findIndex((it) => it.getAttribute("aria-selected") === "true")
-        setActive(sel >= 0 ? sel : 0)
-      } else {
-        trigger.removeAttribute("aria-activedescendant")
+    const server = serverValue(readServer)
+    const ordered = (vals) => {
+      const order = items().map((it) => it.dataset.value)
+      const rank = (v) => { const i = order.indexOf(v); return i < 0 ? order.length : i }
+      return [...new Set(vals)].sort((a, b) => rank(a) - rank(b))
+    }
+    let selected = ordered(JSON.parse(server.initial))
+    let isOpen = false, query = "", activeValue = null
+
+    const matches = (it) => !query || (text(it) + " " + it.dataset.value).toLowerCase().includes(query.toLowerCase())
+    const visible = () => items().filter(matches)
+    const activeEl = () => visible().find((it) => it.dataset.value === activeValue)
+
+    const renderLabel = () => {
+      const lab = q("label")
+      if (!lab) return
+      const chosen = items().filter((it) => selected.includes(it.dataset.value))
+      lab.classList.toggle("text-muted-foreground", chosen.length === 0)
+      if (!chosen.length) { lab.textContent = placeholder; return }
+      const t = document.createElement("span")
+      t.className = "truncate"
+      t.textContent = chosen.slice(0, multiple ? 2 : 1).map(text).join(", ")
+      lab.replaceChildren(t)
+      if (multiple && chosen.length > 2) {
+        const more = document.createElement("span")
+        more.className = "shrink-0 text-muted-foreground"
+        more.textContent = "+" + (chosen.length - 2)
+        const sr = document.createElement("span")
+        sr.className = "sr-only"; sr.textContent = " more"
+        more.appendChild(sr)
+        lab.appendChild(more)
       }
     }
-    const hidden = root.querySelector("[data-select-input]")
-    const apply = (it, emit) => {
-      label.textContent = it.dataset.value
-      label.classList.remove("text-muted-foreground")
-      items.forEach((x) => {
-        x.setAttribute("aria-selected", "false")
-        const c = x.querySelector("span"); if (c) c.classList.add("opacity-0")
+
+    const writeInputs = () => {
+      const single = q("input")
+      if (single) single.value = selected[0] || ""
+      const sentinel = q("sentinel")
+      if (!sentinel) return
+      const cur = [...root.querySelectorAll("input[data-" + p + "-value]")]
+      if (cur.map((i) => i.value).join("\u0000") === selected.join("\u0000")) return
+      cur.forEach((i) => i.remove())
+      let after = sentinel
+      selected.forEach((v) => {
+        const i = document.createElement("input")
+        i.type = "hidden"; i.name = sentinel.name + "[]"; i.value = v; i.disabled = sentinel.disabled
+        i.setAttribute("data-" + p + "-value", "")
+        after.after(i); after = i
       })
-      it.setAttribute("aria-selected", "true")
-      const chk = it.querySelector("span"); if (chk) chk.classList.remove("opacity-0")
-      if (hidden) {
-        hidden.value = it.dataset.value
-        if (emit) ["input", "change"].forEach((t) => hidden.dispatchEvent(new Event(t, { bubbles: true })))
+    }
+
+    const sync = () => {
+      const trigger = q("trigger"), panel = q("panel"), list = q("list") || panel, search = q("search")
+      list.id = listId
+      list.setAttribute("role", "listbox")
+      if (multiple) list.setAttribute("aria-multiselectable", "true")
+      panel.classList.toggle("hidden", !isOpen)
+      if (p === "select") trigger.setAttribute("role", "combobox")
+      trigger.setAttribute("aria-haspopup", "listbox")
+      trigger.setAttribute("aria-expanded", String(isOpen))
+      trigger.setAttribute("aria-controls", listId)
+      if (search) {
+        search.setAttribute("role", "combobox")
+        search.setAttribute("aria-controls", listId)
+        search.setAttribute("aria-expanded", String(isOpen))
+        search.setAttribute("aria-autocomplete", "list")
+        if (!search.getAttribute("aria-label")) search.setAttribute("aria-label", "Search options")
+        if (search.value !== query) search.value = query
+      }
+      let shown = 0
+      items().forEach((it, i) => {
+        const on = selected.includes(it.dataset.value)
+        it.id = listId + "-opt-" + i
+        it.setAttribute("role", "option")
+        it.setAttribute("aria-selected", String(on))
+        it.tabIndex = -1
+        const chk = it.querySelector(":scope > .hero-check")
+        if (chk) chk.classList.toggle("opacity-0", !on)
+        const m = matches(it)
+        row(it).classList.toggle("hidden", !m)
+        if (m) shown++
+      })
+      const empty = q("empty")
+      if (empty) empty.classList.toggle("hidden", shown > 0)
+      const clear = q("clear")
+      if (clear) clear.classList.toggle("hidden", selected.length === 0)
+      let act = isOpen ? activeEl() : null
+      if (isOpen && !act) { act = visible()[0] || null; activeValue = act ? act.dataset.value : null }
+      items().forEach((it) => it.classList.toggle("is-active", it === act))
+      const owner = search || trigger
+      if (act) owner.setAttribute("aria-activedescendant", act.id)
+      else owner.removeAttribute("aria-activedescendant")
+      renderLabel()
+      writeInputs()
+    }
+
+    const emit = () => {
+      server.sent(JSON.stringify([...selected].sort()))
+      const target = q("sentinel") || q("input")
+      if (target) emitChange(target)
+      root.dispatchEvent(new CustomEvent(p + "-change", {
+        bubbles: true,
+        detail: { value: multiple ? [...selected] : selected[0] || null },
+      }))
+    }
+
+    const open = (o) => {
+      if (o === isOpen) return
+      isOpen = o
+      if (o) {
+        query = ""
+        const first = items().find((it) => selected.includes(it.dataset.value))
+        activeValue = first ? first.dataset.value : null
+      }
+      sync()
+      if (o) {
+        const search = q("search")
+        if (search) search.focus()
+        const a = activeEl(); if (a) a.scrollIntoView({ block: "nearest" })
       }
     }
-    const choose = (it) => { apply(it, true); open(false); trigger.focus() }
-    // Reflect a preselected value (e.g. an edit form) on mount — no event.
-    if (hidden && hidden.value) {
-      const match = items.find((it) => it.dataset.value === hidden.value)
-      if (match) apply(match, false)
+
+    const toggle = (it) => {
+      const v = it.dataset.value
+      activeValue = v
+      if (multiple) {
+        selected = ordered(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])
+        sync(); emit()
+      } else {
+        const changed = selected[0] !== v
+        selected = [v]
+        isOpen = false
+        sync(); if (changed) emit()
+        q("trigger").focus()
+      }
     }
-    trigger.addEventListener("click", () => open(!isOpen()))
-    trigger.addEventListener("keydown", (e) => {
-      if (!isOpen()) {
-        if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) { e.preventDefault(); open(true) }
+
+    const clear = () => {
+      if (!selected.length) return
+      selected = []
+      sync(); emit()
+      ;(q("search") || q("trigger")).focus()
+    }
+
+    const move = (to) => {
+      const vis = visible()
+      if (!vis.length) return
+      const i = vis.findIndex((it) => it.dataset.value === activeValue)
+      const n = to === "first" ? 0 : to === "last" ? vis.length - 1 : i < 0 ? 0 : (i + to + vis.length) % vis.length
+      activeValue = vis[n].dataset.value
+      sync()
+      vis[n].scrollIntoView({ block: "nearest" })
+    }
+
+    root.addEventListener("keydown", (e) => {
+      const fromSearch = e.target.matches("[data-" + p + "-search]")
+      if (!fromSearch && !e.target.matches("[data-" + p + "-trigger]")) return
+      if (!isOpen) {
+        if (!fromSearch && ["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) { e.preventDefault(); open(true) }
         return
       }
-      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
-      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
-      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (items[active]) choose(items[active]) }
-      else if (e.key === "Escape") { e.preventDefault(); open(false) }
+      switch (e.key) {
+        case "ArrowDown": e.preventDefault(); move(1); break
+        case "ArrowUp": e.preventDefault(); move(-1); break
+        case "Home": if (!fromSearch) { e.preventDefault(); move("first") } break
+        case "End": if (!fromSearch) { e.preventDefault(); move("last") } break
+        case "Enter": e.preventDefault(); if (activeEl()) toggle(activeEl()); break
+        case " ": if (!fromSearch) { e.preventDefault(); if (activeEl()) toggle(activeEl()) } break
+        // preventDefault also stops Esc from closing a surrounding <dialog> (sheet)
+        case "Escape": e.preventDefault(); e.stopPropagation(); open(false); q("trigger").focus(); break
+        case "Tab": if (!multiple) open(false); break
+      }
     })
-    items.forEach((it) => it.addEventListener("click", () => choose(it)))
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) open(false) })
+    // keep focus on the trigger / search box while clicking rows
+    root.addEventListener("mousedown", (e) => {
+      if (e.target.closest(itemSel + ", [data-" + p + "-clear-btn]")) e.preventDefault()
+    })
+    root.addEventListener("click", (e) => {
+      if (e.target.closest("[data-" + p + "-trigger]")) { open(!isOpen); return }
+      const it = e.target.closest(itemSel)
+      if (it) { toggle(it); return }
+      if (e.target.closest("[data-" + p + "-clear-btn]")) clear()
+    })
+    root.addEventListener("mouseover", (e) => {
+      const it = e.target.closest(itemSel)
+      if (it && isOpen && it.dataset.value !== activeValue) { activeValue = it.dataset.value; sync() }
+    })
+    // the search box is not a form field: keep its keystrokes away from phx-change
+    root.addEventListener("input", (e) => {
+      if (!e.target.matches("[data-" + p + "-search]")) return
+      e.stopPropagation()
+      query = e.target.value
+      activeValue = null
+      sync()
+    })
+    root.addEventListener("change", (e) => { if (e.target.matches("[data-" + p + "-search]")) e.stopPropagation() })
+    root.addEventListener("focusout", (e) => {
+      if (isOpen && e.relatedTarget && !root.contains(e.relatedTarget)) open(false)
+    })
+    document.addEventListener("click", (e) => { if (isOpen && !root.contains(e.target)) open(false) })
+
+    sync()
+    const api = {
+      // after a LiveView patch: adopt a genuine server change, then re-apply state
+      refresh() {
+        const changed = server.changed()
+        if (changed !== null) selected = ordered(JSON.parse(changed))
+        sync()
+      },
+    }
+    root.__sdPicker = api
+    return api
   }
+
+  const initCombobox = (root) => initPicker(root, "combobox")
+  const initSelect = (root) => initPicker(root, "select")
 
   function initCommand(dialog) {
     const search = dialog.querySelector("[data-command-search]")
@@ -933,34 +1036,152 @@ function initDock(scope) {
 
     if (range) container.addEventListener("mouseleave", () => { if (hover) { hover = null; paint() } })
     render()
+    return {
+      // replace the range (range mode) and show its first month
+      setRange(start, end) {
+        rng.start = start || null; rng.end = end || null; hover = null
+        focusDate = rng.start
+        if (rng.start) view = new Date(rng.start.getFullYear(), rng.start.getMonth(), 1)
+        render()
+      },
+      setSelected(date) {
+        selected = date || null; focusDate = selected
+        if (selected) view = new Date(selected.getFullYear(), selected.getMonth(), 1)
+        render()
+      },
+      focus() {
+        const cell = container.querySelector('.cal-day[tabindex="0"]')
+        if (cell) cell.focus()
+      },
+    }
   }
 
+  const parseIsoDate = (v) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || "")
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null
+  }
+  const isoDate = (d) =>
+    d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : ""
+
+  // A trigger + popover panel whose open state survives LiveView patches: the
+  // server always renders the panel `hidden`, so sync() re-applies `isOpen`.
+  // Esc and an outside click close it; a keyboard open focuses `onOpenFocus`.
+  function popoverState(root, trigger, panel, hooks) {
+    let isOpen = false
+    const sync = () => {
+      panel.classList.toggle("hidden", !isOpen)
+      trigger.setAttribute("aria-haspopup", "dialog")
+      trigger.setAttribute("aria-expanded", String(isOpen))
+    }
+    const set = (o, viaKeyboard) => {
+      if (o === isOpen) return
+      isOpen = o
+      sync()
+      if (!o && hooks.onClose) hooks.onClose()
+      if (o && viaKeyboard && hooks.onOpenFocus) hooks.onOpenFocus()
+    }
+    root.addEventListener("click", (e) => {
+      if (e.target.closest("[data-" + hooks.prefix + "-trigger]")) set(!isOpen, e.detail === 0)
+    })
+    root.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && isOpen) {
+        e.preventDefault(); e.stopPropagation()
+        set(false); root.querySelector("[data-" + hooks.prefix + "-trigger]").focus()
+      }
+    })
+    document.addEventListener("click", (e) => { if (isOpen && !root.contains(e.target)) set(false) })
+    sync()
+    return { set, sync, isOpen: () => isOpen }
+  }
+
+  // <.date_range>: popover range picker. Optional hidden inputs
+  // [data-range-start] / [data-range-end] carry ISO dates (YYYY-MM-DD) and
+  // dispatch input + change once a full range is committed (a day pair or a
+  // [data-daterange-preset]). A half-picked range is dropped on close.
   function initDaterange(root) {
-    const trigger = root.querySelector("[data-daterange-trigger]")
-    const panel = root.querySelector("[data-daterange-panel]")
-    const label = root.querySelector("[data-daterange-label]")
-    const calEl = panel.querySelector("[data-calendar-range]")
+    if (root.__sdRange) return root.__sdRange
+    const q = (s) => root.querySelector(s)
+    const calEl = q("[data-calendar-range]")
+    if (!calEl) return null
+    const placeholder = root.dataset.placeholder ?? q("[data-daterange-label]").textContent.trim()
     const md = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
     const mdy = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
-    buildCalendar(calEl, {
+    const server = serverValue(() => (root.dataset.start || "") + "/" + (root.dataset.end || ""))
+    const fromKey = (k) => { const [s, e] = k.split("/"); return { start: parseIsoDate(s), end: parseIsoDate(e) } }
+    let committed = fromKey(server.initial)
+    if (!committed.start) {
+      committed = {
+        start: parseIsoDate((q("[data-range-start]") || {}).value),
+        end: parseIsoDate((q("[data-range-end]") || {}).value),
+      }
+    }
+    let draft = null // { start } while the second day is pending
+
+    const render = () => {
+      pop.sync()
+      const label = q("[data-daterange-label]")
+      const r = draft || committed
+      label.classList.toggle("text-muted-foreground", !r.start)
+      label.textContent = !r.start ? placeholder : r.end ? md(r.start) + " – " + mdy(r.end) : md(r.start) + " – …"
+      const s = q("[data-range-start]"), e = q("[data-range-end]")
+      if (s) s.value = isoDate(committed.start)
+      if (e) e.value = isoDate(committed.end)
+    }
+    const commit = (start, end) => {
+      draft = null
+      committed = { start, end }
+      pop.set(false)
+      render()
+      const key = isoDate(start) + "/" + isoDate(end)
+      server.sent(key)
+      const target = q("[data-range-start]") || q("[data-range-end]")
+      if (target) emitChange(target)
+      root.dispatchEvent(new CustomEvent("range-change", { bubbles: true, detail: { start: isoDate(start), end: isoDate(end) } }))
+    }
+
+    const cal = buildCalendar(calEl, {
       mode: "range",
-      months: 2,
+      months: Number(root.dataset.months) || 2,
+      start: committed.start,
+      end: committed.end,
       onSelect: (sel) => {
-        if (sel.start && sel.end) {
-          label.textContent = md(sel.start) + " – " + mdy(sel.end)
-          label.classList.remove("text-muted-foreground")
-          panel.classList.add("hidden")
-        } else if (sel.start) {
-          label.textContent = md(sel.start) + " – …"
-          label.classList.remove("text-muted-foreground")
-        }
+        if (sel.start && sel.end) commit(sel.start, sel.end)
+        else { draft = { start: sel.start, end: null }; render() }
       },
     })
-    trigger.setAttribute("aria-haspopup", "dialog")
-    const sync = () => trigger.setAttribute("aria-expanded", String(!panel.classList.contains("hidden")))
-    sync()
-    trigger.addEventListener("click", () => { panel.classList.toggle("hidden"); sync() })
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
+    const pop = popoverState(root, q("[data-daterange-trigger]"), q("[data-daterange-panel]"), {
+      prefix: "daterange",
+      onOpenFocus: () => cal.focus(),
+      onClose: () => { if (draft) { draft = null; cal.setRange(committed.start, committed.end); render() } },
+    })
+    root.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-daterange-preset]")
+      if (!b) return
+      let start = parseIsoDate(b.dataset.start), end = parseIsoDate(b.dataset.end)
+      const days = Number(b.dataset.days)
+      if (days > 0) {
+        const now = new Date()
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - (days - 1))
+      }
+      if (!start || !end) return
+      cal.setRange(start, end)
+      commit(start, end)
+      q("[data-daterange-trigger]").focus()
+    })
+    render()
+    const api = {
+      refresh() {
+        const changed = server.changed()
+        if (changed !== null) {
+          committed = fromKey(changed); draft = null
+          cal.setRange(committed.start, committed.end)
+        }
+        render()
+      },
+    }
+    root.__sdRange = api
+    return api
   }
 
   // Inline range calendar (<.range_calendar>). Optional hidden inputs
@@ -973,47 +1194,49 @@ function initDock(scope) {
     const mount = root.querySelector("[data-range-calendar-grid]") || root
     const startIn = root.querySelector("[data-range-start]")
     const endIn = root.querySelector("[data-range-end]")
-    const parse = (v) => {
-      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || "")
-      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null
-    }
-    const iso = (d) =>
-      d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : ""
     const set = (input, value) => {
       if (!input || input.value === value) return
       input.value = value
-      ;["input", "change"].forEach((t) => input.dispatchEvent(new Event(t, { bubbles: true })))
+      emitChange(input)
     }
     buildCalendar(mount, {
       mode: "range",
       months: Number(root.dataset.months) || 1,
-      start: parse((startIn && startIn.value) || root.dataset.start),
-      end: parse((endIn && endIn.value) || root.dataset.end),
+      start: parseIsoDate((startIn && startIn.value) || root.dataset.start),
+      end: parseIsoDate((endIn && endIn.value) || root.dataset.end),
       onSelect: (sel) => {
-        set(startIn, iso(sel.start))
-        set(endIn, iso(sel.end))
-        root.dispatchEvent(new CustomEvent("range-change", { bubbles: true, detail: { start: iso(sel.start), end: iso(sel.end) } }))
+        set(startIn, isoDate(sel.start))
+        set(endIn, isoDate(sel.end))
+        root.dispatchEvent(new CustomEvent("range-change", { bubbles: true, detail: { start: isoDate(sel.start), end: isoDate(sel.end) } }))
       },
     })
   }
 
   function initDatepicker(root) {
-    const trigger = root.querySelector("[data-datepicker-trigger]")
-    const panel = root.querySelector("[data-datepicker-panel]")
+    if (root.__sdDate) return root.__sdDate
     const label = root.querySelector("[data-datepicker-label]")
-    const calEl = panel.querySelector("[data-calendar]")
-    buildCalendar(calEl, {
+    const calEl = root.querySelector("[data-datepicker-panel] [data-calendar]")
+    if (!label || !calEl) return null
+    let text = null
+    const render = () => {
+      pop.sync()
+      if (text) { label.textContent = text; label.classList.remove("text-muted-foreground") }
+    }
+    const cal = buildCalendar(calEl, {
       onSelect: (d) => {
-        label.textContent = d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
-        label.classList.remove("text-muted-foreground")
-        panel.classList.add("hidden")
+        text = d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+        pop.set(false)
+        render()
+        root.querySelector("[data-datepicker-trigger]").focus()
       },
     })
-    trigger.setAttribute("aria-haspopup", "dialog")
-    const sync = () => trigger.setAttribute("aria-expanded", String(!panel.classList.contains("hidden")))
-    sync()
-    trigger.addEventListener("click", () => { panel.classList.toggle("hidden"); sync() })
-    document.addEventListener("click", (e) => { if (!root.contains(e.target)) { panel.classList.add("hidden"); sync() } })
+    const pop = popoverState(root, root.querySelector("[data-datepicker-trigger]"), root.querySelector("[data-datepicker-panel]"), {
+      prefix: "datepicker",
+      onOpenFocus: () => cal.focus(),
+    })
+    render()
+    root.__sdDate = { refresh: render }
+    return root.__sdDate
   }
 
   // SHOWCASE ONLY: renders a fixed demo dataset for the docs gallery. In a real
@@ -1212,14 +1435,16 @@ export function initShadcnDaisyui(root) {
 
 // Phoenix LiveView hooks. Attach with phx-hook="ShadcnCombobox" etc.
 export const Hooks = {
-  ShadcnCombobox: { mounted() { initCombobox(this.el) } },
-  ShadcnSelect: { mounted() { initSelect(this.el) } },
+  // updated(): a patch re-renders the server markup (closed panel, server
+  // label); refresh() re-applies the client state and adopts server changes.
+  ShadcnCombobox: { mounted() { this.api = initCombobox(this.el) }, updated() { this.api && this.api.refresh() } },
+  ShadcnSelect: { mounted() { this.api = initSelect(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnCommand: { mounted() { initCommand(this.el) } },
   ShadcnOtp: { mounted() { initOtp(this.el) } },
   ShadcnContextMenu: { mounted() { initContextMenu() } },
   ShadcnCalendar: { mounted() { if (!this.el.dataset.built) buildCalendar(this.el) } },
-  ShadcnDatePicker: { mounted() { initDatepicker(this.el) } },
-  ShadcnDateRange: { mounted() { initDaterange(this.el) } },
+  ShadcnDatePicker: { mounted() { this.api = initDatepicker(this.el) }, updated() { this.api && this.api.refresh() } },
+  ShadcnDateRange: { mounted() { this.api = initDaterange(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnRangeCalendar: { mounted() { initRangeCalendar(this.el) } },
   ShadcnToaster: {
     mounted() {

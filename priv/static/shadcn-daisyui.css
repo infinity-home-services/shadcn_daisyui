@@ -311,6 +311,60 @@
   .input::placeholder, .textarea::placeholder { color: var(--muted-foreground); }
   /* the dark field fill is translucent; give the native option list an opaque surface */
   .select option { background-color: var(--popover); color: var(--popover-foreground); }
+
+  /* Customizable native select (Chrome 135+ `appearance: base-select`; daisyUI
+     >= 5.1 opts .select in). Its ::picker(select) gets the floating-content
+     recipe - popover surface, ring-1 ring-foreground/10, shadow-md,
+     rounded-md, p-1 - and options get the custom-select row: accent highlight,
+     rounded-sm, check on the right. Browsers without base-select keep the OS
+     list (option colours above). `multiple` / `size` list boxes are left alone. */
+  @supports (appearance: base-select) {
+    .select:not([multiple], [size]),
+    .select select:not([multiple], [size]) { appearance: base-select; }
+    .select::picker-icon,
+    .select select::picker-icon { display: none; }   /* the daisyUI chevron stays */
+    .select::picker(select),
+    .select select::picker(select) {
+      appearance: base-select;
+      margin-block: 0.25rem;
+      padding: 0.25rem;
+      min-width: anchor-size(width);
+      max-height: min(24rem, 70dvh);
+      border: 0;
+      border-radius: var(--radius-md);
+      background-color: var(--popover);
+      color: var(--popover-foreground);
+      box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
+    }
+    :is(select.select, .select select):not([multiple], [size]) option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2rem;
+      padding: 0.375rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background-color: transparent;
+      color: var(--popover-foreground);
+      font-size: 0.875rem;
+      cursor: default;
+    }
+    :is(select.select, .select select):not([multiple], [size]) option:is(:hover, :focus-visible) {
+      outline: none;
+      background-color: var(--accent);
+      color: var(--accent-foreground);
+    }
+    :is(select.select, .select select):not([multiple], [size]) option:disabled { opacity: 0.5; }
+    :is(select.select, .select select):not([multiple], [size]) option::checkmark { order: 1; margin-inline-start: auto; }
+    :is(select.select, .select select):not([multiple], [size]) optgroup { padding: 0; font-size: 0.875rem; }
+    :is(select.select, .select select):not([multiple], [size]) optgroup legend {
+      padding: 0.375rem 0.5rem 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted-foreground);
+    }
+    .select selectedcontent { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (pointer: coarse) { :is(select.select, .select select):not([multiple], [size]) option { min-height: 2.75rem; } }
+  }
   .input:focus, .input:focus-within,
   .textarea:focus, .textarea:focus-within,
   .select:focus, .select:focus-within,
@@ -703,6 +757,10 @@
     background-color: color-mix(in oklab, var(--input) 50%, transparent);
   }
 
+  /* shadcn `aria-invalid:border-destructive aria-invalid:ring-destructive/20` */
+  .btn:is([data-select-trigger], [data-combobox-trigger])[aria-invalid="true"] { border-color: var(--destructive); }
+  .btn:is([data-select-trigger], [data-combobox-trigger])[aria-invalid="true"]:focus-visible { box-shadow: var(--destructive-ring); }
+
   /* ---- Command list / Combobox / Date-picker panels ---------------------- */
   .command-item,
   .combo-item {
@@ -803,6 +861,22 @@
   }
   .facet-check.is-on { background-color: var(--primary); color: var(--primary-foreground); }
   .facet-check:not(.is-on) { opacity: 0.5; }
+  /* <.select multiple> / <.combobox multiple>: the row's aria-selected drives
+     the box (shadcn's faceted filter: `opacity-50 [&_svg]:invisible` off). */
+  [role="option"] > .facet-check { flex-shrink: 0; }
+  [role="option"][aria-selected="true"] > .facet-check {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    opacity: 1;
+  }
+  [role="option"]:not([aria-selected="true"]) > .facet-check > * { visibility: hidden; }
+  /* touch: 44px option rows; a full-width select/combobox trigger grows too */
+  @media (pointer: coarse) {
+    .combo-item { min-height: 2.75rem; }
+    :is([data-select], [data-combobox])[data-full-width] .btn:is([data-select-trigger], [data-combobox-trigger]) {
+      min-height: 2.75rem;
+    }
+  }
 
   /* =======================================================================
      shadcn COMPOSITION COMPONENTS — Item, Attachment, Message, Bubble, Marker

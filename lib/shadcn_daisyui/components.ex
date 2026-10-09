@@ -145,7 +145,7 @@ defmodule ShadcnDaisyui.Components do
 
   def calendar(assigns) do
     ~H"""
-    <div id={@id} phx-hook="ShadcnCalendar" data-calendar class={@class}></div>
+    <div id={@id} phx-hook="ShadcnCalendar" phx-update="ignore" data-calendar class={@class}></div>
     """
   end
 
@@ -162,30 +162,141 @@ defmodule ShadcnDaisyui.Components do
         <span data-datepicker-label class="text-muted-foreground">{@placeholder}</span>
       </button>
       <div data-datepicker-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
-        <div data-calendar></div>
+        <div id={"#{@id}-calendar"} phx-update="ignore" data-calendar></div>
       </div>
     </div>
     """
   end
 
-  @doc "A date range picker (two months, shadcn-style band)."
+  @doc """
+  A date range picker: a trigger that opens two months in a popover, with the
+  shadcn range band.
+
+      <.date_range id="period" />
+
+  Bind it to a form like `range_calendar/1`: name the two hidden inputs it
+  emits (ISO `YYYY-MM-DD`; the JS hook dispatches `input` + `change` once a
+  full range is picked, so `phx-change` fires):
+
+      <.date_range
+        id="report-period"
+        start_name={@form[:from].name}
+        end_name={@form[:to].name}
+        start={@form[:from].value}
+        end={@form[:to].value}
+      >
+        <:preset label="Last 7 days" start={Date.add(@today, -6)} end={@today} />
+        <:preset label="Last 30 days" start={Date.add(@today, -29)} end={@today} />
+        <:preset label="This month" start={Date.beginning_of_month(@today)} end={@today} />
+      </.date_range>
+
+  `:preset` slots render a list of one-click ranges beside the calendar
+  (above it on compact screens). Give each `start` + `end`, or `days={7}` for
+  "the last 7 days ending today" in the browser's time zone (handy on cached or
+  static pages, where server-computed dates go stale). A half-picked range is discarded when the
+  popover closes. The open popover and the label survive LiveView patches,
+  and a changed server value (`start` / `end`) wins. A `range-change` event
+  with `%{start, end}` bubbles from the root.
+  """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Pick a date range")
+  attr(:start, :any, default: nil, doc: "preselected start (Date or ISO string)")
+  attr(:end, :any, default: nil, doc: "preselected end (Date or ISO string)")
+  attr(:start_name, :string, default: nil, doc: "form name for the start date input")
+  attr(:end_name, :string, default: nil, doc: "form name for the end date input")
+  attr(:months, :integer, default: 2, doc: "months shown side by side (1 or 2)")
   attr(:class, :any, default: "w-64")
+  attr(:rest, :global)
+
+  slot :preset, doc: "a one-click range: `start` + `end`, or `days`" do
+    attr(:label, :string, required: true)
+    attr(:start, :any, doc: "Date or ISO string")
+    attr(:end, :any, doc: "Date or ISO string")
+    attr(:days, :integer, doc: "the last N days ending today, computed in the browser")
+  end
 
   def date_range(assigns) do
+    assigns =
+      assigns
+      |> assign(:start_iso, iso_date(assigns.start))
+      |> assign(:end_iso, iso_date(assigns.end))
+      |> assign(:range_label, range_label(assigns.start, assigns.end))
+
     ~H"""
-    <div id={@id} phx-hook="ShadcnDateRange" data-daterange class={["relative", @class]}>
-      <button type="button" data-daterange-trigger class="btn btn-outline w-full justify-start gap-2 font-normal">
+    <div
+      id={@id}
+      phx-hook="ShadcnDateRange"
+      data-daterange
+      data-months={@months}
+      data-start={@start_iso}
+      data-end={@end_iso}
+      data-placeholder={@placeholder}
+      class={["relative", @class]}
+      {@rest}
+    >
+      <input :if={@start_name} type="hidden" name={@start_name} value={@start_iso} data-range-start />
+      <input :if={@end_name} type="hidden" name={@end_name} value={@end_iso} data-range-end />
+      <button
+        type="button"
+        data-daterange-trigger
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        class="btn btn-outline w-full justify-start gap-2 font-normal"
+      >
         <span class="size-4 opacity-70 hero-calendar" aria-hidden="true"></span>
-        <span data-daterange-label class="text-muted-foreground">{@placeholder}</span>
+        <span data-daterange-label class={["truncate", !@range_label && "text-muted-foreground"]}>
+          {@range_label || @placeholder}
+        </span>
       </button>
-      <div data-daterange-panel class="popover-panel absolute z-30 mt-1 hidden p-3">
-        <div data-calendar-range></div>
+      <div
+        data-daterange-panel
+        role="dialog"
+        aria-label={@placeholder}
+        class="popover-panel absolute z-30 mt-1 hidden p-3"
+      >
+        <div class={@preset != [] && "flex flex-col gap-3 sm:flex-row"}>
+          <div
+            :if={@preset != []}
+            class="flex flex-wrap gap-1 border-border sm:w-36 sm:flex-col sm:flex-nowrap sm:border-e sm:pe-3"
+          >
+            <button
+              :for={p <- @preset}
+              type="button"
+              class="btn btn-ghost btn-sm justify-start font-normal"
+              data-daterange-preset
+              data-start={iso_date(p[:start])}
+              data-end={iso_date(p[:end])}
+              data-days={p[:days]}
+            >
+              {p.label}
+            </button>
+          </div>
+          <div id={"#{@id}-calendar"} phx-update="ignore" data-calendar-range></div>
+        </div>
       </div>
     </div>
     """
   end
+
+  # en-US "Oct 4 – Oct 11, 2026", matching the JS label so nothing jumps on mount.
+  defp range_label(start, finish) do
+    with %Date{} = s <- to_date(start), %Date{} = e <- to_date(finish) do
+      Calendar.strftime(s, "%b %-d") <> " – " <> Calendar.strftime(e, "%b %-d, %Y")
+    else
+      _ -> nil
+    end
+  end
+
+  defp to_date(%Date{} = d), do: d
+
+  defp to_date(value) when is_binary(value) do
+    case Date.from_iso8601(value) do
+      {:ok, d} -> d
+      _ -> nil
+    end
+  end
+
+  defp to_date(_), do: nil
 
   @doc """
   An inline calendar for picking a date range (shadcn's Range Calendar). Click a
@@ -245,6 +356,11 @@ defmodule ShadcnDaisyui.Components do
   defp iso_date(value) when is_binary(value) and value != "", do: value
   defp iso_date(_), do: nil
 
+  # ----------------------------------------------------------------------------
+  # Select / Combobox. One renderer and one JS engine (`initPicker` in
+  # shadcn-daisyui.js) for both, single or `multiple`.
+  # ----------------------------------------------------------------------------
+
   @doc """
   A combobox (searchable select). Provide options as `:option` slots.
 
@@ -253,47 +369,56 @@ defmodule ShadcnDaisyui.Components do
         <:option value="Phoenix">Phoenix</:option>
       </.combobox>
 
-  Pass `name` (and `value`) to bind it to a form - it emits a hidden input the
-  JS hook keeps in sync, and a preselected `value` is reflected on mount:
+  Bind it to a form with `field` (or `name` + `value`) - it emits a hidden input
+  the JS hook keeps in sync and dispatches `input` + `change` on, so `phx-change`
+  fires:
 
-      <.combobox id="fw" name="user[framework]" value={@form[:framework].value}>
+      <.combobox id="fw" field={@form[:framework]}>
         <:option value="Next.js">Next.js</:option>
         <:option value="Phoenix">Phoenix</:option>
+      </.combobox>
+
+  `multiple` turns every option into a checkbox row (the faceted-filter
+  pattern); the list stays open while toggling, the search box stays, and a
+  Clear row appears once anything is selected. `value` is then a list and the
+  hidden inputs are `name[]` (see `select/1` for the exact params):
+
+      <.combobox id="labels" field={@form[:labels]} multiple placeholder="Labels">
+        <:option :for={l <- @labels} value={l.id} count={l.count}>{l.name}</:option>
       </.combobox>
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
-  attr(:class, :any, default: "w-60")
-  attr(:name, :string, default: nil, doc: "form field name; emits a hidden input when set")
-  attr(:value, :string, default: nil, doc: "current/preselected value")
 
-  slot :option, doc: "each option; set `value`" do
-    attr(:value, :string, required: true)
+  attr(:search_placeholder, :string,
+    default: nil,
+    doc: "search box text (defaults to `placeholder`)"
+  )
+
+  attr(:empty, :string, default: "No results.", doc: "shown when the search matches nothing")
+  attr(:class, :any, default: nil, doc: "root classes; the width defaults to `w-60`")
+  attr(:field, Phoenix.HTML.FormField, default: nil, doc: "form field: derives name and value")
+  attr(:name, :string, default: nil, doc: "form field name; emits hidden input(s) when set")
+  attr(:value, :any, default: nil, doc: "current/preselected value (a list when `multiple`)")
+  attr(:multiple, :boolean, default: false, doc: "checkbox rows, many values")
+  attr(:full_width, :boolean, default: false, doc: "fill the container; 44px trigger on touch")
+  attr(:clear_label, :string, default: "Clear", doc: "the multiple-mode Clear row")
+  attr(:disabled, :boolean, default: false)
+
+  attr(:"aria-label", :string,
+    default: nil,
+    doc: "accessible name when no `<label for>` points at the trigger"
+  )
+
+  attr(:"aria-labelledby", :string, default: nil)
+  attr(:rest, :global)
+
+  slot :option, doc: "each option; set `value`, optionally `count`" do
+    attr(:value, :any, required: true)
+    attr(:count, :any, doc: "right-aligned muted number (facet count)")
   end
 
-  def combobox(assigns) do
-    ~H"""
-    <div id={@id} phx-hook="ShadcnCombobox" data-combobox class={["relative", @class]}>
-      <input :if={@name} type="hidden" name={@name} value={@value} data-combobox-input />
-      <button type="button" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
-        <span data-combobox-label class="text-muted-foreground">{@placeholder}</span>
-        <span class="size-4 opacity-50 hero-chevron-up-down" aria-hidden="true"></span>
-      </button>
-      <div data-combobox-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
-        <input data-combobox-search class="input mb-1 w-full" placeholder={@placeholder} />
-        <ul data-combobox-list class="max-h-52 overflow-auto">
-          <li :for={opt <- @option}>
-            <button type="button" class="combo-item" data-value={opt.value}>
-              <span class="size-4 opacity-0 hero-check" aria-hidden="true"></span>
-              {render_slot(opt)}
-            </button>
-          </li>
-        </ul>
-        <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">No results.</p>
-      </div>
-    </div>
-    """
-  end
+  def combobox(assigns), do: assigns |> assign(:kind, "combobox") |> picker()
 
   @doc """
   A custom select (shadcn-style trigger + listbox popover). Provide options as
@@ -304,49 +429,229 @@ defmodule ShadcnDaisyui.Components do
         <:option value="Banana">Banana</:option>
       </.select>
 
-  Pass `name` (and `value`) to bind it to a form - it emits a hidden input the
-  JS hook keeps in sync, and a preselected `value` is reflected on mount:
+  Bind it to a form with `field` (or `name` + `value`) - it emits a hidden input
+  the JS hook keeps in sync and dispatches `input` + `change` on, so `phx-change`
+  fires. A preselected value is rendered on the server:
 
-      <.select id="fruit" name="order[fruit]" value={@form[:fruit].value}>
+      <.select id="fruit" field={@form[:fruit]}>
         <:option value="Apple">Apple</:option>
         <:option value="Banana">Banana</:option>
       </.select>
 
-  For the plain HTML control use a `<select class="select">`.
+  ## Multiple
+
+  `multiple` (bits-ui `Select type="multiple"`): each option becomes a checkbox
+  row, the list stays open while toggling, and a Clear row appears once
+  anything is selected. The trigger shows the placeholder, or up to two
+  selected labels then "+N". Options take an optional `count`:
+
+      <.select id="status" field={@form[:status]} multiple placeholder="Status">
+        <:option value="todo" count={12}>Todo</:option>
+        <:option value="done" count={4}>Done</:option>
+      </.select>
+
+  It emits one `name[]` hidden input per selected value, after an always-present
+  `name=""` input, so params are `%{"status" => ["todo", "done"]}` and, when
+  cleared, `%{"status" => ""}` (Ecto casts that to the field default, so an
+  `{:array, :string}` field with `default: []` clears). Every toggle dispatches
+  `input` + `change` on the form. A `select-change` event with
+  `%{value: [...]}` also bubbles from the root (`combobox-change` for the
+  combobox).
+
+  The open list, the label and the checks survive LiveView patches. The
+  server's value wins whenever it changes (a reset, a cap); echoes of the
+  user's own changes are ignored, so fast toggling never flickers.
+
+  For the plain HTML control use `<.native_select>` / `<select class="select">`.
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
-  attr(:class, :any, default: "w-60")
-  attr(:name, :string, default: nil, doc: "form field name; emits a hidden input when set")
-  attr(:value, :string, default: nil, doc: "current/preselected value")
+  attr(:class, :any, default: nil, doc: "root classes; the width defaults to `w-60`")
+  attr(:field, Phoenix.HTML.FormField, default: nil, doc: "form field: derives name and value")
+  attr(:name, :string, default: nil, doc: "form field name; emits hidden input(s) when set")
+  attr(:value, :any, default: nil, doc: "current/preselected value (a list when `multiple`)")
+  attr(:multiple, :boolean, default: false, doc: "checkbox rows, many values")
+  attr(:full_width, :boolean, default: false, doc: "fill the container; 44px trigger on touch")
+  attr(:clear_label, :string, default: "Clear", doc: "the multiple-mode Clear row")
+  attr(:disabled, :boolean, default: false)
 
-  slot :option, doc: "each option; set `value`" do
-    attr(:value, :string, required: true)
+  attr(:"aria-label", :string,
+    default: nil,
+    doc: "accessible name when no `<label for>` points at the trigger"
+  )
+
+  attr(:"aria-labelledby", :string, default: nil)
+  attr(:rest, :global)
+
+  slot :option, doc: "each option; set `value`, optionally `count`" do
+    attr(:value, :any, required: true)
+    attr(:count, :any, doc: "right-aligned muted number (facet count)")
   end
 
-  def select(assigns) do
+  def select(assigns), do: assigns |> assign(:kind, "select") |> picker()
+
+  defp picker(assigns) do
+    {name, value, field_id, invalid} =
+      case assigns.field do
+        %Phoenix.HTML.FormField{} = f ->
+          {assigns.name || f.name, if(is_nil(assigns.value), do: f.value, else: assigns.value),
+           f.id, f.errors != [] and Phoenix.Component.used_input?(f)}
+
+        nil ->
+          {assigns.name, assigns.value, nil, false}
+      end
+
+    values = picker_values(value, assigns.multiple)
+    name = if name && assigns.multiple, do: String.replace_suffix(name, "[]", ""), else: name
+
+    width =
+      cond do
+        assigns.full_width -> "w-full"
+        is_nil(assigns.class) -> "w-60"
+        true -> nil
+      end
+
+    assigns =
+      assign(assigns,
+        name: name,
+        values: values,
+        selected: Enum.filter(assigns.option, &(to_string(&1.value) in values)),
+        trigger_id:
+          if(field_id && field_id != assigns.id, do: field_id, else: "#{assigns.id}-trigger"),
+        list_id: "#{assigns.id}-list",
+        invalid: invalid,
+        width: width,
+        search_placeholder: assigns[:search_placeholder] || assigns.placeholder
+      )
+
     ~H"""
-    <div id={@id} phx-hook="ShadcnSelect" data-select class={["relative", @class]}>
-      <input :if={@name} type="hidden" name={@name} value={@value} data-select-input />
-      <button type="button" data-select-trigger class="btn btn-outline w-full justify-between font-normal">
-        <span data-select-label class="text-muted-foreground">{@placeholder}</span>
-        <span class="size-4 opacity-50 hero-chevron-down" aria-hidden="true"></span>
-      </button>
-      <div data-select-panel class="popover-panel absolute z-30 mt-1 hidden w-full p-1">
-        <button
-          :for={opt <- @option}
-          type="button"
-          class="combo-item"
-          data-select-item
-          data-value={opt.value}
+    <div
+      id={@id}
+      phx-hook={if @kind == "select", do: "ShadcnSelect", else: "ShadcnCombobox"}
+      {%{"data-#{@kind}" => true}}
+      data-multiple={@multiple}
+      data-full-width={@full_width}
+      data-placeholder={@placeholder}
+      class={["relative", @width, @class]}
+      {@rest}
+    >
+      <input
+        :if={@name && !@multiple}
+        type="hidden"
+        name={@name}
+        value={List.first(@values)}
+        disabled={@disabled}
+        {pd(@kind, "input")}
+      />
+      <input :if={@name && @multiple} type="hidden" name={@name} value="" disabled={@disabled} {pd(@kind, "sentinel")} />
+      <input
+        :for={v <- if(@name && @multiple, do: @values, else: [])}
+        type="hidden"
+        name={@name <> "[]"}
+        value={v}
+        disabled={@disabled}
+        {pd(@kind, "value")}
+      />
+      <button
+        type="button"
+        id={@trigger_id}
+        role={@kind == "select" && "combobox"}
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-controls={@list_id}
+        aria-label={assigns[:"aria-label"]}
+        aria-labelledby={assigns[:"aria-labelledby"]}
+        aria-invalid={@invalid && "true"}
+        disabled={@disabled}
+        class="btn btn-outline w-full justify-between font-normal"
+        {pd(@kind, "trigger")}
+      >
+        <span class={["flex min-w-0 items-center gap-1", @selected == [] && "text-muted-foreground"]} {pd(@kind, "label")}>
+          <%= if @selected == [] do %>
+            {@placeholder}
+          <% else %>
+            <span class="truncate"><%= for {opt, i} <- Enum.with_index(Enum.take(@selected, if(@multiple, do: 2, else: 1))) do %>{if i > 0, do: ", "}{render_slot(opt)}<% end %></span>
+            <span :if={length(@selected) > 2} class="shrink-0 text-muted-foreground">+{length(@selected) - 2}<span class="sr-only"> more</span></span>
+          <% end %>
+        </span>
+        <span
+          class={["size-4 shrink-0 opacity-50", if(@kind == "select", do: "hero-chevron-down", else: "hero-chevron-up-down")]}
+          aria-hidden="true"
         >
-          <span class="size-4 opacity-0 hero-check" aria-hidden="true"></span>
-          {render_slot(opt)}
-        </button>
+        </span>
+      </button>
+      <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" {pd(@kind, "panel")}>
+        <%= if @kind == "combobox" do %>
+          <input data-combobox-search class="input mb-1 w-full" placeholder={@search_placeholder} autocomplete="off" />
+          <ul
+            id={@list_id}
+            role="listbox"
+            aria-multiselectable={@multiple && "true"}
+            class="max-h-60 overflow-auto"
+            data-combobox-list
+          >
+            <li :for={opt <- @option}>
+              <.picker_option opt={opt} kind={@kind} multiple={@multiple} values={@values} />
+            </li>
+          </ul>
+          <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">{@empty}</p>
+        <% else %>
+          <div
+            id={@list_id}
+            role="listbox"
+            aria-multiselectable={@multiple && "true"}
+            class="max-h-72 overflow-auto"
+            data-select-list
+          >
+            <.picker_option :for={opt <- @option} opt={opt} kind={@kind} multiple={@multiple} values={@values} />
+          </div>
+        <% end %>
+        <div :if={@multiple} class={["-mx-1 mt-1 border-t border-border px-1 pt-1", @values == [] && "hidden"]} {pd(@kind, "clear")}>
+          <button type="button" class="combo-item justify-center" {pd(@kind, "clear-btn")}>{@clear_label}</button>
+        </div>
       </div>
     </div>
     """
   end
+
+  attr(:opt, :map, required: true)
+  attr(:kind, :string, required: true)
+  attr(:multiple, :boolean, required: true)
+  attr(:values, :list, required: true)
+
+  defp picker_option(assigns) do
+    assigns = assign(assigns, :on, to_string(assigns.opt.value) in assigns.values)
+
+    ~H"""
+    <button
+      type="button"
+      tabindex="-1"
+      role="option"
+      aria-selected={to_string(@on)}
+      class="combo-item"
+      data-select-item={@kind == "select"}
+      data-value={@opt.value}
+      data-selected={@on}
+    >
+      <span :if={@multiple} class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+      <span :if={!@multiple} class={["hero-check size-4 shrink-0", !@on && "opacity-0"]} aria-hidden="true"></span>
+      <span data-label class="truncate">{render_slot(@opt)}</span>
+      <span :if={@opt[:count] != nil} class="ml-auto font-mono text-xs text-muted-foreground">{@opt.count}</span>
+    </button>
+    """
+  end
+
+  defp picker_values(value, _multiple) when value in [nil, ""], do: []
+
+  defp picker_values(values, multiple) when is_list(values) do
+    values = for v <- values, v not in [nil, ""], do: to_string(v)
+    if multiple, do: Enum.uniq(values), else: Enum.take(values, 1)
+  end
+
+  defp picker_values(value, _multiple), do: [to_string(value)]
+
+  # `data-<kind>-<part>` as a dynamic attribute (select and combobox share markup)
+  defp pd(kind, part), do: %{"data-#{kind}-#{part}" => true}
 
   @doc "A segmented one-time-code input."
   attr(:id, :string, required: true)

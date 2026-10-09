@@ -188,7 +188,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{property: "Trigger height", value: "2.25rem / 36px (btn h-9)"},
             %{property: "Trigger radius", value: "var(--radius-md)"},
             %{property: "Panel radius", value: "var(--radius-md)"},
-            %{property: "Panel border", value: "1px var(--border-color)"},
+            %{property: "Panel elevation", value: "ring-1 ring-foreground/10, shadow-md"},
             %{property: "Option padding", value: "0.375rem block, 0.5rem inline"},
             %{property: "Option radius", value: "var(--radius-sm)"}
           ],
@@ -203,11 +203,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
         },
         accessibility: %{
           roles:
-            "Custom trigger button plus a popover list of option buttons, driven by the ShadcnSelect hook. Requires a unique id. Provide an accessible name on the trigger (the placeholder/label reads as the current value).",
+            "The trigger is role=combobox (aria-haspopup=listbox, aria-expanded, aria-activedescendant) over a role=listbox of role=option rows with aria-selected, driven by the ShadcnSelect hook. Requires a unique id. Name it with a <label for> on the trigger (field binding uses the field id), aria-label or aria-labelledby.",
           keyboard: [
-            %{keys: "Enter / Space", action: "Open the listbox from the trigger"},
-            %{keys: "Up / Down", action: "Move the active option"},
-            %{keys: "Enter", action: "Select the active option and close"},
+            %{keys: "Enter / Space / Up / Down", action: "Open the listbox from the trigger"},
+            %{keys: "Up / Down, Home / End", action: "Move the active option"},
+            %{
+              keys: "Enter / Space",
+              action: "Select the active option and close (multiple: toggle, stay open)"
+            },
             %{keys: "Esc", action: "Close the listbox without changing the value"}
           ],
           focus:
@@ -215,7 +218,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           screen_reader:
             "For a fully announced native experience prefer native-select; this custom control trades native semantics for shadcn visuals.",
           touch_target:
-            "Trigger is 36px tall (desktop-fine); options are tappable rows. Pad to 44pt on touch-primary surfaces.",
+            "Trigger is 36px tall (desktop-fine); option rows grow to 44px on touch. Pass full_width for a 44px trigger in sheets and compact forms.",
           reduced_motion: "Panel toggles visibility without a color fade under the theme."
         },
         swiftui: %{

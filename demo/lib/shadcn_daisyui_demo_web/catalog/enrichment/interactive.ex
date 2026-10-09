@@ -32,7 +32,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             %{property: "Option radius", value: "var(--radius-sm)"},
             %{property: "Option padding", value: "0.375rem 0.5rem"},
             %{property: "Option font", value: "0.875rem"},
-            %{property: "Border", value: "1px var(--border-color)"}
+            %{property: "Elevation", value: "ring-1 ring-foreground/10, shadow-md"},
+            %{property: "Touch row", value: "2.75rem min on coarse pointers"}
           ],
           tokens: [
             "popover",
@@ -59,7 +60,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
           screen_reader:
             "aria-activedescendant points at the highlighted option id so its label is announced without moving DOM focus; aria-selected marks the chosen value.",
           touch_target:
-            "Trigger is a full-height field; option rows are tappable but slightly under 44pt - pad rows for touch-first use.",
+            "Trigger is a full-height field; option rows grow to 44px on touch (coarse pointer). Pass full_width in sheets for a 44px trigger too.",
           reduced_motion:
             "Popover toggles via a hidden class with no movement, so reduced-motion has nothing to suppress."
         },
@@ -374,10 +375,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
               action:
                 "Pick the focused day (closes the popover) or step months via the nav buttons"
             },
-            %{keys: "Esc", action: "Dismiss via outside-click; clicking away closes the popover"}
+            %{keys: "Esc", action: "Close the popover and return focus to the trigger"}
           ],
           focus:
-            "Opening reveals the calendar; selecting a day or an outside click closes the popover. aria-expanded on the trigger stays in sync.",
+            "Opening with the keyboard focuses the calendar; selecting a day, Esc or an outside click closes the popover and focus returns to the trigger. aria-expanded stays in sync, and the open state survives LiveView patches.",
           screen_reader:
             "Trigger announces the current date; inside, day cells read their full localized date label.",
           touch_target:

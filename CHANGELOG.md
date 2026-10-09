@@ -8,8 +8,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-09
+
+Multi-select and form-bound date ranges, matching shadcn-svelte (bits-ui
+`Select type="multiple"` and the data-table faceted filter: Popover + Command
+with checkbox rows). New docs pages: **Multi Select** (`/docs/components/multi-select`)
+and **Date Range Picker** (`/docs/components/date-range-picker`), each with specs,
+accessibility and SwiftUI notes.
+
+### Added
+
+- **`multiple` on `<.select>` and `<.combobox>`** (not a new component). Options
+  become checkbox rows (16px primary box, filled when selected), the list stays
+  open while toggling, and a Clear row (`clear_label`) appears once anything is
+  selected. The trigger shows the placeholder, or up to two selected labels then
+  a muted "+N". `<.combobox multiple>` keeps its search box (Space types, Enter
+  toggles). Keyboard: arrows, Home/End (select), Space/Enter toggle, Tab to Clear,
+  Esc closes (without closing a surrounding sheet).
+- **Form binding for multiple**: `value` takes a list; the component emits an
+  always-present `name=""` input plus one `name[]` input per value, so params are
+  `["a", "b"]`, and `""` when cleared (Ecto casts it to the field default). Every
+  toggle dispatches `input` + `change` on the form, so `phx-change` fires. A
+  `select-change` / `combobox-change` event with `{ value }` bubbles from the root.
+- **`field` on `<.select>` and `<.combobox>`** (single and multiple): derives
+  name and value, gives the trigger the field id (so `<.label for>` / `<.field>`
+  name it), and sets `aria-invalid` (destructive border and ring) once the field
+  is used and has errors.
+- **`count` on `:option`** - a right-aligned muted `font-mono text-xs` number, as
+  in the faceted filter.
+- `full_width`, `disabled`, `aria-label` / `aria-labelledby` on both pickers;
+  `search_placeholder` and `empty` on the combobox.
+- **`<.date_range>` form binding**: `start_name` / `end_name` + `start` / `end`
+  (ISO `YYYY-MM-DD` hidden inputs, like `<.range_calendar>`). They dispatch
+  `input` + `change` once per complete range (two days or a preset), not per
+  click; a half-picked range is dropped on close. The label is server-rendered,
+  and `range-change` bubbles with `{ start, end }`. Also `months` (default 2).
+- **`<:preset>` slots on `<.date_range>`**: `<:preset label="This month" start end>`,
+  or `<:preset label="Last 7 days" days={7}>` computed in the browser (for cached
+  and static pages). A column beside the calendar, wrapping above it on compact.
+- **Customizable native select**: where `appearance: base-select` is supported
+  (Chrome 135+), `.select`'s `::picker(select)` uses the floating-content recipe
+  (popover surface, `ring-1 ring-foreground/10`, `shadow-md`, `rounded-md`, `p-1`),
+  options get accent highlight, `rounded-sm` and the check on the right, and the
+  duplicate `::picker-icon` is hidden. daisyUI >= 5.1 opts `.select` into
+  base-select with its own picker look; this replaces it. `multiple` / `size`
+  list boxes keep native rendering.
+
+### Changed
+
+- **Select / combobox / date-picker / date-range state survives LiveView
+  patches.** The hooks now implement `updated()`: an open list or popover, the
+  label, checks, search text and hidden inputs are re-applied after every patch.
+  The server's value wins whenever it changes (a reset, a cap); echoes of the
+  user's own changes are ignored, so fast toggling never snaps back.
+- Select and combobox share one JS engine with delegated listeners, so options
+  the server adds or replaces keep working. The trigger label is the option's
+  text (it was the `value`), rendered on the server for a preselected value.
+- Select triggers are `role="combobox"` (bits-ui), option rows are
+  `tabindex="-1"`, and clicking a row no longer moves focus off the trigger.
+- Option rows are 44px tall on touch (`pointer: coarse`), single and multiple.
+- `<.date_picker>` / `<.date_range>`: Esc closes the popover, and opening with
+  the keyboard focuses the calendar.
+
+### Fixed
+
+- The combobox search box no longer triggers the surrounding form's
+  `phx-change` on every keystroke.
+- `<.calendar>`, `<.date_picker>` and `<.date_range>` calendars are no longer
+  wiped by a LiveView patch (`phx-update="ignore"` on the JS-built grid).
+- `initShadcnDaisyui()` plus the LiveView hooks no longer double-bind the select,
+  combobox and date pickers on the same element.
+
 ### Docs
 
+- The strict-CSP LiveView lab (`/lab/csp`) gains a form with a multiple select,
+  a multiple combobox whose counts change on every tick, and a bound date range
+  with presets, to prove open state, `phx-change` and server resets under patches.
+- Select, Combobox, Date Picker and Select Native pages: multiple / form / props
+  notes, and stale specs refreshed (floating ring instead of a border, 44px touch
+  rows, Esc on date pickers).
 - The docs site no longer uses inline event handlers anywhere except the
   deliberate canary on `/docs/dark-mode`. Sonner, Attachment, Message, Bubble
   and Marker previews use `data-toast*` attributes, the Range Calendar booking

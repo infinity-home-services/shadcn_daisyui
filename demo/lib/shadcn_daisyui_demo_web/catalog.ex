@@ -17,6 +17,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   """
 
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
+  alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
   alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
@@ -27,7 +28,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       title: "Forms & inputs",
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
-                date-picker range-calendar rating filter validator)
+                date-picker date-range-picker range-calendar multi-select rating filter validator)
     },
     %{
       title: "Actions",
@@ -98,7 +99,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   def components do
     enrichment = Enrichment.all()
 
-    for c <- all() ++ Composition.all(), into: %{} do
+    for c <- all() ++ Composition.all() ++ Pickers.all(), into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
       {c.slug, Spec.new!(spec)}
     end
@@ -542,6 +543,18 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         description:
           "Displays a list of options for the user to pick from, triggered by a button.",
         hook: true,
+        props: [
+          %{name: "id", type: "string (required)", default: "-"},
+          %{name: "field", type: "Phoenix.HTML.FormField", default: "nil"},
+          %{name: "name / value", type: "string / any (list when multiple)", default: "nil"},
+          %{name: "multiple", type: "boolean", default: "false"},
+          %{name: "placeholder", type: "string", default: ~s("Select…")},
+          %{name: "full_width", type: "boolean", default: "false"},
+          %{name: "disabled", type: "boolean", default: "false"},
+          %{name: ":option value count", type: "slot", default: "-"}
+        ],
+        notes:
+          "Form-bind with field={@form[:x]} (or name + value): a hidden input the hook keeps in sync dispatches input + change, so phx-change fires. multiple turns rows into checkboxes and posts a list - see Multi Select. The open list and the value survive LiveView patches.",
         examples: [
           %{
             title: "Default",
@@ -569,6 +582,36 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               </div>
             </div>
             """
+          },
+          %{
+            title: "Multiple",
+            heex: ~S"""
+            <.select id="fruits" multiple placeholder="Select fruits" aria-label="Fruits">
+              <:option value="Apple">Apple</:option>
+              <:option value="Banana">Banana</:option>
+              <:option value="Blueberry">Blueberry</:option>
+              <:option value="Grapes">Grapes</:option>
+            </.select>
+            """,
+            code: ~S"""
+            <div id="fruits" data-select data-multiple data-placeholder="Select fruits" class="relative w-60">
+              <button type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Fruits" class="btn btn-outline w-full justify-between font-normal" data-select-trigger>
+                <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-select-label>Select fruits</span>
+                <span class="hero-chevron-down size-4 shrink-0 opacity-50" aria-hidden="true"></span>
+              </button>
+              <div class="popover-panel absolute z-30 mt-1 hidden w-full p-1" data-select-panel>
+                <div role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
+                  <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Apple"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Apple</span></button>
+                  <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Banana"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Banana</span></button>
+                  <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Blueberry"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Blueberry</span></button>
+                  <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="Grapes"><span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span><span data-label class="truncate">Grapes</span></button>
+                </div>
+                <div class="-mx-1 mt-1 hidden border-t border-border px-1 pt-1" data-select-clear>
+                  <button type="button" class="combo-item justify-center" data-select-clear-btn>Clear</button>
+                </div>
+              </div>
+            </div>
+            """
           }
         ]
       },
@@ -576,6 +619,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "native-select",
         title: "Select Native",
         description: "The native HTML select control, styled to match.",
+        notes:
+          "Where the browser supports customizable select (Chrome 135+, appearance: base-select), the open list is themed like the custom Select: popover surface, ring + shadow-md, rounded-md, accent highlight, check on the right. Elsewhere the OS list is used with popover colours. multiple / size list boxes keep the native rendering.",
         examples: [
           %{
             title: "Default",
@@ -1994,6 +2039,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           ios: "A searchable list pushed or presented as a sheet - not a tiny inline dropdown."
         },
         hook: true,
+        notes:
+          "Form-bind with field={@form[:x]} (or name + value); phx-change fires on each pick, and the search box never triggers it. Add multiple for checkbox rows with counts and Clear (the faceted filter) - see Multi Select.",
         examples: [
           %{
             title: "Default",
@@ -2197,6 +2244,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         title: "Date Picker",
         description: "A popover calendar for picking a single date or a range.",
         hook: true,
+        notes:
+          "For a form-bound range with preset ranges, see Date Range Picker (start_name / end_name, :preset slots). Esc closes either popover.",
         examples: [
           %{
             title: "Single & range",

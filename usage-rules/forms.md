@@ -35,8 +35,25 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 `<.input_otp>` are JS-hook components. In LiveView forms:
 
 - Give each a unique, stable `id` (LiveView requirement; never index-based ids in streams).
-- They emit values via hidden inputs / events - wire to the changeset explicitly;
-  they do not take `field` yet.
+- `<.select>` and `<.combobox>` take `field` like `<.input>` (or `name` + `value`).
+  The hidden input(s) dispatch `input` + `change`, so `phx-change` fires on every pick.
+- `multiple` posts a list: `name=""` plus one `name[]` per value. Use an
+  `{:array, :string}` field with `default: []` - a cleared picker posts `""`, which
+  Ecto casts to the default:
+
+  ```heex
+  <.select id="task-status" field={@form[:status]} multiple placeholder="Status">
+    <:option :for={s <- @statuses} value={s.id} count={s.count}>{s.name}</:option>
+  </.select>
+  ```
+
+- `<.date_range>` / `<.range_calendar>` bind two fields with `start_name` / `end_name`
+  (+ `start` / `end`); values are ISO `YYYY-MM-DD` strings that cast to `:date`.
+  `<.date_range>` emits once per complete range, not per click.
+- Label a picker with `<.label for={@form[:x].id}>` (the trigger takes the field id)
+  or `aria-label`. Errors are not rendered by the picker - wrap it in `<.field>`.
+- Open lists, labels and values survive LiveView re-renders; if the server changes
+  the value (reset, cap) the server wins. `<.date_picker>` is not form-bound yet.
 
 ## Error translation
 
