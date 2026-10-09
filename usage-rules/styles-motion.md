@@ -26,6 +26,16 @@ decorates.
   hand-animate `height` / `max-height`. Keep spacing inside the reveal, not on
   the parent (a `gap` stays when the row is closed). Not for floating content
   (popovers fade/scale), whole sections, or content appearing on page load.
+  Keep the row's content rendered and let `open` drive the reveal: content
+  removed with `:if` in the same patch vanishes and the row snaps shut. If it
+  must go, hold it with a `phx-remove` `JS.transition(…, time: 180)` so the
+  row collapses around it.
+- **Chips in a `<.chip_row>`** scale and fade in and out (`scale` 0.9 ↔ 1 +
+  opacity, 150ms ease-out) and the chips after them slide (FLIP on
+  `translate`); the hook does it, instant under reduced motion. Opening a
+  reveal while its first chip scales in, and closing it while its last chip
+  scales out, run together as one motion. Give every chip a `value` so a
+  patch removes that chip, not the last one.
 - Theme switching is **instant by design** (no fade - fading light↔dark passes
   text through a grey crossover). [web] The theme CSS only zeroes out
   `transition-duration` while `<html>` carries the `theme-transition` class, so
@@ -47,6 +57,7 @@ decorates.
 | micro | 150ms | ease | color, bg, border, shadow | button hover/active |
 | small surface | 180ms | ease | opacity, transform | popover, tooltip, ⌘K palette |
 | large surface | 300ms | ease | translate, backdrop | sheet, drawer |
+| chip in/out | 150ms | ease-out | scale, opacity, translate (neighbours) | `<.chip_row>` chips |
 | row reveal | 180ms | ease-out | grid-template-rows, opacity | filter chip row, inline alert, accordion |
 | theme switch | 0ms | - | - | instant by design |
 

@@ -392,8 +392,8 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~ ~s(phx-click="remove")
       assert count(html, "data-chip-remove") == 4
       # the remove button is named "Remove" + the chip label
-      assert html =~ ~s(aria-labelledby="filters-chip-0-remove filters-chip-0-label")
-      assert html =~ ~s(id="filters-chip-0-label")
+      assert html =~ ~r/aria-labelledby="(filters-chip-v-status-todo-\w+)-remove \1-label"/
+      assert html =~ ~r/id="filters-chip-v-status-todo-\w+-label"/
       assert html =~ ~s(aria-controls="filters-overflow")
       assert html =~ ~s(data-more-label="Show {count} more")
     end
@@ -430,6 +430,32 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
 
       assert html =~ "data-chip-row-actions"
       assert html =~ "Clear all"
+    end
+
+    test "chips are keyed by value and animate out through phx-remove" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.chip_row id="k">
+          <:chip value="bug">Bug</:chip>
+          <:chip value="status:open">Open</:chip>
+          <:chip value="status-open">Open too</:chip>
+          <:chip>No value</:chip>
+          <:action><button type="button">Clear all</button></:action>
+        </.chip_row>
+        """)
+
+      # id-safe values are used as-is; others get a hash so slugs can't collide
+      assert html =~ ~s(id="k-chip-v-bug-label")
+      assert html =~ ~s(id="k-copy-v-bug-label")
+      assert html =~ ~s(id="k-chip-v-status-open-label")
+      assert [_] = Regex.scan(~r/id="k-chip-v-status-open-\w+-label"/, html)
+      # no value: index key
+      assert html =~ ~s(id="k-chip-3-label")
+      # every chip, copy and the actions dispatch chip-exit and hold 180ms
+      assert count(html, "chip-exit") == 2 * 9
+      assert html =~ "&quot;time&quot;:180"
     end
   end
 

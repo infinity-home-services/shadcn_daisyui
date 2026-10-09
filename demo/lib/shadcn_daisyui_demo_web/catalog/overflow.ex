@@ -430,7 +430,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         %{name: ":action", type: "slot", default: "-"}
       ],
       notes:
-        "Needs the ShadcnChipRow hook (or initShadcnDaisyui()). In LiveView pass on_remove (e.g. JS.push(\"remove_filter\", value: %{id: f.id})); the server drops the chip and the patch re-fits the row. Without it the hook removes the chip itself after a cancelable chip-remove event ({ value, index }) bubbles from the root; a data-chip-row-clear button does the same for every chip (chip-clear). After a removal focus moves to the chip that took its place, then +N, then the last chip.",
+        "Needs the ShadcnChipRow hook (or initShadcnDaisyui()). In LiveView pass on_remove (e.g. JS.push(\"remove_filter\", value: %{id: f.id})); the server drops the chip and the patch re-fits the row. Without it the hook removes the chip itself after a cancelable chip-remove event ({ value, index }) bubbles from the root; a data-chip-row-clear button does the same for every chip (chip-clear). After a removal focus moves to the chip that took its place, then +N, then the last chip. Motion: a chip added after mount scales and fades in (0.9 to 1, 150ms ease-out) and the chips after it slide over; a removed chip leaves the flow and scales and fades out where it stood while its neighbours slide into its place, and +N recounts once it is gone. Give every chip a value: the DOM id follows it, so a patch removes that chip and not the last one. In LiveView each chip (and the actions) carries a phx-remove that keeps it 180ms, the length of a reveal collapse, so a reveal closing in the same patch shrinks around the fading chip: keep the row rendered inside <.reveal open={@filters != []}> (no :if) and let open drive it.",
       specs: %{
         anatomy: [
           %{
@@ -502,7 +502,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         touch_target:
           "On coarse pointers chips are 32px and the remove button and +N reach a 44px hit area through an invisible pseudo-element inside the 8px gap.",
         reduced_motion:
-          "Nothing animates. Wrap the row in <.reveal> to slide it in and out (instant under reduced motion)."
+          "Chips scale and fade in and out and their neighbours slide (transform and opacity only); under reduced motion all of it is instant. Wrap the row in <.reveal> to slide it in and out (also instant under reduced motion)."
       },
       swiftui: %{
         code: ~S"""
@@ -577,6 +577,57 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           """
         },
         %{
+          title: "Add and remove (animated)",
+          center: false,
+          heex: ~S"""
+          <button type="button" class="btn btn-outline btn-sm" phx-click="add_filter">
+            <.icon name="hero-plus" class="size-4" /> Add filter
+          </button>
+          <%!-- keep the row rendered (no :if); `open` slides it in and out --%>
+          <.reveal open={@filters != []} class="pt-3">
+            <.chip_row id="live-filters" aria-label="Active filters">
+              <:chip :for={f <- @filters} value={f.id} on_remove={JS.push("remove_filter", value: %{id: f.id})}>
+                {f.label}
+              </:chip>
+              <:action>
+                <button type="button" class="btn btn-ghost btn-sm" phx-click="clear_filters">Clear all</button>
+              </:action>
+            </.chip_row>
+          </.reveal>
+          """,
+          code: ~S"""
+          <div class="w-full max-w-md">
+            <button type="button" class="btn btn-outline btn-sm" data-demo-chip-add="live-filters">
+              <span class="hero-plus size-4" aria-hidden="true"></span> Add filter
+            </button>
+            <div id="live-filters-reveal" class="reveal" data-open>
+              <div class="reveal-track">
+                <div class="pt-3">
+                <div id="live-filters" data-chip-row role="group" aria-label="Active filters" class="chip-row">
+                  <ul class="chip-row-chips" data-chip-row-chips>
+                    <li id="live-filters-chip-v-todo" class="badge chip badge-secondary" data-index="0" data-value="todo" data-chip><span id="live-filters-chip-v-todo-label" class="chip-label">Status: Todo</span><button type="button" id="live-filters-chip-v-todo-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-chip-v-todo-remove live-filters-chip-v-todo-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
+                    <li id="live-filters-chip-v-high" class="badge chip badge-secondary" data-index="1" data-value="high" data-chip><span id="live-filters-chip-v-high-label" class="chip-label">Priority: High</span><button type="button" id="live-filters-chip-v-high-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-chip-v-high-remove live-filters-chip-v-high-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
+                  </ul>
+                  <div class="chip-row-more" data-chip-row-more hidden>
+                    <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="live-filters-overflow" data-chip-row-trigger data-more-label="Show {count} more"></button>
+                    <div id="live-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+                      <ul class="flex flex-wrap gap-2" aria-label="Active filters">
+                          <li id="live-filters-copy-v-todo" class="badge chip badge-secondary" data-index="0" data-value="todo" hidden data-chip-copy><span id="live-filters-copy-v-todo-label" class="chip-label">Status: Todo</span><button type="button" id="live-filters-copy-v-todo-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-copy-v-todo-remove live-filters-copy-v-todo-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
+                          <li id="live-filters-copy-v-high" class="badge chip badge-secondary" data-index="1" data-value="high" hidden data-chip-copy><span id="live-filters-copy-v-high-label" class="chip-label">Priority: High</span><button type="button" id="live-filters-copy-v-high-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-copy-v-high-remove live-filters-copy-v-high-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div id="live-filters-actions" class="chip-row-actions" data-chip-row-actions>
+                    <button type="button" class="btn btn-ghost btn-sm" data-chip-row-clear>Clear all</button>
+                  </div>
+                </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          """
+        },
+        %{
           title: "Outline (recipients)",
           center: false,
           resizable: true,
@@ -645,7 +696,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         %{name: "class", type: "classes for the content", default: "nil"}
       ],
       notes:
-        "This is the one sanctioned layout animation (styles-motion.md): the accordion / collapse already animates grid-template-rows the same way. The server owns open (flip an assign); for client-side toggles give it an id and point a <button data-reveal-toggle=\"id\"> at it (shadcn-daisyui.js sets data-open and aria-expanded), and pass client so LiveView patches keep the toggled state. Plain HTML: <div class=\"reveal\" data-open><div class=\"reveal-track\"><div>…</div></div></div>.",
+        "This is the one sanctioned layout animation (styles-motion.md): the accordion / collapse already animates grid-template-rows the same way. The server owns open (flip an assign); for client-side toggles give it an id and point a <button data-reveal-toggle=\"id\"> at it (shadcn-daisyui.js sets data-open and aria-expanded), and pass client so LiveView patches keep the toggled state. When open turns false in the same patch that empties the row, the row still collapses around its old content: keep the content rendered (a chip row with no :if) and let open drive it - the chip row holds its removed chips for the 180ms collapse through phx-remove. Content removed with :if vanishes at once and the row snaps shut; give such content phx-remove={JS.transition({\"transition-opacity duration-150 ease-out\", \"opacity-100\", \"opacity-0\"}, time: 180)} to keep it while the row closes. Plain HTML: <div class=\"reveal\" data-open><div class=\"reveal-track\"><div>…</div></div></div>.",
       specs: %{
         anatomy: [
           %{
@@ -716,6 +767,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           <button type="button" class="btn btn-outline btn-sm" phx-click="toggle_filters">
             <.icon name="hero-funnel" class="size-4" /> Filters
           </button>
+          <%!-- keep the row rendered (no :if); `open` slides it in and out --%>
           <.reveal open={@filters != []} class="pt-3">
             <.chip_row id="active-filters" aria-label="Active filters">…</.chip_row>
           </.reveal>

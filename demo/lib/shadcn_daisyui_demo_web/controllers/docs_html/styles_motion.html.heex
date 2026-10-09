@@ -25,6 +25,8 @@
               {"micro", "150ms", "color, bg, border, shadow", "button hover / active"},
               {"small surface", "180ms", "opacity, transform", "popover, tooltip, ⌘K palette"},
               {"large surface", "300ms", "translate, backdrop", "sheet, drawer"},
+              {"chip in / out", "150ms", "scale, opacity, translate",
+               "chip row chips and their neighbours"},
               {"row reveal", "180ms", "grid-template-rows, opacity",
                "filter chip row, inline alert, accordion"},
               {"theme switch", "0ms", "-", "instant by design"}
@@ -121,6 +123,13 @@
         class="link link-primary"
       >&lt;.reveal open&gt;</a>; never
       hand-animate height or max-height.
+    </p>
+    <p class="text-sm text-muted-foreground">
+      Keep the row's content rendered and let <code class="font-mono text-xs">open</code>
+      drive it: chips in a
+      <a href={~p"/docs/components/chip-row"} class="link link-primary">chip row</a>
+      scale and fade in and out (150ms) while the reveal grows or shrinks, so removing the
+      last chip closes the row around it as one motion.
     </p>
     <div class="space-y-3 rounded-lg border border-base-300 p-4">
       <button

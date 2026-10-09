@@ -35,8 +35,10 @@ defmodule ShadcnDaisyui.JS.FitRowsBrowserTest do
 
   # Renders `fixtures` (each `{id, width_px, html}`) into a page, mounts every
   # hook the way LiveView does (mounted, then updated as after a patch), and
-  # returns %{"errors" => [...], "rows" => %{id => state}}.
-  defp run_in_chrome(fixtures) do
+  # returns %{"errors" => [...], "rows" => %{id => state}, "probe" => ...}.
+  # `probe` is an async JS body run after the rows settle; what it returns
+  # comes back as "probe".
+  defp run_in_chrome(fixtures, probe \\ "return null") do
     css = File.read!(Path.join(@root, "priv/static/shadcn-daisyui.css"))
     js = File.read!(Path.join(@root, "priv/static/shadcn-daisyui.js"))
 
@@ -85,7 +87,9 @@ defmodule ShadcnDaisyui.JS.FitRowsBrowserTest do
         visibleTabs: [...el.querySelectorAll("[data-tab-nav-item]")].filter(shown).length,
       }
     }
-    window.__result = JSON.stringify({ errors, rows })
+    let probe = null
+    try { probe = await (async () => { #{probe} })() } catch (e) { errors.push(String(e)) }
+    window.__result = JSON.stringify({ errors, rows, probe })
     </script>
     </body>
     </html>
@@ -169,5 +173,50 @@ defmodule ShadcnDaisyui.JS.FitRowsBrowserTest do
     refute result["rows"]["tabs-wide"]["collapsed"]
     assert result["rows"]["tabs-narrow"]["collapsed"]
     assert result["rows"]["tabs-narrow"]["visibleTabs"] == 0
+  end
+
+  test "removing a chip fades it out in place, slides the rest, then recounts +N" do
+    probe = ~S"""
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    const row = document.getElementById("anim")
+    const state = () => ({
+      chips: [...row.querySelectorAll("[data-chip]")].map((c) => ({
+        value: c.dataset.value,
+        hidden: c.hidden,
+        exiting: c.hasAttribute("data-chip-exiting"),
+        position: getComputedStyle(c).position,
+      })),
+      count: row.querySelector("[data-chip-row-trigger]").dataset.count,
+      slides: row.getAnimations({ subtree: true }).filter((a) => "translate" in a.effect.getKeyframes()[0]).length,
+    })
+    const before = state()
+    row.querySelector("[data-chip] [data-chip-remove]").click()
+    await sleep(40)
+    const during = state()
+    await sleep(300)
+    return { before, during, after: state() }
+    """
+
+    result =
+      run_in_chrome([{"anim", 300, chip_row_html("anim", Enum.take(@labels, 6))}], probe)
+
+    assert result["errors"] == []
+    %{"before" => before, "during" => during, "after" => settled} = result["probe"]
+    hidden_before = Enum.count(before["chips"], & &1["hidden"])
+    assert hidden_before > 0
+    assert before["count"] == "+#{hidden_before}"
+
+    # the removed chip leaves the flow and fades; the next one slides over
+    [first | _] = during["chips"]
+    assert first["exiting"] and first["position"] == "absolute"
+    assert during["slides"] > 0
+    # +N waits for the exit
+    assert during["count"] == before["count"]
+
+    # then it is gone and the row re-fits
+    assert length(settled["chips"]) == length(before["chips"]) - 1
+    refute Enum.any?(settled["chips"], & &1["exiting"])
+    hidden_after = Enum.count(settled["chips"], & &1["hidden"])
+    assert settled["count"] == "+#{hidden_after}"
   end
 end

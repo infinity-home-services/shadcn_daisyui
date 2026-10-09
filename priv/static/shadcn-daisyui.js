@@ -1743,6 +1743,28 @@ function initTabNav(root) {
   return api
 }
 
+// <.chip_row> motion - the micro tier, transform and opacity only (WAAPI, so
+// it needs no inline styles in markup and stays CSP-safe). A chip added after
+// mount scales and fades in (0.9 -> 1, CHIP_MS ease-out); a removed one leaves
+// the flow at once (absolute, where it stood) and scales and fades out while
+// the chips after it slide into its place (FLIP on `translate`). Removed nodes
+// stay CHIP_HOLD - the length of a <.reveal> collapse - with the row holding
+// its height, so a reveal that closes in the same patch shrinks around the
+// fading chip. LiveView keeps them through their phx-remove transition (the
+// component renders it); in dead views the hook does. The +N count is frozen
+// until the exits end. Reduced motion: no scale, no slide, instant.
+const CHIP_MS = 150
+const CHIP_HOLD = 180
+const reducedMotion = () =>
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+const canAnimate = () => typeof Element.prototype.animate === "function" && !reducedMotion()
+// layout width, ignoring a running scale animation
+function layoutW(el) {
+  const w = outerW(el)
+  const s = parseFloat(getComputedStyle(el).scale)
+  return s > 0 ? w / s : w
+}
+
 // <.chip_row>: removable chips; the ones that don't fit collapse into "+N".
 function initChipRow(root) {
   if (root.__sdChipRow) return root.__sdChipRow
@@ -1752,36 +1774,47 @@ function initChipRow(root) {
     wrap: "[data-chip-row-more]",
     trigger: "[data-chip-row-trigger]",
     panel: "[data-chip-row-panel]",
-    item: "[data-chip-row-panel] [data-chip-remove]",
+    item: "[data-chip-row-panel] [data-chip-copy]:not([data-chip-exiting]) [data-chip-remove]",
   }, { flipTo: "end", horizontal: true })
   // where focus goes after a removal: { copy, pos } (position among the visible chips)
   let refocus = null
+
+  const MOVERS = "[data-chip], [data-chip-copy], [data-chip-row-more], [data-chip-row-actions]"
+  const known = new WeakSet() // nodes already rendered (no enter animation)
+  const pos = new WeakMap() // node -> { x, y, shown }: its layout box at the last sync
+  const slides = new WeakMap() // node -> its running FLIP animation
+  const exiting = new Map() // node -> true when the hook removes it (dead views)
+  let holdTimer = null
+  let scheduled = false
+  let ready = false
 
   const setCount = (trigger, n) => {
     trigger.setAttribute("data-count", "+" + n)
     trigger.setAttribute("aria-label", (trigger.dataset.moreLabel || "Show {count} more").replace("{count}", n))
   }
-  const visible = (sel) => qa(sel).filter((el) => !el.closest("[hidden]"))
+  const leaving = (el) => el.hasAttribute("data-chip-exiting")
+  const live = (sel) => qa(sel).filter((el) => !leaving(el))
+  const visible = (sel) => live(sel).filter((el) => !el.closest("[hidden]"))
 
   function fit() {
     const more = q("[data-chip-row-more]")
     const trigger = q("[data-chip-row-trigger]")
     if (!more || !trigger || !root.offsetWidth) return
-    const chips = qa("[data-chip]")
-    const actions = q("[data-chip-row-actions]")
+    const chips = live("[data-chip]")
+    const actions = live("[data-chip-row-actions]")[0]
     root.removeAttribute("data-squeezed")
     chips.forEach((el) => { el.hidden = false })
     more.hidden = false
     setCount(trigger, chips.length) // the widest label this row can need
     const gap = rowGap(root)
-    const avail = contentW(root) - (actions ? outerW(actions) + gap : 0)
-    const widths = chips.map(outerW)
+    const avail = contentW(root) - (actions ? layoutW(actions) + gap : 0)
+    const widths = chips.map(layoutW)
     const moreW = outerW(more)
     const vis = fitRow({ widths, avail, gap, moreW, moreAlways: false, pinned: -1 })
     const shown = new Set(vis)
     chips.forEach((el, i) => { el.hidden = !shown.has(i) })
     const visibleIdx = new Set(vis.map((i) => chips[i].dataset.index))
-    qa("[data-chip-copy]").forEach((el) => { el.hidden = visibleIdx.has(el.dataset.index) })
+    live("[data-chip-copy]").forEach((el) => { el.hidden = visibleIdx.has(el.dataset.index) })
     const rest = chips.length - vis.length
     setCount(trigger, rest)
     more.hidden = rest === 0
@@ -1791,7 +1824,6 @@ function initChipRow(root) {
     root.setAttribute("data-ready", "")
     if (more.hidden && pop.isOpen()) pop.set(false)
     pop.sync()
-    restoreFocus()
   }
 
   // After a removal, focus the chip that took the removed one's place (or the
@@ -1799,18 +1831,128 @@ function initChipRow(root) {
   function restoreFocus() {
     if (!refocus) return
     const a = document.activeElement
-    if (a && a !== document.body && root.contains(a)) { refocus = null; return }
-    const { copy, pos } = refocus
+    if (a && a !== document.body && root.contains(a) && !a.closest("[data-chip-exiting]")) { refocus = null; return }
+    const { copy, pos: at } = refocus
     refocus = null
-    const pick = (list) => list[Math.min(pos, list.length - 1)]
-    const rowBtns = visible("[data-chip] [data-chip-remove]")
-    const copyBtns = pop.isOpen() ? visible("[data-chip-copy] [data-chip-remove]") : []
+    const pick = (list) => list[Math.min(at, list.length - 1)]
+    const rowBtns = visible("[data-chip]").map((el) => el.querySelector("[data-chip-remove]")).filter(Boolean)
+    const copyBtns = pop.isOpen()
+      ? visible("[data-chip-copy]").map((el) => el.querySelector("[data-chip-remove]")).filter(Boolean)
+      : []
     const trigger = q("[data-chip-row-trigger]")
+    const actions = live("[data-chip-row-actions]")[0]
     const target = (copy ? pick(copyBtns) : pick(rowBtns)) ||
       (trigger && !trigger.closest("[hidden]") && trigger) ||
       rowBtns[rowBtns.length - 1] ||
-      q("[data-chip-row-actions] :is(button, a[href], input, select)")
+      (actions && actions.querySelector("button, a[href], input, select"))
     if (target) target.focus()
+  }
+
+  // Remember where every chip, +N and the actions sit (offset box: layout,
+  // not the animated position) - the "first" of FLIP for the next change.
+  function measure() {
+    qa(MOVERS).forEach((el) => {
+      if (leaving(el)) return
+      known.add(el)
+      pos.set(el, { x: el.offsetLeft, y: el.offsetTop, shown: !el.closest("[hidden]") })
+    })
+  }
+
+  function slide(el, from) {
+    let dx = from.x - el.offsetLeft
+    let dy = from.y - el.offsetTop
+    if (!dx && !dy) return
+    const running = slides.get(el)
+    if (running) {
+      // start from where it is now, mid-slide
+      const [tx = 0, ty = 0] = (getComputedStyle(el).translate.match(/-?[\d.]+/g) || []).map(Number)
+      dx += tx
+      dy += ty
+      running.cancel()
+    }
+    const a = el.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0px 0px" }], { duration: CHIP_MS, easing: "ease-out" })
+    slides.set(el, a)
+    a.onfinish = () => { if (slides.get(el) === a) slides.delete(el) }
+  }
+
+  const enter = (el) =>
+    el.animate([{ scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: CHIP_MS, easing: "ease-out" })
+
+  // A chip, chip copy or the actions leaving. `own`: the hook removes the node
+  // (dead views); otherwise LiveView does, after its phx-remove transition.
+  function exit(el, own) {
+    if (leaving(el)) return
+    el.setAttribute("data-chip-exiting", "")
+    el.inert = true // out of the tab order and the a11y tree right away
+    if (el.closest("[hidden]") || !canAnimate()) {
+      el.hidden = true
+      if (own) el.remove()
+      return
+    }
+    exiting.set(el, own)
+    hold()
+    const from = pos.get(el)
+    const at = from && from.shown ? from : { x: el.offsetLeft, y: el.offsetTop }
+    const cs = getComputedStyle(el)
+    const start = {
+      scale: cs.scale === "none" ? "1" : cs.scale,
+      opacity: cs.opacity,
+      translate: cs.translate === "none" ? "0px 0px" : cs.translate,
+    }
+    const w = layoutW(el)
+    el.getAnimations().forEach((a) => a.cancel())
+    slides.delete(el)
+    Object.assign(el.style, { position: "absolute", left: at.x + "px", top: at.y + "px", width: w + "px", margin: "0" })
+    el.animate([start, { scale: 0.9, opacity: 0, translate: start.translate }], {
+      duration: CHIP_MS,
+      easing: "ease-out",
+      fill: "forwards",
+    })
+  }
+
+  // Keep the row's height while chips fade out of the flow; release it (and
+  // re-fit, so +N recounts) once the last exit is over.
+  function hold() {
+    if (!holdTimer) {
+      const ul = q("[data-chip-row-chips]")
+      for (const el of [root, ul]) if (el) el.style.minHeight = getComputedStyle(el).height
+    }
+    clearTimeout(holdTimer)
+    holdTimer = setTimeout(release, CHIP_HOLD)
+  }
+  function release() {
+    holdTimer = null
+    exiting.forEach((own, el) => {
+      el.hidden = true
+      if (own) el.remove()
+    })
+    exiting.clear()
+    const ul = q("[data-chip-row-chips]")
+    for (const el of [root, ul]) if (el) el.style.minHeight = ""
+    sync(true)
+  }
+
+  // Apply a change: re-fit (unless chips are still fading out), then animate
+  // what moved or arrived since the last measure.
+  function sync(animate) {
+    scheduled = false
+    if (!exiting.size) fit()
+    restoreFocus()
+    if (animate && ready && canAnimate()) {
+      qa(MOVERS).forEach((el) => {
+        if (leaving(el) || el.closest("[hidden]")) return
+        const from = pos.get(el)
+        // new nodes, and chips the re-fit pulled out of +N, fade in
+        if (!known.has(el) || (from && !from.shown && el.hasAttribute("data-chip"))) enter(el)
+        else if (from && from.shown) slide(el, from)
+      })
+    }
+    measure()
+  }
+  const schedule = () => {
+    if (scheduled) return
+    scheduled = true
+    queueMicrotask(() => { if (scheduled) sync(true) })
   }
 
   root.addEventListener("click", (e) => {
@@ -1819,13 +1961,15 @@ function initChipRow(root) {
     if (clear) {
       const allowed = root.dispatchEvent(new CustomEvent("chip-clear", { bubbles: true, cancelable: true }))
       if (clear.hasAttribute("phx-click") || !allowed) return
-      qa("[data-chip], [data-chip-copy]").forEach((el) => el.remove())
-      fit()
+      measure()
+      live("[data-chip], [data-chip-copy]").forEach((el) => exit(el, true))
+      sync(true)
       return
     }
     const btn = e.target.closest("[data-chip-remove]")
     if (!btn) return
     const chip = btn.closest("[data-chip], [data-chip-copy]")
+    if (leaving(chip)) return
     const copy = chip.hasAttribute("data-chip-copy")
     refocus = { copy, pos: visible(copy ? "[data-chip-copy]" : "[data-chip]").indexOf(chip) }
     const ev = new CustomEvent("chip-remove", {
@@ -1834,20 +1978,43 @@ function initChipRow(root) {
       detail: { value: chip.dataset.value == null ? null : chip.dataset.value, index: Number(chip.dataset.index) },
     })
     const allowed = root.dispatchEvent(ev)
-    // LiveView (phx-click) removes it on the server; the patch re-fits via updated()
+    // LiveView (phx-click) removes it on the server; its phx-remove starts the exit
     if (btn.hasAttribute("phx-click")) return
     if (!allowed) { refocus = null; return }
-    qa("[data-chip], [data-chip-copy]")
+    measure()
+    live("[data-chip], [data-chip-copy]")
       .filter((el) => el.dataset.index === chip.dataset.index)
-      .forEach((el) => el.remove())
-    fit()
+      .forEach((el) => exit(el, true))
+    sync(true)
   })
 
-  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => fit()) : null
+  // LiveView: a chip (or the actions) the patch removed runs its phx-remove,
+  // which dispatches chip-exit right after the hook's updated()
+  root.addEventListener("chip-exit", (e) => {
+    const el = e.target.closest && e.target.closest("[data-chip], [data-chip-copy], [data-chip-row-actions]")
+    if (!el || !root.contains(el)) return
+    exit(el, false)
+    schedule()
+  })
+
+  // dead views: chips added or removed by other scripts animate too
+  const mo = typeof MutationObserver !== "undefined" ? new MutationObserver(schedule) : null
+  if (mo) mo.observe(root, { childList: true, subtree: true })
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => sync(false)) : null
   if (ro) ro.observe(root)
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit)
-  fit()
-  const api = { refresh: fit, destroy() { if (ro) ro.disconnect() } }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => sync(false))
+  sync(false)
+  ready = true
+  const api = {
+    refresh: () => sync(true),
+    beforeUpdate: measure,
+    updated: schedule,
+    destroy() {
+      if (ro) ro.disconnect()
+      if (mo) mo.disconnect()
+      clearTimeout(holdTimer)
+    },
+  }
   root.__sdChipRow = api
   return api
 }
@@ -1924,9 +2091,12 @@ export const Hooks = {
     updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },
+  // ShadcnChipRow also animates the patch: beforeUpdate() records where the
+  // chips sit, updated() slides / fades them from there.
   ShadcnChipRow: {
     mounted() { this.api = initChipRow(this.el) },
-    updated() { this.api && this.api.refresh() },
+    beforeUpdate() { this.api && this.api.beforeUpdate() },
+    updated() { this.api && this.api.updated() },
     destroyed() { this.api && this.api.destroy() },
   },
 }

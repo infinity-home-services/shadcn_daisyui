@@ -1002,9 +1002,16 @@
 
   /* ---- Chip row (<.chip_row>) --------------------------------------------
      One line of removable badge chips. ShadcnChipRow hides the chips that
-     don't fit and un-hides their copies in the "+N" popover. */
-  .chip-row { display: flex; min-width: 0; align-items: center; gap: 0.5rem; }
-  .chip-row-chips { display: flex; min-width: 0; align-items: center; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+     don't fit and un-hides their copies in the "+N" popover. Chips scale and
+     fade in and out and their neighbours slide (the hook animates transform
+     and opacity with WAAPI); a leaving chip is taken out of the flow
+     (absolute), so the row, the chip list and the popover list are its
+     containing blocks. */
+  .chip-row { position: relative; display: flex; min-width: 0; align-items: center; gap: 0.5rem; }
+  .chip-row-chips { position: relative; display: flex; min-width: 0; align-items: center; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+  .chip-row-panel > ul { position: relative; }
+  .chip-exit,
+  [data-chip-exiting] { pointer-events: none; }
   .chip-row:not([data-ready]) .chip-row-chips { overflow: hidden; }
   .chip { flex-shrink: 0; white-space: nowrap; gap: 0.25rem; }
   .chip:has(> .chip-remove) { padding-inline-end: 0.25rem; }

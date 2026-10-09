@@ -13,8 +13,9 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   The width-aware rows ride the same patches: a `<.tab_nav>` whose counts
   change width on every tick (it must re-fit without a visible jump, keep the
   `?view=` tab visible and keep its More menu open), and a `<.chip_row>` of
-  the active filters inside a `<.reveal>` (removing a chip is a server event;
-  focus lands on its neighbour).
+  the active filters inside a `<.reveal>` (adding or removing a chip is a
+  server event; chips scale in and out, their neighbours slide, removing the
+  last one closes the reveal around it, and focus lands on a neighbour).
 
   Toasts and flashes must show above an open sheet or dialog and stay
   clickable: the buttons inside them `put_flash` and `push_toast` while the
@@ -72,6 +73,18 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
 
   def handle_event("undo", _params, socket),
     do: {:noreply, put_flash(socket, :info, "Undone from the toast")}
+
+  def handle_event("add_chip", _params, socket) do
+    params = socket.assigns.params
+
+    case Enum.reject(@labels, &(&1 in params["labels"])) do
+      [label | _] ->
+        {:noreply, assign_filters(socket, Map.update!(params, "labels", &(&1 ++ [label])))}
+
+      [] ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_event("remove_chip", %{"field" => field, "value" => value}, socket) do
     params = Map.update!(socket.assigns.params, field, &List.delete(&1, value))
@@ -226,6 +239,9 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
         <pre id="params" class="rounded-md bg-muted p-3 font-mono text-xs">{inspect(@params)}</pre>
       </.form>
 
+      <button type="button" id="add-chip" class="btn btn-outline btn-sm" phx-click="add_chip">
+        Add a label
+      </button>
       <.reveal id="chips-reveal" open={chips(@params) != []} class="max-w-sm">
         <.chip_row id="lab-chips" aria-label="Active filters">
           <:chip

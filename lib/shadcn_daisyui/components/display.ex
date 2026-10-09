@@ -541,7 +541,21 @@ defmodule ShadcnDaisyui.Components.Display do
   marked `data-chip-row-clear` (e.g. in `:action`) dispatches `chip-clear` and
   removes every chip; with `phx-click` it is left to the server.
 
+  Chips animate (transform and opacity, instant under reduced motion): one
+  added after mount scales and fades in while the chips after it slide over;
+  a removed one leaves the flow, scales and fades out where it stood while its
+  neighbours slide into its place, and "+N" recounts once it is gone. Give
+  every chip a `value` - its DOM id follows the value, so a patch removes
+  that chip (without one, chips are keyed by position).
+
   Put the row inside `reveal/1` to slide it in and out as chips come and go.
+  Keep the row rendered (no `:if`) and let `open` drive the reveal: each chip
+  and the actions carry a `phx-remove` that keeps them for the 180ms
+  collapse, so removing the last chip closes the reveal around it.
+
+      <.reveal open={@filters != []}>
+        <.chip_row id="active-filters">…</.chip_row>
+      </.reveal>
   """
   attr(:id, :string, required: true)
   attr(:aria_label, :string, default: "Chips", doc: "names the group of chips")
@@ -585,7 +599,7 @@ defmodule ShadcnDaisyui.Components.Display do
         <.chip
           :for={{chip, i} <- @chips}
           chip={chip}
-          id={"#{@id}-chip-#{i}"}
+          id={"#{@id}-chip-#{chip_key(chip, i)}"}
           index={i}
           vclass={@vclass}
           data-chip
@@ -613,7 +627,7 @@ defmodule ShadcnDaisyui.Components.Display do
             <.chip
               :for={{chip, i} <- @chips}
               chip={chip}
-              id={"#{@id}-copy-#{i}"}
+              id={"#{@id}-copy-#{chip_key(chip, i)}"}
               index={i}
               vclass={@vclass}
               hidden
@@ -622,7 +636,13 @@ defmodule ShadcnDaisyui.Components.Display do
           </ul>
         </div>
       </div>
-      <div :if={@action != []} class="chip-row-actions" data-chip-row-actions>
+      <div
+        :if={@action != []}
+        id={"#{@id}-actions"}
+        class="chip-row-actions"
+        data-chip-row-actions
+        phx-remove={chip_exit()}
+      >
         {render_slot(@action)}
       </div>
     </div>
@@ -639,11 +659,13 @@ defmodule ShadcnDaisyui.Components.Display do
   defp chip(assigns) do
     ~H"""
     <li
+      id={@id}
       class={["badge chip", @vclass]}
       data-index={@index}
       data-value={@chip[:value]}
       hidden={@hidden}
       phx-mounted={keep_client_attrs(["hidden"])}
+      phx-remove={chip_exit()}
       {@rest}
     >
       <span id={"#{@id}-label"} class="chip-label">{render_slot(@chip)}</span>
@@ -686,6 +708,19 @@ defmodule ShadcnDaisyui.Components.Display do
       </button>
       <.reveal id="more-options" client>…</.reveal>
 
+  When `open` turns false in the same patch that empties the row, the row
+  still collapses around its old content as long as that content is kept
+  until the collapse ends: render it unconditionally and let `open` drive the
+  reveal. `chip_row/1` keeps removed chips for those 180ms on its own; other
+  content removed with `:if` needs a `phx-remove` transition as long as the
+  collapse:
+
+      <.reveal open={@saved?}>
+        <.alert :if={@saved?} id="saved" phx-remove={JS.transition({"transition-opacity duration-150 ease-out", "opacity-100", "opacity-0"}, time: 180)}>
+          Saved
+        </.alert>
+      </.reveal>
+
   Spacing belongs inside (`class="pt-4"`), not on the parent (`space-y-*` /
   `gap-*` would keep the gap while closed).
 
@@ -717,6 +752,26 @@ defmodule ShadcnDaisyui.Components.Display do
     </div>
     """
   end
+
+  # A chip's DOM id follows its value, so a patch that removes one chip removes
+  # that node (index ids would morph every later chip and drop the last one,
+  # and the wrong chip would animate out). Values with characters outside an
+  # id-safe set get a hash suffix so two values can't share a slug.
+  defp chip_key(%{value: value}, _i) when not is_nil(value) do
+    value = to_string(value)
+    slug = String.replace(value, ~r/[^A-Za-z0-9_-]+/, "-")
+
+    if slug == value,
+      do: "v-" <> slug,
+      else: "v-#{slug}-#{Integer.to_string(:erlang.phash2(value), 36)}"
+  end
+
+  defp chip_key(_chip, i), do: Integer.to_string(i)
+
+  # phx-remove for a chip, its popover copy and the actions: tell the hook to
+  # animate the exit, and keep the node for the length of a <.reveal> collapse
+  # (180ms) so a reveal closing in the same patch shrinks around it.
+  defp chip_exit, do: JS.dispatch("chip-exit") |> JS.transition("chip-exit", time: 180)
 
   # Attributes the hooks own; a LiveView patch would otherwise reset them.
   defp keep_client_attrs(attrs), do: JS.ignore_attributes(attrs)

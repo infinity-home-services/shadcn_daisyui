@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-09
+
+Chips animate in and out, and a closing `<.reveal>` collapses around its
+last chip instead of snapping shut.
+
+### Added
+
+- **Chip motion** (`<.chip_row>`, `ShadcnChipRow` / `initShadcnDaisyui()`):
+  a chip added after mount scales and fades in (`scale` 0.9 → 1 + opacity,
+  150ms ease-out) and the chips, "+N" and actions after it slide over (FLIP
+  on `translate`). A removed chip leaves the flow, scales and fades out where
+  it stood while its neighbours slide into its place; "+N" recounts once it
+  is gone, and a chip pulled out of "+N" then fades in. Removing `:action`
+  content animates the same way. Works for LiveView patches, the hook's own
+  removals in dead views, and chips other scripts add or remove (a
+  MutationObserver). Transform and opacity only, through the Web Animations
+  API (CSP-safe); instant under reduced motion. The first render is not
+  animated.
+- Each chip, its popover copy and the actions wrapper render a `phx-remove`
+  (`JS.dispatch("chip-exit")` + a 180ms `JS.transition`), so LiveView keeps a
+  removed chip for the length of a reveal collapse. When `open` turns false
+  in the patch that removes the last chip, the reveal shrinks with the chip
+  still visible inside it, as one motion.
+- Docs: an "Add and remove (animated)" chip row example (adds chips, removes
+  them including the last one, which closes its reveal), and the pattern in
+  the reveal docs, `usage-rules.md` and `usage-rules/styles-motion.md` (a new
+  "chip in / out" tier). `/lab/csp` gains an "Add a label" button.
+
+### Changed
+
+- **Chip DOM ids follow the chip's `value`** (`<id>-chip-v-<value>`, with a
+  hash suffix when the value has characters outside `[A-Za-z0-9_-]`), and
+  the chip `<li>` now carries the id. Index ids made a patch that removed one
+  chip morph every later chip and drop the last node. Chips without a
+  `value` keep index ids - pass `value` to get correct exit animations.
+- The actions wrapper has an id (`<id>-actions`). `.chip-row`,
+  `.chip-row-chips` and the popover list are `position: relative` (a leaving
+  chip is positioned in them).
+- `ShadcnChipRow` gains `beforeUpdate()` (records chip positions before a
+  patch); `updated()` re-fits on a microtask so `phx-remove` exits are known
+  first. Keyboard navigation and focus restoration skip leaving chips; focus
+  moves off a removed chip as its exit starts.
+
 ## [0.13.0] - 2026-10-09
 
 Tabs, outline buttons and fields follow shadcn's default (Vega) style, so a

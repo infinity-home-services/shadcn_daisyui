@@ -180,6 +180,63 @@ document.addEventListener("input", (e) => {
   range.parentElement.querySelector("[data-demo-width-out]").textContent = `${range.value}%`
 })
 
+// Chip row "Add and remove" preview: the dead-view stand-in for a LiveView
+// that adds filters. It appends a chip and its popover copy (the hook's
+// MutationObserver animates them in) and drives the surrounding reveal the
+// way `open={@filters != []}` would: open on add, closed when the last chip
+// or Clear all removes everything.
+const DEMO_FILTERS = [
+  ["todo", "Status: Todo"], ["high", "Priority: High"], ["bug", "Label: Bug"],
+  ["me", "Assignee: Me"], ["frontend", "Label: Frontend"], ["week", "Created: Last 7 days"],
+]
+const demoChip = (rowId, kind, index, value, label) => {
+  const li = document.createElement("li")
+  li.id = `${rowId}-${kind}-v-${value}`
+  li.className = "badge chip badge-secondary"
+  li.dataset.index = index
+  li.dataset.value = value
+  li.setAttribute(kind === "copy" ? "data-chip-copy" : "data-chip", "")
+  if (kind === "copy") li.hidden = true
+  const text = document.createElement("span")
+  text.id = `${li.id}-label`
+  text.className = "chip-label"
+  text.textContent = label
+  const btn = document.createElement("button")
+  btn.type = "button"
+  btn.id = `${li.id}-remove`
+  btn.className = "chip-remove"
+  btn.setAttribute("aria-label", "Remove")
+  btn.setAttribute("aria-labelledby", `${btn.id} ${text.id}`)
+  btn.setAttribute("data-chip-remove", "")
+  const icon = document.createElement("span")
+  icon.className = "hero-x-mark size-3"
+  icon.setAttribute("aria-hidden", "true")
+  btn.append(icon)
+  li.append(text, btn)
+  return li
+}
+const liveChips = (row) => row.querySelectorAll("[data-chip]:not([data-chip-exiting])")
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-demo-chip-add]")
+  if (!btn) return
+  const row = document.getElementById(btn.dataset.demoChipAdd)
+  const taken = new Set([...liveChips(row)].map((c) => c.dataset.value))
+  const next = DEMO_FILTERS.find(([value]) => !taken.has(value) && !document.getElementById(`${row.id}-chip-v-${value}`))
+  if (!next) return
+  const index = Math.max(-1, ...[...row.querySelectorAll("[data-index]")].map((c) => Number(c.dataset.index))) + 1
+  row.querySelector("[data-chip-row-chips]").append(demoChip(row.id, "chip", index, ...next))
+  row.querySelector("[data-chip-row-panel] ul").append(demoChip(row.id, "copy", index, ...next))
+  document.getElementById(`${row.id}-reveal`).setAttribute("data-open", "")
+})
+document.addEventListener("chip-remove", (e) => {
+  const reveal = document.getElementById(`${e.target.id}-reveal`)
+  if (reveal && liveChips(e.target).length <= 1) reveal.removeAttribute("data-open")
+})
+document.addEventListener("chip-clear", (e) => {
+  const reveal = document.getElementById(`${e.target.id}-reveal`)
+  if (reveal) reveal.removeAttribute("data-open")
+})
+
 // Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")

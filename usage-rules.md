@@ -28,7 +28,9 @@ like shadcn/ui. **Every UI decision goes through this package.**
   and `<.chip_row>` (removable chips → "+N" popover). Never let a tab or chip
   row wrap or scroll sideways, and never hand-roll an overflow menu.
 - Rows that appear and disappear in place (filter chips, inline alerts) slide
-  with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`.
+  with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`, and
+  never `:if` the chip row inside the reveal - `open` drives it, and the chips
+  animate in and out on their own.
 - Interactive components (combobox, select, date picker, calendar, range calendar,
   OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row)
   REQUIRE a unique `id` attribute and the JS hooks
@@ -90,8 +92,8 @@ Decision order:
 | `<.message>` / `<.message_group>` | chat turn: `align="start\|end"`, `<:avatar>` `<:header>` `<:footer>`; `role="log"` on the group for live transcripts |
 | `<.bubble>` / `<.bubble_group>` | `variant="default\|secondary\|muted\|tinted\|outline\|ghost\|destructive"`, `align`, `as="button"` for suggested replies, `<:reactions label>` |
 | `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
-| `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"` |
-| `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class` |
+| `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
+| `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
 | `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
