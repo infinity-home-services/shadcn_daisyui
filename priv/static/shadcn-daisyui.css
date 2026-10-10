@@ -612,6 +612,25 @@
   }
   .collapse-content > :last-child { padding-bottom: 1rem; }
   .collapse-arrow > .collapse-title:after { color: var(--muted-foreground); inset-inline-end: 0.25rem; }
+  /* <.accordion flush>: rows run edge to edge (no card padding around them),
+     each trigger and its content carry the card-body's 24px inset, and 1px
+     lines under the header and between rows reach both edges, like table
+     rows in a card. The focus ring is inset so the card doesn't clip it, and
+     the rows at the card's corners round with it. */
+  .accordion-flush > .accordion-header { border-bottom: 1px solid var(--border-color); }
+  .accordion-flush .collapse > input,
+  .accordion-flush .collapse > .collapse-title { padding-inline: 1.5rem 4rem; }
+  .accordion-flush .collapse-content { padding-inline: 1.5rem; }
+  .accordion-flush .collapse-arrow > .collapse-title:after { inset-inline-end: 1.75rem; }
+  .accordion-flush .collapse:has(> input:is([type="checkbox"], [type="radio"]):focus-visible) { outline-offset: -2px; }
+  .accordion-flush > .accordion-rows:first-child > .collapse:first-child {
+    border-start-start-radius: calc(var(--radius-xl) - 1px);
+    border-start-end-radius: calc(var(--radius-xl) - 1px);
+  }
+  .accordion-flush > .accordion-rows > .collapse:last-child {
+    border-end-start-radius: calc(var(--radius-xl) - 1px);
+    border-end-end-radius: calc(var(--radius-xl) - 1px);
+  }
 
   /* ---- Avatar ------------------------------------------------------------ */
   .avatar-placeholder > div { background-color: var(--muted); color: var(--muted-foreground); }

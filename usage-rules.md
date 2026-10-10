@@ -78,7 +78,7 @@ Decision order:
 | `<.breadcrumb>` | `<:item navigate={...}>` slots; last item without link = current page |
 | `<.pagination>` | `page` `total_pages` + `path={fn p -> ... end}` or `event="..."` |
 | `<.sidebar_layout>` / `<.sidebar_group>` | app shell; `<:sidebar>` slot; items with `active` |
-| `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple` |
+| `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple`; opt in to a section card: `<:header>` (content above the rows in the same card: `card_title`, `card_description`, an action) and `flush` (rows edge to edge, 24px inset inside each row, 1px line under the header and between rows) |
 | `<.avatar>` / `<.avatar_group>` | `src` or `fallback="JD"`, `shape`, size via `class` |
 | `<.progress>` / `<.skeleton>` / `<.spinner>` | sized via `class` |
 | `<.toaster>` | once in root layout (`position`, `rich_colors`, `close_button`); toasts via JS `toast()` / `toast.success()` / `toast.promise()` or LiveView `push_toast(socket, msg, type: :success)`; toasts render in the top layer and follow into an open sheet/dialog/drawer/command, so they show above it and stay clickable - never raise them with z-index |

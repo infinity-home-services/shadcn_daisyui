@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-10
+
+`<.accordion>` gets two opt-ins that turn it into a full section card: a
+`<:header>` slot and `flush` rows. Both default to off, and an accordion that
+uses neither renders the same markup as 0.16.1 (a test pins that output).
+
+### Added
+
+- **`<:header>`** on `<.accordion>`: content above the rows inside the same
+  card, padded like a card body (a `card_title`, a `card_description`, maybe
+  an action).
+- **`flush`** on `<.accordion>`: rows run edge to edge. The card keeps no
+  horizontal padding around them; each trigger and its open content carry the
+  card body's 24px inset inside the row, and the chevron moves in with it. A
+  1px `border-border` line separates the header from the first row and each
+  row from the next, reaching both edges like table rows in a card, with none
+  under the last row. The keyboard focus ring is inset so the card doesn't
+  clip it, and the first and last rows round with the card's corners. Theme
+  classes: `.accordion-flush`, `.accordion-header`, `.accordion-rows`.
+- Docs: a "Section card (header + flush rows)" accordion example.
+
 ## [0.16.1] - 2026-10-10
 
 Test-only release: no changes to the components, CSS or JS.

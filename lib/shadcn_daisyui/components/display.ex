@@ -17,20 +17,65 @@ defmodule ShadcnDaisyui.Components.Display do
         <:section title="Is it accessible?" open>Yes. It adheres to the WAI-ARIA pattern.</:section>
         <:section title="Is it styled?">Yes, shadcn-matched out of the box.</:section>
       </.accordion>
+
+  Opt in to a section card: `<:header>` puts content above the rows in the
+  same card (padded like a card body), and `flush` runs the rows edge to edge,
+  each keeping the card's 24px inset, with a 1px line under the header and
+  between rows.
+
+      <.accordion id="timeline" flush>
+        <:header>
+          <.card_title>Timeline</.card_title>
+          <.card_description>Every step of this job so far.</.card_description>
+        </:header>
+        <:section title="Inquiry received" open>…</:section>
+        <:section title="Estimate sent">…</:section>
+      </.accordion>
   """
   attr(:id, :string, required: true)
   attr(:multiple, :boolean, default: false, doc: "allow several sections open at once")
+
+  attr(:flush, :boolean,
+    default: false,
+    doc: "rows run edge to edge with the card's inset inside each row"
+  )
+
   attr(:class, :any, default: nil)
+
+  slot(:header, doc: "content above the rows in the same card (title, description, action)")
 
   slot :section, required: true do
     attr(:title, :string, required: true)
     attr(:open, :boolean)
   end
 
-  def accordion(assigns) do
+  # Without :header or flush the markup is exactly the pre-0.17 output (pinned by
+  # a test); the opt-ins render through the second clause.
+  def accordion(%{header: [], flush: false} = assigns) do
     ~H"""
     <div class={["card w-full", @class]}>
       <div class="card-body py-1">
+        <div :for={section <- @section} class="collapse collapse-arrow">
+          <input
+            type={(@multiple && "checkbox") || "radio"}
+            name={!@multiple && @id}
+            checked={section[:open]}
+          />
+          <div class="collapse-title">{section.title}</div>
+          <div class="collapse-content">{render_slot(section)}</div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def accordion(assigns) do
+    ~H"""
+    <div class={["card w-full", @flush && "accordion-flush", @class]}>
+      <div :if={@header != []} class={["card-body accordion-header", !@flush && "pb-2"]}>
+        {render_slot(@header)}
+      </div>
+      <div class={(@flush && "accordion-rows") || "card-body pt-0 pb-1"}>
         <div :for={section <- @section} class="collapse collapse-arrow">
           <input
             type={(@multiple && "checkbox") || "radio"}

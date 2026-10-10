@@ -939,6 +939,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "accordion",
         title: "Accordion",
         description: "Vertically stacked, expandable sections.",
+        notes:
+          "Two opt-ins turn it into a full section card: <:header> puts content above the rows in the same card (padded like a card body: a card_title, a card_description, maybe an action), and flush runs the rows edge to edge, each trigger and its content keeping the card's 24px inset, with a 1px line under the header and between rows (none under the last). Without either, it renders exactly as the default example.",
         examples: [
           %{
             title: "Default",
@@ -973,6 +975,126 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   <input type="checkbox" />
                   <div class="collapse-title">Is it animated?</div>
                   <div class="collapse-content">Yes. It uses a smooth height transition.</div>
+                </div>
+              </div>
+            </div>
+            """
+          },
+          %{
+            title: "Section card (header + flush rows)",
+            center: false,
+            heex: ~S"""
+            <.accordion id="job-timeline" flush multiple>
+              <:header>
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex flex-col gap-1.5">
+                    <.card_title>Timeline</.card_title>
+                    <.card_description>Every step of this job so far.</.card_description>
+                  </div>
+                  <.badge variant="secondary">4 steps</.badge>
+                </div>
+              </:header>
+              <:section title="Inquiry received" open>
+                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs">Source</dt>
+                    <dd class="text-foreground">Website form</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs">Received</dt>
+                    <dd class="text-foreground">Mon, Oct 5, 9:12 AM</dd>
+                  </div>
+                </dl>
+              </:section>
+              <:section title="Site visit scheduled">
+                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs">Assigned to</dt>
+                    <dd class="text-foreground">Pat Rivera</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs">Visit</dt>
+                    <dd class="text-foreground">Wed, Oct 7, 2:00 PM</dd>
+                  </div>
+                </dl>
+              </:section>
+              <:section title="Estimate sent">
+                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs">Amount</dt>
+                    <dd class="text-foreground">$12,480</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs">Sent</dt>
+                    <dd class="text-foreground">Thu, Oct 8, 4:30 PM</dd>
+                  </div>
+                </dl>
+              </:section>
+              <:section title="Contract signed">
+                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs">Signed by</dt>
+                    <dd class="text-foreground">Jordan Lee</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs">Signed</dt>
+                    <dd class="text-foreground">Fri, Oct 9, 11:05 AM</dd>
+                  </div>
+                </dl>
+              </:section>
+            </.accordion>
+            """,
+            code: ~S"""
+            <div class="card w-full accordion-flush">
+              <div class="card-body accordion-header">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex flex-col gap-1.5">
+                    <h3 class="card-title">Timeline</h3>
+                    <p class="text-sm text-muted-foreground">Every step of this job so far.</p>
+                  </div>
+                  <span class="badge badge-secondary">4 steps</span>
+                </div>
+              </div>
+              <div class="accordion-rows">
+                <div class="collapse collapse-arrow">
+                  <input type="checkbox" checked />
+                  <div class="collapse-title">Inquiry received</div>
+                  <div class="collapse-content">
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div><dt class="text-xs">Source</dt><dd class="text-foreground">Website form</dd></div>
+                      <div><dt class="text-xs">Received</dt><dd class="text-foreground">Mon, Oct 5, 9:12 AM</dd></div>
+                    </dl>
+                  </div>
+                </div>
+                <div class="collapse collapse-arrow">
+                  <input type="checkbox" />
+                  <div class="collapse-title">Site visit scheduled</div>
+                  <div class="collapse-content">
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div><dt class="text-xs">Assigned to</dt><dd class="text-foreground">Pat Rivera</dd></div>
+                      <div><dt class="text-xs">Visit</dt><dd class="text-foreground">Wed, Oct 7, 2:00 PM</dd></div>
+                    </dl>
+                  </div>
+                </div>
+                <div class="collapse collapse-arrow">
+                  <input type="checkbox" />
+                  <div class="collapse-title">Estimate sent</div>
+                  <div class="collapse-content">
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div><dt class="text-xs">Amount</dt><dd class="text-foreground">$12,480</dd></div>
+                      <div><dt class="text-xs">Sent</dt><dd class="text-foreground">Thu, Oct 8, 4:30 PM</dd></div>
+                    </dl>
+                  </div>
+                </div>
+                <div class="collapse collapse-arrow">
+                  <input type="checkbox" />
+                  <div class="collapse-title">Contract signed</div>
+                  <div class="collapse-content">
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div><dt class="text-xs">Signed by</dt><dd class="text-foreground">Jordan Lee</dd></div>
+                      <div><dt class="text-xs">Signed</dt><dd class="text-foreground">Fri, Oct 9, 11:05 AM</dd></div>
+                    </dl>
+                  </div>
                 </div>
               </div>
             </div>
