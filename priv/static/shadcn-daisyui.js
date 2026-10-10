@@ -1465,6 +1465,140 @@ function initDock(scope) {
     return root.__sdDate
   }
 
+  // <.time_picker>: hour / minute (/ second) / AM-PM listbox columns in a
+  // popover. State is { h, m, s } in 24-hour time; render() writes it to the
+  // label, the options and the optional [data-timepicker-input] (ISO HH:MM or
+  // HH:MM:SS), so refresh() can restore it after a patch. Every pick commits
+  // and dispatches input + change. Up/Down pick in a column, Left/Right move
+  // between columns, Enter closes.
+  function initTimepicker(root) {
+    if (root.__sdTime) return root.__sdTime
+    const q = (s) => root.querySelector(s)
+    const trigger = q("[data-timepicker-trigger]"), panel = q("[data-timepicker-panel]")
+    if (!trigger || !panel) return null
+    const twelve = root.dataset.hourCycle !== "24"
+    const withSeconds = root.hasAttribute("data-seconds")
+    const placeholder = root.dataset.placeholder ?? q("[data-timepicker-label]").textContent.trim()
+    const pad = (n) => String(n).padStart(2, "0")
+    const parse = (v) => {
+      const m = /^(\d{2}):(\d{2})(?::(\d{2}))?/.exec(v || "")
+      return m ? { h: +m[1], m: +m[2], s: +(m[3] || 0) } : null
+    }
+    const iso = (t) => (t ? pad(t.h) + ":" + pad(t.m) + (withSeconds ? ":" + pad(t.s) : "") : "")
+    const h12 = (h) => (h % 12 === 0 ? 12 : h % 12)
+    const label = (t) =>
+      (twelve ? h12(t.h) : pad(t.h)) + ":" + pad(t.m) + (withSeconds ? ":" + pad(t.s) : "") +
+      (twelve ? (t.h < 12 ? " AM" : " PM") : "")
+    // The option value each column shows as selected for a time.
+    const part = (key, t) =>
+      key === "h" ? String(twelve ? h12(t.h) : t.h)
+        : key === "m" ? String(t.m)
+        : key === "s" ? String(t.s)
+        : t.h < 12 ? "AM" : "PM"
+    const cols = () => [...root.querySelectorAll("[data-time-col]")]
+    const options = (col) => [...col.querySelectorAll("[role=option]")]
+    const server = serverValue(() => root.dataset.value || "")
+    let value = parse(server.initial) || parse((q("[data-timepicker-input]") || {}).value)
+
+    const render = () => {
+      pop.sync()
+      const l = q("[data-timepicker-label]")
+      l.textContent = value ? label(value) : placeholder
+      l.classList.toggle("text-muted-foreground", !value)
+      const input = q("[data-timepicker-input]")
+      if (input) input.value = iso(value)
+      cols().forEach((col) => {
+        const sel = value && part(col.dataset.timeCol, value)
+        const opts = options(col)
+        const stop = opts.find((o) => o.dataset.value === sel) || opts[0]
+        opts.forEach((o) => {
+          o.setAttribute("aria-selected", String(o.dataset.value === sel))
+          o.tabIndex = o === stop ? 0 : -1
+        })
+      })
+    }
+    // Scroll each column so its selected option sits at the top (on open).
+    const alignColumns = () =>
+      cols().forEach((col) => {
+        const sel = col.querySelector("[aria-selected=true]")
+        col.scrollTop = sel ? sel.offsetTop - col.firstElementChild.offsetTop : 0
+      })
+    const pick = (key, raw) => {
+      const t = value ? { ...value } : { h: 0, m: 0, s: 0 }
+      if (key === "h") {
+        const n = +raw
+        t.h = twelve ? (n % 12) + (t.h >= 12 ? 12 : 0) : n
+      } else if (key === "m") t.m = +raw
+      else if (key === "s") t.s = +raw
+      else if (raw === "AM" && t.h >= 12) t.h -= 12
+      else if (raw === "PM" && t.h < 12) t.h += 12
+      value = t
+      render()
+      const key2 = iso(value)
+      server.sent(key2)
+      const input = q("[data-timepicker-input]")
+      if (input) emitChange(input)
+      root.dispatchEvent(new CustomEvent("time-change", { bubbles: true, detail: { value: key2 } }))
+    }
+
+    const pop = popoverState(root, trigger, panel, {
+      prefix: "timepicker",
+      onOpenFocus: () => {
+        alignColumns()
+        const c = cols()[0]
+        if (c) c.querySelector("[tabindex='0']").focus({ preventScroll: true })
+      },
+    })
+    // After popoverState's own root listener, so a pointer open sees isOpen.
+    root.addEventListener("click", (e) => {
+      if (e.target.closest("[data-timepicker-trigger]") && pop.isOpen()) alignColumns()
+    })
+    root.addEventListener("click", (e) => {
+      const o = e.target.closest("[data-time-col] [role=option]")
+      if (!o) return
+      pick(o.closest("[data-time-col]").dataset.timeCol, o.dataset.value)
+      o.scrollIntoView({ block: "nearest" })
+    })
+    panel.addEventListener("keydown", (e) => {
+      const o = e.target.closest("[role=option]")
+      if (!o) return
+      const col = o.closest("[data-time-col]"), opts = options(col), i = opts.indexOf(o)
+      const all = cols(), c = all.indexOf(col)
+      let next = null
+      if (e.key === "ArrowDown") next = opts[Math.min(i + 1, opts.length - 1)]
+      else if (e.key === "ArrowUp") next = opts[Math.max(i - 1, 0)]
+      else if (e.key === "Home") next = opts[0]
+      else if (e.key === "End") next = opts[opts.length - 1]
+      else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const to = all[c + (e.key === "ArrowRight" ? 1 : -1)]
+        if (to) { e.preventDefault(); to.querySelector("[tabindex='0']").focus() }
+        return
+      } else if (e.key === "Enter") {
+        e.preventDefault()
+        if (o.getAttribute("aria-selected") !== "true") pick(col.dataset.timeCol, o.dataset.value)
+        pop.set(false); trigger.focus()
+        return
+      } else if (e.key === " ") {
+        e.preventDefault(); pick(col.dataset.timeCol, o.dataset.value)
+        return
+      } else return
+      e.preventDefault()
+      pick(col.dataset.timeCol, next.dataset.value)
+      next.focus()
+      next.scrollIntoView({ block: "nearest" })
+    })
+    render()
+    const api = {
+      refresh() {
+        const changed = server.changed()
+        if (changed !== null) value = parse(changed)
+        render()
+      },
+    }
+    root.__sdTime = api
+    return api
+  }
+
   // SHOWCASE ONLY: renders a fixed demo dataset for the docs gallery. In a real
   // app use ShadcnDaisyui.CoreComponents.table/1 with LiveView-driven sorting,
   // filtering, and pagination (phx-click events) instead of this hook.
@@ -2118,6 +2252,7 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-otp]").forEach(initOtp)
   root.querySelectorAll("[data-datepicker]").forEach(initDatepicker)
   root.querySelectorAll("[data-daterange]").forEach(initDaterange)
+  root.querySelectorAll("[data-timepicker]").forEach(initTimepicker)
   root.querySelectorAll("[data-range-calendar]").forEach(initRangeCalendar)
   root.querySelectorAll("[data-calendar]").forEach((el) => { if (!el.dataset.built) buildCalendar(el) })
   root.querySelectorAll("[data-datatable]").forEach(initDataTable)
@@ -2141,6 +2276,7 @@ export const Hooks = {
   ShadcnCalendar: { mounted() { if (!this.el.dataset.built) buildCalendar(this.el) } },
   ShadcnDatePicker: { mounted() { this.api = initDatepicker(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnDateRange: { mounted() { this.api = initDaterange(this.el) }, updated() { this.api && this.api.refresh() } },
+  ShadcnTimePicker: { mounted() { this.api = initTimepicker(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnRangeCalendar: { mounted() { initRangeCalendar(this.el) } },
   // Optional since 0.12: server toasts arrive through a window listener.
   ShadcnToaster: { mounted() { toasterSection() } },

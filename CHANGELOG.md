@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-10
+
+A time picker. `<.time_picker>` is new; nothing existing changes.
+
+### Added
+
+- **`<.time_picker>`**: a field-style trigger (clock icon, formatted time or
+  placeholder) that opens scrollable Hours, Minutes, optional Seconds and
+  AM/PM columns in a popover. Bind it with `field` (or `name` + `value`, a
+  `Time` or ISO string); the hidden input posts a 24-hour `HH:MM`
+  (`HH:MM:SS` with `seconds`) that an Ecto `:time` field casts, and every
+  pick dispatches `input` + `change`. `hour_cycle={24}` drops AM/PM,
+  `minute_step` sets the minute grid, `full_width` gives a 44px touch
+  trigger. Each column is a `role="listbox"`: Up/Down pick, Left/Right move
+  between columns, Enter or Esc closes. Opening scrolls every column to its
+  value. The open popover and label survive LiveView patches and a changed
+  server value wins; a `time-change` event with `{ value }` bubbles. Hook:
+  `ShadcnTimePicker`. Theme classes: `.time-columns`, `.time-col`,
+  `.time-option`.
+- Docs: a Time Picker page under Forms & inputs.
+
 ## [0.17.0] - 2026-10-10
 
 `<.accordion>` gets two opt-ins that turn it into a full section card: a

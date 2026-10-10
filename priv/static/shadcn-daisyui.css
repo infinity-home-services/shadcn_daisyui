@@ -835,18 +835,18 @@
      fill when a consumer overrides it, matching .input/.select/.textarea. The
      `.btn[...]` specificity (0,2,0) matches `.btn.btn-outline` and wins on source
      order; re-assert the outline hover so it isn't flattened by the same. */
-  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]) {
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger], [data-timepicker-trigger]) {
     background-color: var(--input-background);
     border-color: var(--input);
     flex-wrap: nowrap;              /* one line at any width: the label truncates, like a field */
     white-space: nowrap;
   }
-  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):hover { background-color: var(--outline-hover); }
-  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger]):disabled { background-color: var(--input-background); border-color: var(--input); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger], [data-timepicker-trigger]):hover { background-color: var(--outline-hover); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-datepicker-trigger], [data-daterange-trigger], [data-timepicker-trigger]):disabled { background-color: var(--input-background); border-color: var(--input); }
 
   /* shadcn `aria-invalid:border-destructive aria-invalid:ring-destructive/20` */
-  .btn:is([data-select-trigger], [data-combobox-trigger])[aria-invalid="true"] { border-color: var(--destructive); }
-  .btn:is([data-select-trigger], [data-combobox-trigger])[aria-invalid="true"]:focus-visible { box-shadow: var(--destructive-ring); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-timepicker-trigger])[aria-invalid="true"] { border-color: var(--destructive); }
+  .btn:is([data-select-trigger], [data-combobox-trigger], [data-timepicker-trigger])[aria-invalid="true"]:focus-visible { box-shadow: var(--destructive-ring); }
 
   /* ---- Command list / Combobox / Date-picker panels ---------------------- */
   .command-item,
@@ -925,6 +925,38 @@
   /* endpoints (declared AFTER .in-band so primary wins over accent) */
   .cal-day.is-selected,
   .cal-day.is-selected:hover { background-color: var(--primary); color: var(--primary-foreground); }
+
+  /* ---- Time picker columns (<.time_picker>) ----------------------------- */
+  .time-columns { display: flex; }
+  .time-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    max-height: 14rem;
+    padding: 0.25rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .time-col::-webkit-scrollbar { display: none; }
+  .time-col + .time-col { border-inline-start: 1px solid var(--border-color); }
+  .time-option {
+    display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center;
+    width: 2.75rem; height: 2rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .time-option:hover { background-color: var(--accent); color: var(--accent-foreground); }
+  .time-option:focus-visible { outline: none; box-shadow: var(--ring-shadow); position: relative; z-index: 1; }
+  .time-option[aria-selected="true"],
+  .time-option[aria-selected="true"]:hover { background-color: var(--primary); color: var(--primary-foreground); }
+  @media (pointer: coarse) {
+    .time-option { width: 3rem; height: 2.75rem; }
+    [data-timepicker][data-full-width] .btn[data-timepicker-trigger] { min-height: 2.75rem; }
+  }
 
   /* ---- Chart (bars + line) ----------------------------------------------- */
   .chart-bar { background-color: var(--primary); border-radius: var(--radius-sm) var(--radius-sm) 0 0; transition: opacity 0.15s; }
