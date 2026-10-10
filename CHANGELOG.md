@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-10
+
+Test-only release: no changes to the components, CSS or JS.
+
+### Fixed
+
+- The toast-layer browser test no longer fails intermittently in a full
+  parallel run. It waited a fixed 450ms for a toast to enter, and under load
+  the enter transition could start later, leaving the toast below the
+  viewport when it was hit-tested. It now waits until the toast has settled
+  (5s deadline).
+
 ## [0.16.0] - 2026-10-10
 
 `<.dropdown_menu>` items get opt-in attributes for row-actions menus: a
