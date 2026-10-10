@@ -302,6 +302,47 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   The menu is floating content (`z-50`), so it opens above sticky table
   headers and toolbars (`z-10`).
+
+  ## Opt-in item attributes
+
+  Items without these render exactly as before.
+
+    * `variant="destructive"` - `text-destructive`, hover/focus fill tinted
+      destructive (10%, 20% in dark), like shadcn's `DropdownMenuItem
+      variant="destructive"`.
+    * `confirm` - renders `data-confirm`, so the browser asks before
+      `phx-click` is sent (handled by `phoenix_html`, imported in a stock
+      Phoenix `app.js`). Name the object: "Remove Acme Marketing from Pat?",
+      not "Are you sure?".
+    * `values` - a map, one `phx-value-<key>` per entry, for events that need
+      more than an id. `phx-value-id` still works; when both are given,
+      `values` wins for its own keys only.
+    * `id` - on the item, for tests and focus.
+    * `disabled` - `aria-disabled="true"`, no `phx-click` / `data-confirm`, the
+      variant's colors at 50% opacity, no pointer events.
+
+  `close_on_select` on the menu closes it once an item is chosen (default:
+  focus keeps it open until it blurs). One delegated listener in
+  `shadcn-daisyui.js`, no inline handlers.
+
+      <.dropdown_menu
+        trigger_class="btn btn-ghost btn-square btn-sm"
+        chevron={false}
+        aria-label={"Actions for \#{@member.name}"}
+        align="end"
+        close_on_select
+      >
+        <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+        <:item phx-click="edit" phx-value-id={@member.id}>Edit</:item>
+        <:item
+          phx-click="remove"
+          values={%{user_id: @member.id, team_id: @team.id}}
+          variant="destructive"
+          confirm={"Remove \#{@team.name} from \#{@member.name}?"}
+        >
+          Remove
+        </:item>
+      </.dropdown_menu>
   """
   attr(:class, :any, default: "w-48", doc: "menu panel classes")
   attr(:trigger_class, :any, default: "btn btn-outline")
@@ -317,6 +358,11 @@ defmodule ShadcnDaisyui.Components.Overlay do
     doc: "names the trigger; required when it shows only an icon"
   )
 
+  attr(:close_on_select, :boolean,
+    default: false,
+    doc: "close the menu once an item is chosen (default: stays open until blur)"
+  )
+
   attr(:rest, :global)
 
   slot(:trigger, required: true)
@@ -326,11 +372,20 @@ defmodule ShadcnDaisyui.Components.Overlay do
     attr(:class, :any)
     attr(:"phx-click", :any)
     attr(:"phx-value-id", :any)
+    attr(:id, :string, doc: "on the item, for tests and focus")
+    attr(:variant, :string, values: ~w(destructive), doc: "opt in: destructive text + tint")
+    attr(:confirm, :string, doc: "data-confirm; name the object (\"Remove X from Pat?\")")
+    attr(:values, :map, doc: "one phx-value-<key> per entry; wins over phx-value-id")
+    attr(:disabled, :boolean, doc: "aria-disabled, no phx-click, 50% opacity")
   end
 
   def dropdown_menu(assigns) do
     ~H"""
-    <div class={["dropdown", @align == "end" && "dropdown-end"]} {@rest}>
+    <div
+      class={["dropdown", @align == "end" && "dropdown-end"]}
+      data-close-on-select={@close_on_select}
+      {@rest}
+    >
       <div tabindex="0" role="button" class={@trigger_class} aria-label={assigns[:"aria-label"]}>
         {render_slot(@trigger)}
         <span :if={@chevron} class="hero-chevron-down size-4" aria-hidden="true"></span>
@@ -338,13 +393,53 @@ defmodule ShadcnDaisyui.Components.Overlay do
       <ul tabindex="0" class={["dropdown-content menu z-50 mt-2", @class]}>
         <li :if={@label != []} class="menu-title">{render_slot(@label)}</li>
         <li :for={item <- @item}>
-          <a class={item[:class]} phx-click={item[:"phx-click"]} phx-value-id={item[:"phx-value-id"]}>
+          <a
+            class={dropdown_item_class(item)}
+            phx-click={!item[:disabled] && item[:"phx-click"]}
+            phx-value-id={dropdown_item_value_id(item)}
+            {dropdown_item_attrs(item)}
+          >
             {render_slot(item)}
           </a>
         </li>
       </ul>
     </div>
     """
+  end
+
+  # Opt-in item attributes. With none of them set, the item keeps its old
+  # markup exactly: `class={item[:class]}`, phx-click, phx-value-id, nothing else.
+  @dropdown_item_variants %{"destructive" => "text-destructive"}
+
+  defp dropdown_item_class(%{variant: variant} = item) when is_binary(variant),
+    do: [@dropdown_item_variants[variant], item[:class]]
+
+  defp dropdown_item_class(item), do: item[:class]
+
+  defp dropdown_item_value_id(item) do
+    values = item[:values] || %{}
+
+    cond do
+      Map.has_key?(values, :id) -> values[:id]
+      Map.has_key?(values, "id") -> values["id"]
+      true -> item[:"phx-value-id"]
+    end
+  end
+
+  defp dropdown_item_attrs(item) do
+    values =
+      for {key, value} <- item[:values] || %{}, to_string(key) != "id" do
+        {:"phx-value-#{key}", value}
+      end
+
+    [
+      id: item[:id],
+      "data-variant": item[:variant],
+      "data-confirm": !item[:disabled] && item[:confirm],
+      "aria-disabled": item[:disabled] && "true"
+    ]
+    |> Enum.filter(fn {_, v} -> v not in [nil, false] end)
+    |> Kernel.++(values)
   end
 
   @doc """

@@ -8,6 +8,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-10
+
+`<.dropdown_menu>` items get opt-in attributes for row-actions menus: a
+destructive variant, a confirm prompt, extra event values, an id and a
+disabled state, plus a menu-level `close_on_select`. All default to off, and an
+item that doesn't use them renders the same markup, classes and events as
+0.15.0 (a test pins that output).
+
+### Added
+
+- **`<:item variant="destructive">`**: `text-destructive`, with the hover /
+  focus fill tinted like shadcn's `DropdownMenuItem variant="destructive"`
+  (destructive at 10%, 20% in dark), via a new per-theme token
+  `--menu-destructive-hover`, so a light island in a dark page (and the
+  reverse) gets its own tint.
+- **`<:item confirm="…">`**: renders `data-confirm`, so the browser asks
+  before `phx-click` is sent (phoenix_html, imported in a stock Phoenix
+  `app.js`). Name the object: "Remove Acme Marketing from Pat?".
+- **`<:item values={%{…}}>`**: one `phx-value-<key>` per entry, for events
+  that need more than an id. `phx-value-id` keeps working; when both are
+  given, `values` wins for its own keys only.
+- **`<:item id="…">`**: rendered on the item, for tests and focus.
+- **`<:item disabled>`**: `aria-disabled="true"`, no `phx-click` or
+  `data-confirm`, the variant's colors at 50% opacity and no pointer events.
+- **`close_on_select`** on `<.dropdown_menu>`: the menu closes once an item is
+  chosen (default unchanged: focus keeps it open until it blurs). One
+  delegated listener in `shadcn-daisyui.js`, CSP-safe, no inline handlers.
+
+### Fixed
+
+- Clicking the placeholder / value text of a `<.select>` or `<.combobox>`
+  trigger now opens it. Opening re-renders the label, which detached the
+  clicked element, so the outside-click check closed the panel straight away.
+  The date picker, date range popover and the docs data table's faceted filter
+  use the same click-path check now.
+
 ## [0.15.0] - 2026-10-10
 
 `<.sheet>` and `<.drawer>` get a header and a footer that stay put while only

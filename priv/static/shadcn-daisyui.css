@@ -210,6 +210,7 @@
   --tab-foreground: color-mix(in oklab, var(--foreground) 60%, transparent); /* text-foreground/60 */
   --tab-active-background: var(--background);                             /* data-active:bg-background */
   --tab-active-border: transparent;
+  --menu-destructive-hover: color-mix(in oklab, var(--destructive) 10%, transparent); /* focus:bg-destructive/10 */
 }
 [data-theme*="dark"],
 .dark {
@@ -219,6 +220,7 @@
   --tab-foreground: var(--muted-foreground);                                  /* dark:text-muted-foreground */
   --tab-active-background: color-mix(in oklab, var(--input) 30%, transparent); /* dark:data-active:bg-input/30 */
   --tab-active-border: var(--input);                                          /* dark:data-active:border-input */
+  --menu-destructive-hover: color-mix(in oklab, var(--destructive) 20%, transparent); /* dark:focus:bg-destructive/20 */
 }
 
 /* ===========================================================================
@@ -545,6 +547,17 @@
   .menu li > * { border-radius: var(--radius-sm); }
   .menu li > *:not(ul):not(.menu-title):hover,
   .menu li > *:not(ul):not(.menu-title):focus { background-color: var(--accent); color: var(--accent-foreground); }
+  /* <.dropdown_menu> opt-in items. shadcn DropdownMenuItem variant="destructive":
+     destructive text, hover/focus fill destructive/10 (dark /20, via the token). */
+  .menu li > [data-variant="destructive"]:not(ul):not(.menu-title) { color: var(--destructive); }
+  .menu li > [data-variant="destructive"]:not(ul):not(.menu-title):hover,
+  .menu li > [data-variant="destructive"]:not(ul):not(.menu-title):focus {
+    background-color: var(--menu-destructive-hover);
+    color: var(--destructive);
+  }
+  /* disabled: the variant's colors at 50%, no hover fill, no clicks (shadcn
+     data-disabled:pointer-events-none data-disabled:opacity-50) */
+  .menu li > [aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 
   /* ---- Modal ------------------------------------------------------------- */
   .modal-box {

@@ -339,6 +339,158 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
 
       refute html =~ "menu-title"
     end
+
+    # Other apps depend on this exact output: an item that uses none of the
+    # opt-in attributes (confirm, values, id, variant, disabled) and a menu
+    # without close_on_select render byte-for-byte as before 0.16.0.
+    test "today's usage renders unchanged" do
+      assigns = %{id: 7}
+
+      html =
+        render(~H"""
+        <.dropdown_menu
+          trigger_class="btn btn-ghost btn-square btn-sm"
+          chevron={false}
+          aria-label="More actions"
+          align="end"
+          class="w-40"
+          data-row="r"
+        >
+          <:trigger><span class="hero-ellipsis-horizontal size-4"></span></:trigger>
+          <:label>Actions</:label>
+          <:item>Plain</:item>
+          <:item phx-click="edit" phx-value-id={@id}>Edit</:item>
+          <:item phx-click="delete" phx-value-id={@id} class="text-destructive">Delete</:item>
+        </.dropdown_menu>
+        """)
+
+      assert html == """
+             <div class="dropdown dropdown-end" data-row="r">
+               <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm" aria-label="More actions">
+                 <span class="hero-ellipsis-horizontal size-4"></span>
+                 \n  </div>
+               <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40">
+                 <li class="menu-title">Actions</li>
+                 <li>
+                   <a class="">
+                     Plain
+                   </a>
+                 </li><li>
+                   <a class="" phx-click="edit" phx-value-id="7">
+                     Edit
+                   </a>
+                 </li><li>
+                   <a class="text-destructive" phx-click="delete" phx-value-id="7">
+                     Delete
+                   </a>
+                 </li>
+               </ul>
+             </div>\
+             """
+    end
+
+    defp item_tag(html, text) do
+      [tag] = Regex.run(~r/<a\b[^>]*>\s*#{text}\s*<\/a>/, html)
+      tag
+    end
+
+    test "confirm renders data-confirm" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu>
+          <:trigger>T</:trigger>
+          <:item phx-click="remove" confirm="Remove Acme Marketing from Pat?">Remove</:item>
+        </.dropdown_menu>
+        """)
+
+      assert item_tag(html, "Remove") =~ ~s(data-confirm="Remove Acme Marketing from Pat?")
+      assert item_tag(html, "Remove") =~ ~s(phx-click="remove")
+    end
+
+    test "values renders one phx-value per key; values wins for its own keys only" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu>
+          <:trigger>T</:trigger>
+          <:item phx-click="a" phx-value-id="1" values={%{user_id: 2, team: "x"}}>A</:item>
+          <:item phx-click="b" phx-value-id="1" values={%{"id" => 9, user_id: 3}}>B</:item>
+        </.dropdown_menu>
+        """)
+
+      a = item_tag(html, "A")
+      assert a =~ ~s(phx-value-id="1")
+      assert a =~ ~s(phx-value-user_id="2")
+      assert a =~ ~s(phx-value-team="x")
+
+      b = item_tag(html, "B")
+      assert b =~ ~s(phx-value-id="9")
+      refute b =~ ~s(phx-value-id="1")
+      assert count(b, "phx-value-id=") == 1
+      assert b =~ ~s(phx-value-user_id="3")
+    end
+
+    test "id renders on the item" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu><:trigger>T</:trigger><:item id="row-1-edit">Edit</:item></.dropdown_menu>
+        """)
+
+      assert item_tag(html, "Edit") =~ ~s(id="row-1-edit")
+    end
+
+    test "variant destructive adds text-destructive and the data-variant hook" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu>
+          <:trigger>T</:trigger>
+          <:item variant="destructive" class="font-medium">Remove</:item>
+        </.dropdown_menu>
+        """)
+
+      tag = item_tag(html, "Remove")
+      assert tag =~ ~s(class="text-destructive font-medium")
+      assert tag =~ ~s(data-variant="destructive")
+    end
+
+    test "disabled: aria-disabled, no phx-click, no data-confirm" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dropdown_menu>
+          <:trigger>T</:trigger>
+          <:item phx-click="remove" confirm="Remove X?" variant="destructive" disabled>Remove</:item>
+        </.dropdown_menu>
+        """)
+
+      tag = item_tag(html, "Remove")
+      assert tag =~ ~s(aria-disabled="true")
+      refute tag =~ "phx-click"
+      refute tag =~ "data-confirm"
+      assert tag =~ "text-destructive"
+    end
+
+    test "close_on_select marks the menu; off by default" do
+      assigns = %{}
+
+      on =
+        render(
+          ~H|<.dropdown_menu close_on_select><:trigger>T</:trigger><:item>I</:item></.dropdown_menu>|
+        )
+
+      off = render(~H|<.dropdown_menu><:trigger>T</:trigger><:item>I</:item></.dropdown_menu>|)
+
+      assert on =~ ~r/<div class="dropdown ?" data-close-on-select>/
+      refute off =~ "data-close-on-select"
+    end
   end
 
   describe "command/1" do
@@ -447,7 +599,10 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
         </.drawer>
         <.popover><:trigger>P</:trigger>body</.popover>
         <.tooltip tip="t">x</.tooltip>
-        <.dropdown_menu><:trigger>M</:trigger><:label>L</:label><:item>I</:item></.dropdown_menu>
+        <.dropdown_menu close_on_select>
+          <:trigger>M</:trigger><:label>L</:label><:item>I</:item>
+          <:item confirm="Remove X?" variant="destructive" values={%{a: 1}}>R</:item>
+        </.dropdown_menu>
         <.command id="cmd">
           <:trigger_label>Search</:trigger_label>
           <:item group="G" icon="hero-calendar" shortcut="⌘P">Calendar</:item>

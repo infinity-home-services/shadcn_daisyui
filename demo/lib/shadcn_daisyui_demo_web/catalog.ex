@@ -1061,7 +1061,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             "More than ~8 items - use a command palette or a dedicated page"
           ],
           sizing:
-            "Menu items are text-sm with rounded-sm; destructive item last, styled destructive.",
+            "Menu items are text-sm with rounded-sm; destructive item last, `variant=\"destructive\"` with a `confirm` that names the object. Opt-in item attrs leave existing items untouched.",
           responsive:
             "Menus are fine on touch (items are full-width rows); ensure the trigger itself meets the 44pt floor.",
           ios: "Menu attached to a button (or context menu on long-press); destructive role last."
@@ -1072,10 +1072,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{name: "aria-label", type: "string (icon-only triggers)", default: "nil"},
           %{name: "align", type: "start | end", default: "start"},
           %{name: "class", type: "menu panel classes", default: ~s("w-48")},
-          %{name: ":item class / phx-click / phx-value-id", type: "slot attrs", default: "-"}
+          %{name: "close_on_select", type: "boolean (opt in)", default: "false"},
+          %{name: ":item class / phx-click / phx-value-id", type: "slot attrs", default: "-"},
+          %{name: ":item variant", type: "destructive (opt in)", default: "nil"},
+          %{name: ":item confirm", type: "string, data-confirm (opt in)", default: "nil"},
+          %{name: ":item values", type: "map, phx-value-<key> (opt in)", default: "nil"},
+          %{name: ":item id", type: "string (opt in)", default: "nil"},
+          %{name: ":item disabled", type: "boolean (opt in)", default: "false"}
         ],
         notes:
-          "The menu is floating content at z-50, so it opens above sticky table headers, toolbars and bottom bars (z-10). Dialogs and sheets render in the browser's top layer, above both.",
+          "The menu is floating content at z-50, so it opens above sticky table headers, toolbars and bottom bars (z-10). Dialogs and sheets render in the browser's top layer, above both. Item attributes variant, confirm, values, id and disabled, and the menu's close_on_select, are opt in: items without them render exactly as before. confirm renders data-confirm, which phoenix_html (imported in a stock Phoenix app.js) turns into a browser confirm before phx-click is sent; name the object, e.g. \"Remove Acme Marketing from Pat?\".",
         examples: [
           %{
             title: "Default",
@@ -1129,6 +1135,45 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <li><a>Edit</a></li>
                 <li><a>Duplicate</a></li>
                 <li><a class="text-destructive">Delete</a></li>
+              </ul>
+            </div>
+            """
+          },
+          %{
+            title: "Row actions with a confirmed, destructive Remove",
+            heex: ~S"""
+            <.dropdown_menu
+              trigger_class="btn btn-ghost btn-square btn-sm"
+              chevron={false}
+              aria-label={"Actions for #{@member.name}"}
+              align="end"
+              class="w-40"
+              close_on_select
+            >
+              <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+              <:item phx-click="edit" phx-value-id={@member.id}>Edit</:item>
+              <:item disabled>Transfer</:item>
+              <:item
+                phx-click="remove"
+                values={%{user_id: @member.id, team_id: @team.id}}
+                variant="destructive"
+                confirm={"Remove #{@team.name} from #{@member.name}?"}
+              >
+                Remove
+              </:item>
+            </.dropdown_menu>
+            """,
+            code: ~S"""
+            <div class="dropdown dropdown-end" data-close-on-select>
+              <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm" aria-label="Actions for Pat">
+                <span class="hero-ellipsis-horizontal size-4" aria-hidden="true"></span>
+              </div>
+              <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40">
+                <li><a>Edit</a></li>
+                <li><a aria-disabled="true">Transfer</a></li>
+                <li>
+                  <a class="text-destructive" data-variant="destructive" data-confirm="Remove Acme Marketing from Pat?">Remove</a>
+                </li>
               </ul>
             </div>
             """

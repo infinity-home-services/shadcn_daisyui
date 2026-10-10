@@ -103,6 +103,21 @@ if (typeof window !== "undefined" && !window.__shadcnRevealToggle) {
   })
 }
 
+// <.dropdown_menu close_on_select>: choosing an item closes the menu. The menu
+// is open while focus is inside it (daisyUI :focus-within), so blur it. One
+// delegated listener: CSP-safe, dead views and LiveView alike. Disabled items
+// have pointer-events: none, so their clicks never land here.
+if (typeof window !== "undefined" && !window.__shadcnDropdownClose) {
+  window.__shadcnDropdownClose = true
+  document.addEventListener("click", (e) => {
+    const item = e.target instanceof Element && e.target.closest(".dropdown-content li > :is(a, button)")
+    const menu = item && item.closest(".dropdown[data-close-on-select]")
+    if (!menu || item.getAttribute("aria-disabled") === "true") return
+    const active = document.activeElement
+    if (active instanceof HTMLElement && menu.contains(active)) active.blur()
+  })
+}
+
 // ---- Sonner (toast) --------------------------------------------------------
 // A dependency-free port of sonner's behaviour (the toast shadcn/ui ships):
 // typed toasts with icons, description, action / cancel buttons, promise
@@ -926,7 +941,9 @@ function initDock(scope) {
     root.addEventListener("focusout", (e) => {
       if (isOpen && e.relatedTarget && !root.contains(e.relatedTarget)) open(false)
     })
-    document.addEventListener("click", (e) => { if (isOpen && !root.contains(e.target)) open(false) })
+    // composedPath: opening re-renders the label, so a click on the placeholder
+    // text has a detached target by now - it still counts as inside
+    document.addEventListener("click", (e) => { if (isOpen && !e.composedPath().includes(root)) open(false) })
 
     sync()
     const api = {
@@ -1298,7 +1315,7 @@ function initDock(scope) {
         set(false); root.querySelector("[data-" + hooks.prefix + "-trigger]").focus()
       }
     })
-    document.addEventListener("click", (e) => { if (isOpen && !root.contains(e.target)) set(false) })
+    document.addEventListener("click", (e) => { if (isOpen && !e.composedPath().includes(root)) set(false) })
     sync()
     return { set, sync, isOpen: () => isOpen }
   }
@@ -1569,7 +1586,7 @@ function initDock(scope) {
     prev.addEventListener("click", () => { if (page > 0) { page--; render() } })
     next.addEventListener("click", () => { page++; render() })
     facetTrigger.addEventListener("click", () => facetPanel.classList.toggle("hidden"))
-    document.addEventListener("click", (e) => { if (!facetWrap.contains(e.target)) facetPanel.classList.add("hidden") })
+    document.addEventListener("click", (e) => { if (!e.composedPath().includes(facetWrap)) facetPanel.classList.add("hidden") })
     facetClearBtn.addEventListener("click", () => { facet.clear(); page = 0; render(); renderFacet(); updateBadges(); updateReset() })
     resetBtn.addEventListener("click", () => {
       facet.clear(); q = ""; filterEl.value = ""; page = 0
