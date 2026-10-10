@@ -128,6 +128,36 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ "shadcn:show-modal"
       assert html =~ "shadcn:hide-modal"
     end
+
+    test "header, scrolling body and footer sections" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.sheet id="filters">
+          <:title>Filters</:title>
+          <:description>Narrow the list.</:description>
+          <:header><input id="filter-search" /></:header>
+          body rows
+          <:footer><button>Clear all</button><button class="ml-auto">Show 24 results</button></:footer>
+        </.sheet>
+        """)
+
+      assert html =~
+               ~r/class="sheet-header">.*aria-label="Close".*Filters.*Narrow the list\..*filter-search.*<\/div>\s*<\/div>\s*<div class="sheet-body">\s*<div>\s*body rows\s*<\/div>\s*<\/div>\s*<div class="sheet-footer">.*Clear all.*Show 24 results/s
+
+      # the scroll-edge state the JS sets survives LiveView patches
+      assert html =~ "data-scroll-top"
+      assert html =~ "data-scroll-bottom"
+    end
+
+    test "no footer or header slot renders no footer / header content" do
+      assigns = %{}
+      html = render(~H|<.sheet id="s">body</.sheet>|)
+      assert html =~ ~s(class="sheet-body")
+      refute html =~ "sheet-footer"
+      refute html =~ "sheet-header-content"
+    end
   end
 
   describe "drawer/1" do
@@ -145,7 +175,29 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert html =~ ~s(id="goal")
       assert html =~ ~s(class="drawer-bottom )
       assert html =~ "drawer content"
-      assert html =~ "rounded-full bg-muted"
+      assert html =~ ~s(class="drawer-handle")
+      assert html =~ ~s(class="drawer-body")
+      refute html =~ "drawer-header"
+      refute html =~ "drawer-footer"
+    end
+
+    test "header, scrolling body and footer sections" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.drawer id="goal">
+          <:title>Move goal</:title>
+          <:description>Set your daily activity goal.</:description>
+          content
+          <:footer><button>Submit</button></:footer>
+        </.drawer>
+        """)
+
+      assert html =~
+               ~r/class="drawer-header">.*Move goal.*Set your daily.*<div class="drawer-body">.*content.*<div class="drawer-footer">.*Submit/s
+
+      assert html =~ "data-scroll-bottom"
     end
   end
 

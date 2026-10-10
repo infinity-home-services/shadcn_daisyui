@@ -24,7 +24,9 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   """
   use ShadcnDaisyuiDemoWeb, :live_view
 
-  import ShadcnDaisyui.Components.Overlay, only: [dialog: 1, sheet: 1, show_modal: 1]
+  import ShadcnDaisyui.Components.Overlay,
+    only: [dialog: 1, sheet: 1, show_modal: 1, hide_modal: 1]
+
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1, date_range: 1]
   import ShadcnDaisyui.Components.Navigation, only: [tab_nav: 1]
   import ShadcnDaisyui.Components.Display, only: [chip_row: 1, reveal: 1, push_toast: 3]
@@ -175,6 +177,16 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
               push_toast
             </button>
           </div>
+          <%!-- long enough to scroll: the position and the edge lines survive the patches --%>
+          <p :for={i <- 1..40} class="mt-3 text-sm text-muted-foreground">
+            Row {i} · tick {@ticks}
+          </p>
+          <:footer>
+            <button type="button" class="btn btn-ghost">Clear all</button>
+            <button type="button" class="btn btn-primary ml-auto" phx-click={hide_modal("live-sheet")}>
+              Done
+            </button>
+          </:footer>
         </.sheet>
 
         <%!-- a custom trigger wired with the show_modal/1 JS command --%>

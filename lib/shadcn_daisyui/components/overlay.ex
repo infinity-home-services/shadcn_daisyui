@@ -94,7 +94,30 @@ defmodule ShadcnDaisyui.Components.Overlay do
         <:title>Edit profile</:title>
         <:description>Make changes to your profile here.</:description>
         …form…
+        <:footer>
+          <.button variant="outline" phx-click={hide_modal("edit-profile")}>Cancel</.button>
+          <.button class="ml-auto">Save changes</.button>
+        </:footer>
       </.sheet>
+
+  The sheet is a full-height column, like shadcn's `SheetHeader` /
+  `SheetFooter`: the header (`:title`, `:description`, the close button and an
+  optional `:header` slot, e.g. a search box) stays at the top, `:footer` stays
+  at the bottom, and only the body between them scrolls. A 1px border separates
+  the body from the header / footer only while content is scrolled under it.
+  With a short body the footer still sits at the bottom of the sheet.
+
+  The footer is a row (`flex items-center gap-2`) with safe-area padding on
+  phones. A typical one: a ghost "Clear all" on the left and the primary action
+  on the right (`ml-auto`); on compact screens let the primary action take the
+  remaining width with `grow sm:grow-0`.
+
+      <:footer>
+        <.button variant="ghost" phx-click="clear_filters">Clear all</.button>
+        <.button class="ml-auto grow sm:grow-0" phx-click={hide_modal("filters")}>
+          Show 24 results
+        </.button>
+      </:footer>
 
   Width matches shadcn: 75% on phones, then `size` from `sm` (`sm` 20rem,
   `default` 24rem, `lg` 32rem, `xl` 40rem), capped at 90vw. A width class
@@ -111,7 +134,9 @@ defmodule ShadcnDaisyui.Components.Overlay do
   slot(:trigger)
   slot(:title)
   slot(:description)
+  slot(:header, doc: "content under the description that stays put (e.g. a search box)")
   slot(:inner_block)
+  slot(:footer, doc: "pinned to the bottom; a row of actions (`ml-auto` on the primary one)")
 
   def sheet(assigns) do
     assigns = assign(assigns, :size_class, @sheet_sizes[assigns.size])
@@ -120,20 +145,24 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["sheet", @size_class, @class]} phx-mounted={keep_open()} {@rest}>
-      <button
-        type="button"
-        class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
-        aria-label="Close"
-        phx-click={hide_modal(@id)}
-      >
-        <span class="hero-x-mark size-4" aria-hidden="true"></span>
-      </button>
-      <h3 :if={@title != []} class="text-lg font-semibold">{render_slot(@title)}</h3>
-      <p :if={@description != []} class="mt-1 text-sm text-muted-foreground">
-        {render_slot(@description)}
-      </p>
-      <div class="mt-5">{render_slot(@inner_block)}</div>
+    <dialog id={@id} class={["sheet", @size_class, @class]} phx-mounted={keep_open_scrolled()} {@rest}>
+      <div class="sheet-header">
+        <button
+          type="button"
+          class="btn btn-ghost btn-square btn-sm absolute right-3 top-3"
+          aria-label="Close"
+          phx-click={hide_modal(@id)}
+        >
+          <span class="hero-x-mark size-4" aria-hidden="true"></span>
+        </button>
+        <h3 :if={@title != []} class="sheet-title text-lg font-semibold">{render_slot(@title)}</h3>
+        <p :if={@description != []} class="sheet-description text-sm text-muted-foreground">{render_slot(@description)}</p>
+        <div :if={@header != []} class="sheet-header-content">{render_slot(@header)}</div>
+      </div>
+      <div class="sheet-body">
+        <div>{render_slot(@inner_block)}</div>
+      </div>
+      <div :if={@footer != []} class="sheet-footer">{render_slot(@footer)}</div>
       <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
@@ -144,23 +173,45 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
       <.drawer id="goal">
         <:trigger><.button variant="outline">Open drawer</.button></:trigger>
+        <:title>Move goal</:title>
+        <:description>Set your daily activity goal.</:description>
         …content…
+        <:footer>
+          <.button class="w-full">Submit</.button>
+        </:footer>
       </.drawer>
+
+  Same layout as `sheet/1`: the header (`:title`, `:description`, optional
+  `:header`) and `:footer` stay put and only the body scrolls once the drawer
+  reaches its max height (85vh), with a border shown only while content is
+  scrolled under the header or footer. The footer gets safe-area padding.
   """
   attr(:id, :string, required: true)
   attr(:class, :any, default: nil)
   attr(:rest, :global)
   slot(:trigger)
+  slot(:title)
+  slot(:description)
+  slot(:header, doc: "content under the description that stays put")
   slot(:inner_block, required: true)
+  slot(:footer, doc: "pinned to the bottom; a row of actions")
 
   def drawer(assigns) do
     ~H"""
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["drawer-bottom", @class]} phx-mounted={keep_open()} {@rest}>
-      <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted"></div>
-      {render_slot(@inner_block)}
+    <dialog id={@id} class={["drawer-bottom", @class]} phx-mounted={keep_open_scrolled()} {@rest}>
+      <div class="drawer-handle" aria-hidden="true"></div>
+      <div :if={@title != [] or @description != [] or @header != []} class="drawer-header">
+        <h3 :if={@title != []} class="drawer-title text-lg font-semibold">{render_slot(@title)}</h3>
+        <p :if={@description != []} class="drawer-description text-sm text-muted-foreground">{render_slot(@description)}</p>
+        <div :if={@header != []} class="drawer-header-content">{render_slot(@header)}</div>
+      </div>
+      <div class="drawer-body">
+        <div>{render_slot(@inner_block)}</div>
+      </div>
+      <div :if={@footer != []} class="drawer-footer">{render_slot(@footer)}</div>
       <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
@@ -370,6 +421,11 @@ defmodule ShadcnDaisyui.Components.Overlay do
   # The browser owns a <dialog>'s `open` attribute (showModal/close); without
   # this a LiveView patch would strip it and close an open dialog.
   defp keep_open, do: JS.ignore_attributes(["open"])
+
+  # Sheet / drawer: also keep the scroll-edge state the package JS sets on the
+  # dialog (`data-scroll-top` / `data-scroll-bottom`, see shadcn-daisyui.js).
+  defp keep_open_scrolled,
+    do: JS.ignore_attributes(["open", "data-scroll-top", "data-scroll-bottom"])
 
   # Groups consecutive items by their :group attr, preserving order.
   defp command_groups(items) do

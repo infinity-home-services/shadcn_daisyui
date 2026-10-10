@@ -8,6 +8,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-10
+
+`<.sheet>` and `<.drawer>` get a header and a footer that stay put while only
+the body scrolls, like shadcn's `SheetHeader` / `SheetFooter`.
+
+### Added
+
+- **`<:footer>` slot** on `<.sheet>` and `<.drawer>`: pinned to the bottom, a
+  row (`flex items-center gap-2`) with the header's horizontal padding and
+  safe-area padding at the bottom on phones (`env(safe-area-inset-bottom)`).
+  With a short body the footer still sits at the bottom of the sheet. Typical
+  footer: a ghost "Clear all" on the left and the primary action on the right
+  (`ml-auto`; `grow sm:grow-0` lets it take the remaining width on phones).
+- **`<:header>` slot** on both for content under the description that also
+  stays put (e.g. a search box).
+- `<.drawer>` gains `<:title>` and `<:description>` (centred on compact, start
+  aligned from `sm`).
+- **Scroll-edge lines**: a 1px `border-border` line between the body and the
+  header / footer, shown only while content is scrolled under it (none at the
+  top, none at the end, none when the body fits). `shadcn-daisyui.js` sets
+  `data-scroll-top` / `data-scroll-bottom` on the dialog from the body's
+  scroll position and size (a ResizeObserver, so LiveView patches that grow or
+  shrink the body update it); the components keep both attributes across
+  patches. No shadows, no motion, CSP-safe.
+- Class recipe for raw HTML: `.sheet-header` / `.sheet-body` / `.sheet-footer`
+  (and `.drawer-handle` / `.drawer-header` / `.drawer-body` / `.drawer-footer`)
+  as direct children of the `<dialog>`.
+- Docs: a long "Filters" sheet example (search in the header, "Clear all" and
+  "Show 24 results" in the footer); the Default sheet and drawer examples use
+  the footer. `/lab/csp`'s sheet is long enough to scroll and has a footer, to
+  prove scroll position and edge lines survive patches.
+
+### Changed
+
+- **Sheet layout**: the sheet is a full-height column; the header, body and
+  footer are sections and only the body scrolls (`min-height: 0; flex: 1;
+  overflow-y: auto`), not the whole dialog. The body content renders inside
+  `.sheet-body > div`. The drawer body scrolls the same way once the drawer
+  reaches 85vh.
+- The drawer's grab handle is now `.drawer-handle` (theme CSS) instead of a
+  utility class list.
+- Raw `<dialog class="sheet">` / `class="drawer-bottom"` markup without the
+  section classes keeps the old padded, whole-dialog-scrolls behaviour.
+
 ## [0.14.0] - 2026-10-09
 
 Chips animate in and out, and a closing `<.reveal>` collapses around its

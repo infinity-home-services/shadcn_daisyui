@@ -38,6 +38,52 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   })
 }
 
+// Sheet / drawer scroll edges: while content is scrolled under the header or
+// footer, the dialog gets data-scroll-top / data-scroll-bottom and the theme
+// draws a 1px line there. Bodies are found when their dialog opens (focus moves
+// into it on showModal, whichever way it was opened) and then watched with a
+// ResizeObserver - on the body (open, viewport) and its content wrapper (a
+// LiveView patch that grows or shrinks it) - plus one capturing scroll listener.
+// The components keep both attributes across patches (JS.ignore_attributes).
+const OVERLAY_BODY = ":scope > .sheet-body, :scope > .drawer-body"
+function syncScrollEdges(body) {
+  const d = body.parentElement
+  if (!d) return
+  const top = body.scrollTop > 0.5
+  const bottom = body.scrollHeight - body.clientHeight - body.scrollTop > 1
+  if (d.hasAttribute("data-scroll-top") !== top) d.toggleAttribute("data-scroll-top", top)
+  if (d.hasAttribute("data-scroll-bottom") !== bottom) d.toggleAttribute("data-scroll-bottom", bottom)
+}
+if (typeof window !== "undefined" && !window.__shadcnScrollEdges) {
+  window.__shadcnScrollEdges = true
+  const watched = new WeakSet()
+  const ro = typeof ResizeObserver !== "undefined"
+    ? new ResizeObserver((entries) => {
+        for (const e of entries) {
+          const body = e.target.matches(".sheet-body, .drawer-body") ? e.target : e.target.parentElement
+          if (body) syncScrollEdges(body)
+        }
+      })
+    : null
+  const watch = (d) => {
+    const body = d && d.querySelector(OVERLAY_BODY)
+    if (!body) return
+    syncScrollEdges(body)
+    if (!ro) return
+    if (!watched.has(body)) { watched.add(body); ro.observe(body) }
+    const content = body.firstElementChild
+    if (content && !watched.has(content)) { watched.add(content); ro.observe(content) }
+  }
+  const dialogOf = (el) => el instanceof Element && el.closest("dialog.sheet, dialog.drawer-bottom")
+  document.addEventListener("focusin", (e) => watch(dialogOf(e.target)))
+  document.addEventListener("toggle", (e) => watch(dialogOf(e.target)), true)
+  window.addEventListener("shadcn:show-modal", (e) => watch(dialogOf(e.target)))
+  document.addEventListener("scroll", (e) => {
+    const t = e.target
+    if (t instanceof Element && t.matches(".sheet-body, .drawer-body")) syncScrollEdges(t)
+  }, { capture: true, passive: true })
+}
+
 // <.reveal>: `<button data-reveal-toggle="id">` opens/closes the reveal with that
 // id (flips its data-open, mirrors aria-expanded on every toggle for it). One
 // delegated listener, so it is CSP-safe and works in dead views and LiveView.

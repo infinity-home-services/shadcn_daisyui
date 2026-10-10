@@ -68,7 +68,7 @@ Decision order:
 | `<.card>` / `<.card_body>` / `<.card_title>` / `<.card_description>` | compose |
 | `<.separator>` | `orientation="horizontal\|vertical"` |
 | `<.dialog>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:actions>`; open via `show_modal(id)` |
-| `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` + content (right panel / bottom panel); sheet `size="sm\|default\|lg\|xl"` (20/24/32/40rem from `sm`, 75% on phones, ≤90vw), or a width class (`sm:w-[28rem]`) |
+| `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:header>` (stays put, e.g. search) + body + `<:footer>` (pinned actions: ghost "Clear all" left, primary `ml-auto grow sm:grow-0`); only the body scrolls, lines show only while content is under the header/footer - never add your own sticky header/footer, borders or shadows; right panel / bottom panel; sheet `size="sm\|default\|lg\|xl"` (20/24/32/40rem from `sm`, 75% on phones, ≤90vw), or a width class (`sm:w-[28rem]`) |
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"` |
@@ -128,6 +128,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Tabs | `<div role="tablist" class="tabs tabs-box w-fit">` + `<input type="radio" name="…" class="tab" aria-label="…">` |
 | Static table | `<div class="card w-full overflow-hidden"><table class="table">…` |
 | Data table (sortable/faceted/paged) | Build with `<.table>` + LiveView `phx-click` sort/filter/page events. The `ShadcnDataTable` JS hook is docs-demo only (fixed dataset) - do not wire it in apps. |
+| Sheet sections (raw HTML) | `<dialog class="sheet">` with direct children `.sheet-header` (close button, `h3.sheet-title`, description, `.sheet-header-content`), `.sheet-body` (one wrapper `div` inside), `.sheet-footer`; drawer: `.drawer-handle` `.drawer-header` `.drawer-body` `.drawer-footer` |
 | Modal/dialog | native `<dialog id="d" class="modal"><div class="modal-box">…`, opened by `<button commandfor="d" command="show-modal">` (no inline JS); backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
 | Tooltip | `<div class="tooltip" data-tip="…">` wrapping the trigger |
 | Dropdown | `<div class="dropdown">` + `tabindex="0"` trigger + `<ul class="dropdown-content menu z-50 …">` |

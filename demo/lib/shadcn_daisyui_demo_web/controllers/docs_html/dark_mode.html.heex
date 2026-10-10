@@ -308,10 +308,11 @@
 
           <.drawer id={"dm-drawer-#{theme}"}>
             <:trigger><button type="button" class="btn btn-outline">Drawer</button></:trigger>
-            <div class="mx-auto w-full max-w-sm space-y-3">
-              <p class="text-lg font-semibold">Move goal</p>
-              <input class="input w-full" value="350" aria-label="Calories" />
-            </div>
+            <:title>Move goal</:title>
+            <input class="input w-full" value="350" aria-label="Calories" />
+            <:footer>
+              <button type="button" class="btn btn-primary w-full">Submit</button>
+            </:footer>
           </.drawer>
 
           <%!-- one palette only: every [data-command] dialog listens for ⌘K --%>
