@@ -634,6 +634,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{
               part: "Content",
               description: "collapse-content panel revealed when open, in muted text."
+            },
+            %{
+              part: "Header (opt-in)",
+              description: "<:header> card-body above the rows: title, description, action."
             }
           ],
           measurements: [
@@ -643,7 +647,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             },
             %{property: "Trigger font", value: "0.875rem / 500"},
             %{property: "Divider", value: "1px var(--border-color) between sections"},
-            %{property: "Content font", value: "0.875rem, var(--muted-foreground)"}
+            %{property: "Content font", value: "0.875rem, var(--muted-foreground)"},
+            %{
+              property: "Flush rows (opt-in)",
+              value:
+                "edge to edge; 1.5rem inline padding inside each row, 1px line under the header and between rows"
+            }
           ],
           tokens: ["card", "border-color", "muted-foreground", "foreground"]
         },

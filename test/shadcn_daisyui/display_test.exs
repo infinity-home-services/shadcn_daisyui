@@ -49,6 +49,95 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       refute html =~ ~s(type="radio")
       refute html =~ ~s(name="faq")
     end
+
+    # Other apps depend on this output: an accordion without <:header> or flush
+    # must render byte-for-byte as it did before those opt-ins existed (0.16.1).
+    test "without header or flush renders exactly the 0.16.1 markup" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.accordion id="faq" class="max-w-lg">
+          <:section title="One" open>1</:section>
+          <:section title="Two">2</:section>
+        </.accordion>
+        """)
+
+      assert html ==
+               ~s(<div class="card w-full max-w-lg">\n  <div class="card-body py-1">\n    ) <>
+                 ~s(<div class="collapse collapse-arrow">\n      <input type="radio" name="faq" checked>\n      ) <>
+                 ~s(<div class="collapse-title">One</div>\n      <div class="collapse-content">1</div>\n    ) <>
+                 ~s(</div><div class="collapse collapse-arrow">\n      <input type="radio" name="faq">\n      ) <>
+                 ~s(<div class="collapse-title">Two</div>\n      <div class="collapse-content">2</div>\n    ) <>
+                 ~s(</div>\n  </div>\n</div>)
+
+      html =
+        render(~H"""
+        <.accordion id="faq" multiple>
+          <:section title="One">1</:section>
+        </.accordion>
+        """)
+
+      assert html ==
+               ~s(<div class="card w-full ">\n  <div class="card-body py-1">\n    ) <>
+                 ~s(<div class="collapse collapse-arrow">\n      <input type="checkbox">\n      ) <>
+                 ~s(<div class="collapse-title">One</div>\n      <div class="collapse-content">1</div>\n    ) <>
+                 ~s(</div>\n  </div>\n</div>)
+    end
+
+    test "header renders above the rows inside the same card" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.accordion id="faq">
+          <:header><h3>Timeline</h3></:header>
+          <:section title="One">1</:section>
+        </.accordion>
+        """)
+
+      assert html =~ ~s(<div class="card w-full )
+      assert html =~ ~s(<div class="card-body accordion-header pb-2">)
+      assert html =~ ~s(<div class="card-body pt-0 pb-1">)
+      refute html =~ "accordion-flush"
+      [header, rows] = String.split(html, "card-body pt-0")
+      assert header =~ "<h3>Timeline</h3>"
+      assert rows =~ "collapse-title"
+    end
+
+    test "flush runs the rows edge to edge, with or without a header" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.accordion id="tl" flush multiple>
+          <:header><h3>Timeline</h3></:header>
+          <:section title="Inquiry received" open>1</:section>
+          <:section title="Estimate sent">2</:section>
+        </.accordion>
+        """)
+
+      assert html =~ ~s(<div class="card w-full accordion-flush">)
+      assert html =~ ~s(<div class="card-body accordion-header )
+      refute html =~ "pb-2"
+      assert html =~ ~s(<div class="accordion-rows">)
+      refute html =~ "card-body py-1"
+      refute html =~ "card-body pt-0"
+      assert count(html, ~s(type="checkbox")) == 2
+      assert count(html, "checked") == 1
+
+      html =
+        render(~H"""
+        <.accordion id="tl" flush>
+          <:section title="One">1</:section>
+        </.accordion>
+        """)
+
+      assert html =~ ~s(<div class="card w-full accordion-flush">)
+      refute html =~ "accordion-header"
+      assert html =~ ~s(<div class="accordion-rows">)
+      assert count(html, ~s(name="tl")) == 1
+    end
   end
 
   describe "avatar/1" do
