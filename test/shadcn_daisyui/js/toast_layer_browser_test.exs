@@ -71,6 +71,19 @@ defmodule ShadcnDaisyui.JS.ToastLayerBrowserTest do
       const r = el.getBoundingClientRect()
       return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2))
     }
+    // Poll a condition instead of sleeping a fixed time: with many Chromes
+    // running at once the toast's enter transition can start late, leaving it
+    // below the viewport after any fixed wait. Gives up (false) after 5s.
+    const until = async (ok, ms = 5000) => {
+      const end = performance.now() + ms
+      while (!ok()) { if (performance.now() > end) return false; await wait(16) }
+      return true
+    }
+    // a toast has finished entering: fully opaque, transform back at rest
+    const settled = (t) => {
+      const s = t && getComputedStyle(t)
+      return !!s && s.opacity === "1" && (s.transform === "none" || s.transform === "matrix(1, 0, 0, 1, 0, 0)")
+    }
     const out = {}
     await frames()
     await wait(450)
@@ -91,7 +104,7 @@ defmodule ShadcnDaisyui.JS.ToastLayerBrowserTest do
     let undone = 0
     toast("Saved", { duration: 60000, action: { label: "Undo", onClick: () => undone++ } })
     await frames()
-    await wait(450)
+    await until(() => settled(document.querySelector("[data-sonner-toast]")))
     const action = document.querySelector("[data-sonner-toast] [data-button]")
     out.sheetHost = host()
     out.sheetHittable = hittable(action)
@@ -105,13 +118,12 @@ defmodule ShadcnDaisyui.JS.ToastLayerBrowserTest do
     // a dialog opened later: the layer follows to the new top modal
     toast("Again", { duration: 60000 })
     await frames()
-    await wait(450)
+    await until(() => settled(document.querySelector("[data-sonner-toast][data-front=true]")))
     const dlg = document.getElementById("dlg")
     dlg.showModal()
     await wait(0)
     out.dialogHost = host()
-    await wait(50)
-    out.dialogHittable = hittable(document.querySelector("[data-sonner-toast][data-front=true]"))
+    out.dialogHittable = await until(() => hittable(document.querySelector("[data-sonner-toast][data-front=true]")))
     dlg.close()
     await wait(0)
     out.afterDialogHost = host()
