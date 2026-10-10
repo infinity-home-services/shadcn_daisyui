@@ -299,6 +299,195 @@ defmodule ShadcnDaisyui.Components do
   defp to_date(_), do: nil
 
   @doc """
+  A time picker: a field-style trigger that opens scrollable hour, minute
+  (optional second) and AM/PM columns in a popover.
+
+      <.time_picker id="start-time" />
+
+  Bind it to a form with `field` (or `name` + `value`). It emits one hidden
+  input with a 24-hour ISO time (`HH:MM`, or `HH:MM:SS` with `seconds`), which
+  an Ecto `:time` field casts directly. Every pick dispatches `input` +
+  `change`, so `phx-change` fires:
+
+      <.time_picker id="opens-at" field={@form[:opens_at]} minute_step={15} />
+
+  `hour_cycle={24}` drops the AM/PM column. `value` takes a `Time` or an ISO
+  string. The open popover and label survive LiveView patches, and a changed
+  server value wins. A `time-change` event with `%{value}` bubbles from the
+  root.
+  """
+  attr(:id, :string, required: true)
+  attr(:placeholder, :string, default: "Pick a time")
+  attr(:field, Phoenix.HTML.FormField, default: nil, doc: "form field: derives name and value")
+  attr(:name, :string, default: nil, doc: "form field name; emits a hidden input when set")
+  attr(:value, :any, default: nil, doc: "current/preselected time (Time or ISO string)")
+  attr(:hour_cycle, :integer, default: 12, values: [12, 24])
+  attr(:minute_step, :integer, default: 1, doc: "minutes between options (1, 5, 15, …)")
+  attr(:seconds, :boolean, default: false, doc: "adds a seconds column; value is HH:MM:SS")
+  attr(:full_width, :boolean, default: false, doc: "fill the container; 44px trigger on touch")
+  attr(:disabled, :boolean, default: false)
+  attr(:class, :any, default: nil, doc: "root classes; the width defaults to `w-40`")
+
+  attr(:"aria-label", :string,
+    default: nil,
+    doc: "accessible name when no `<label for>` points at the trigger"
+  )
+
+  attr(:"aria-labelledby", :string, default: nil)
+  attr(:rest, :global)
+
+  def time_picker(assigns) do
+    {name, value, field_id, invalid} =
+      case assigns.field do
+        %Phoenix.HTML.FormField{} = f ->
+          {assigns.name || f.name, if(is_nil(assigns.value), do: f.value, else: assigns.value),
+           f.id, f.errors != [] and Phoenix.Component.used_input?(f)}
+
+        nil ->
+          {assigns.name, assigns.value, nil, false}
+      end
+
+    time = to_time(value)
+    twelve = assigns.hour_cycle == 12
+
+    columns =
+      [
+        {"h", "Hours",
+         if(twelve,
+           do: Enum.map([12 | Enum.to_list(1..11)], &{&1, Integer.to_string(&1)}),
+           else: Enum.map(0..23, &{&1, pad2(&1)})
+         ), time && if(twelve, do: hour12(time.hour), else: time.hour)},
+        {"m", "Minutes", Enum.map(0..59//max(assigns.minute_step, 1), &{&1, pad2(&1)}),
+         time && time.minute},
+        assigns.seconds &&
+          {"s", "Seconds", Enum.map(0..59, &{&1, pad2(&1)}), time && time.second},
+        twelve &&
+          {"p", "AM/PM", [{"AM", "AM"}, {"PM", "PM"}],
+           time && if(time.hour < 12, do: "AM", else: "PM")}
+      ]
+      |> Enum.filter(& &1)
+
+    width =
+      cond do
+        assigns.full_width -> "w-full"
+        is_nil(assigns.class) -> "w-40"
+        true -> nil
+      end
+
+    assigns =
+      assign(assigns,
+        name: name,
+        iso: time_iso(time, assigns.seconds),
+        time_label: time_label(time, twelve, assigns.seconds),
+        columns: columns,
+        invalid: invalid,
+        width: width,
+        trigger_id:
+          if(field_id && field_id != assigns.id, do: field_id, else: "#{assigns.id}-trigger")
+      )
+
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="ShadcnTimePicker"
+      data-timepicker
+      data-value={@iso}
+      data-hour-cycle={@hour_cycle}
+      data-seconds={@seconds}
+      data-full-width={@full_width}
+      data-placeholder={@placeholder}
+      class={["relative", @width, @class]}
+      {@rest}
+    >
+      <input
+        :if={@name}
+        type="hidden"
+        name={@name}
+        value={@iso || ""}
+        disabled={@disabled}
+        data-timepicker-input
+      />
+      <button
+        type="button"
+        id={@trigger_id}
+        data-timepicker-trigger
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-invalid={@invalid && "true"}
+        aria-label={assigns[:"aria-label"]}
+        aria-labelledby={assigns[:"aria-labelledby"]}
+        disabled={@disabled}
+        class="btn btn-outline w-full justify-start gap-2 font-normal"
+      >
+        <span class="hero-clock size-4 opacity-70" aria-hidden="true"></span>
+        <span data-timepicker-label class={["truncate", !@time_label && "text-muted-foreground"]}>
+          {@time_label || @placeholder}
+        </span>
+      </button>
+      <div
+        data-timepicker-panel
+        role="dialog"
+        aria-label={@placeholder}
+        class="popover-panel absolute z-50 mt-1 hidden p-1"
+      >
+        <div class="time-columns">
+          <div
+            :for={{key, label, options, selected} <- @columns}
+            role="listbox"
+            aria-label={label}
+            class="time-col"
+            data-time-col={key}
+          >
+            <button
+              :for={{value, text} <- options}
+              type="button"
+              role="option"
+              tabindex="-1"
+              aria-selected={to_string(value == selected)}
+              class="time-option"
+              data-value={value}
+            >
+              {text}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp to_time(%Time{} = t), do: t
+
+  defp to_time(value) when is_binary(value) do
+    value = if Regex.match?(~r/^\d{2}:\d{2}$/, value), do: value <> ":00", else: value
+
+    case Time.from_iso8601(value) do
+      {:ok, t} -> t
+      _ -> nil
+    end
+  end
+
+  defp to_time(_), do: nil
+
+  defp pad2(n), do: n |> Integer.to_string() |> String.pad_leading(2, "0")
+
+  defp hour12(h), do: if(rem(h, 12) == 0, do: 12, else: rem(h, 12))
+
+  defp time_iso(nil, _), do: nil
+  defp time_iso(t, false), do: pad2(t.hour) <> ":" <> pad2(t.minute)
+  defp time_iso(t, true), do: time_iso(t, false) <> ":" <> pad2(t.second)
+
+  # "2:30 PM" / "14:30" (seconds appended), matching the JS label so nothing jumps on mount.
+  defp time_label(nil, _, _), do: nil
+
+  defp time_label(t, twelve, seconds) do
+    hour = if twelve, do: Integer.to_string(hour12(t.hour)), else: pad2(t.hour)
+    secs = if seconds, do: ":" <> pad2(t.second), else: ""
+    period = if twelve, do: if(t.hour < 12, do: " AM", else: " PM"), else: ""
+    hour <> ":" <> pad2(t.minute) <> secs <> period
+  end
+
+  @doc """
   An inline calendar for picking a date range (shadcn's Range Calendar). Click a
   start day, then an end day; the band between them is highlighted. Arrow keys,
   Home/End, and PageUp/PageDown move focus.

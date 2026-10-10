@@ -601,4 +601,85 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assert html =~ "<label"
     end
   end
+
+  describe "time_picker/1" do
+    test "renders hook, trigger, placeholder and 12-hour columns" do
+      assigns = %{}
+      html = render(~H|<.time_picker id="tp" />|)
+
+      assert html =~ ~s(phx-hook="ShadcnTimePicker")
+      assert html =~ ~s(data-hour-cycle="12")
+      assert html =~ "data-timepicker-trigger"
+      assert html =~ ~s(id="tp-trigger")
+      assert html =~ "Pick a time"
+      assert html =~ "text-muted-foreground"
+      assert html =~ ~s(aria-label="Hours")
+      assert html =~ ~s(aria-label="AM/PM")
+      refute html =~ ~s(aria-label="Seconds")
+      refute html =~ "data-timepicker-input"
+      assert count(html, ~s(class="time-option")) == 12 + 60 + 2
+      refute html =~ ~s(aria-selected="true")
+    end
+
+    test "a value renders the label, the hidden input and the selected options" do
+      assigns = %{}
+      html = render(~H|<.time_picker id="tp" name="shift[start]" value={~T[14:05:30]} />|)
+
+      assert html =~ ~s(data-value="14:05")
+
+      assert html =~
+               ~s(<input type="hidden" name="shift[start]" value="14:05" data-timepicker-input>)
+
+      assert html =~ "2:05 PM"
+      assert html =~ ~r/aria-selected="true"[^>]*data-value="2"/
+      assert html =~ ~r/aria-selected="true"[^>]*data-value="5"/
+      assert html =~ ~r/aria-selected="true"[^>]*data-value="PM"/
+    end
+
+    test "24-hour cycle, seconds and minute_step" do
+      assigns = %{}
+
+      html =
+        render(
+          ~H|<.time_picker id="tp" value="09:30" hour_cycle={24} seconds minute_step={15} />|
+        )
+
+      assert html =~ ~s(data-value="09:30:00")
+      assert html =~ "09:30:00"
+      refute html =~ ~s(aria-label="AM/PM")
+      assert html =~ ~s(aria-label="Seconds")
+      assert count(html, ~s(class="time-option")) == 24 + 4 + 60
+    end
+
+    test "midnight and noon in 12-hour time" do
+      assigns = %{}
+      assert render(~H|<.time_picker id="a" value="00:15" />|) =~ "12:15 AM"
+      assert render(~H|<.time_picker id="b" value="12:00" />|) =~ "12:00 PM"
+    end
+
+    test "field binding derives name, value, trigger id and invalid state" do
+      assigns = %{
+        form:
+          Phoenix.Component.to_form(%{"opens_at" => "08:00"},
+            as: :store,
+            errors: [opens_at: {"is invalid", []}]
+          )
+      }
+
+      html = render(~H|<.time_picker id="opens" field={@form[:opens_at]} />|)
+
+      assert html =~ ~s(name="store[opens_at]")
+      assert html =~ ~s(value="08:00")
+      assert html =~ ~s(id="store_opens_at")
+      assert html =~ "8:00 AM"
+    end
+
+    test "an unparseable value shows the placeholder" do
+      assigns = %{}
+      html = render(~H|<.time_picker id="tp" name="t" value="soon" />|)
+
+      assert html =~ "Pick a time"
+      assert html =~ ~s(value="")
+    end
+  end
 end

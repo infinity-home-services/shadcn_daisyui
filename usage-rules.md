@@ -31,7 +31,7 @@ like shadcn/ui. **Every UI decision goes through this package.**
   with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`, and
   never `:if` the chip row inside the reveal - `open` drives it, and the chips
   animate in and out on their own.
-- Interactive components (combobox, select, date picker, calendar, range calendar,
+- Interactive components (combobox, select, date picker, time picker, calendar, range calendar,
   OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row)
   REQUIRE a unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
@@ -86,6 +86,7 @@ Decision order:
 | `<.calendar>` | `id` required (hook) |
 | `<.date_picker>` | `id` required (hook), `placeholder` |
 | `<.date_range>` | `id` (hook), popover range; form-bind with `start_name`/`end_name` + `start`/`end` (ISO dates); `<:preset label start end>` or `<:preset label days={7}>` |
+| `<.time_picker>` | `id` (hook), hour/minute(/second)/AM-PM columns in a popover; form-bind with `field` (or `name` + `value`: `Time` or ISO); posts 24-hour `HH:MM` (`HH:MM:SS` with `seconds`), casts to `:time`; `hour_cycle={24}`, `minute_step={15}`, `full_width` |
 | `<.range_calendar>` | `id` (hook), inline range picker; `months`, `start`/`end`; form-bind with `start_name`/`end_name` (ISO dates) |
 | `<.item>` / `<.item_group>` / `<.item_separator>` | row with `<:media variant="icon\|image">` `<:title>` `<:description>` `<:actions>` (`<:header>`/`<:footer>`); `variant="default\|outline\|muted"`, `size="default\|sm\|xs"`, `href`/`navigate` makes it a link |
 | `<.attachment>` / `<.attachment_group>` / `<.attachment_action>` | file tile: `state="idle\|uploading\|processing\|error\|done"`, `size`, `orientation`, `<:media>` `<:title>` `<:description>` `<:actions>` `<:trigger label>` |
@@ -152,7 +153,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (88 components) in the docs site (`demo/`) or
+Browse the full gallery (89 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

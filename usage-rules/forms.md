@@ -32,7 +32,7 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 ## Interactive pickers in forms
 
 `<.combobox>`, `<.select>` (custom listbox), `<.date_picker>`, `<.date_range>`,
-`<.input_otp>` are JS-hook components. In LiveView forms:
+`<.time_picker>`, `<.input_otp>` are JS-hook components. In LiveView forms:
 
 - Give each a unique, stable `id` (LiveView requirement; never index-based ids in streams).
 - `<.select>` and `<.combobox>` take `field` like `<.input>` (or `name` + `value`).
@@ -50,6 +50,9 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 - `<.date_range>` / `<.range_calendar>` bind two fields with `start_name` / `end_name`
   (+ `start` / `end`); values are ISO `YYYY-MM-DD` strings that cast to `:date`.
   `<.date_range>` emits once per complete range, not per click.
+- `<.time_picker>` takes `field` (or `name` + `value`) and posts a 24-hour ISO
+  time (`HH:MM`, or `HH:MM:SS` with `seconds`) that casts to `:time`, whatever
+  `hour_cycle` the trigger shows. Every pick emits. Use `minute_step` for slots.
 - Label a picker with `<.label for={@form[:x].id}>` (the trigger takes the field id)
   or `aria-label`. Errors are not rendered by the picker - wrap it in `<.field>`.
 - Open lists, labels and values survive LiveView re-renders; if the server changes

@@ -29,7 +29,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       title: "Forms & inputs",
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
-                date-picker date-range-picker range-calendar multi-select chip-row rating filter
+                date-picker date-range-picker time-picker range-calendar multi-select chip-row rating filter
                 validator)
     },
     %{
