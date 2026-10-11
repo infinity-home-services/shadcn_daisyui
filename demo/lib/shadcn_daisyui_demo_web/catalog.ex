@@ -754,19 +754,30 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         title: "Alert",
         description: "Displays a callout for user attention.",
         props: [
-          %{name: "variant", type: "default | destructive", default: "default"}
+          %{name: "variant", type: "default | destructive", default: "default"},
+          %{name: "<:title>", type: "slot", default: "-"},
+          %{name: "<:icon>", type: "slot, 16px icon left of the text", default: "-"},
+          %{
+            name: "<:actions>",
+            type: "slot, right of the text from sm, below it on phones",
+            default: "-"
+          }
         ],
+        notes:
+          "The inner block renders in a div, so it can hold paragraphs and links. Buttons go in <:actions>, never inside the text.",
         examples: [
           %{
             title: "Default & destructive",
             center: false,
             heex: ~S"""
             <.alert>
+              <:icon><.icon name="hero-information-circle" /></:icon>
               <:title>Heads up!</:title>
               You can add components to your app using the CLI.
             </.alert>
 
             <.alert variant="destructive">
+              <:icon><.icon name="hero-exclamation-triangle" /></:icon>
               <:title>Error</:title>
               Your session has expired. Please log in again.
             </.alert>
@@ -774,18 +785,44 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             code: ~S"""
             <div class="w-full space-y-3">
               <div class="alert" role="alert">
-                <span class="hero-information-circle size-4" aria-hidden="true"></span>
-                <div>
+                <span class="alert-icon" aria-hidden="true"><span class="hero-information-circle"></span></span>
+                <div class="alert-content">
                   <h3 class="text-sm font-medium">Heads up!</h3>
-                  <p class="text-sm text-muted-foreground">You can add components to your app using the CLI.</p>
+                  <div class="text-sm text-muted-foreground">You can add components to your app using the CLI.</div>
                 </div>
               </div>
               <div class="alert alert-error" role="alert">
-                <span class="hero-exclamation-triangle size-4" aria-hidden="true"></span>
-                <div>
+                <span class="alert-icon" aria-hidden="true"><span class="hero-exclamation-triangle"></span></span>
+                <div class="alert-content">
                   <h3 class="text-sm font-medium">Error</h3>
-                  <p class="text-sm">Your session has expired. Please log in again.</p>
+                  <div class="text-sm text-muted-foreground">Your session has expired. Please log in again.</div>
                 </div>
+              </div>
+            </div>
+            """
+          },
+          %{
+            title: "With an action",
+            center: false,
+            heex: ~S"""
+            <.alert>
+              <:icon><.icon name="hero-inbox" /></:icon>
+              <:title>New leads</:title>
+              3 new leads are waiting.
+              <:actions>
+                <.button size="sm" navigate={~p"/leads/new"}>Go to new leads</.button>
+              </:actions>
+            </.alert>
+            """,
+            code: ~S"""
+            <div class="alert w-full" role="alert">
+              <span class="alert-icon" aria-hidden="true"><span class="hero-inbox"></span></span>
+              <div class="alert-content">
+                <h3 class="text-sm font-medium">New leads</h3>
+                <div class="text-sm text-muted-foreground">3 new leads are waiting.</div>
+              </div>
+              <div class="alert-actions">
+                <a href="#" class="btn btn-primary btn-sm">Go to new leads</a>
               </div>
             </div>
             """
@@ -2551,7 +2588,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         },
         hook: true,
         notes:
-          "Form-bind with field={@form[:x]} (or name + value); phx-change fires on each pick, and the search box never triggers it. Add multiple for checkbox rows with counts and Clear (the faceted filter) - see Multi Select.",
+          "Form-bind with field={@form[:x]} (or name + value); phx-change fires on each pick, and the search box never triggers it. Add multiple for checkbox rows with counts and Clear (the faceted filter) - see Multi Select. Add create to let people add a value the list lacks: text no option label matches exactly (case and spaces ignored) shows a last Add \"…\" row (create_label, create_max default 80). Choosing it selects and posts the trimmed text; on_create also pushes %{\"id\" => id, \"value\" => text} so the app can save the option and re-render the slots.",
         examples: [
           %{
             title: "Default",
@@ -2582,6 +2619,51 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                   <li><button type="button" class="combo-item" data-value="Phoenix"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> Phoenix</button></li>
                 </ul>
                 <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">No framework found.</p>
+              </div>
+            </div>
+            """
+          },
+          %{
+            title: "Creatable (add a value)",
+            heex: ~S"""
+            <.label for="insurer-trigger">Insurer</.label>
+            <.combobox
+              id="insurer"
+              field={@form[:insurer]}
+              create
+              on_create="add_insurer"
+              placeholder="Select insurer…"
+              search_placeholder="Search or add an insurer…"
+            >
+              <:option :for={i <- @insurers} value={i}>{i}</:option>
+            </.combobox>
+            """,
+            code: ~S"""
+            <div class="grid gap-2">
+              <label for="insurer-trigger" class="text-sm font-medium">Insurer</label>
+              <div data-combobox data-create data-create-label="Add &quot;%{value}&quot;" data-create-max="80" class="relative w-60">
+                <input type="hidden" name="insurer" value="" data-combobox-input />
+                <button type="button" id="insurer-trigger" data-combobox-trigger class="btn btn-outline w-full justify-between font-normal">
+                  <span data-combobox-label class="text-muted-foreground">Select insurer…</span>
+                  <span class="hero-chevron-up-down size-4 opacity-50" aria-hidden="true"></span>
+                </button>
+                <div data-combobox-panel class="popover-panel absolute z-50 mt-1 hidden w-full p-1">
+                  <input data-combobox-search class="input mb-1 w-full" placeholder="Search or add an insurer…" autocomplete="off" maxlength="80" />
+                  <ul data-combobox-list class="max-h-60 overflow-auto">
+                    <li><button type="button" class="combo-item" data-value="Allstate"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> <span data-label>Allstate</span></button></li>
+                    <li><button type="button" class="combo-item" data-value="Liberty Mutual"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> <span data-label>Liberty Mutual</span></button></li>
+                    <li><button type="button" class="combo-item" data-value="Progressive"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> <span data-label>Progressive</span></button></li>
+                    <li><button type="button" class="combo-item" data-value="State Farm"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> <span data-label>State Farm</span></button></li>
+                    <li><button type="button" class="combo-item" data-value="USAA"><span class="hero-check size-4 opacity-0" aria-hidden="true"></span> <span data-label>USAA</span></button></li>
+                    <li class="hidden">
+                      <button type="button" class="combo-item" data-combobox-create>
+                        <span class="hero-plus size-4 shrink-0" aria-hidden="true"></span>
+                        <span data-create-text class="truncate"></span>
+                      </button>
+                    </li>
+                  </ul>
+                  <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">No insurer found.</p>
+                </div>
               </div>
             </div>
             """

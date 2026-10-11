@@ -8,7 +8,10 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   The form below does the same for the hook-driven pickers: a multiple select,
   a multiple combobox whose counts change on every tick, and a date range with
   presets. Each must stay open across patches, fire `phx-change` on every
-  toggle, and adopt a server-side reset.
+  toggle, and adopt a server-side reset. The insurer combobox is creatable:
+  Add posts the typed text and pushes `add_insurer`, which appends it to the
+  options, so the added value must survive the patches and then become a
+  server-rendered option.
 
   The width-aware rows ride the same patches: a `<.tab_nav>` whose counts
   change width on every tick (it must re-fit without a visible jump, keep the
@@ -31,7 +34,8 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   import ShadcnDaisyui.Components.Navigation, only: [tab_nav: 1]
   import ShadcnDaisyui.Components.Display, only: [chip_row: 1, reveal: 1, push_toast: 3]
 
-  @empty %{"status" => [], "labels" => [], "from" => "", "to" => ""}
+  @empty %{"status" => [], "labels" => [], "from" => "", "to" => "", "insurer" => ""}
+  @insurers ["Allstate", "Progressive", "State Farm"]
   @labels ~w(bug docs feature perf security ui)
   @views ~w(all active backlog triage review done canceled)
 
@@ -42,7 +46,7 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
     {:ok,
      socket
      |> assign(ticks: 0, changes: 0, page_title: "CSP + LiveView patches", labels: @labels)
-     |> assign(views: @views, view: "all")
+     |> assign(views: @views, view: "all", insurers: @insurers)
      |> assign_filters(@empty)}
   end
 
@@ -57,6 +61,10 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   end
 
   def handle_event("reset", _params, socket), do: {:noreply, assign_filters(socket, @empty)}
+
+  def handle_event("add_insurer", %{"value" => name}, socket) do
+    {:noreply, update(socket, :insurers, &Enum.sort(Enum.uniq(&1 ++ [name])))}
+  end
 
   def handle_event("flash", %{"kind" => kind}, socket) do
     msg = if kind == "info", do: "Profile saved", else: "Could not save the profile"
@@ -99,6 +107,7 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
 
     params = Map.update!(params, "from", &if(&1 == [], do: "", else: &1))
     params = Map.update!(params, "to", &if(&1 == [], do: "", else: &1))
+    params = Map.update!(params, "insurer", &if(&1 == [], do: "", else: &1))
     assign(socket, params: params, form: to_form(params, as: :filters))
   end
 
@@ -219,6 +228,17 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
             <:option :for={{l, i} <- Enum.with_index(@labels)} value={l} count={rem(@ticks + i, 10)}>
               {String.capitalize(l)}
             </:option>
+          </.combobox>
+          <.combobox
+            id="insurer"
+            field={@form[:insurer]}
+            create
+            on_create="add_insurer"
+            placeholder="Insurer"
+            aria-label="Insurer"
+            data-tick={@ticks}
+          >
+            <:option :for={i <- @insurers} value={i}>{i}</:option>
           </.combobox>
           <.date_range
             id="period"

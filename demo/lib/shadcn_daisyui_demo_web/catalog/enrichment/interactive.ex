@@ -24,7 +24,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             },
             %{
               part: "Empty state",
-              description: "Shown when the filter matches nothing."
+              description: "Shown when the filter matches nothing (and no Add row is offered)."
+            },
+            %{
+              part: "Add row (create)",
+              description:
+                "Last role=option row, plus icon + create_label, shown when the search text matches no option label exactly; the only row when nothing matches."
             }
           ],
           measurements: [
@@ -51,14 +56,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
           keyboard: [
             %{keys: "Arrow Down", action: "Move the active option down (wraps to the top)"},
             %{keys: "Arrow Up", action: "Move the active option up (wraps to the bottom)"},
-            %{keys: "Enter", action: "Select the active option and close the listbox"},
+            %{
+              keys: "Enter",
+              action: "Select the active option (or Add the typed text) and close the listbox"
+            },
             %{keys: "Esc", action: "Close the listbox and return focus to the trigger"},
             %{keys: "Type", action: "Filter the options by substring"}
           ],
           focus:
             "Opening the popover moves focus into the search input and sets the active option; selecting or Esc returns focus to the trigger.",
           screen_reader:
-            "aria-activedescendant points at the highlighted option id so its label is announced without moving DOM focus; aria-selected marks the chosen value.",
+            "aria-activedescendant points at the highlighted option id so its label is announced without moving DOM focus; aria-selected marks the chosen value. The Add row is an option too, announced by its label (Add \"Acme Mutual\").",
           touch_target:
             "Trigger is a full-height field; option rows grow to 44px on touch (coarse pointer). Pass full_width in sheets for a 44px trigger too.",
           reduced_motion:

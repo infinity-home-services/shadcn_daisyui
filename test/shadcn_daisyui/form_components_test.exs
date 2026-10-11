@@ -215,6 +215,17 @@ defmodule ShadcnDaisyui.FormComponentsTest do
       assert html =~ "Free"
       assert html =~ "Pro"
     end
+
+    test "the fieldset carries radio-group (44px label rows on touch, from the theme)" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.radio_group name="plan" id="plan"><:radio value="free">Free</:radio></.radio_group>
+        """)
+
+      assert html =~ ~s(<fieldset class="radio-group grid gap-2)
+    end
   end
 
   describe "native_select/1" do

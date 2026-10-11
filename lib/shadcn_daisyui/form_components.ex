@@ -130,12 +130,17 @@ defmodule ShadcnDaisyui.FormComponents do
   defp boolean_control(assigns, control_class) do
     assigns = apply_field(assigns)
 
+    # assign/3, not Map.update!/3: only assign marks `checked` changed, so the
+    # control follows the field's value when LiveView re-renders. An explicit
+    # `checked` attr wins over the field.
     assigns =
       assigns
-      |> Map.update!(:checked, fn
-        nil -> Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-        checked -> checked
-      end)
+      |> assign(
+        :checked,
+        derive(assigns.checked, fn ->
+          Phoenix.HTML.Form.normalize_value("checkbox", assigns.value)
+        end)
+      )
       |> assign(:control_class, control_class)
 
     ~H"""
@@ -182,7 +187,7 @@ defmodule ShadcnDaisyui.FormComponents do
     assigns = apply_field(assigns)
 
     ~H"""
-    <fieldset class={["grid gap-2", @class]}>
+    <fieldset class={["radio-group grid gap-2", @class]}>
       <legend :if={@label} class="mb-1 text-sm font-medium">{@label}</legend>
       <label
         :for={{radio, i} <- Enum.with_index(@radio)}
@@ -271,25 +276,25 @@ defmodule ShadcnDaisyui.FormComponents do
     """
   end
 
-  # Derives id/name/value/errors from a FormField; passes explicit assigns through.
+  # Derives id/name/value/errors from a FormField; explicit attrs win. Every
+  # derived assign goes through assign/3 so LiveView's change tracking sees it:
+  # Map.update!/3 would leave it unmarked and the control would keep its
+  # first-render state on every re-render.
   defp apply_field(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    multiple = assigns[:multiple] || false
+    name = if assigns[:multiple], do: field.name <> "[]", else: field.name
 
     assigns
     |> assign(:field, nil)
     |> assign(:errors, field_errors(field))
-    |> Map.update!(:id, fn id -> id || field.id end)
-    |> Map.update!(:name, fn
-      nil -> if multiple, do: field.name <> "[]", else: field.name
-      name -> name
-    end)
-    |> Map.update!(:value, fn
-      nil -> field.value
-      value -> value
-    end)
+    |> assign(:id, derive(assigns.id, fn -> field.id end))
+    |> assign(:name, derive(assigns.name, fn -> name end))
+    |> assign(:value, derive(assigns.value, fn -> field.value end))
   end
 
   defp apply_field(assigns), do: assign_new(assigns, :errors, fn -> [] end)
+
+  defp derive(nil, fun), do: fun.()
+  defp derive(given, _fun), do: given
 
   defp field_errors(%Phoenix.HTML.FormField{} = field) do
     if Phoenix.Component.used_input?(field) do

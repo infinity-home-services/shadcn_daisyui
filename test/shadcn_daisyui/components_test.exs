@@ -79,6 +79,40 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assigns = %{}
       refute render(~H|<.alert>Body only</.alert>|) =~ "<h3"
     end
+
+    test "renders the inner block in a div, never a p, so it can hold blocks and buttons" do
+      assigns = %{}
+      html = render(~H|<.alert><div>3 new leads</div><button>Go</button></.alert>|)
+
+      assert html =~ ~s(<div class="text-sm text-muted-foreground"><div>3 new leads</div>)
+      refute html =~ "<p"
+      refute html =~ "alert-icon"
+      refute html =~ "alert-actions"
+    end
+
+    test "icon and actions slots render around the content" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.alert>
+          <:icon><span class="hero-inbox"></span></:icon>
+          <:title>New leads</:title>
+          3 new leads are waiting.
+          <:actions><button type="button">Go to new leads</button></:actions>
+        </.alert>
+        """)
+
+      assert html =~ ~r/class="alert-icon" aria-hidden="true">\s*<span class="hero-inbox">/
+      assert html =~ ~r/class="alert-actions">\s*<button type="button">Go to new leads/
+      # icon, then the title + description, then the actions
+      [icon, content, actions] =
+        Enum.map(["alert-icon", "alert-content", "alert-actions"], fn c ->
+          :binary.match(html, c) |> elem(0)
+        end)
+
+      assert icon < content and content < actions
+    end
   end
 
   describe "card composition" do
@@ -445,6 +479,93 @@ defmodule ShadcnDaisyui.ComponentsTest do
       assert html =~ ~s(name="labels[]" value="bug" data-combobox-value)
       assert html =~ "data-combobox-clear-btn"
       assert count(html, ~s(class="facet-check")) == 2
+    end
+
+    test "create is off by default: no Add row, no data-create" do
+      assigns = %{}
+      html = render(~H|<.combobox id="c"><:option value="a">A</:option></.combobox>|)
+
+      refute html =~ "data-create"
+      refute html =~ "data-combobox-create"
+      refute html =~ "maxlength"
+    end
+
+    test "create renders a hidden Add row and the create data attributes" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.combobox id="insurer" create on_create="add_insurer" create_label="New: %{value}" create_max={40}>
+          <:option value="State Farm">State Farm</:option>
+        </.combobox>
+        """)
+
+      assert html =~ ~s(data-create)
+      assert html =~ ~s(data-create-label="New: %{value}")
+      assert html =~ ~s(data-create-max="40")
+      assert html =~ ~s(data-on-create="add_insurer")
+      assert html =~ ~s(maxlength="40")
+
+      assert html =~
+               ~r/<li class="hidden">\s*<button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-combobox-create>/
+
+      assert html =~ "hero-plus"
+    end
+
+    test "create defaults the label to Add \"%{value}\" and the cap to 80" do
+      assigns = %{}
+      html = render(~H|<.combobox id="c" create><:option value="a">A</:option></.combobox>|)
+
+      assert html =~ ~s(data-create-label="Add &quot;%{value}&quot;")
+      assert html =~ ~s(data-create-max="80")
+      refute html =~ "data-on-create"
+    end
+
+    test "with create, a value no option carries shows as the selection and a checked row" do
+      assigns = %{field: form_field("insurer", "Acme Mutual")}
+
+      html =
+        render(~H"""
+        <.combobox id="insurer" field={@field} create>
+          <:option value="State Farm">State Farm</:option>
+        </.combobox>
+        """)
+
+      assert html =~ ~s(name="filters[insurer]" value="Acme Mutual" data-combobox-input)
+      assert html =~ ~s(<span class="truncate">Acme Mutual</span>)
+      assert html =~ ~s(data-value="Acme Mutual" data-selected data-created)
+      assert count(html, "data-created") == 1
+    end
+
+    test "create with multiple adds checked rows for extra values after the options" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.combobox id="tags" name="tags" multiple create value={["vip", "Referral"]}>
+          <:option value="vip">VIP</:option>
+        </.combobox>
+        """)
+
+      assert html =~ ~s(<span class="truncate">VIP, Referral</span>)
+      assert html =~ ~s(data-value="Referral" data-selected data-created)
+
+      assert :binary.match(html, ~s(data-value="vip")) <
+               :binary.match(html, ~s(data-value="Referral"))
+    end
+
+    test "without create, an unknown value is not shown" do
+      assigns = %{field: form_field("insurer", "Acme Mutual")}
+
+      html =
+        render(~H"""
+        <.combobox id="insurer" field={@field}>
+          <:option value="State Farm">State Farm</:option>
+        </.combobox>
+        """)
+
+      refute html =~ ~s(<span class="truncate">Acme Mutual</span>)
+      refute html =~ "data-created"
     end
 
     test "full_width replaces the default width" do

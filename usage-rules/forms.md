@@ -26,7 +26,10 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
   a description line.
 - `<.checkbox>`, `<.switch>`, `<.radio_group>`, `<.textarea>`, `<.native_select>` -
   FormField-aware dedicated controls when you need more layout control than the
-  polymorphic `<.input>`.
+  polymorphic `<.input>`. They follow the field on every re-render (a `phx-change`
+  that flips a boolean re-checks the switch); an explicit `checked` / `value` attr
+  wins over the field. `<.radio_group>` rows are 44px tall on touch already - don't
+  add `min-h-11` / `py-2` to its labels.
 - `<.error>` - render a translated error string manually (rare).
 
 ## Interactive pickers in forms
@@ -37,6 +40,22 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 - Give each a unique, stable `id` (LiveView requirement; never index-based ids in streams).
 - `<.select>` and `<.combobox>` take `field` like `<.input>` (or `name` + `value`).
   The hidden input(s) dispatch `input` + `change`, so `phx-change` fires on every pick.
+- A list people may need to extend on the spot (insurers, lead sources, tags) is a
+  `<.combobox create on_create="add_…">`. The added text posts like any value; the
+  `on_create` handler saves the new option and adds it to the slots:
+
+  ```heex
+  <.combobox id="lead-insurer" field={@form[:insurer]} create on_create="add_insurer">
+    <:option :for={i <- @insurers} value={i}>{i}</:option>
+  </.combobox>
+  ```
+
+  ```elixir
+  def handle_event("add_insurer", %{"value" => name}, socket) do
+    {:ok, _} = Insurers.create(name)
+    {:noreply, assign(socket, insurers: Insurers.names())}
+  end
+  ```
 - `multiple` posts a list: `name=""` plus one `name[]` per value. Use an
   `{:array, :string}` field with `default: []` - a cleared picker posts `""`, which
   Ecto casts to the default:
