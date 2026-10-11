@@ -64,7 +64,7 @@ Decision order:
 | Component | Signature sketch |
 |---|---|
 | `<.badge>` | `variant="default\|secondary\|outline\|destructive"` |
-| `<.alert>` | `variant="default\|destructive"`, `<:title>` slot |
+| `<.alert>` | `variant="default\|destructive"`, `<:title>` slot; inner block is a `div` (paragraphs, links); opt-in `<:icon>` (16px, left of the text) and `<:actions>` (buttons right of the text from `sm`, below it on phones) - never put a button in the text or add a colored left border |
 | `<.card>` / `<.card_body>` / `<.card_title>` / `<.card_description>` | compose |
 | `<.separator>` | `orientation="horizontal\|vertical"` |
 | `<.dialog>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:actions>`; open via `show_modal(id)` |
@@ -96,6 +96,7 @@ Decision order:
 | `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
 | `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
 | `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms |
+| `<.combobox create>` | lets people add a value the list lacks (an insurer, a tag): text no option label matches exactly (case/spaces ignored) shows a last `Add "…"` row (`create_label="Add \"%{value}\""`, `create_max={80}`); choosing it selects + posts the trimmed text (`multiple`: ticks it, stays open); `on_create="event"` also pushes `%{"id" => id, "value" => text}` - save the option there and re-render the slots. Never hand-roll an "Other…" text input next to a picker |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
 | `<.resizable>` | `id` (hook), `<:start>` / `<:end_pane>` slots |

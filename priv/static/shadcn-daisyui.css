@@ -427,6 +427,10 @@
     border: 1px solid var(--input);
   }
   .radio:checked { border-color: var(--primary); color: var(--primary); }
+  /* <.radio_group>: each label row is the target, 44px tall on touch */
+  @media (pointer: coarse) {
+    .radio-group > label { min-height: 2.75rem; }
+  }
 
   /* ---- Toggle (switch) ---------------------------------------------------
      daisyUI draws the knob as a ::before (currentColor) that slides via grid
@@ -466,6 +470,38 @@
     border-color: color-mix(in oklab, var(--destructive) 30%, var(--border-color));
   }
   .alert-error .text-muted-foreground { color: color-mix(in oklab, var(--destructive) 80%, transparent); }
+  /* <.alert> layout (shadcn): icon | title + description | actions. Phones
+     stack the actions under the text, aligned with it; from `sm` they move to
+     a right-hand column. Scoped to `.alert-content` so hand-written daisyUI
+     `.alert` markup keeps daisyUI's own row layout. */
+  .alert:has(> .alert-content) {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+  }
+  .alert:has(> .alert-icon) { grid-template-columns: 1rem minmax(0, 1fr); }
+  .alert > .alert-icon {
+    display: flex;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.125rem;           /* centre on the 20px first line */
+    color: currentColor;
+  }
+  .alert > .alert-icon > * { width: 100%; height: 100%; }
+  .alert > .alert-content { display: grid; gap: 0.125rem; min-width: 0; }
+  .alert > .alert-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    grid-column: -2;
+  }
+  @media (min-width: 40rem) {
+    .alert:has(> .alert-actions) { grid-template-columns: minmax(0, 1fr) auto; }
+    .alert:has(> .alert-icon):has(> .alert-actions) { grid-template-columns: 1rem minmax(0, 1fr) auto; }
+    .alert > .alert-actions { grid-row: 1; align-self: center; }
+  }
 
   /* ---- Tabs (boxed/segmented, shadcn style) ------------------------------ */
   /* shadcn TabsList h-9 p-[3px] rounded-lg bg-muted. A list holding its

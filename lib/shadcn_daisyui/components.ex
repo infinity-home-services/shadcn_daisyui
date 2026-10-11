@@ -64,20 +64,36 @@ defmodule ShadcnDaisyui.Components do
         <:title>Error</:title>
         Your session has expired.
       </.alert>
+
+  The inner block renders in a `<div>`, so it can hold paragraphs, links or
+  lists. Two optional slots, laid out like shadcn's alert: `<:icon>` sits left
+  of the title and description, and `<:actions>` sits to their right on wide
+  screens and below them on phones:
+
+      <.alert>
+        <:icon><.icon name="hero-inbox" /></:icon>
+        <:title>New leads</:title>
+        3 new leads are waiting.
+        <:actions><.button size="sm" navigate={~p"/leads/new"}>Go to new leads</.button></:actions>
+      </.alert>
   """
   attr(:variant, :string, default: "default", values: ~w(default destructive))
   attr(:class, :any, default: nil)
   attr(:rest, :global)
+  slot(:icon, doc: "leading icon, 16px, left of the title and description")
   slot(:title)
   slot(:inner_block, required: true)
+  slot(:actions, doc: "buttons or links; right of the text on wide screens, below it on phones")
 
   def alert(assigns) do
     ~H"""
     <div class={["alert", @variant == "destructive" && "alert-error", @class]} role="alert" {@rest}>
-      <div>
+      <span :if={@icon != []} class="alert-icon" aria-hidden="true">{render_slot(@icon)}</span>
+      <div class="alert-content">
         <h3 :if={@title != []} class="text-sm font-medium">{render_slot(@title)}</h3>
-        <p class="text-sm text-muted-foreground">{render_slot(@inner_block)}</p>
+        <div class="text-sm text-muted-foreground">{render_slot(@inner_block)}</div>
       </div>
+      <div :if={@actions != []} class="alert-actions">{render_slot(@actions)}</div>
     </div>
     """
   end
@@ -575,6 +591,24 @@ defmodule ShadcnDaisyui.Components do
       <.combobox id="labels" field={@form[:labels]} multiple placeholder="Labels">
         <:option :for={l <- @labels} value={l.id} count={l.count}>{l.name}</:option>
       </.combobox>
+
+  ## Creatable
+
+  `create` lets the person add a value that isn't in the list. When the search
+  text doesn't exactly match an option (case and surrounding spaces ignored),
+  a last row `Add "<text>"` appears; when nothing matches it is the only row.
+  Choosing it selects the trimmed text and posts it like any value (`input` +
+  `change` on the hidden input, so `phx-change` fires). With `multiple` it
+  ticks the new value and keeps the list open. `on_create` also pushes a
+  LiveView event with `%{"id" => id, "value" => text}` so the app can save the
+  new option and re-render the slots; the server's re-render wins:
+
+      <.combobox id="insurer" field={@form[:insurer]} create on_create="add_insurer">
+        <:option :for={i <- @insurers} value={i}>{i}</:option>
+      </.combobox>
+
+  A value not among the options (one the person added, or a saved value the
+  list no longer has) still shows as the selection and as a checked row.
   """
   attr(:id, :string, required: true)
   attr(:placeholder, :string, default: "Select…")
@@ -593,6 +627,23 @@ defmodule ShadcnDaisyui.Components do
   attr(:full_width, :boolean, default: false, doc: "fill the container; 44px trigger on touch")
   attr(:clear_label, :string, default: "Clear", doc: "the multiple-mode Clear row")
   attr(:disabled, :boolean, default: false)
+
+  attr(:create, :boolean,
+    default: false,
+    doc: "offer an `Add \"…\"` row for text no option matches"
+  )
+
+  attr(:create_label, :string,
+    default: ~s(Add "%{value}"),
+    doc: "the Add row's text; `%{value}` is the typed text"
+  )
+
+  attr(:create_max, :integer, default: 80, doc: "longest text the Add row accepts")
+
+  attr(:on_create, :string,
+    default: nil,
+    doc: ~s|LiveView event pushed on Add with `%{"id" => id, "value" => text}`|
+  )
 
   attr(:"aria-label", :string,
     default: nil,
@@ -700,11 +751,20 @@ defmodule ShadcnDaisyui.Components do
         true -> nil
       end
 
+    create = assigns[:create] || false
+    option_values = Enum.map(assigns.option, &to_string(&1.value))
+    # values no option carries (added by the person, or no longer in the list):
+    # a creatable combobox still shows them as the selection and a checked row
+    extra = if create, do: Enum.reject(values, &(&1 in option_values)), else: []
+    selected = Enum.filter(assigns.option, &(to_string(&1.value) in values))
+
     assigns =
       assign(assigns,
         name: name,
         values: values,
-        selected: Enum.filter(assigns.option, &(to_string(&1.value) in values)),
+        create: create,
+        extra: extra,
+        chosen: Enum.map(selected, &{:slot, &1}) ++ Enum.map(extra, &{:text, &1}),
         trigger_id:
           if(field_id && field_id != assigns.id, do: field_id, else: "#{assigns.id}-trigger"),
         list_id: "#{assigns.id}-list",
@@ -721,6 +781,10 @@ defmodule ShadcnDaisyui.Components do
       data-multiple={@multiple}
       data-full-width={@full_width}
       data-placeholder={@placeholder}
+      data-create={@create}
+      data-create-label={@create && @create_label}
+      data-create-max={@create && @create_max}
+      data-on-create={@create && @on_create}
       class={["relative", @width, @class]}
       {@rest}
     >
@@ -755,12 +819,12 @@ defmodule ShadcnDaisyui.Components do
         class="btn btn-outline w-full justify-between font-normal"
         {pd(@kind, "trigger")}
       >
-        <span class={["flex min-w-0 items-center gap-1", @selected == [] && "text-muted-foreground"]} {pd(@kind, "label")}>
-          <%= if @selected == [] do %>
+        <span class={["flex min-w-0 items-center gap-1", @chosen == [] && "text-muted-foreground"]} {pd(@kind, "label")}>
+          <%= if @chosen == [] do %>
             <span class="truncate">{@placeholder}</span>
           <% else %>
-            <span class="truncate"><%= for {opt, i} <- Enum.with_index(Enum.take(@selected, if(@multiple, do: 2, else: 1))) do %>{if i > 0, do: ", "}{render_slot(opt)}<% end %></span>
-            <span :if={length(@selected) > 2} class="shrink-0 text-muted-foreground">+{length(@selected) - 2}<span class="sr-only"> more</span></span>
+            <span class="truncate"><%= for {item, i} <- Enum.with_index(Enum.take(@chosen, if(@multiple, do: 2, else: 1))) do %>{if i > 0, do: ", "}<%= case item do %><% {:slot, opt} -> %>{render_slot(opt)}<% {:text, text} -> %>{text}<% end %><% end %></span>
+            <span :if={length(@chosen) > 2} class="shrink-0 text-muted-foreground">+{length(@chosen) - 2}<span class="sr-only"> more</span></span>
           <% end %>
         </span>
         <span
@@ -771,7 +835,13 @@ defmodule ShadcnDaisyui.Components do
       </button>
       <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" {pd(@kind, "panel")}>
         <%= if @kind == "combobox" do %>
-          <input data-combobox-search class="input mb-1 w-full" placeholder={@search_placeholder} autocomplete="off" />
+          <input
+            data-combobox-search
+            class="input mb-1 w-full"
+            placeholder={@search_placeholder}
+            autocomplete="off"
+            maxlength={@create && @create_max}
+          />
           <ul
             id={@list_id}
             role="listbox"
@@ -781,6 +851,15 @@ defmodule ShadcnDaisyui.Components do
           >
             <li :for={opt <- @option}>
               <.picker_option opt={opt} kind={@kind} multiple={@multiple} values={@values} />
+            </li>
+            <li :for={value <- @extra}>
+              <.picker_option opt={%{value: value}} text={value} kind={@kind} multiple={@multiple} values={@values} />
+            </li>
+            <li :if={@create} class="hidden">
+              <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-combobox-create>
+                <span class="hero-plus size-4 shrink-0" aria-hidden="true"></span>
+                <span data-create-text class="truncate"></span>
+              </button>
             </li>
           </ul>
           <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">{@empty}</p>
@@ -804,6 +883,7 @@ defmodule ShadcnDaisyui.Components do
   end
 
   attr(:opt, :map, required: true)
+  attr(:text, :string, default: nil, doc: "label for a value without an option slot")
   attr(:kind, :string, required: true)
   attr(:multiple, :boolean, required: true)
   attr(:values, :list, required: true)
@@ -821,10 +901,11 @@ defmodule ShadcnDaisyui.Components do
       data-select-item={@kind == "select"}
       data-value={@opt.value}
       data-selected={@on}
+      data-created={!!@text}
     >
       <span :if={@multiple} class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
       <span :if={!@multiple} class={["hero-check size-4 shrink-0", !@on && "opacity-0"]} aria-hidden="true"></span>
-      <span data-label class="truncate">{render_slot(@opt)}</span>
+      <span data-label class="truncate">{if @text, do: @text, else: render_slot(@opt)}</span>
       <span :if={@opt[:count] != nil} class="ml-auto font-mono text-xs text-muted-foreground">{@opt.count}</span>
     </button>
     """

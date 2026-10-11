@@ -8,6 +8,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-11
+
+A creatable combobox, a fix for form controls that ignored LiveView
+re-renders, and an alert that can hold actions and an icon. `create`,
+`<:actions>` and `<:icon>` are opt-in; nothing existing needs a change.
+
+### Added
+
+- **`create` on `<.combobox>`** (shadcn's creatable pattern): when the search
+  text matches no option label exactly (case and surrounding spaces ignored),
+  a last `Add "<text>"` row with a plus icon appears, and when nothing matches
+  it is the only row, replacing `empty`. Choosing it (click, Enter, or arrow
+  keys to it) closes the list, shows the trimmed text as the selection and
+  posts it like any value (`input` + `change` on the hidden input, so
+  `phx-change` fires). `on_create="event"` also pushes
+  `%{"id" => id, "value" => text}` so the app can save the new option and
+  re-render the slots; the server's re-render wins, as for every pick. With
+  `multiple`, Add ticks the new value, clears the search and keeps the list
+  open. Blank text, an exact match and text over `create_max` (default 80,
+  also the search box's `maxlength`) never offer Add. `create_label` sets the
+  row text (default `Add "%{value}"`). The row is a `role="option"`, announced
+  by its label and reachable through `aria-activedescendant` like the others.
+  A value no option carries (just added, or saved but no longer in the list)
+  still shows as the selection and as a checked row, and a
+  `combobox-create` event with `{ value }` bubbles from the root.
+- **`<:icon>` and `<:actions>` on `<.alert>`**, laid out like shadcn's alert:
+  a 16px icon left of the title and description, and actions to the right of
+  the text from `sm` (640px), below it and aligned with it on phones. Theme
+  classes: `.alert-icon`, `.alert-content`, `.alert-actions`; hand-written
+  daisyUI `.alert` markup without them keeps daisyUI's row layout.
+- `<.radio_group>` label rows are 44px tall on touch (`pointer: coarse`), with
+  desktop density unchanged. Theme class: `.radio-group`. Apps can drop their
+  own `[&_label]:min-h-11 [&_label]:py-2`.
+- Docs: a "Creatable (add a value)" Insurer example on the Combobox page, a
+  "With an action" example and slot props on the Alert page, usage rules rows
+  for `<.combobox create>` and the alert slots, and a creatable insurer
+  combobox in the `/lab/csp` LiveView patch harness.
+
+### Fixed
+
+- **`<.switch>`, `<.checkbox>` and `<.radio_group>` kept their first-render
+  state on LiveView re-renders.** `checked` and the field-derived `id`, `name`
+  and `value` were set with `Map.update!/3`, which LiveView's change tracking
+  doesn't see, so a `phx-change` that flipped a boolean (or changed the picked
+  radio) never patched the control, even while a `<.reveal>` driven by the same
+  value opened. They now go through `assign/3`, which also fixes
+  `<.native_select>` and `<.textarea>` (same `apply_field/1`). An explicit
+  `checked` attr still wins over the field, as does `value` on the radio group.
+  LiveView tests in the demo app cover all five controls.
+- `<.alert>` rendered its inner block in a `<p>`, so a description with a
+  `<div>` or a button nested invalid HTML. It is now a `<div>` with the same
+  text styles.
+- The select/combobox hook now works on pages that also run
+  `initShadcnDaisyui()` before LiveView mounts it: the hook attaches to the
+  existing picker (needed for `on_create` to push).
+
 ## [0.18.0] - 2026-10-10
 
 A time picker. `<.time_picker>` is new; nothing existing changes.

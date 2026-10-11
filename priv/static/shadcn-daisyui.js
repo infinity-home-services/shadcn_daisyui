@@ -721,8 +721,16 @@ function initDock(scope) {
   // list, the label, the checks and the hidden inputs after a LiveView patch
   // re-renders the server markup. Every listener is delegated on the root, so
   // options the server adds or replaces keep working.
-  function initPicker(root, p) {
-    if (root.__sdPicker) return root.__sdPicker
+  //
+  // Creatable combobox (`data-create`): a last `[data-combobox-create]` row
+  // offers the search text when no option label (or value) equals it, case and
+  // surrounding spaces ignored. Values added that way get a row of their own
+  // (`data-created`), re-inserted after each patch until the server renders a
+  // real option for them. `hook` (LiveView) pushes `data-on-create`.
+  function initPicker(root, p, hook) {
+    // a page that runs initShadcnDaisyui() before LiveView mounts the hook
+    // already has a picker here: hand it the hook so on_create still pushes
+    if (root.__sdPicker) { if (hook) root.__sdPicker.hook = hook; return root.__sdPicker }
     const q = (part) => root.querySelector("[data-" + p + "-" + part + "]")
     if (!q("trigger") || !q("panel")) return null
     const multiple = root.hasAttribute("data-multiple")
@@ -734,6 +742,14 @@ function initDock(scope) {
     const label0 = q("label")
     const placeholder = root.dataset.placeholder ?? (label0 ? label0.textContent.trim() : "")
     const row = (it) => (it.parentElement && it.parentElement.tagName === "LI" ? it.parentElement : it)
+    const createOn = p === "combobox" && root.hasAttribute("data-create")
+    const createMax = parseInt(root.dataset.createMax, 10) || 80
+    const createLabel = root.dataset.createLabel || 'Add "%{value}"'
+    const CREATE = "\u0000create" // activeValue of the Add row
+    const createRow = () => (createOn ? root.querySelector("[data-combobox-create]") : null)
+    const rowSel = itemSel + (createOn ? ", [data-combobox-create]" : "")
+    const key = (it) => (it.hasAttribute("data-combobox-create") ? CREATE : it.dataset.value)
+    let created = []
 
     // the server's value: options it marked data-selected, else the hidden inputs
     const readServer = () => {
@@ -744,6 +760,32 @@ function initDock(scope) {
       return JSON.stringify(multiple ? [...new Set(v)].sort() : v.slice(0, 1))
     }
     const server = serverValue(readServer)
+    // a row for each added value the server markup doesn't carry yet
+    const ensureCreated = () => {
+      const list = q("list")
+      if (!list || !created.length) return
+      // the server's option for it may use another value (an id): match labels too
+      const have = new Set(items().flatMap((it) => [it.dataset.value, text(it).toLowerCase()]))
+      const cr = createRow()
+      created.filter((v) => !have.has(v) && !have.has(v.toLowerCase())).forEach((v) => {
+        const b = document.createElement("button")
+        b.type = "button"; b.className = "combo-item"; b.dataset.value = v
+        b.setAttribute("data-created", "")
+        const mark = document.createElement("span")
+        mark.setAttribute("aria-hidden", "true")
+        if (multiple) {
+          mark.className = "facet-check"
+          const c = document.createElement("span"); c.className = "hero-check size-3.5"
+          mark.appendChild(c)
+        } else mark.className = "hero-check size-4 shrink-0"
+        const lab = document.createElement("span")
+        lab.setAttribute("data-label", ""); lab.className = "truncate"; lab.textContent = v
+        b.append(mark, lab)
+        const li = document.createElement("li")
+        li.appendChild(b)
+        list.insertBefore(li, cr ? row(cr) : null)
+      })
+    }
     const ordered = (vals) => {
       const order = items().map((it) => it.dataset.value)
       const rank = (v) => { const i = order.indexOf(v); return i < 0 ? order.length : i }
@@ -753,8 +795,22 @@ function initDock(scope) {
     let isOpen = false, query = "", activeValue = null
 
     const matches = (it) => !query || (text(it) + " " + it.dataset.value).toLowerCase().includes(query.toLowerCase())
-    const visible = () => items().filter(matches)
-    const activeEl = () => visible().find((it) => it.dataset.value === activeValue)
+    // the text the Add row offers, or "" (off, blank, too long, or an exact match)
+    const createText = () => {
+      if (!createOn) return ""
+      const t = query.trim()
+      if (!t || t.length > createMax) return ""
+      const n = t.toLowerCase()
+      const exact = items().some((it) => text(it).toLowerCase() === n || (it.dataset.value || "").trim().toLowerCase() === n)
+      return exact ? "" : t
+    }
+    const visible = () => {
+      const vis = items().filter(matches)
+      const cr = createRow()
+      if (cr && createText()) vis.push(cr)
+      return vis
+    }
+    const activeEl = () => visible().find((it) => key(it) === activeValue)
 
     const renderLabel = () => {
       const lab = q("label")
@@ -794,6 +850,7 @@ function initDock(scope) {
     }
 
     const sync = () => {
+      ensureCreated()
       const trigger = q("trigger"), panel = q("panel"), list = q("list") || panel, search = q("search")
       list.id = listId
       list.setAttribute("role", "listbox")
@@ -824,13 +881,25 @@ function initDock(scope) {
         row(it).classList.toggle("hidden", !m)
         if (m) shown++
       })
+      const cr = createRow(), ct = createText()
+      if (cr) {
+        cr.id = listId + "-create"
+        cr.setAttribute("role", "option")
+        cr.setAttribute("aria-selected", "false")
+        cr.tabIndex = -1
+        row(cr).classList.toggle("hidden", !ct)
+        const label = createLabel.split("%{value}").join(ct)
+        const span = cr.querySelector("[data-create-text]") || cr
+        if (ct && span.textContent !== label) span.textContent = label
+      }
       const empty = q("empty")
-      if (empty) empty.classList.toggle("hidden", shown > 0)
+      if (empty) empty.classList.toggle("hidden", shown > 0 || !!(cr && ct))
       const clear = q("clear")
       if (clear) clear.classList.toggle("hidden", selected.length === 0)
       let act = isOpen ? activeEl() : null
-      if (isOpen && !act) { act = visible()[0] || null; activeValue = act ? act.dataset.value : null }
+      if (isOpen && !act) { act = visible()[0] || null; activeValue = act ? key(act) : null }
       items().forEach((it) => it.classList.toggle("is-active", it === act))
+      if (cr) cr.classList.toggle("is-active", cr === act)
       const owner = search || trigger
       if (act) owner.setAttribute("aria-activedescendant", act.id)
       else owner.removeAttribute("aria-activedescendant")
@@ -864,7 +933,33 @@ function initDock(scope) {
       }
     }
 
+    // choose the Add row: select the trimmed search text like any value
+    const create = () => {
+      const v = createText()
+      if (!v) return
+      if (!created.includes(v)) created.push(v)
+      ensureCreated()
+      const onCreate = root.dataset.onCreate
+      if (onCreate && api.hook) api.hook.pushEvent(onCreate, { id: root.id, value: v })
+      root.dispatchEvent(new CustomEvent(p + "-create", { bubbles: true, detail: { value: v } }))
+      activeValue = v
+      if (multiple) {
+        query = ""
+        const added = !selected.includes(v)
+        selected = ordered([...selected, v])
+        sync(); if (added) emit()
+        const search = q("search"); if (search) search.focus()
+      } else {
+        const changed = selected[0] !== v
+        selected = [v]
+        isOpen = false
+        sync(); if (changed) emit()
+        q("trigger").focus()
+      }
+    }
+
     const toggle = (it) => {
+      if (key(it) === CREATE) { create(); return }
       const v = it.dataset.value
       activeValue = v
       if (multiple) {
@@ -889,9 +984,9 @@ function initDock(scope) {
     const move = (to) => {
       const vis = visible()
       if (!vis.length) return
-      const i = vis.findIndex((it) => it.dataset.value === activeValue)
+      const i = vis.findIndex((it) => key(it) === activeValue)
       const n = to === "first" ? 0 : to === "last" ? vis.length - 1 : i < 0 ? 0 : (i + to + vis.length) % vis.length
-      activeValue = vis[n].dataset.value
+      activeValue = key(vis[n])
       sync()
       vis[n].scrollIntoView({ block: "nearest" })
     }
@@ -917,17 +1012,17 @@ function initDock(scope) {
     })
     // keep focus on the trigger / search box while clicking rows
     root.addEventListener("mousedown", (e) => {
-      if (e.target.closest(itemSel + ", [data-" + p + "-clear-btn]")) e.preventDefault()
+      if (e.target.closest(rowSel + ", [data-" + p + "-clear-btn]")) e.preventDefault()
     })
     root.addEventListener("click", (e) => {
       if (e.target.closest("[data-" + p + "-trigger]")) { open(!isOpen); return }
-      const it = e.target.closest(itemSel)
+      const it = e.target.closest(rowSel)
       if (it) { toggle(it); return }
       if (e.target.closest("[data-" + p + "-clear-btn]")) clear()
     })
     root.addEventListener("mouseover", (e) => {
-      const it = e.target.closest(itemSel)
-      if (it && isOpen && it.dataset.value !== activeValue) { activeValue = it.dataset.value; sync() }
+      const it = e.target.closest(rowSel)
+      if (it && isOpen && key(it) !== activeValue) { activeValue = key(it); sync() }
     })
     // the search box is not a form field: keep its keystrokes away from phx-change
     root.addEventListener("input", (e) => {
@@ -947,6 +1042,7 @@ function initDock(scope) {
 
     sync()
     const api = {
+      hook: hook || null,
       // after a LiveView patch: adopt a genuine server change, then re-apply state
       refresh() {
         const changed = server.changed()
@@ -958,7 +1054,7 @@ function initDock(scope) {
     return api
   }
 
-  const initCombobox = (root) => initPicker(root, "combobox")
+  const initCombobox = (root, hook) => initPicker(root, "combobox", hook)
   const initSelect = (root) => initPicker(root, "select")
 
   function initCommand(dialog) {
@@ -2246,7 +2342,7 @@ export function setTheme(theme) {
 // views / plain HTML. Safe to call once on page load.
 export function initShadcnDaisyui(root) {
   root = root || document
-  root.querySelectorAll("[data-combobox]").forEach(initCombobox)
+  root.querySelectorAll("[data-combobox]").forEach((el) => initCombobox(el))
   root.querySelectorAll("[data-select]").forEach(initSelect)
   root.querySelectorAll("[data-command]").forEach(initCommand)
   root.querySelectorAll("[data-otp]").forEach(initOtp)
@@ -2268,7 +2364,7 @@ export function initShadcnDaisyui(root) {
 export const Hooks = {
   // updated(): a patch re-renders the server markup (closed panel, server
   // label); refresh() re-applies the client state and adopts server changes.
-  ShadcnCombobox: { mounted() { this.api = initCombobox(this.el) }, updated() { this.api && this.api.refresh() } },
+  ShadcnCombobox: { mounted() { this.api = initCombobox(this.el, this) }, updated() { this.api && this.api.refresh() } },
   ShadcnSelect: { mounted() { this.api = initSelect(this.el) }, updated() { this.api && this.api.refresh() } },
   ShadcnCommand: { mounted() { initCommand(this.el) } },
   ShadcnOtp: { mounted() { initOtp(this.el) } },

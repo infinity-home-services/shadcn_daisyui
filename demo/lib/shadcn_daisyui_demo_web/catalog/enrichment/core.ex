@@ -338,7 +338,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{property: "Size", value: "1rem x 1rem (radio radio-sm)"},
             %{property: "Border", value: "1px var(--input)"},
             %{property: "Checked", value: "border + dot use var(--primary)"},
-            %{property: "Row gap", value: "0.5rem (gap-2)"}
+            %{property: "Row gap", value: "0.5rem (gap-2)"},
+            %{property: "Touch row", value: "2.75rem min label row on coarse pointers"}
           ],
           tokens: ["input", "primary", "ring", "foreground"]
         },
@@ -353,7 +354,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
           focus: "Focused radio shows a ring shadow; arrow keys move both focus and selection.",
           screen_reader:
             "Legend is announced as the group name; each radio announces its label and position in the set.",
-          touch_target: "Each option is a full label row, giving a 44pt-friendly hit area.",
+          touch_target:
+            "Each option is a full label row, 44px tall on coarse pointers (desktop keeps its density).",
           reduced_motion: "Selecting is a short color transition only; nothing moves."
         },
         swiftui: %{
@@ -451,10 +453,20 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
               part: "Container",
               description: "Bordered card-surface region carrying role=alert."
             },
+            %{
+              part: "Icon",
+              description: "Optional <:icon>, 16px, left of the title and description."
+            },
             %{part: "Title", description: "Optional medium-weight heading line."},
             %{
               part: "Description",
-              description: "Muted body text; tinted destructive in the error variant."
+              description:
+                "Muted body text in a div (holds paragraphs and links); tinted destructive in the error variant."
+            },
+            %{
+              part: "Actions",
+              description:
+                "Optional <:actions>: right of the text from 640px, below it (aligned with the text) on phones."
             }
           ],
           measurements: [
@@ -462,7 +474,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{property: "Radius", value: "var(--radius-lg)"},
             %{property: "Border", value: "1px var(--border-color); error blends 30% destructive"},
             %{property: "Font", value: "0.875rem (text-sm)"},
-            %{property: "Shadow", value: "none (flat)"}
+            %{property: "Shadow", value: "none (flat)"},
+            %{property: "Gaps", value: "0.75rem icon to text and text to actions"}
           ],
           tokens: ["card", "card-foreground", "border-color", "destructive", "muted-foreground"]
         },
