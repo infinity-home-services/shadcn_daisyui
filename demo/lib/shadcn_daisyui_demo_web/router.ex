@@ -29,6 +29,8 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/docs/themes", DocsController, :themes
     get "/docs/tokens", DocsController, :tokens
     get "/docs/dark-mode", DocsController, :dark_mode
+    get "/docs/app-shell", DocsController, :app_shell
+    get "/docs/app-shell/preview/:page", DocsController, :app_shell_preview
     get "/docs/foundations/:guide", DocsController, :guide
     get "/docs/styles/:guide", DocsController, :guide
     get "/docs/components/:component", DocsController, :component

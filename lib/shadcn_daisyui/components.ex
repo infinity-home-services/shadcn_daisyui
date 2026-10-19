@@ -13,17 +13,24 @@ defmodule ShadcnDaisyui.Components do
   (`btn`, `card`, `tabs tabs-box`, …) - the theme styles them automatically.
 
   `use ShadcnDaisyui.Components` also imports `ShadcnDaisyui.FormComponents`
-  (field-aware form controls). The generator-compatible `button`, `input`,
-  `flash`, `table`, … live in `ShadcnDaisyui.CoreComponents` - apps normally get
-  those through their own `CoreComponents` module.
+  (field-aware form controls) and the app shell (`app_shell/1`, see
+  `ShadcnDaisyui.Components.Shell`). The generator-compatible `button`,
+  `input`, `flash`, `table`, `page_header`, … live in
+  `ShadcnDaisyui.CoreComponents` - apps normally get those through their own
+  `CoreComponents` module.
+
+  `theme_toggle/1` is the one component `use` leaves out (Phoenix 1.8's
+  `Layouts` defines its own); call it as `ShadcnDaisyui.Components.theme_toggle`.
   """
   use Phoenix.Component
 
   defmacro __using__(_opts) do
+    # theme_toggle/1 is left out: Phoenix 1.8 generates its own in Layouts.
     quote do
-      import(ShadcnDaisyui.Components)
+      import(ShadcnDaisyui.Components, except: [theme_toggle: 1])
       import(ShadcnDaisyui.Components.Overlay)
       import(ShadcnDaisyui.Components.Navigation)
+      import(ShadcnDaisyui.Components.Shell)
       import(ShadcnDaisyui.Components.Display)
       import(ShadcnDaisyui.Components.Conversation)
       import(ShadcnDaisyui.FormComponents)
@@ -148,6 +155,56 @@ defmodule ShadcnDaisyui.Components do
   def separator(assigns) do
     ~H"""
     <div class={["divider", @orientation == "vertical" && "divider-horizontal", @class]}></div>
+    """
+  end
+
+  # ----------------------------------------------------------------------------
+  # Theme toggle
+  # ----------------------------------------------------------------------------
+  @doc ~S"""
+  The three-way theme toggle: system, light, dark. `<.app_shell>` has one in
+  its account menu.
+
+      <ShadcnDaisyui.Components.theme_toggle />
+      <ShadcnDaisyui.Components.theme_toggle light="acme" dark="acme-dark" />
+
+  Not imported by `use ShadcnDaisyui.Components`: Phoenix 1.8 generates a
+  `theme_toggle/1` in your `Layouts`, and an import would conflict with it.
+  Call it by its full name, or replace yours with
+  `defdelegate theme_toggle(assigns), to: ShadcnDaisyui.Components`.
+
+  Each button dispatches `phx:set-theme` with its theme in `data-phx-theme`
+  ("system" or the theme name), which the root layout's pre-paint script
+  handles (it goes through the `theme-transition` guard). The thumb follows
+  `<html>`: no `data-theme` or `data-theme-source="system"` is system, a theme
+  whose name contains "dark" is dark, any other is light.
+  """
+  attr(:light, :string, default: "shadcn", doc: "the light theme's name")
+  attr(:dark, :string, default: "shadcn-dark", doc: "the dark theme's name")
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+
+  def theme_toggle(assigns) do
+    ~H"""
+    <div class={["theme-toggle", @class]} role="group" aria-label="Theme" {@rest}>
+      <span class="theme-toggle-thumb" aria-hidden="true"></span>
+      <button
+        :for={
+          {theme, label, icon} <- [
+            {"system", "System theme", "hero-computer-desktop-micro"},
+            {@light, "Light theme", "hero-sun-micro"},
+            {@dark, "Dark theme", "hero-moon-micro"}
+          ]
+        }
+        type="button"
+        data-phx-theme={theme}
+        aria-label={label}
+        title={label}
+        phx-click={Phoenix.LiveView.JS.dispatch("phx:set-theme")}
+      >
+        <span class={[icon, "size-4"]} aria-hidden="true"></span>
+      </button>
+    </div>
     """
   end
 

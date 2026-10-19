@@ -9,14 +9,14 @@ It bundles:
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
 - **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
   stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable,
-  tab nav, chip row, …).
-- **Function components** - `ShadcnDaisyui.Components` (`<.badge>`, `<.card>`,
-  `<.dialog>`, `<.combobox>`, `<.tabs>`, `<.sidebar_layout>`, …),
+  tab nav, chip row, page header, …), plus the app shell's behaviour.
+- **Function components** - `ShadcnDaisyui.Components` (`<.app_shell>` - a signed-in
+  app's whole shell - `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
   `<.radio_group>`, …), and `ShadcnDaisyui.CoreComponents` - a **drop-in replacement
   for Phoenix 1.8's generated core components** (`<.input field={@form[:email]}>`,
-  `<.button>`, `<.table>`, `<.flash>`), so `phx.gen.live` / `phx.gen.html` output
-  works unmodified.
+  `<.button>`, `<.table>`, `<.flash>`, plus `<.page_header>`), so `phx.gen.live` /
+  `phx.gen.html` output works unmodified.
 - **AI usage rules** - `usage-rules.md` ships in the package; sync it into your app's
   `AGENTS.md` / `CLAUDE.md` with the [usage_rules](https://hex.pm/packages/usage_rules)
   package so coding agents follow the design system on every UI decision.

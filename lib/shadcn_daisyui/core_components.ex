@@ -5,7 +5,9 @@ defmodule ShadcnDaisyui.CoreComponents do
 
   Exposes the exact API `phx.gen.live` / `phx.gen.html` templates call -
   `input/1`, `button/1`, `error/1`, `header/1`, `table/1`, `list/1`, `icon/1`,
-  `flash/1` - so generated code works unmodified.
+  `flash/1` - so generated code works unmodified. Plus the header every page in
+  `<.app_shell>` starts with: `page_header/1` (and the `sticky_top/1` it pins
+  with).
 
   ## Replacing your app's CoreComponents
 
@@ -45,6 +47,8 @@ defmodule ShadcnDaisyui.CoreComponents do
     input: 1,
     error: 1,
     header: 1,
+    page_header: 1,
+    sticky_top: 1,
     table: 1,
     list: 1,
     icon: 1
@@ -407,6 +411,158 @@ defmodule ShadcnDaisyui.CoreComponents do
       </div>
       <div class="flex-none">{render_slot(@actions)}</div>
     </header>
+    """
+  end
+
+  @doc ~S"""
+  The header every page in `<.app_shell>` starts with, so the breadcrumb,
+  title and actions sit in the same place on every page, pinned while the page
+  scrolls (`sticky_top/1`). No line under the title.
+
+      <.page_header crumbs={[%{label: "Sales"}, %{label: "Orders", path: ~p"/orders"}, %{label: @order.number}]}>
+        {@order.number}
+        <:badge><.badge variant="outline">Paid</.badge></:badge>
+        <:actions><.button size="sm">Save</.button></:actions>
+      </.page_header>
+
+    * `crumbs` - the breadcrumb (wider screens only), `[%{label, path?}]`: the
+      page's navigation group as plain text, then the page (the last crumb is
+      always the current page, plain text). On a record the list is a crumb
+      with a `path`, and Esc goes there (the last such crumb before the page),
+      outside fields, pickers, menus and open dialogs; `esc_back={false}` turns
+      that off where it would drop what's being typed. `back` makes that crumb
+      send an event (or `Phoenix.LiveView.JS`) instead of navigating, e.g. to
+      return to a list as it was left.
+    * the title (inner block), `badge` beside it and `actions` on the right,
+      in a row of fixed height. On phones the title keeps at least half the
+      row, so actions that don't fit beside it go to their own line.
+    * `below` - what pins with the header (an edit form's section select).
+
+  The crumbs usually come from your navigation; keep a thin wrapper in your
+  app's `CoreComponents` that computes them and calls this one:
+
+      def page_header(assigns) do
+        assigns = assign(assigns, :crumbs, MyAppWeb.Navigation.crumbs(assigns.page, assigns[:current]))
+        ShadcnDaisyui.CoreComponents.page_header(assigns)
+      end
+
+  The breadcrumb needs the `ShadcnPageBack` hook and the header the
+  `ShadcnStickyTop` hook (both in `Hooks`).
+  """
+  attr(:id, :string, default: "page-header")
+  attr(:crumbs, :list, default: [], doc: "[%{label, path?}], the breadcrumb above the title")
+  attr(:back, :any, default: nil, doc: "an event (or JS) the back crumb (and Esc) sends instead")
+
+  attr(:esc_back, :boolean,
+    default: true,
+    doc: "Esc goes back; off where it would drop what's being typed"
+  )
+
+  slot(:inner_block, required: true)
+  slot(:badge, doc: "beside the title")
+  slot(:actions, doc: "right of the title (`size=\"sm\"` buttons)")
+  slot(:below, doc: "pinned with the header, under it")
+
+  def page_header(assigns) do
+    crumbs = assigns.crumbs || []
+    last = length(crumbs) - 1
+
+    # the back crumb: the last one with a path before the page itself
+    back =
+      crumbs
+      |> Enum.with_index()
+      |> Enum.filter(fn {crumb, i} -> crumb[:path] && i < last end)
+      |> List.last()
+
+    assigns =
+      assign(assigns,
+        crumbs: Enum.with_index(crumbs),
+        back_index: back && elem(back, 1),
+        last_index: last
+      )
+
+    ~H"""
+    <.sticky_top id={@id}>
+      <div class="page-header">
+        <nav
+          :if={@crumbs != []}
+          id={@id <> "-crumbs"}
+          aria-label="Breadcrumb"
+          phx-hook="ShadcnPageBack"
+          data-page-back
+          data-esc-back={to_string(@esc_back)}
+          class="breadcrumbs page-header-crumbs"
+        >
+          <ul>
+            <li :for={{crumb, i} <- @crumbs}>
+              <%= cond do %>
+                <% i == @back_index && @back -> %>
+                  <button
+                    type="button"
+                    id={@id <> "-back"}
+                    data-back
+                    phx-click={@back}
+                    title="Back (Esc)"
+                  >
+                    {crumb.label}
+                  </button>
+                <% i == @back_index -> %>
+                  <.link navigate={crumb.path} id={@id <> "-back"} data-back title="Back (Esc)">
+                    {crumb.label}
+                  </.link>
+                <% crumb[:path] && i != @last_index -> %>
+                  <.link navigate={crumb.path}>{crumb.label}</.link>
+                <% true -> %>
+                  <span aria-current={i == @last_index && "page"}>{crumb.label}</span>
+              <% end %>
+            </li>
+          </ul>
+        </nav>
+        <header class="page-header-row">
+          <div class="page-header-heading">
+            <h1 class="page-header-title">{render_slot(@inner_block)}</h1>
+            <div :if={@badge != []} class="page-header-badge">{render_slot(@badge)}</div>
+          </div>
+          <div :if={@actions != []} class="page-header-actions">{render_slot(@actions)}</div>
+        </header>
+      </div>
+      {render_slot(@below)}
+    </.sticky_top>
+    """
+  end
+
+  @doc """
+  Keeps its content (a page's breadcrumb, title and actions) pinned to the top
+  of `<.app_shell>`'s `#main` while it scrolls, so Save is always in reach (its
+  offsets and margins are the shell's: `#main`'s padding).
+  Covers what scrolls under it with the page colour (`bg-page`), and once
+  `#main` (or, outside the shell, the document) has scrolled it gets
+  `data-stuck`: a bottom border and `shadow-sm`, so it reads as above the
+  content. `page_header/1` uses it; use it directly for a pinned toolbar of
+  your own. Needs the `ShadcnStickyTop` hook.
+
+      <.sticky_top id="toolbar">…</.sticky_top>
+
+  On phones it pins below the shell's pinned top row; from 48rem at the very
+  top, covering `#main`'s top padding.
+  """
+  attr(:id, :string, default: "sticky-top")
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  def sticky_top(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="ShadcnStickyTop"
+      phx-mounted={JS.ignore_attributes(["data-stuck"])}
+      data-sticky-top
+      class={["sticky-top", @class]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </div>
     """
   end
 

@@ -9,7 +9,20 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1, input_otp: 1]
 
   import ShadcnDaisyui.Components.Overlay,
-    only: [dialog: 1, sheet: 1, drawer: 1, popover: 1, tooltip: 1, dropdown_menu: 1, command: 1]
+    only: [
+      dialog: 1,
+      sheet: 1,
+      drawer: 1,
+      popover: 1,
+      tooltip: 1,
+      dropdown_menu: 1,
+      command: 1,
+      show_modal: 1
+    ]
+
+  # the app shell page and its preview
+  import ShadcnDaisyui.Components.Shell
+  import ShadcnDaisyui.CoreComponents, only: [page_header: 1]
 
   embed_templates "docs_html/*"
 

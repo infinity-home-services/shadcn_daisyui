@@ -254,7 +254,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       %{slug: "adopt", title: "Adopt the design system"},
       %{slug: "themes", title: "Themes"},
       %{slug: "tokens", title: "Tokens"},
-      %{slug: "dark-mode", title: "Dark mode & CSP"}
+      %{slug: "dark-mode", title: "Dark mode & CSP"},
+      %{slug: "app-shell", title: "App shell"}
     ]
   end
 

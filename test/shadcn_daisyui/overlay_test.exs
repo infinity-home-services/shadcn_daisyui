@@ -550,6 +550,96 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       refute html =~ "command-group-label"
       assert count(html, "data-command-item") == 2
     end
+
+    test "items navigate, link, submit a form or run phx-click" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="search" label="Search" placeholder="Search pages">
+          <:item id="page" group="Pages" icon="hero-home" navigate="/home">Home</:item>
+          <:item id="patched" group="Pages" patch="/home?tab=2">Tab two</:item>
+          <:item id="brand" group="Brands" href="/context/brand?brand=acme">Acme</:item>
+          <:item id="loc" group="Locations" form="loc-form" name="location" value="all">
+            All locations
+          </:item>
+          <:item id="act" phx-click="refresh">Refresh</:item>
+        </.command>
+        """)
+
+      assert html =~ ~s(aria-label="Search")
+      assert html =~ ~s(id="search-search")
+      assert html =~ ~s(id="search-list")
+
+      assert html =~
+               ~r{<a href="/home" data-phx-link="redirect" data-phx-link-state="push" id="page" class="command-item" data-command-item>}
+
+      assert html =~ ~r{<a href="/home\?tab=2" data-phx-link="patch"[^>]* id="patched"}
+
+      assert html =~
+               ~r{<a href="/context/brand\?brand=acme" id="brand" class="command-item" data-command-item>}
+
+      assert html =~
+               ~s(<button type="submit" id="loc" form="loc-form" name="location" value="all" class="command-item" data-command-item>)
+
+      assert html =~
+               ~r{<button type="button" id="act" class="command-item" data-command-item phx-click="refresh">}
+
+      assert count(html, "data-command-item") == 5
+      assert count(html, "command-group-label") == 3
+    end
+
+    test "opens with Cmd/Ctrl+K by default" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="cmd">
+          <:trigger_label>Search…</:trigger_label>
+          <:item>One</:item>
+        </.command>
+        """)
+
+      assert html =~ ~s(data-shortcut="k")
+      assert html =~ ~s(<kbd class="kbd">⌘K</kbd>)
+    end
+
+    test "shortcut picks another letter, and nil means none" do
+      assigns = %{}
+
+      other =
+        render(~H"""
+        <.command id="cmd" shortcut="j">
+          <:trigger_label>Jump…</:trigger_label>
+          <:item>One</:item>
+        </.command>
+        """)
+
+      none =
+        render(~H"""
+        <.command id="cmd" shortcut={nil}>
+          <:trigger_label>Switch…</:trigger_label>
+          <:item>One</:item>
+        </.command>
+        """)
+
+      assert other =~ ~s(data-shortcut="j")
+      assert other =~ "⌘J"
+      # an empty data-shortcut tells the hook "no key" (no attribute = ⌘K, for raw HTML)
+      assert none =~ ~s(data-shortcut="")
+      refute none =~ "kbd"
+
+      empty =
+        render(~H"""
+        <.command id="cmd" shortcut="">
+          <:trigger_label>Switch…</:trigger_label>
+          <:item>One</:item>
+        </.command>
+        """)
+
+      assert empty =~ ~s(data-shortcut="")
+      refute empty =~ "kbd"
+    end
   end
 
   describe "toast host" do

@@ -48,8 +48,10 @@ defmodule Mix.Tasks.Site.Export do
         "/docs/adopt",
         "/docs/themes",
         "/docs/tokens",
-        "/docs/dark-mode"
+        "/docs/dark-mode",
+        "/docs/app-shell"
       ] ++
+        Enum.map(ShadcnDaisyuiDemoWeb.ShellPreview.pages(), &"/docs/app-shell/preview/#{&1}") ++
         Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.path) ++
         Enum.map(Catalog.slugs(), &"/docs/components/#{&1}")
 

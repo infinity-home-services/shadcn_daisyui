@@ -131,20 +131,75 @@ defmodule ShadcnDaisyui.Install.Patcher do
   end
 
   @doc ~S"""
-  Adds data-theme="shadcn" to the <html> tag of the root layout.
+  Patches the root layout's pre-paint setup: the theme and `<.app_shell>`'s
+  sidebar state, both set on `<html>` before first paint.
 
-  Phoenix 1.8's stock layout manages data-theme client-side (the phx:set-theme
-  script, values "light"/"dark"/"system") - the theme CSS aliases those values,
-  so no data-theme is added. Instead its inline `setTheme` is wrapped in the
+  Theme: adds data-theme="shadcn" to the <html> tag. Phoenix 1.8's stock layout
+  manages data-theme client-side (the phx:set-theme script, values
+  "light"/"dark"/"system") - the theme CSS aliases those values, so no
+  data-theme is added. Instead its inline `setTheme` is wrapped in the
   `theme-transition` guard so the swap stays instant (see `setTheme` in
   shadcn-daisyui.js).
+
+  Sidebar: sets `data-sidebar` from localStorage `shadcn:sidebar` - inside the
+  theme script (before its `storage` listener) when there is one, else in a
+  small script of its own at the end of `<head>`. Untouched once the layout
+  mentions `shadcn:sidebar`.
   """
   def patch_root_layout(heex) do
+    heex
+    |> ensure_theme()
+    |> ensure_sidebar_state()
+  end
+
+  defp ensure_theme(heex) do
     cond do
       heex =~ "phx:set-theme" -> ensure_theme_transition_guard(heex)
       Regex.match?(~r/<html[^>]*data-theme/, heex) -> heex
       true -> Regex.replace(~r/<html/, heex, ~s(<html data-theme="shadcn"), global: false)
     end
+  end
+
+  @sidebar_lines [
+    "// <.app_shell>: the sidebar's collapsed or open state, before first paint",
+    "document.documentElement.dataset.sidebar =",
+    ~s|  localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";|
+  ]
+
+  defp ensure_sidebar_state(heex) do
+    storage = ~r/^([ \t]*)window\.addEventListener\("storage"/m
+    head = ~r/^([ \t]*)<\/head>/m
+
+    cond do
+      heex =~ "shadcn:sidebar" ->
+        heex
+
+      heex =~ "phx:set-theme" and Regex.match?(storage, heex) ->
+        [{start, _}, {ind_start, ind_len}] = Regex.run(storage, heex, return: :index)
+        indent = binary_part(heex, ind_start, ind_len)
+        insert_at(heex, start, indented(@sidebar_lines, indent))
+
+      Regex.match?(head, heex) ->
+        [{start, _}, {ind_start, ind_len}] = Regex.run(head, heex, return: :index)
+        indent = binary_part(heex, ind_start, ind_len) <> "  "
+
+        script =
+          [indent <> "<script nonce={assigns[:csp_nonce]}>"] ++
+            indented(@sidebar_lines, indent <> "  ") ++ [indent <> "</script>"]
+
+        insert_at(heex, start, script)
+
+      true ->
+        heex
+    end
+  end
+
+  defp indented(lines, indent), do: Enum.map(lines, &(indent <> &1))
+
+  # Inserts whole lines before the line starting at byte `start`.
+  defp insert_at(heex, start, lines) do
+    binary_part(heex, 0, start) <>
+      Enum.map_join(lines, &(&1 <> "\n")) <> binary_part(heex, start, byte_size(heex) - start)
   end
 
   # Wrap the body of the stock `const setTheme = (theme) => { ... };` in

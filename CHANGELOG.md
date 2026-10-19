@@ -8,6 +8,137 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-19
+
+The app shell: the sidebar, phone dock, search, account menu and page header
+a signed-in app needs, as one set of neutral components.
+Everything is new or opt-in except the `<.command>` palette's shortcut
+handling (see Changed).
+
+### Added
+
+- **`<.app_shell>`** (`ShadcnDaisyui.Components.Shell`, imported by
+  `use ShadcnDaisyui.Components`): a signed-in app's whole shell.
+  - Wide screens (from 48rem): a 16rem sidebar that collapses to a 3rem icon
+    rail through `data-sidebar="collapsed"` on `<html>`, with a grab strip on
+    its edge, a "Collapse sidebar ⌘B" row and tooltips on rail items. From the
+    top: the `:header` slot, the search row (with its ⌘K hint) when `search`
+    names a command dialog, the `nav` groups (small muted labels; the `active`
+    item `aria-current="page"`, `bg-accent font-medium`), then the footer:
+    `:footer_item`s, the collapse row, the `environment` badge and the account
+    menu (initials, name, email; opens right of the sidebar, bottom-aligned).
+  - Phones: a top row pinned while the page scrolls (`:phone_header`, then a
+    search button), a bottom dock of up to four destinations (`bar`, default
+    the first four of `more`) plus More, and the More sheet: the `more` groups
+    (default `nav`), the footer items, then the account section.
+  - The account menu's `:account_item`s (links with `navigate`/`patch`/`href`
+    and `method`, or `phx-click` buttons; `soon`, `divider`, `destructive`)
+    show in the dropdown (32px rows) and the More sheet (44px rows), with the
+    theme row closing their first section.
+  - `#main` is the one scroll region, with a 48rem reading width (a page
+    child's own `max-w-*` wins), `wide` for full-width tables and `fill` for
+    a table body that scrolls instead.
+  - `nav` takes the shape a `Navigation` module returns:
+    `[%{label, items: [%{id, label, short, path, icon}]}]`.
+- **`<.app_shell_heading>`**: the top of the sidebar (a tile, title and
+  subtitle; only the tile in the rail, with `tip` as its tooltip; `chevron`
+  and the trigger attributes for a switcher). **`toggle_sidebar/1`**: the JS
+  command that collapses or expands it.
+- **`page_header/1` and `sticky_top/1` in `ShadcnDaisyui.CoreComponents`**,
+  wrapped into your app's `CoreComponents` like `header/1` and overridable.
+  `page_header` takes `crumbs` (`[%{label, path?}]`) rather than computing
+  them: the last crumb with a `path` is the back link (Esc follows it outside
+  fields, pickers, menus and open dialogs; `esc_back={false}` turns that off),
+  and `back` makes it send an event instead. `badge`, `actions` and `below`
+  slots; `id` (default `page-header`). `sticky_top` pins its content to the
+  top of `#main` on the page colour and gets `data-stuck` (a line and
+  `shadow-sm`) once `#main` has scrolled, falling back to the document's
+  scroll outside the shell. The last crumb is always the current page. Hooks: `ShadcnStickyTop`, `ShadcnPageBack` (in
+  `Hooks`; `initShadcnDaisyui()` wires them in dead views).
+- **`ShadcnDaisyui.Components.theme_toggle/1`**: the system / light / dark
+  toggle (`light` / `dark` theme names, default `shadcn` / `shadcn-dark`). It
+  dispatches `phx:set-theme`, like Phoenix's own. Not imported by
+  `use ShadcnDaisyui.Components`, because Phoenix 1.8 generates a
+  `theme_toggle/1` in every app's `Layouts` and the import would clash with
+  it. Call it by its full name, or `defdelegate` yours to it.
+- **`<.command>` covers a search and a switcher**: `label` (the dialog's
+  accessible name), `shortcut` (the Cmd/Ctrl letter that toggles it: `"k"` by
+  default, `nil` for none), and items with an `id` that `navigate`, `patch`,
+  `href`, or submit a form (`form`, `name`, `value`), besides `phx-click`. We
+  extended `<.command>` rather than adding a `<.command_dialog>`: one palette
+  component, and no clash with an app's own `command_dialog/1`.
+- **Shell behaviour in `shadcn-daisyui.js`** (window listeners, so it works
+  under a strict `script-src` CSP):
+  - `shadcn:toggle-sidebar`, and Cmd/Ctrl+B outside fields on a page with a
+    shell, toggle the sidebar and remember it in localStorage `shadcn:sidebar`.
+  - `shadcn:show-dialog` opens its target dialog (the same as `show_modal/2`'s
+    `shadcn:show-modal`).
+  - On a page with a shell, plain dialogs close on a backdrop click (sheets,
+    drawers and command dialogs already did), and every open dialog closes
+    when LiveView navigates to another page (`phx:page-loading-start` with
+    `kind: "redirect"`). A reconnect, a rejoin, a patch or `phx-page-loading`
+    leaves them open.
+- **`bg-page`**: base-100 with a 40% base-200 tint, as one solid colour so a
+  pinned header can cover what scrolls under it (token `--page-background`,
+  restated on every theme scope).
+- **The pre-paint script is a setup rule**: the root layout sets `data-theme`
+  and `data-sidebar` before first paint. `mix shadcn_daisyui.install` and
+  `mix shadcn_daisyui.upgrade` add the sidebar line to Phoenix's theme
+  script, or as a small script of its own when there is none, and leave a
+  layout that already reads `shadcn:sidebar` alone.
+- Docs: an "App shell" section and rows in `usage-rules.md` (the navigation
+  guideline now points at `<.app_shell>`), and an App shell page in the docs
+  site: a working shell on desktop and on a phone, `page_header` and the
+  command dialog.
+
+### Changed
+
+- **The `<.command>` palette's shortcut**: the key listener is removed when the hook is destroyed, so
+  a LiveView navigation no longer leaves one behind for a dialog that's gone.
+  One listener serves every palette: a second ⌘K closes the palette (as in
+  shadcn), and otherwise the last palette on the page with that letter opens,
+  closing any other open dialog. Before, every `<.command>` on the page
+  opened on ⌘K, stacked. The hook also reads its items live, so
+  a patch that changes them is picked up (an open palette re-filters), and it
+  keeps explicit item ids. Backwards compatible: `shortcut` defaults to `"k"`,
+  and raw `data-command` markup without `data-shortcut` keeps ⌘K.
+- `mix shadcn_daisyui.upgrade` patches the root layout in both install modes
+  (it used to re-copy the assets of `--copy` installs only).
+- `<.sidebar_layout>` and `<.sidebar_group>` are unchanged; their docs point
+  signed-in apps at `<.app_shell>`.
+- Dead views: a dock button that opens a popup (`aria-haspopup`, like the
+  shell's More) no longer becomes the active dock item when tapped.
+- `use ShadcnDaisyui.Components` also imports `app_shell/1`,
+  `app_shell_heading/1` and `toggle_sidebar/1`, and your `CoreComponents` now
+  exports `page_header/1` and `sticky_top/1`. A `CoreComponents` that already
+  defines those two overrides them; a function with one of these names in
+  another module that imports them must be renamed or removed.
+
+### Moving an app onto `app_shell`
+
+- **Delete**:
+  - the shell markup in `Layouts.app/1`: the sidebar, phone row, dock, More
+    sheet, user menu and their helpers. Render `<.app_shell>` with your
+    navigation, header, footer items and account items instead.
+  - the app's command dialog module: use `<.command id="search" label="Search">`,
+    with `shortcut={nil}` on any other palette.
+  - `page_header/1` and `sticky_top/1`: keep a thin `page_header` in your
+    `CoreComponents` that computes `crumbs` from your navigation and calls
+    `ShadcnDaisyui.CoreComponents.page_header/1`.
+  - `theme_toggle/1`, or `defdelegate` it to `ShadcnDaisyui.Components`.
+  - the shell part of `app.js`: the sidebar toggle and its Cmd/Ctrl+B
+    listener, the show-dialog listener, the backdrop-click and
+    `phx:page-loading-start` dialog closing. App-only listeners stay.
+  - the `bg-page` `@utility` in `app.css`.
+- **Rename**: an app's own shell events become `shadcn:toggle-sidebar` and
+  `shadcn:show-dialog`, and the root layout's sidebar localStorage key becomes
+  `shadcn:sidebar` (replace the line, or delete it and run
+  `mix shadcn_daisyui.upgrade`).
+- Shell ids: `shell`, `sidebar`, `main`, `nav-<id>`, `bar-<id>`, `bar-more`,
+  `more-nav`, `user-menu`, `account-phone`, `search-open`, `sidebar-toggle`,
+  `phone-header` and `environment-badge`. Account items are
+  `user-menu-<id>` / `account-phone-<id>`, footer items `<id>` / `<id>-phone`.
+
 ## [0.19.0] - 2026-10-11
 
 A creatable combobox, a fix for form controls that ignored LiveView

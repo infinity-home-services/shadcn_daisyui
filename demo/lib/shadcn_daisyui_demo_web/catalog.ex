@@ -2323,6 +2323,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         slug: "sidebar",
         title: "Sidebar",
         description: "An app navigation sidebar layout.",
+        notes:
+          "A plain sidebar layout. A signed-in app's shell (the collapsible sidebar, the phone dock and More sheet, search, the account menu and one scroll region) is <.app_shell>: see the App shell guide (/docs/app-shell).",
         guidance: %{
           use_when: [
             "Primary navigation on expanded screens (≥ 1024px) with grouped sections",
@@ -2675,6 +2677,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         title: "Command",
         description: "A command palette for fast keyboard-driven actions.",
         hook: true,
+        notes:
+          "Opens with ⌘K (Ctrl+K), which also closes it; shortcut=\"j\" picks another letter and shortcut={nil} none (every palette on the page but one). Opening it closes any other open dialog. Items run phx-click, or go somewhere: navigate / patch / href, or form + name + value (submits that form). label is the dialog's accessible name. The hook drops its key listener when LiveView removes it. The app shell's search is one (/docs/app-shell).",
         examples: [
           %{
             title: "Default",

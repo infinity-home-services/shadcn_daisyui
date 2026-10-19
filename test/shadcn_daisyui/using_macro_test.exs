@@ -12,6 +12,38 @@ defmodule ShadcnDaisyui.UsingMacroTest.Overriding do
   end
 end
 
+# Phoenix 1.8 generates theme_toggle/1 in every app's Layouts, and templates
+# there `use ShadcnDaisyui.Components`: the import must leave it out, or this
+# module wouldn't compile ("imported ... conflicts with local function").
+defmodule ShadcnDaisyui.UsingMacroTest.Layouts do
+  use Phoenix.Component
+  use ShadcnDaisyui.Components
+
+  def theme_toggle(assigns), do: ~H|<div id="my-theme-toggle"></div>|
+
+  def app(assigns) do
+    ~H"""
+    <.app_shell nav={[]} person={%{name: "A B"}}>
+      <.theme_toggle />
+    </.app_shell>
+    """
+  end
+end
+
+# The usual app setup: an app's CoreComponents keeps its own page_header
+# (computing the crumbs) over the wrapped one.
+defmodule ShadcnDaisyui.UsingMacroTest.CrumbsHeader do
+  use ShadcnDaisyui.CoreComponents
+
+  attr(:page, :string, required: true)
+  slot(:inner_block, required: true)
+
+  def page_header(assigns) do
+    assigns = assign(assigns, :crumbs, [%{label: "Group"}, %{label: assigns.page}])
+    ShadcnDaisyui.CoreComponents.page_header(assigns)
+  end
+end
+
 defmodule ShadcnDaisyui.UsingMacroTest do
   use ExUnit.Case, async: true
 
@@ -26,7 +58,18 @@ defmodule ShadcnDaisyui.UsingMacroTest do
   end
 
   test "the using module exports all wrapped components" do
-    for fun <- [:flash, :button, :input, :error, :header, :table, :list, :icon] do
+    for fun <- [
+          :flash,
+          :button,
+          :input,
+          :error,
+          :header,
+          :page_header,
+          :sticky_top,
+          :table,
+          :list,
+          :icon
+        ] do
       assert function_exported?(Delegating, fun, 1), "expected #{fun}/1 to be exported"
     end
   end
@@ -89,7 +132,34 @@ defmodule ShadcnDaisyui.UsingMacroTest do
     end
   end
 
+  describe "use ShadcnDaisyui.Components" do
+    alias ShadcnDaisyui.UsingMacroTest.Layouts
+
+    test "imports app_shell but leaves theme_toggle to the app's Layouts" do
+      assigns = %{}
+      html = render(~H|<Layouts.app />|)
+
+      assert html =~ ~s(id="shell")
+      assert html =~ ~s(<div id="my-theme-toggle"></div>)
+    end
+  end
+
   describe "overriding" do
+    test "an app's page_header wrapper computes the crumbs and calls the package's" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <ShadcnDaisyui.UsingMacroTest.CrumbsHeader.page_header page="Orders">
+          Orders
+        </ShadcnDaisyui.UsingMacroTest.CrumbsHeader.page_header>
+        """)
+
+      assert html =~ "<span>Group</span>"
+      assert html =~ ~s(<span aria-current="page">Orders</span>)
+      assert html =~ "page-header-title"
+    end
+
     test "a locally redefined component replaces the wrapper" do
       assigns = %{}
       html = render(~H|<Overriding.header>Custom</Overriding.header>|)

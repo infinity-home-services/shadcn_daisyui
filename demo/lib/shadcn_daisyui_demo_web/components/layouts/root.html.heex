@@ -37,6 +37,9 @@
         if (!document.documentElement.hasAttribute("data-theme")) {
           setTheme(localStorage.getItem("phx:theme") || "shadcn");
         }
+        // <.app_shell>: the sidebar's collapsed or open state, before first paint
+        document.documentElement.dataset.sidebar =
+          localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
 
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
@@ -45,7 +48,8 @@
   </head>
   <body>
     {@inner_content}
-    <.command_palette />
+    <%!-- the app shell preview (an iframe on /docs/app-shell) has its own ⌘K search --%>
+    <.command_palette :if={!assigns[:shell_preview]} />
     <ShadcnDaisyui.Components.Display.toaster />
   </body>
 </html>

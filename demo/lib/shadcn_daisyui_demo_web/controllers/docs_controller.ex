@@ -117,6 +117,27 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
     |> render(:dark_mode)
   end
 
+  def app_shell(conn, _params) do
+    conn
+    |> assign(:page_title, "App shell")
+    |> render(:app_shell_guide)
+  end
+
+  # A whole app in <.app_shell>, shown in the iframes on /docs/app-shell.
+  def app_shell_preview(conn, %{"page" => page}) do
+    case ShadcnDaisyuiDemoWeb.ShellPreview.page(page) do
+      nil ->
+        not_found(conn)
+
+      preview ->
+        conn
+        |> assign(:page_title, "App shell preview")
+        |> assign(:shell_preview, true)
+        |> assign(:preview, preview)
+        |> render(:app_shell_preview)
+    end
+  end
+
   def tokens(conn, _params) do
     conn
     |> assign(:page_title, "Tokens")

@@ -481,6 +481,126 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
     end
   end
 
+  describe "page_header/1" do
+    test "renders the title in a pinned header" do
+      assigns = %{}
+      html = render(~H|<.page_header>Orders</.page_header>|)
+
+      assert html =~
+               ~r{<div id="page-header" phx-hook="ShadcnStickyTop" phx-mounted="[^"]+" data-sticky-top class="sticky-top ?">}
+
+      assert html =~ ~s(<h1 class="page-header-title">Orders</h1>)
+      # no crumbs, no breadcrumb (and no Esc back)
+      refute html =~ "Breadcrumb"
+      refute html =~ "page-header-badge"
+      refute html =~ "page-header-actions"
+    end
+
+    test "crumbs: group as text, the last crumb with a path is the back link, the page is current" do
+      assigns = %{
+        crumbs: [%{label: "Sales"}, %{label: "Orders", path: "/orders"}, %{label: "#1042"}]
+      }
+
+      html =
+        render(~H"""
+        <.page_header crumbs={@crumbs}>#1042</.page_header>
+        """)
+
+      assert html =~
+               ~s(<nav id="page-header-crumbs" aria-label="Breadcrumb" phx-hook="ShadcnPageBack" data-page-back data-esc-back="true" class="breadcrumbs page-header-crumbs">)
+
+      assert html =~ ~r{<span>Sales</span>}
+
+      assert html =~
+               ~r{<a href="/orders" data-phx-link="redirect" data-phx-link-state="push" id="page-header-back" title="Back \(Esc\)" data-back>\s*Orders\s*</a>}
+
+      assert html =~ ~s(<span aria-current="page">#1042</span>)
+      assert count(html, "data-back") == 1
+    end
+
+    test "only the last crumb with a path is the back link" do
+      assigns = %{
+        crumbs: [
+          %{label: "Settings", path: "/settings"},
+          %{label: "Team", path: "/team"},
+          %{label: "Pat"}
+        ]
+      }
+
+      html = render(~H|<.page_header crumbs={@crumbs}>Pat</.page_header>|)
+
+      assert html =~
+               ~r{<a href="/settings" data-phx-link="redirect" data-phx-link-state="push">\s*Settings}
+
+      assert html =~ ~r{<a href="/team"[^>]*id="page-header-back"}
+      assert count(html, "data-back") == 1
+    end
+
+    test "the last crumb is the current page even with a path" do
+      assigns = %{
+        crumbs: [%{label: "Orders", path: "/orders"}, %{label: "#1042", path: "/orders/1042"}]
+      }
+
+      html = render(~H|<.page_header crumbs={@crumbs}>#1042</.page_header>|)
+
+      assert html =~ ~r{<a href="/orders"[^>]*id="page-header-back"}
+      assert html =~ ~s(<span aria-current="page">#1042</span>)
+      refute html =~ ~s(href="/orders/1042")
+    end
+
+    test "back makes the back crumb send an event instead" do
+      assigns = %{crumbs: [%{label: "Orders", path: "/orders"}, %{label: "#1042"}]}
+
+      html =
+        render(~H"""
+        <.page_header id="order-header" crumbs={@crumbs} back="close_record" esc_back={false}>
+          #1042
+        </.page_header>
+        """)
+
+      assert html =~
+               ~r{<button type="button" id="order-header-back" data-back phx-click="close_record" title="Back \(Esc\)">\s*Orders\s*</button>}
+
+      refute html =~ ~s(href="/orders")
+      assert html =~ ~s(data-esc-back="false")
+      assert html =~ ~s(id="order-header-crumbs")
+    end
+
+    test "badge, actions and below" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.page_header>
+          Order
+          <:badge><span class="badge">Paid</span></:badge>
+          <:actions><button>Save</button></:actions>
+          <:below><div id="section-select">Sections</div></:below>
+        </.page_header>
+        """)
+
+      assert html =~
+               ~r{<div class="page-header-heading">\s*<h1 class="page-header-title">\s*Order\s*</h1>\s*<div class="page-header-badge"><span class="badge">Paid</span></div>}
+
+      assert html =~ ~s(<div class="page-header-actions"><button>Save</button></div>)
+      # below pins with the header, after it
+      assert html =~ ~r{</header>\s*</div>\s*<div id="section-select">Sections</div>\s*</div>}
+    end
+  end
+
+  describe "sticky_top/1" do
+    test "a pinned block with the hook, keeping data-stuck across patches" do
+      assigns = %{}
+      html = render(~H|<.sticky_top id="toolbar" class="gap-2">Tools</.sticky_top>|)
+
+      assert html =~ ~s(id="toolbar" phx-hook="ShadcnStickyTop")
+      assert html =~ "data-sticky-top"
+      assert html =~ ~s(class="sticky-top gap-2")
+      assert html =~ "ignore_attrs"
+      assert html =~ "data-stuck"
+    end
+  end
+
   describe "translate_errors/2" do
     test "translates all errors for the given field" do
       errors = [email: {"can't be blank", []}, name: {"too long", []}, email: {"bad", []}]

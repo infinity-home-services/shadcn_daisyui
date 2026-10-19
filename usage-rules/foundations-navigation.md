@@ -8,8 +8,9 @@ Where navigation lives at each window size class, and how deep structures travel
   - **compact** → bottom navigation. [web] `dock` recipe. [ios] `TabView`.
   - **medium** → top navbar ([web] `navbar`) or the bottom nav carried over -
     pick one per app and keep it.
-  - **expanded** → sidebar. [web] `<.sidebar_layout>` (15rem / 240px sidebar).
-    [ios] `NavigationSplitView`.
+  - **expanded** → sidebar. [web] `<.app_shell>` (16rem sidebar collapsing to a
+    3rem icon rail; it shows from 48rem and the dock below that), or
+    `<.sidebar_layout>` for a plain layout. [ios] `NavigationSplitView`.
 - Bottom navigation holds **3-5 destinations**, each with icon + label, always
   visible. More than 5 → rethink the IA or move items behind a "More"
   destination; never scroll a tab bar.
@@ -39,10 +40,11 @@ Where navigation lives at each window size class, and how deep structures travel
 |---|---|---|---|
 | compact | bottom dock / `TabView`, 3-5 items | drawer for overflow (settings etc.) | push / full-screen |
 | medium | navbar (or carried-over bottom nav) | dropdown menus in navbar | push / dialog |
-| expanded | sidebar 15rem, grouped sections | sidebar groups + collapsible | content pane / dialog |
+| expanded | sidebar 16rem (3rem rail), grouped sections | sidebar groups + collapsible | content pane / dialog |
 
-Web recipes: bottom dock `<div class="dock">…`, navbar `<div class="navbar">…`,
-sidebar via the `<.sidebar_layout>` component with `<.sidebar_group>` sections,
+Web recipes: a signed-in app's sidebar, dock and More sheet are `<.app_shell>`;
+otherwise bottom dock `<div class="dock">…`, navbar `<div class="navbar">…`,
+a plain sidebar via `<.sidebar_layout>` with `<.sidebar_group>` sections,
 breadcrumbs `<.breadcrumb>` (last item = current page, no link).
 
 ## iOS / SwiftUI notes

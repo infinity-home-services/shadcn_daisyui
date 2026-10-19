@@ -1,7 +1,8 @@
 defmodule ShadcnDaisyui.Components.Navigation do
   @moduledoc """
   Navigation components: tabs, link tabs with overflow (`tab_nav`), breadcrumb,
-  pagination, and the sidebar app shell.
+  pagination, and a plain sidebar layout. A signed-in app's shell is
+  `ShadcnDaisyui.Components.Shell.app_shell/1`.
 
   Imported by `use ShadcnDaisyui.Components`.
   """
@@ -378,7 +379,13 @@ defmodule ShadcnDaisyui.Components.Navigation do
   end
 
   @doc """
-  The sidebar app shell: a fixed-width sidebar next to the main content.
+  A plain sidebar layout: a fixed-width sidebar next to the main content.
+
+  For a signed-in app use `<.app_shell>` instead
+  (`ShadcnDaisyui.Components.Shell.app_shell/1`): the collapsible sidebar,
+  the phone dock and More sheet, search and the account menu, with `#main`
+  as the one scroll region. `sidebar_layout` stays for simple layouts (a docs
+  page, an admin tool) that need none of that.
 
       <.sidebar_layout>
         <:sidebar>
@@ -408,7 +415,7 @@ defmodule ShadcnDaisyui.Components.Navigation do
 
   @doc """
   A titled group of sidebar navigation items. Use inside `sidebar_layout`'s
-  `:sidebar` slot.
+  `:sidebar` slot. (`<.app_shell>` renders its own groups from `nav`.)
   """
   attr(:title, :string, default: nil)
   attr(:class, :any, default: nil)

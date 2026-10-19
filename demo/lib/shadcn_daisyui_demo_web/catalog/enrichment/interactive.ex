@@ -126,7 +126,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
           roles:
             "A native <dialog> modal. The search is role=combobox over a role=listbox; each command is role=option with aria-selected tracking the active row.",
           keyboard: [
-            %{keys: "Cmd/Ctrl + K", action: "Open the command palette from anywhere"},
+            %{
+              keys: "Cmd/Ctrl + K",
+              action: "Open the command palette from anywhere, or close it (its shortcut letter)"
+            },
             %{keys: "Arrow Down", action: "Move to the next visible command (wraps)"},
             %{keys: "Arrow Up", action: "Move to the previous visible command (wraps)"},
             %{keys: "Enter", action: "Run the active command and close the palette"},

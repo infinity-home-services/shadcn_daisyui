@@ -1,0 +1,278 @@
+<.docs_layout active_guide="app-shell">
+  <.doc_heading
+    title="App shell"
+    description="The whole shell of a signed-in app: a collapsible sidebar on wide screens, a pinned top row, bottom dock and More sheet on phones, search, the account menu, and one scroll region for the page."
+  />
+
+  <div class="mt-10 space-y-12">
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Desktop</h2>
+      <p class="text-sm text-muted-foreground">
+        A live app in <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;.app_shell&gt;</code>.
+        Click into it, then try <kbd class="kbd kbd-sm">⌘K</kbd>
+        (search, filter, Enter), <kbd class="kbd kbd-sm">⌘B</kbd>
+        or the grab strip on the sidebar's edge (the icon rail, remembered across reloads),
+        the account menu, an order (Esc goes back), and scroll a page to see its header pin.
+      </p>
+      <div class="overflow-hidden rounded-xl border border-border shadow-sm">
+        <iframe
+          id="shell-desktop"
+          src={ShadcnDaisyuiDemoWeb.ShellPreview.path("home")}
+          title="App shell on a wide screen"
+          class="block h-[40rem] w-full"
+          loading="lazy"
+        >
+        </iframe>
+      </div>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Phone</h2>
+      <p class="text-sm text-muted-foreground">
+        The same app below 48rem: the top row (your app's slot, then search) stays pinned and the
+        page header pins under it; the dock holds four destinations and More, which opens the
+        whole navigation, the footer items and the account. No hamburger.
+      </p>
+      <div class="flex justify-center">
+        <div class="overflow-hidden rounded-[2rem] border-8 border-base-300 shadow-sm">
+          <iframe
+            id="shell-phone"
+            src={ShadcnDaisyuiDemoWeb.ShellPreview.path("order")}
+            title="App shell on a phone"
+            class="block h-[44rem] w-[390px] max-w-full"
+            loading="lazy"
+          >
+          </iframe>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Usage</h2>
+      <p class="text-sm text-muted-foreground">
+        In your
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">Layouts.app/1</code>
+        for signed-in pages. Brand pickers, permission checks, routes and copy stay in your app:
+        pass them in through the attributes and slots.
+      </p>
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <.app_shell
+            nav={MyAppWeb.Navigation.groups(@current_scope)}
+            more={MyAppWeb.Navigation.phone_groups(@current_scope)}
+            active={@active}
+            wide={@wide}
+            fill={@fill}
+            search="search"
+            environment={Application.get_env(:my_app, :environment_label)}
+            person={%{name: @current_scope.user.name, email: @current_scope.user.email}}
+          >
+            <:header>
+              <.app_shell_heading id="app-heading" icon="hero-cube" title="Acme" subtitle="Operations" tip="Acme · Operations" />
+            </:header>
+            <:phone_header>
+              <span class="app-shell-tile"><.icon name="hero-cube" /></span>
+              <span class="text-sm font-semibold">Acme</span>
+            </:phone_header>
+            <:footer_item id="whats-new-open" icon="hero-megaphone" label="What's new" phx-click={show_modal("whats-new")} />
+            <:account_item id="account" icon="hero-user-circle" navigate={~p"/account"}>Account</:account_item>
+            <:account_item id="notifications" icon="hero-bell" navigate={~p"/notifications"}>Notifications</:account_item>
+            <:account_item id="support" icon="hero-lifebuoy" soon divider>Support</:account_item>
+            <:account_item id="feedback" icon="hero-chat-bubble-left-ellipsis" soon>Feedback</:account_item>
+            <:account_item id="sign-out" icon="hero-arrow-right-start-on-rectangle"
+              href={~p"/sign-out"} method="delete" destructive divider>
+              Sign out
+            </:account_item>
+            {render_slot(@inner_block)}
+          </.app_shell>
+
+          <.command id="search" label="Search" placeholder="Search pages">
+            <:item :for={page <- @pages} id={"search-page-" <> page.id} group="Pages" icon={page.icon} navigate={page.path}>
+              {page.label}
+            </:item>
+          </.command>
+          <.flash_group flash={@flash} />
+          '''
+        }
+      />
+      <p class="text-sm text-muted-foreground">
+        The navigation is groups of items, the shape a
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">Navigation</code>
+        module filtered by permissions returns.
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">short</code>
+        is the dock label (optional).
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">bar</code>
+        defaults to the first four items of <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">more</code>,
+        and <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">more</code>
+        to <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">nav</code>
+        (leave desktop-only pages out of it).
+      </p>
+      <.code_block
+        language="elixir"
+        code={
+          ~S'''
+          [
+            %{label: nil, items: [%{id: "home", label: "Home", short: "Home", path: "/", icon: "hero-home"}]},
+            %{label: "Sales", items: [
+              %{id: "orders", label: "Orders", short: "Orders", path: "/orders", icon: "hero-shopping-cart"},
+              %{id: "customers", label: "Customers", short: "People", path: "/customers", icon: "hero-users"}
+            ]}
+          ]
+          '''
+        }
+      />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Page header</h2>
+      <p class="text-sm text-muted-foreground">
+        Every page starts with
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;.page_header&gt;</code>
+        (from your <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">CoreComponents</code>),
+        so the breadcrumb, title and actions sit in the same place on every page, pinned while
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">#main</code>
+        scrolls. The breadcrumb shows from 48rem; on a record the list is a link and Esc goes there.
+        Open an order in the previews above to try it.
+      </p>
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <.page_header crumbs={[%{label: "Sales"}, %{label: "Orders", path: ~p"/orders"}, %{label: "#1042"}]}>
+            #1042
+            <:badge><.badge variant="outline">Paid</.badge></:badge>
+            <:actions>
+              <.button variant="outline" size="sm" navigate={~p"/orders"}>Cancel</.button>
+              <.button size="sm">Save</.button>
+            </:actions>
+          </.page_header>
+          '''
+        }
+      />
+      <p class="text-sm text-muted-foreground">
+        Keep a thin wrapper in your
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">CoreComponents</code>
+        that computes the crumbs from your navigation:
+      </p>
+      <.code_block
+        language="elixir"
+        code={
+          ~S'''
+          attr :page, :string, required: true
+          attr :current, :string, default: nil
+          # ...the rest of page_header's attrs and slots
+
+          def page_header(assigns) do
+            assigns = assign(assigns, :crumbs, MyAppWeb.Navigation.crumbs(assigns.page, assigns.current))
+            ShadcnDaisyui.CoreComponents.page_header(assigns)
+          end
+          '''
+        }
+      />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Command dialog</h2>
+      <p class="text-sm text-muted-foreground">
+        The shell's search is a <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;.command&gt;</code>.
+        Items navigate, link, submit a form or run <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">phx-click</code>;
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">shortcut</code>
+        is its Cmd/Ctrl letter (⌘K by default,
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">nil</code>
+        for none). This one has none (⌘K on this site opens the docs search):
+      </p>
+      <div class="flex min-h-32 items-center justify-center rounded-xl border border-border p-8">
+        <button type="button" class="btn btn-outline" phx-click={show_modal("shell-switcher")}>
+          <.icon name="hero-arrows-right-left" class="size-4" /> Switch team
+        </button>
+        <.command
+          id="shell-switcher"
+          label="Switch team"
+          placeholder="Search teams"
+          shortcut={nil}
+        >
+          <:item
+            :for={team <- ["Operations", "Field", "Finance", "Marketing"]}
+            group="Teams"
+            icon="hero-user-group"
+            href={~p"/docs/app-shell"}
+          >
+            {team}
+          </:item>
+        </.command>
+      </div>
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <.button variant="outline" phx-click={show_modal("team-switcher")}>Switch team</.button>
+          <.command id="team-switcher" label="Switch team" placeholder="Search teams" shortcut={nil}>
+            <:item :for={team <- @teams} group="Teams" icon="hero-user-group" href={~p"/teams/#{team}"}>
+              {team.name}
+            </:item>
+            <:item group="Locations" icon="hero-map-pin" form="location-form" name="location" value="all">
+              All locations
+            </:item>
+          </.command>
+          '''
+        }
+      />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Setup</h2>
+      <p class="text-sm text-muted-foreground">
+        The hooks (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">ShadcnCommand</code>, <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">ShadcnStickyTop</code>, <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">ShadcnPageBack</code>)
+        come with <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">Hooks</code>, and the
+        shell's events (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">shadcn:toggle-sidebar</code>, <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">shadcn:show-dialog</code>) with
+        the module itself; all of it works under a strict <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">script-src</code>. The root
+        layout sets the theme and the sidebar's state before first paint;
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          mix shadcn_daisyui.install
+        </code>
+        and
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          mix shadcn_daisyui.upgrade
+        </code>
+        add the sidebar line to it. The whole script:
+      </p>
+      <.code_block
+        language="root.html.heex"
+        code={
+          ~S'''
+          <script nonce={assigns[:csp_nonce]}>
+            (() => {
+              const root = document.documentElement;
+              const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "shadcn-dark" : "shadcn";
+              // instant swap: transitions off only while the theme changes
+              const setTheme = (theme) => {
+                root.classList.add("theme-transition");
+                if (theme === "system") {
+                  localStorage.removeItem("phx:theme");
+                  root.setAttribute("data-theme", systemTheme());
+                  root.setAttribute("data-theme-source", "system");
+                } else {
+                  localStorage.setItem("phx:theme", theme);
+                  root.setAttribute("data-theme", theme);
+                  root.setAttribute("data-theme-source", "user");
+                }
+                requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-transition")));
+              };
+              setTheme(localStorage.getItem("phx:theme") || "system");
+              // <.app_shell>: the sidebar's collapsed or open state, before first paint
+              root.dataset.sidebar = localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
+              window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+              window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+              matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+                if (root.getAttribute("data-theme-source") === "system") setTheme("system");
+              });
+            })();
+          </script>
+          '''
+        }
+      />
+    </section>
+  </div>
+</.docs_layout>

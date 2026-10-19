@@ -66,7 +66,15 @@ defmodule ShadcnDaisyuiDemoWeb.StrictCSPTest do
   describe "every docs page" do
     test "renders no inline event handler (the dark-mode canary aside)", %{conn: conn} do
       pages =
-        ["/", "/docs/installation", "/docs/adopt", "/docs/themes", "/docs/tokens"] ++
+        [
+          "/",
+          "/docs/installation",
+          "/docs/adopt",
+          "/docs/themes",
+          "/docs/tokens",
+          "/docs/app-shell"
+        ] ++
+          Enum.map(ShadcnDaisyuiDemoWeb.ShellPreview.pages(), &"/docs/app-shell/preview/#{&1}") ++
           Enum.map(ShadcnDaisyuiDemoWeb.Guides.all(), & &1.path) ++
           Enum.map(ShadcnDaisyuiDemoWeb.Catalog.slugs(), &"/docs/components/#{&1}")
 

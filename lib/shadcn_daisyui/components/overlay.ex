@@ -442,9 +442,10 @@ defmodule ShadcnDaisyui.Components.Overlay do
     |> Kernel.++(values)
   end
 
-  @doc """
+  @doc ~S"""
   A command palette (searchable action list in a modal). Needs the
-  `ShadcnCommand` hook. Also opens with ⌘K.
+  `ShadcnCommand` hook. Opens with ⌘K (Ctrl+K) unless `shortcut` says
+  otherwise.
 
       <.command id="commands">
         <:trigger_label>Search commands…</:trigger_label>
@@ -452,17 +453,51 @@ defmodule ShadcnDaisyui.Components.Overlay do
         <:item group="Suggestions" icon="hero-calculator">Calculator</:item>
         <:item group="Settings" icon="hero-user" shortcut="⌘P">Profile</:item>
       </.command>
+
+  Items run `phx-click`, or go somewhere: `navigate` / `patch` (a LiveView
+  link), `href` (a full page load), or `form` + `name` + `value` (submits that
+  form, e.g. a "switch location" form elsewhere on the page). Consecutive
+  items with the same `group` share a label.
+
+      <.command id="search" label="Search" placeholder="Search pages, teams">
+        <:item :for={page <- @pages} id={"search-" <> page.id} group="Pages" icon={page.icon} navigate={page.path}>
+          {page.label}
+        </:item>
+        <:item :for={team <- @teams} group="Teams" icon="hero-users" form="team-form" name="team" value={team.id}>
+          {team.name}
+        </:item>
+      </.command>
+
+  `shortcut` is the letter that opens (and closes) it with Cmd/Ctrl - `"k"`
+  by default, `nil` for none (a second palette on the page). Opening it closes
+  any other open dialog. Open it from a button with `show_modal(id)` or
+  `JS.dispatch("shadcn:show-dialog", to: "#id")`; the hook drops its key
+  listener when LiveView removes it.
   """
   attr(:id, :string, required: true)
+  attr(:label, :string, default: nil, doc: "the dialog's accessible name, e.g. \"Search\"")
   attr(:placeholder, :string, default: "Type a command or search…")
+
+  attr(:shortcut, :any,
+    default: "k",
+    doc: "a letter that toggles it with Cmd/Ctrl, or nil for none"
+  )
+
   attr(:class, :any, default: nil)
   slot(:trigger_label, doc: "text inside the default trigger button")
 
   slot :item, required: true do
+    attr(:id, :string)
     attr(:group, :string)
     attr(:icon, :string, doc: "heroicon class, e.g. \"hero-calendar\"")
-    attr(:shortcut, :string)
+    attr(:shortcut, :string, doc: "a hint shown on the right, e.g. \"⌘P\"")
     attr(:"phx-click", :any)
+    attr(:navigate, :any, doc: "a page in this LiveView session")
+    attr(:patch, :any)
+    attr(:href, :any, doc: "any other address (a full page load)")
+    attr(:form, :string, doc: "the id of a form this item submits, with `name` and `value`")
+    attr(:name, :string)
+    attr(:value, :string)
   end
 
   def command(assigns) do
@@ -474,34 +509,33 @@ defmodule ShadcnDaisyui.Components.Overlay do
       phx-click={show_modal(@id)}
     >
       <span class="text-muted-foreground">{render_slot(@trigger_label)}</span>
-      <kbd class="kbd">⌘K</kbd>
+      <kbd :if={@shortcut not in [nil, ""]} class="kbd">⌘{String.upcase(@shortcut)}</kbd>
     </button>
     <dialog
       id={@id}
       phx-hook="ShadcnCommand"
       phx-mounted={keep_open()}
       data-command
+      data-shortcut={@shortcut || ""}
+      aria-label={@label}
       class={["command-dialog", @class]}
     >
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
         <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
         <input
+          id={"#{@id}-search"}
           data-command-search
+          autocomplete="off"
+          aria-label={@placeholder}
           class="h-11 w-full bg-transparent text-sm outline-none"
           placeholder={@placeholder}
         />
       </div>
-      <ul data-command-list class="max-h-80 overflow-auto p-1">
+      <ul id={"#{@id}-list"} data-command-list class="max-h-80 overflow-auto p-1">
         <%= for {group, items} <- command_groups(@item) do %>
           <li :if={group} class="command-group-label" data-group>{group}</li>
           <li :for={item <- items}>
-            <button type="button" class="command-item" data-command-item phx-click={item[:"phx-click"]}>
-              <span :if={item[:icon]} class={[item.icon, "size-4"]} aria-hidden="true"></span>
-              {render_slot(item)}
-              <span :if={item[:shortcut]} class="ml-auto text-xs text-muted-foreground">
-                {item.shortcut}
-              </span>
-            </button>
+            <.command_item item={item} />
           </li>
         <% end %>
       </ul>
@@ -510,6 +544,71 @@ defmodule ShadcnDaisyui.Components.Overlay do
       </p>
       <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
+    """
+  end
+
+  attr(:item, :map, required: true)
+
+  # A link when the item goes somewhere, a submit button for a form, else a
+  # button running its phx-click.
+  defp command_item(assigns) do
+    item = assigns.item
+
+    kind =
+      cond do
+        item[:navigate] || item[:patch] || item[:href] -> :link
+        item[:form] -> :submit
+        true -> :button
+      end
+
+    assigns = assign(assigns, :kind, kind)
+
+    ~H"""
+    <.link
+      :if={@kind == :link}
+      id={@item[:id]}
+      navigate={@item[:navigate]}
+      patch={@item[:patch]}
+      href={@item[:href]}
+      class="command-item"
+      data-command-item
+    >
+      <.command_item_label item={@item} />
+    </.link>
+    <button
+      :if={@kind == :submit}
+      type="submit"
+      id={@item[:id]}
+      form={@item.form}
+      name={@item[:name]}
+      value={@item[:value]}
+      class="command-item"
+      data-command-item
+    >
+      <.command_item_label item={@item} />
+    </button>
+    <button
+      :if={@kind == :button}
+      type="button"
+      id={@item[:id]}
+      class="command-item"
+      data-command-item
+      phx-click={@item[:"phx-click"]}
+    >
+      <.command_item_label item={@item} />
+    </button>
+    """
+  end
+
+  attr(:item, :map, required: true)
+
+  defp command_item_label(assigns) do
+    ~H"""
+    <span :if={@item[:icon]} class={[@item.icon, "size-4"]} aria-hidden="true"></span>
+    {render_slot(@item)}
+    <span :if={@item[:shortcut]} class="ml-auto text-xs text-muted-foreground">
+      {@item.shortcut}
+    </span>
     """
   end
 

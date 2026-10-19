@@ -37,6 +37,7 @@
   --color-border: var(--border-color);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-page: var(--page-background);   /* bg-page: the app shell's page behind the content */
 
   --radius-sm: calc(0.625rem - 4px);
   --radius-md: calc(0.625rem - 2px);
@@ -211,6 +212,7 @@
   --tab-active-background: var(--background);                             /* data-active:bg-background */
   --tab-active-border: transparent;
   --menu-destructive-hover: color-mix(in oklab, var(--destructive) 10%, transparent); /* focus:bg-destructive/10 */
+  --shell-sidebar-background: var(--color-base-200);                     /* <.app_shell> sidebar: bg-base-200 */
 }
 [data-theme*="dark"],
 .dark {
@@ -221,6 +223,16 @@
   --tab-active-background: color-mix(in oklab, var(--input) 30%, transparent); /* dark:data-active:bg-input/30 */
   --tab-active-border: var(--input);                                          /* dark:data-active:border-input */
   --menu-destructive-hover: color-mix(in oklab, var(--destructive) 20%, transparent); /* dark:focus:bg-destructive/20 */
+  --shell-sidebar-background: var(--card);                                    /* dark:bg-card */
+}
+/* The page behind the content (`bg-page`, <.app_shell>'s column and pinned
+   headers): base-100 with a 40% base-200 tint, as one solid colour so a pinned
+   header (<.sticky_top>) can cover what scrolls under it. Restated on every
+   theme scope so each resolves against its own base colours. */
+:root,
+[data-theme],
+.dark {
+  --page-background: color-mix(in oklab, var(--color-base-200) 40%, var(--color-base-100));
 }
 
 /* ===========================================================================
@@ -1778,6 +1790,368 @@
   @media (max-width: 600px) {
     [data-flash] { left: 1rem; right: 1rem; width: auto; translate: none; }
   }
+
+  /* ---- App shell (<.app_shell>) -------------------------------------------
+     Wide screens (from 48rem, shadcn's sidebar breakpoint): a 16rem sidebar
+     that collapses to a 3rem icon rail while <html data-sidebar="collapsed">
+     (set before first paint by the root layout's script). In the rail
+     .app-shell-label parts hide and the daisyUI tooltips (data-tip) show;
+     otherwise the tooltips stay off. Phones: a pinned top row, the bottom
+     dock and the More sheet. The page itself never scrolls: #main
+     (.app-shell-main) is the one scroll region. Layering inside the shell:
+     pinned headers z-20, the sidebar and the phone top row z-30, so the
+     account menu (in the sidebar) floats over a pinned page header. */
+  .app-shell { display: flex; height: 100dvh; overflow: hidden; }
+  .app-shell-sidebar {
+    position: relative;
+    z-index: 30;
+    display: none;
+    width: 16rem;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-inline-end: 1px solid var(--border-color);
+    background-color: var(--shell-sidebar-background);
+    transition: width 200ms ease-out;
+  }
+  [data-sidebar="collapsed"] .app-shell-sidebar { width: 3rem; }
+  @media (width >= 48rem) { .app-shell-sidebar { display: flex; } }
+  @media (prefers-reduced-motion: reduce) { .app-shell-sidebar { transition: none; } }
+  [data-sidebar="collapsed"] .app-shell-sidebar .app-shell-label { display: none; }
+  :root:not([data-sidebar="collapsed"]) .app-shell-sidebar .tooltip::before,
+  :root:not([data-sidebar="collapsed"]) .app-shell-sidebar .tooltip::after { display: none; }
+  .app-shell-grow { flex: 1 1 0%; min-width: 0; text-align: start; }
+  .app-shell-muted { color: var(--muted-foreground); }
+
+  /* the grab strip on the sidebar's edge: a 2px line on hover */
+  .app-shell-rail {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: -0.5rem;
+    z-index: 20;
+    width: 1rem;
+    border: 0;
+    background: transparent;
+    cursor: w-resize;
+  }
+  .app-shell-rail::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 50%;
+    width: 2px;
+  }
+  .app-shell-rail:hover::after { background-color: var(--border-color); }
+  [data-sidebar="collapsed"] .app-shell-rail { cursor: e-resize; }
+
+  /* top: the :header slot, then search */
+  .app-shell-top { padding: 0.5rem 0.5rem 0; }
+  .app-shell-heading {
+    display: flex;
+    width: 100%;
+    height: 3rem;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+  }
+  .app-shell-heading:is(a, button, [role="button"]):hover { background-color: var(--accent); }
+  [data-sidebar="collapsed"] .app-shell-sidebar .app-shell-heading { border-color: transparent; padding: 0; }
+  .app-shell-tile {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+  .app-shell-heading-text { min-width: 0; flex: 1 1 0%; text-align: start; }
+  .app-shell-heading-title,
+  .app-shell-heading-subtitle { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-shell-heading-title { font-size: 0.875rem; line-height: calc(1.25 / 0.875); font-weight: 600; }
+  .app-shell-heading-subtitle { font-size: 0.75rem; line-height: calc(1 / 0.75); color: var(--muted-foreground); }
+  .app-shell-search.btn { margin-top: 0.5rem; width: 100%; justify-content: flex-start; gap: 0.5rem; }
+  [data-sidebar="collapsed"] .app-shell-search.btn { justify-content: center; }
+
+  /* navigation groups */
+  .app-shell-nav {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    padding: 1rem 0.5rem;
+  }
+  [data-sidebar="collapsed"] .app-shell-nav { overflow: visible; }   /* tooltips aren't clipped */
+  .app-shell-nav ul { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
+  .app-shell-group-label {
+    display: flex;
+    height: 2rem;
+    align-items: center;
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  [data-sidebar="collapsed"] .app-shell-group-label { display: none; }
+  /* a row: nav item, footer item, "Collapse sidebar" */
+  .app-shell-item {
+    display: flex;
+    width: 100%;
+    height: 2rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    text-align: start;
+  }
+  .app-shell-item:hover,
+  .app-shell-item[aria-current="page"] { background-color: var(--accent); }
+  .app-shell-item[aria-current="page"] { font-weight: 500; }
+  .app-shell-item > .app-shell-label:not(kbd) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-shell-item:focus-visible,
+  .app-shell-account-trigger:focus-visible,
+  .app-shell-menu-row:focus-visible,
+  .app-shell-sheet-row:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+
+  /* footer: rows, the environment badge, the account menu */
+  .app-shell-footer { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem; }
+  .app-shell-badge.badge { width: 100%; justify-content: center; }
+  .app-shell-account { margin-top: 0.25rem; }
+  .app-shell-account-trigger {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.25rem;
+  }
+  .app-shell-account-trigger:hover { background-color: var(--accent); }
+  [data-sidebar="collapsed"] .app-shell-account-trigger { justify-content: center; padding: 0; }
+  .app-shell-avatar {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--muted);
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-weight: 500;
+  }
+  .app-shell-person { min-width: 0; flex: 1 1 0%; text-align: start; }
+  .app-shell-name,
+  .app-shell-email { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-shell-name { font-size: 0.875rem; line-height: calc(1.25 / 0.875); font-weight: 500; }
+  .app-shell-email { font-size: 0.75rem; line-height: calc(1 / 0.75); color: var(--muted-foreground); }
+  .app-shell-person-heading { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.5rem; }
+  /* the account menu (and a header switcher's): floating content right of the
+     sidebar, 16px off its edge (dropdown-right; dropdown-end bottom-aligns it).
+     Zero specificity, so a width utility (w-64) sizes another menu. */
+  :where(.app-shell-menu) { width: 15rem; margin-inline-start: 1rem; padding: 0.25rem; }
+  .app-shell-sep { margin: 0.25rem -0.25rem; border-top: 1px solid var(--border-color); }
+  .app-shell-menu-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-sm);
+    padding-inline: 0.5rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    text-align: start;
+  }
+  .app-shell-menu .app-shell-menu-row { height: 2rem; }
+  .app-shell-more .app-shell-menu-row { min-height: 2.75rem; }
+  :is(a, button).app-shell-menu-row:hover { background-color: var(--accent); color: var(--accent-foreground); }
+  .app-shell-menu-row[data-soon] { color: var(--muted-foreground); }
+  .app-shell-menu-row[data-variant="destructive"] { color: var(--destructive); }
+  .app-shell-menu-row[data-variant="destructive"]:hover { background-color: var(--menu-destructive-hover); color: var(--destructive); }
+  .app-shell-theme-row { justify-content: space-between; }
+  .app-shell-theme-label { display: flex; align-items: center; gap: 0.5rem; }
+
+  /* the content column and #main, the one scroll region */
+  .app-shell-content {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--page-background);
+  }
+  .app-shell-main {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1.5rem 1rem 6rem;   /* clears the dock */
+  }
+  @media (width >= 48rem) { .app-shell-main { padding: 1.5rem; } }
+  /* narrow pages keep their content to a reading width; the page header
+     (data-sticky-top) still spans the page so its actions line up. Zero
+     specificity, so a child's own width (a max-w-md form) wins. */
+  .app-shell-page { display: flex; flex-direction: column; gap: 1rem; }
+  .app-shell-page > * { flex-shrink: 0; }
+  .app-shell-page[data-fill] { min-height: 0; flex: 1 1 0%; }
+  :where(.app-shell-page:not([data-wide]) > :not([data-sticky-top])) { width: 100%; max-width: 48rem; }
+
+  /* phones: the top row (72px), pinned to the very top while #main scrolls,
+     on the page colour; a page's <.sticky_top> pins just below it. Sticky
+     insets count from #main's content box, inside its 24px top padding:
+     -1.5rem is the very top. */
+  .app-shell-phone-header {
+    position: sticky;
+    top: -1.5rem;
+    z-index: 30;
+    margin: -1.5rem -1rem 0;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--page-background);
+    padding: 1.5rem 1rem 1rem;
+  }
+  @media (width >= 48rem) { .app-shell-phone-header { display: none; } }
+  .app-shell-phone-search.btn { position: relative; flex-shrink: 0; margin-inline-start: auto; }
+  .app-shell-phone-search.btn::after { content: ""; position: absolute; inset: -0.375rem; }   /* 48px hit area */
+
+  /* phones: the dock, and the More sheet */
+  .app-shell-dock.dock { z-index: 20; border-top: 1px solid var(--border-color); }
+  @media (width >= 48rem) { .app-shell-dock.dock { display: none; } }
+  .app-shell-handle {
+    width: 3rem;
+    height: 0.375rem;
+    margin: 0 auto 1rem;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--muted);
+  }
+  .app-shell-more-body { display: flex; flex-direction: column; gap: 1rem; }
+  .app-shell-more-label {
+    padding: 0 0.5rem 0.25rem;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .app-shell-sheet-row {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--radius-sm);
+    padding-inline: 0.5rem;
+    font-size: 0.875rem;
+    line-height: calc(1.25 / 0.875);
+    text-align: start;
+  }
+  .app-shell-sheet-row:hover { background-color: var(--accent); color: var(--accent-foreground); }
+  .app-shell-more-account { border-top: 1px solid var(--border-color); padding-top: 1rem; }
+
+  /* ---- Sticky top / page header (<.sticky_top>, <.page_header>) -----------
+     Pinned to the top of the shell's #main: on phones just below its pinned
+     top row (3rem past #main's 24px top padding = 72px), from 48rem at the
+     very top, covering that padding. The page colour covers what scrolls
+     under it; data-stuck (set by the ShadcnStickyTop hook once #main has
+     scrolled) adds a line and shadow-sm. */
+  .sticky-top {
+    position: sticky;
+    top: 3rem;
+    z-index: 20;
+    margin-inline: -1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-bottom: 1px solid transparent;
+    background-color: var(--page-background);
+    padding: 0.5rem 1rem;
+  }
+  @media (width >= 48rem) {
+    .sticky-top { top: -1.5rem; margin: -1.5rem -1.5rem 0; padding: 1.5rem 1.5rem 0.5rem; }
+  }
+  .sticky-top[data-stuck] { border-bottom-color: var(--border-color); box-shadow: var(--shadow-sm); }
+  .page-header { display: flex; flex-direction: column; gap: 0.25rem; }
+  .page-header-crumbs.breadcrumbs { display: none; height: 1.25rem; overflow: visible; padding-block: 0; line-height: calc(1.25 / 0.875); }
+  @media (width >= 48rem) { .page-header-crumbs.breadcrumbs { display: flex; } }
+  .page-header-crumbs button { cursor: pointer; }
+  .page-header-crumbs :is(a, button):hover { color: var(--foreground); }
+  /* the title row, of fixed height; on phones the title keeps at least half
+     of it, so actions that don't fit beside it wrap to their own line */
+  .page-header-row {
+    display: flex;
+    min-height: 2.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+  .page-header-heading { display: flex; min-width: 50%; align-items: center; gap: 0.5rem; }
+  @media (width >= 40rem) {
+    .page-header-row { flex-wrap: nowrap; }
+    .page-header-heading { min-width: 0; }
+  }
+  .page-header-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.5rem;
+    line-height: calc(2 / 1.5);
+    font-weight: 600;
+  }
+  .page-header-badge,
+  .page-header-actions { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
+  .page-header-actions { margin-inline-start: auto; }
+
+  /* ---- Theme toggle (ShadcnDaisyui.Components.theme_toggle) ---------------
+     System / light / dark, on a card-like track (the card's radius, border
+     and fill). The thumb follows <html>:
+     system while it has no data-theme or data-theme-source="system", dark for
+     a theme whose name contains "dark", light for any other. */
+  .theme-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    background-color: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+  .theme-toggle-thumb {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 33.333%;
+    border: 1px solid var(--color-base-200);
+    border-radius: calc(infinity * 1px);
+    background-color: var(--color-base-100);
+    filter: brightness(2);
+    transition: left 150ms ease;
+  }
+  :root[data-theme]:not([data-theme*="dark"]) .theme-toggle-thumb { left: 33.333%; }
+  :root[data-theme*="dark"] .theme-toggle-thumb { left: 66.667%; }
+  :root[data-theme][data-theme-source="system"] .theme-toggle-thumb { left: 0; }
+  .theme-toggle > button {
+    position: relative;   /* above the thumb */
+    display: flex;
+    width: 33.333%;
+    justify-content: center;
+    padding: 0.5rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .theme-toggle > button > span { opacity: 0.75; }
+  .theme-toggle > button:hover > span { opacity: 1; }
+  .theme-toggle > button:focus-visible { outline: none; border-radius: calc(infinity * 1px); box-shadow: var(--ring-shadow); }
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,0 +1,211 @@
+<%!-- A pretend app in <.app_shell>, shown in the iframes on /docs/app-shell.
+     Everything here is the package's own components and recipes. --%>
+<.app_shell
+  nav={ShadcnDaisyuiDemoWeb.ShellPreview.nav()}
+  active={@preview.active}
+  wide={@preview.kind == :table}
+  fill={@preview.kind == :table}
+  search="search"
+  environment="Preview"
+  person={%{name: "Pat Lee", email: "pat@acme.test"}}
+>
+  <:header>
+    <.app_shell_heading
+      id="app-heading"
+      icon="hero-cube"
+      title="Acme"
+      subtitle="Operations"
+      tip="Acme · Operations"
+    />
+  </:header>
+  <:phone_header>
+    <span class="app-shell-tile"><.icon name="hero-cube" class="size-4" /></span>
+    <span class="text-sm font-semibold">Acme</span>
+  </:phone_header>
+  <:footer_item
+    id="whats-new-open"
+    icon="hero-megaphone"
+    label="What's new"
+    phx-click={show_modal("whats-new")}
+  />
+  <:account_item
+    id="account"
+    icon="hero-user-circle"
+    navigate={ShadcnDaisyuiDemoWeb.ShellPreview.path("team")}
+  >
+    Account
+  </:account_item>
+  <:account_item id="notifications" icon="hero-bell" soon>Notifications</:account_item>
+  <:account_item id="support" icon="hero-lifebuoy" soon divider>Support</:account_item>
+  <:account_item id="feedback" icon="hero-chat-bubble-left-ellipsis" soon>Feedback</:account_item>
+  <:account_item
+    id="sign-out"
+    icon="hero-arrow-right-start-on-rectangle"
+    href={~p"/docs/app-shell"}
+    destructive
+    divider
+  >
+    Sign out
+  </:account_item>
+
+  <%= case @preview.kind do %>
+    <% :home -> %>
+      <.page_header crumbs={@preview.crumbs}>
+        Good morning, Pat
+        <:actions>
+          <a
+            href={ShadcnDaisyuiDemoWeb.ShellPreview.path("orders")}
+            class="btn btn-primary btn-sm"
+          >
+            View orders
+          </a>
+        </:actions>
+      </.page_header>
+      <div class="stats w-full">
+        <div class="stat">
+          <div class="stat-title">Open orders</div>
+          <div class="stat-value">24</div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">This week</div>
+          <div class="stat-value">$41.2k</div>
+        </div>
+      </div>
+      <div :for={i <- 1..8} class="card">
+        <div class="card-body">
+          <h2 class="card-title text-base">Update {i}</h2>
+          <p class="text-sm text-muted-foreground">
+            Scroll: <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">#main</code>
+            is the one scroll region, and the page header stays pinned with a line under it once it has scrolled.
+          </p>
+        </div>
+      </div>
+    <% :table -> %>
+      <.page_header crumbs={@preview.crumbs}>
+        Orders
+        <:actions>
+          <button type="button" class="btn btn-outline btn-sm">Export</button>
+          <button type="button" class="btn btn-primary btn-sm">New order</button>
+        </:actions>
+      </.page_header>
+      <div class="card flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div class="min-h-0 flex-1 overflow-auto">
+          <table class="table">
+            <thead class="sticky top-0 z-10 bg-card">
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={order <- ShadcnDaisyuiDemoWeb.ShellPreview.orders()}>
+                <td>
+                  <a href={ShadcnDaisyuiDemoWeb.ShellPreview.path("order")} class="font-medium">
+                    #{order.number}
+                  </a>
+                </td>
+                <td>{order.customer}</td>
+                <td><span class="badge badge-outline">{order.status}</span></td>
+                <td class="text-right tabular-nums">{order.total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% :record -> %>
+      <.page_header crumbs={@preview.crumbs}>
+        {@preview.title}
+        <:badge><span class="badge badge-outline">Paid</span></:badge>
+        <:actions>
+          <a
+            href={ShadcnDaisyuiDemoWeb.ShellPreview.path("orders")}
+            class="btn btn-outline btn-sm hidden sm:inline-flex"
+          >
+            Cancel
+          </a>
+          <button type="button" class="btn btn-primary btn-sm">Save</button>
+        </:actions>
+      </.page_header>
+      <div :for={card <- ["Details", "Items", "Shipping", "Payment", "Activity"]} class="card">
+        <div class="card-body">
+          <h2 class="card-title text-base">{card}</h2>
+          <p class="text-sm text-muted-foreground">
+            Esc goes back to Orders (the breadcrumb's link), outside fields and open dialogs.
+          </p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <div class="text-xs font-medium text-muted-foreground">Customer</div>
+              <div class="text-sm">Riverside Dental</div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-muted-foreground">Placed</div>
+              <div class="text-sm">Oct 19, 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% :empty -> %>
+      <.page_header crumbs={@preview.crumbs}>{@preview.title}</.page_header>
+      <div class="card">
+        <div class="card-body items-center py-12 text-center">
+          <span class="grid size-10 place-items-center rounded-full bg-muted">
+            <.icon name="hero-inbox" class="size-5 text-muted-foreground" />
+          </span>
+          <h2 class="mt-2 text-sm font-medium">Nothing here yet</h2>
+          <p class="text-sm text-muted-foreground">
+            A preview page. Try ⌘K, ⌘B, the account menu, or a phone-width window.
+          </p>
+        </div>
+      </div>
+  <% end %>
+</.app_shell>
+
+<.command id="search" label="Search" placeholder="Search pages and teams">
+  <:item
+    :for={item <- Enum.flat_map(ShadcnDaisyuiDemoWeb.ShellPreview.nav(), & &1.items)}
+    id={"search-page-" <> item.id}
+    group="Pages"
+    icon={item.icon}
+    href={item.path}
+  >
+    {item.label}
+  </:item>
+  <:item
+    :for={team <- ["Operations", "Field", "Finance"]}
+    group="Teams"
+    icon="hero-user-group"
+    form="team-form"
+    name="team"
+    value={team}
+  >
+    {team}
+  </:item>
+  <:item group="Actions" icon="hero-view-columns" shortcut="⌘B" phx-click={toggle_sidebar()}>
+    Toggle sidebar
+  </:item>
+</.command>
+<form id="team-form" action={ShadcnDaisyuiDemoWeb.ShellPreview.path("home")} method="get"></form>
+
+<%!-- A plain dialog: on an app shell page it closes on a backdrop click --%>
+<dialog id="whats-new" class="modal" aria-labelledby="whats-new-title">
+  <div class="modal-box max-w-lg">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="whats-new-title" class="text-lg font-semibold">What's new</h2>
+        <p class="text-sm text-muted-foreground">Changes to Acme, newest first.</p>
+      </div>
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm btn-square" aria-label="Close">
+          <.icon name="hero-x-mark" class="size-4" />
+        </button>
+      </form>
+    </div>
+    <div class="mt-6 rounded-lg border border-border p-6 text-center">
+      <.icon name="hero-megaphone" class="size-5 text-muted-foreground" />
+      <p class="mt-2 text-sm font-medium">Nothing yet</p>
+      <p class="text-sm text-muted-foreground">Changes show here after launch.</p>
+    </div>
+  </div>
+</dialog>

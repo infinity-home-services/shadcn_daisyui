@@ -164,6 +164,9 @@ defmodule ShadcnDaisyui.Install.PatcherTest do
                      if (!document.documentElement.hasAttribute("data-theme")) {
                        setTheme(localStorage.getItem("phx:theme") || "system");
                      }
+                     // <.app_shell>: the sidebar's collapsed or open state, before first paint
+                     document.documentElement.dataset.sidebar =
+                       localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
                      window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
 
                      window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
@@ -178,6 +181,47 @@ defmodule ShadcnDaisyui.Install.PatcherTest do
       patched = Patcher.patch_root_layout(@stock_layout)
       assert Patcher.patch_root_layout(patched) == patched
       refute patched =~ ~s(<html data-theme)
+    end
+
+    test "without a theme script, the sidebar state gets a script of its own in <head>" do
+      heex = """
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+        </head>
+        <body></body>
+      </html>
+      """
+
+      patched = Patcher.patch_root_layout(heex)
+
+      assert patched == """
+             <html data-theme="shadcn" lang="en">
+               <head>
+                 <meta charset="utf-8" />
+                 <script nonce={assigns[:csp_nonce]}>
+                   // <.app_shell>: the sidebar's collapsed or open state, before first paint
+                   document.documentElement.dataset.sidebar =
+                     localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
+                 </script>
+               </head>
+               <body></body>
+             </html>
+             """
+
+      assert Patcher.patch_root_layout(patched) == patched
+    end
+
+    test "leaves a script that already sets the sidebar state alone" do
+      heex = """
+      <html lang="en" data-theme="shadcn">
+        <head>
+          <script>document.documentElement.dataset.sidebar = localStorage.getItem("shadcn:sidebar") || "open"</script>
+        </head>
+      </html>
+      """
+
+      assert Patcher.patch_root_layout(heex) == heex
     end
 
     test "leaves an already-guarded theme script alone (e.g. the demo's)" do

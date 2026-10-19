@@ -10,15 +10,20 @@ let a11yUid = 0
 
 // Global listeners so the server side can open/close native <dialog> elements
 // (dialog, sheet, drawer, command) via JS.dispatch — see
-// ShadcnDaisyui.Components.show_modal/2 and hide_modal/2. Registered once at
-// module load; works for both dead views and LiveView.
+// ShadcnDaisyui.Components.show_modal/2 and hide_modal/2. `shadcn:show-dialog`
+// is the same as `shadcn:show-modal` (the app shell's name for it). Registered
+// once at module load; works for both dead views and LiveView.
+// A page with an <.app_shell> (see "App shell" below)
+const hasShell = () => !!document.querySelector(".app-shell")
 if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   window.__shadcnDialogEvents = true
-  window.addEventListener("shadcn:show-modal", (e) => {
+  const show = (e) => {
     const el = e.target
     if (el && typeof el.showModal === "function" && !el.open) el.showModal()
     hostToasts() // toasts follow into the new modal, above it
-  })
+  }
+  window.addEventListener("shadcn:show-modal", show)
+  window.addEventListener("shadcn:show-dialog", show)
   window.addEventListener("shadcn:hide-modal", (e) => {
     const el = e.target
     if (el && typeof el.close === "function" && el.open) el.close()
@@ -28,14 +33,98 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   // both target the dialog - tell them apart by the click point. One delegated
   // listener instead of inline onclick handlers keeps the markup CSP-safe.
   // (.modal dialogs close via their <form method="dialog" class="modal-backdrop">.)
+  // On an app shell page every other dialog closes on a backdrop click too: a
+  // .modal fills the screen, so a click on the dialog itself is outside its box;
+  // any other dialog is the box, so the click point tells.
   document.addEventListener("click", (e) => {
     const d = e.target
     if (!(d instanceof HTMLDialogElement) || !d.open || e.detail === 0) return
-    if (!d.matches(".sheet, .drawer-bottom, .command-dialog")) return
+    const panel = d.matches(".sheet, .drawer-bottom, .command-dialog")
+    if (!panel && !hasShell()) return
     const r = d.getBoundingClientRect()
     const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
-    if (!inside) d.close()
+    if (!inside || (!panel && d.matches(".modal"))) d.close()
   })
+}
+
+// App shell (<.app_shell>): the sidebar collapses to a 3rem icon rail and stays
+// that way (localStorage "shadcn:sidebar"; the root layout's pre-paint script
+// sets data-sidebar on <html> before first paint, and this sets it if that
+// script is missing). `shadcn:toggle-sidebar` (toggle_sidebar/1: the grab strip
+// and the "Collapse sidebar" row) toggles it, and so does Cmd/Ctrl+B outside
+// fields on a page with a shell. There, every open dialog also closes when
+// LiveView starts navigating to another page (a link in the More sheet or the
+// search) - not on its other page-loading events (a reconnect, a patch).
+// Window listeners only: CSP-safe, dead views and LiveView alike.
+const SIDEBAR_KEY = "shadcn:sidebar"
+const FIELD = "input, textarea, select, [contenteditable]"
+function toggleSidebar() {
+  const root = document.documentElement
+  const next = root.dataset.sidebar === "collapsed" ? "open" : "collapsed"
+  root.dataset.sidebar = next
+  try { localStorage.setItem(SIDEBAR_KEY, next) } catch (_e) { /* private mode: not remembered */ }
+}
+if (typeof window !== "undefined" && !window.__shadcnShell) {
+  window.__shadcnShell = true
+  const root = document.documentElement
+  if (!root.dataset.sidebar) {
+    let saved = null
+    try { saved = localStorage.getItem(SIDEBAR_KEY) } catch (_e) { /* private mode */ }
+    root.dataset.sidebar = saved === "collapsed" ? "collapsed" : "open"
+  }
+  window.addEventListener("shadcn:toggle-sidebar", toggleSidebar)
+  window.addEventListener("keydown", (e) => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || (e.key || "").toLowerCase() !== "b") return
+    if (e.target instanceof Element && e.target.closest(FIELD)) return
+    if (!hasShell()) return
+    e.preventDefault()
+    toggleSidebar()
+  })
+  window.addEventListener("phx:page-loading-start", (e) => {
+    const kind = e.detail && e.detail.kind
+    if (kind && kind !== "redirect") return
+    if (hasShell()) document.querySelectorAll("dialog[open]").forEach((d) => d.close())
+  })
+}
+
+// <.sticky_top> (and <.page_header>): data-stuck once its scroller has scrolled
+// (the shell's #main, else the document), for the theme's bottom border and
+// shadow. The component keeps the attribute across patches.
+function initStickyTop(el) {
+  if (el.__sdStickyTop) return el.__sdStickyTop
+  const main = el.closest("#main")
+  const target = main || window
+  const sync = () => {
+    const y = main ? main.scrollTop : (document.scrollingElement || document.documentElement).scrollTop
+    if (el.hasAttribute("data-stuck") !== y > 0) el.toggleAttribute("data-stuck", y > 0)
+  }
+  target.addEventListener("scroll", sync, { passive: true })
+  sync()
+  el.__sdStickyTop = {
+    refresh: sync,
+    destroy() { target.removeEventListener("scroll", sync); delete el.__sdStickyTop },
+  }
+  return el.__sdStickyTop
+}
+
+// <.page_header>'s breadcrumb: Esc clicks its back crumb ([data-back]) - outside
+// fields, pickers, menus and toasts, and not while a dialog is open (Esc
+// closes those).
+const KEEPS_ESC = FIELD + ", [data-select], [data-combobox], [data-datepicker], [data-daterange], " +
+  "[data-timepicker], [data-tab-nav], [data-chip-row], [data-context-menu], [data-sonner-toaster], .dropdown"
+function initPageBack(el) {
+  if (el.__sdPageBack) return el.__sdPageBack
+  const onKey = (e) => {
+    if (e.key !== "Escape" || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return
+    if (el.dataset.escBack !== "true" || !el.isConnected) return
+    if (document.querySelector("dialog[open], .modal-open")) return
+    if (e.target instanceof Element && e.target.closest(KEEPS_ESC)) return
+    const back = el.querySelector("[data-back]")
+    if (back) back.click()
+  }
+  window.addEventListener("keydown", onKey)
+  el.__sdPageBack = { destroy() { window.removeEventListener("keydown", onKey); delete el.__sdPageBack } }
+  return el.__sdPageBack
 }
 
 // Sheet / drawer scroll edges: while content is scrolled under the header or
@@ -78,6 +167,7 @@ if (typeof window !== "undefined" && !window.__shadcnScrollEdges) {
   document.addEventListener("focusin", (e) => watch(dialogOf(e.target)))
   document.addEventListener("toggle", (e) => watch(dialogOf(e.target)), true)
   window.addEventListener("shadcn:show-modal", (e) => watch(dialogOf(e.target)))
+  window.addEventListener("shadcn:show-dialog", (e) => watch(dialogOf(e.target)))
   document.addEventListener("scroll", (e) => {
     const t = e.target
     if (t instanceof Element && t.matches(".sheet-body, .drawer-body")) syncScrollEdges(t)
@@ -681,9 +771,11 @@ function initResizable(root) {
     })
 }
 
+// Dead views: a tapped dock button becomes the active one. A button that opens
+// a popup (aria-haspopup, e.g. the app shell's More) is not a destination.
 function initDock(scope) {
   ;(scope || document).addEventListener("click", (e) => {
-    const btn = e.target.closest(".dock button")
+    const btn = e.target.closest(".dock button:not([aria-haspopup])")
     if (!btn) return
     btn.parentElement.querySelectorAll("button").forEach((b) => b.classList.remove("dock-active"))
     btn.classList.add("dock-active")
@@ -1057,52 +1149,87 @@ function initDock(scope) {
   const initCombobox = (root, hook) => initPicker(root, "combobox", hook)
   const initSelect = (root) => initPicker(root, "select")
 
-  function initCommand(dialog) {
-    const search = dialog.querySelector("[data-command-search]")
-    const listEl = dialog.querySelector("[data-command-list]")
-    const items = [...dialog.querySelectorAll("[data-command-item]")]
-    const groups = [...dialog.querySelectorAll("[data-group]")]
-    const empty = dialog.querySelector("[data-command-empty]")
+  // Command palettes' shortcuts: one window listener for all of them, so two
+  // palettes on the same letter don't fight. Cmd/Ctrl+letter closes the open
+  // one, else opens the last on the page (closing any other open dialog). The
+  // listener goes when the last palette does (LiveView navigation).
+  const palettes = new Set()
+  function onPaletteKey(e) {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return
+    const key = (e.key || "").toLowerCase()
+    const mine = [...palettes]
+      .filter((d) => d.isConnected && d.__sdShortcut === key)
+      .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+    if (!mine.length) return
+    e.preventDefault()
+    const open = mine.find((d) => d.open)
+    if (open) return open.close()
+    document.querySelectorAll("dialog[open]").forEach((d) => d.close())
+    mine[mine.length - 1].showModal()
+  }
+  function watchPalette(dialog, key) {
+    dialog.__sdShortcut = key
+    if (!key) return
+    if (!palettes.size) window.addEventListener("keydown", onPaletteKey)
+    palettes.add(dialog)
+  }
+  function unwatchPalette(dialog) {
+    if (!palettes.delete(dialog)) return
+    if (!palettes.size) window.removeEventListener("keydown", onPaletteKey)
+  }
 
-    // a11y: combobox-style palette over a listbox of options
+  // <.command>: a searchable list in a dialog. Items are read live, so a
+  // LiveView patch that changes them is picked up (refresh() re-applies the
+  // filter and ARIA). `data-shortcut` is the Cmd/Ctrl letter that toggles it
+  // ("" for none; no attribute = "k"). destroy() drops its shortcut.
+  function initCommand(dialog) {
+    if (dialog.__sdCommand) return dialog.__sdCommand
     if (!dialog.id) dialog.id = "sd-cmd-" + (++a11yUid)
     const listId = dialog.id + "-list"
-    if (listEl) { listEl.id = listId; listEl.setAttribute("role", "listbox") }
-    if (search) {
-      search.setAttribute("role", "combobox")
-      search.setAttribute("aria-controls", listId)
-      search.setAttribute("aria-expanded", "true")
-      search.setAttribute("aria-autocomplete", "list")
-      if (!search.getAttribute("aria-label")) search.setAttribute("aria-label", "Search commands")
-    }
-    items.forEach((it, i) => {
-      it.id = listId + "-opt-" + i
-      it.setAttribute("role", "option")
-      it.setAttribute("aria-selected", "false")
-    })
-
+    const search = () => dialog.querySelector("[data-command-search]")
+    const items = () => [...dialog.querySelectorAll("[data-command-item]")]
+    const visible = () => items().filter((it) => !it.parentElement.classList.contains("hidden"))
     let active = -1
-    const visible = () => items.filter((it) => !it.parentElement.classList.contains("hidden"))
+
+    // a11y: combobox-style palette over a listbox of options
+    const wire = () => {
+      const listEl = dialog.querySelector("[data-command-list]")
+      const input = search()
+      if (listEl) { listEl.id = listId; listEl.setAttribute("role", "listbox") }
+      if (input) {
+        input.setAttribute("role", "combobox")
+        input.setAttribute("aria-controls", listId)
+        input.setAttribute("aria-expanded", "true")
+        input.setAttribute("aria-autocomplete", "list")
+        if (!input.getAttribute("aria-label")) input.setAttribute("aria-label", "Search commands")
+      }
+      items().forEach((it, i) => {
+        if (!it.id) it.id = listId + "-opt-" + i
+        it.setAttribute("role", "option")
+      })
+    }
     const setActive = (i) => {
       const vis = visible()
-      items.forEach((it) => { it.classList.remove("bg-accent", "text-accent-foreground"); it.setAttribute("aria-selected", "false") })
-      if (!vis.length) { active = -1; search && search.removeAttribute("aria-activedescendant"); return }
+      const input = search()
+      items().forEach((it) => { it.classList.remove("bg-accent", "text-accent-foreground"); it.setAttribute("aria-selected", "false") })
+      if (!vis.length) { active = -1; input && input.removeAttribute("aria-activedescendant"); return }
       active = (i + vis.length) % vis.length
       const el = vis[active]
       el.classList.add("bg-accent", "text-accent-foreground")
       el.setAttribute("aria-selected", "true")
       el.scrollIntoView({ block: "nearest" })
-      search && search.setAttribute("aria-activedescendant", el.id)
+      input && input.setAttribute("aria-activedescendant", el.id)
     }
-    const filter = (q) => {
-      const ql = q.toLowerCase()
+    const filter = () => {
+      const input = search()
+      const ql = (input ? input.value : "").trim().toLowerCase()
       let total = 0
-      items.forEach((it) => {
+      items().forEach((it) => {
         const m = it.textContent.toLowerCase().includes(ql)
         it.parentElement.classList.toggle("hidden", !m)
         if (m) total++
       })
-      groups.forEach((g) => {
+      dialog.querySelectorAll("[data-group]").forEach((g) => {
         let el = g.nextElementSibling, vis = false
         while (el && !el.hasAttribute("data-group")) {
           if (!el.classList.contains("hidden")) vis = true
@@ -1110,26 +1237,40 @@ function initDock(scope) {
         }
         g.classList.toggle("hidden", !vis)
       })
-      empty.classList.toggle("hidden", total > 0)
+      const empty = dialog.querySelector("[data-command-empty]")
+      if (empty) empty.classList.toggle("hidden", total > 0)
       setActive(0)
     }
+    wire()
     // backdrop click is handled by the module-level dialog listener at the top
-    new MutationObserver(() => {
-      if (dialog.open) { search.value = ""; filter(""); search.focus() }
-    }).observe(dialog, { attributes: true, attributeFilter: ["open"] })
-    search.addEventListener("input", () => filter(search.value))
-    search.addEventListener("keydown", (e) => {
+    const observer = new MutationObserver(() => {
+      const input = search()
+      if (dialog.open && input) { input.value = ""; filter(); input.focus() }
+    })
+    observer.observe(dialog, { attributes: true, attributeFilter: ["open"] })
+    dialog.addEventListener("input", (e) => { if (e.target.matches("[data-command-search]")) filter() })
+    dialog.addEventListener("keydown", (e) => {
+      if (!e.target.matches("[data-command-search]")) return
       if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
       else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
       else if (e.key === "Enter") { e.preventDefault(); const v = visible(); if (v[active]) v[active].click() }
     })
-    items.forEach((it) => it.addEventListener("click", () => dialog.close()))
-    window.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault()
-        if (!dialog.open) dialog.showModal()
-      }
+    dialog.addEventListener("mousemove", (e) => {
+      const i = visible().indexOf(e.target.closest("[data-command-item]"))
+      if (i >= 0 && i !== active) setActive(i)
     })
+    // choosing an item closes the palette; its link or form still runs
+    dialog.addEventListener("click", (e) => { if (e.target.closest("[data-command-item]")) dialog.close() })
+    watchPalette(dialog, dialog.hasAttribute("data-shortcut") ? dialog.dataset.shortcut.toLowerCase() : "k")
+    dialog.__sdCommand = {
+      refresh() { wire(); if (dialog.open) filter() },
+      destroy() {
+        unwatchPalette(dialog)
+        observer.disconnect()
+        delete dialog.__sdCommand
+      },
+    }
+    return dialog.__sdCommand
   }
 
   function initOtp(root) {
@@ -2356,6 +2497,8 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-resizable]").forEach(initResizable)
   root.querySelectorAll("[data-tab-nav]").forEach(initTabNav)
   root.querySelectorAll("[data-chip-row]").forEach(initChipRow)
+  root.querySelectorAll("[data-sticky-top]").forEach(initStickyTop)
+  root.querySelectorAll("[data-page-back]").forEach(initPageBack)
   initContextMenu()
   initDock(root)
 }
@@ -2366,7 +2509,13 @@ export const Hooks = {
   // label); refresh() re-applies the client state and adopts server changes.
   ShadcnCombobox: { mounted() { this.api = initCombobox(this.el, this) }, updated() { this.api && this.api.refresh() } },
   ShadcnSelect: { mounted() { this.api = initSelect(this.el) }, updated() { this.api && this.api.refresh() } },
-  ShadcnCommand: { mounted() { initCommand(this.el) } },
+  // updated(): a patch may change the items (refresh re-filters an open one);
+  // destroyed(): drop the shortcut's window listener.
+  ShadcnCommand: {
+    mounted() { this.api = initCommand(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
   ShadcnOtp: { mounted() { initOtp(this.el) } },
   ShadcnContextMenu: { mounted() { initContextMenu() } },
   ShadcnCalendar: { mounted() { if (!this.el.dataset.built) buildCalendar(this.el) } },
@@ -2392,6 +2541,17 @@ export const Hooks = {
     mounted() { this.api = initChipRow(this.el) },
     beforeUpdate() { this.api && this.api.beforeUpdate() },
     updated() { this.api && this.api.updated() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.sticky_top> / <.page_header>: data-stuck while its scroller is scrolled
+  ShadcnStickyTop: {
+    mounted() { this.api = initStickyTop(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.page_header>'s breadcrumb: Esc goes back
+  ShadcnPageBack: {
+    mounted() { this.api = initPageBack(this.el) },
     destroyed() { this.api && this.api.destroy() },
   },
 }

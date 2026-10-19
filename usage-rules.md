@@ -31,9 +31,11 @@ like shadcn/ui. **Every UI decision goes through this package.**
   with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`, and
   never `:if` the chip row inside the reveal - `open` drives it, and the chips
   animate in and out on their own.
+- A signed-in app's layout is `<.app_shell>` (see App shell). Never hand-roll a
+  sidebar, bottom bar, account menu or page header.
 - Interactive components (combobox, select, date picker, time picker, calendar, range calendar,
-  OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row)
-  REQUIRE a unique `id` attribute and the JS hooks
+  OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row,
+  page header) REQUIRE a unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
 - Never write inline event handlers (`onclick=`, `onsubmit=`, …) or `javascript:`
@@ -72,12 +74,13 @@ Decision order:
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"`; opt-in item attrs (items without them render as before): `variant="destructive"`, `confirm="Remove Acme Marketing from Pat?"` (`data-confirm`, name the object), `values={%{user_id: …}}` (one `phx-value-<key>` each, wins over `phx-value-id` for its own keys), `id`, `disabled` (`aria-disabled`, no click, 50%); opt-in menu attr `close_on_select` closes it after a choice |
-| `<.command>` | `id` req. (hook), `<:trigger_label>`, `<:item group icon shortcut>` slots, ⌘K |
+| `<.app_shell>` | a signed-in app's whole shell (see App shell): `nav` groups, `active`, `search` (a `<.command>` id), `person`, `environment`, `bar`/`more`, `wide`/`fill`; slots `<:header>` (`<.app_shell_heading icon title subtitle tip chevron>`), `<:phone_header>`, `<:footer_item id icon label navigate\|href\|phx-click>`, `<:account_item id icon navigate\|href method soon divider destructive>` |
+| `<.command>` | `id` req. (hook), `label` (accessible name), `placeholder`, `<:trigger_label>`, `<:item id group icon shortcut>` that runs `phx-click`, or goes somewhere: `navigate`/`patch`/`href`, or `form` + `name` + `value` (submits that form); `shortcut="k"` (default, ⌘K toggles it; opening closes other dialogs) or `shortcut={nil}` (none - every palette but the search) |
 | `<.tabs>` | `id` req., `<:tab label="..." checked>` slots with panel content |
 | `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible (too narrow for it + More: every tab folds into the menu and More names the active tab + count) |
 | `<.breadcrumb>` | `<:item navigate={...}>` slots; last item without link = current page |
 | `<.pagination>` | `page` `total_pages` + `path={fn p -> ... end}` or `event="..."` |
-| `<.sidebar_layout>` / `<.sidebar_group>` | app shell; `<:sidebar>` slot; items with `active` |
+| `<.sidebar_layout>` / `<.sidebar_group>` | a plain sidebar layout (docs page, admin tool); `<:sidebar>` slot; items with `active`. A signed-in app uses `<.app_shell>` |
 | `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple`; opt in to a section card: `<:header>` (content above the rows in the same card: `card_title`, `card_description`, an action) and `flush` (rows edge to edge, 24px inset inside each row, 1px line under the header and between rows) |
 | `<.avatar>` / `<.avatar_group>` | `src` or `fallback="JD"`, `shape`, size via `class` |
 | `<.progress>` / `<.skeleton>` / `<.spinner>` | sized via `class` |
@@ -103,7 +106,51 @@ Decision order:
 
 From your app's `CoreComponents` (delegating to `ShadcnDaisyui.CoreComponents`):
 `<.button>` (variants + `navigate`), `<.input field={...}>`, `<.error>`, `<.header>`,
-`<.table id rows>` with `<:col>` slots, `<.list>`, `<.icon name="hero-...">`, `<.flash>`.
+`<.table id rows>` with `<:col>` slots, `<.list>`, `<.icon name="hero-...">`, `<.flash>`,
+`<.page_header crumbs back esc_back>` with `<:badge>` `<:actions>` `<:below>` (every page
+in the shell starts with it), `<.sticky_top id>` (a pinned block of your own).
+
+Not imported (Phoenix's `Layouts` defines its own): `<ShadcnDaisyui.Components.theme_toggle
+light="shadcn" dark="shadcn-dark">` - system / light / dark; `<.app_shell>`'s account
+menu already has one.
+
+### App shell
+
+- A signed-in app renders `<.app_shell>` in its `Layouts.app/1` (the signed-out
+  pages keep a plain centered column). Wide screens (from 48rem): a 16rem sidebar
+  that collapses to a 3rem icon rail (`data-sidebar` on `<html>`, Cmd/Ctrl+B, the
+  grab strip and the "Collapse sidebar" row; remembered). Phones: a pinned top
+  row (`<:phone_header>` + search), a bottom dock of four destinations plus More,
+  and the More sheet (everything, the footer items, the account). Never a
+  hamburger.
+- `nav` is the navigation as your `Navigation` module returns it, already filtered
+  by what the person may open: `[%{label: "Sales" | nil, items: [%{id: "orders",
+  label: "Orders", short: "Orders", path: ~p"/orders", icon: "hero-shopping-cart"}]}]`
+  (`short` = the dock label). `active` is this page's item id. `more` = the groups
+  the More sheet lists (leave desktop-only pages out; default `nav`), `bar` = the
+  dock's items (default: the first four of `more`).
+- `#main` is the page's one scroll region: the page itself never scrolls. Pages
+  keep a reading width (48rem; a page child's own `max-w-*`, e.g. a `max-w-md`
+  form, wins); `wide` uses the full width (tables), and `fill`
+  makes the content fill the window so a table body inside a growing card
+  scrolls instead (`card flex min-h-0 flex-1 flex-col overflow-hidden` >
+  `div.min-h-0.flex-1.overflow-auto` > table, sticky `thead` with `bg-card`).
+- Every page starts with `<.page_header>`: breadcrumb (from 48rem; group as text,
+  then the page; on a record the list is a link and Esc goes there), the title,
+  `<:badge>`, `<:actions>` (`size="sm"` buttons) and `<:below>`, pinned while
+  `#main` scrolls. Keep a thin `page_header` in your `CoreComponents` that computes
+  `crumbs` from your navigation and calls `ShadcnDaisyui.CoreComponents.page_header/1`.
+- Search is a `<.command id="search">` next to the shell (`search="search"`):
+  pages, then records. Other palettes (a brand switcher) take `shortcut={nil}`.
+- App-specific things (brand pickers, permission checks, routes, copy) go in
+  through the slots and attributes: `<:header>` (`<.app_shell_heading>`, or your
+  own markup with `app-shell-label` on what the rail hides), `<:footer_item>`
+  (What's new), `<:account_item>`s (Account, Notifications, then `divider` +
+  `soon` Support / Feedback, then `divider destructive` Sign out last; the theme
+  row closes the first section).
+- Open the shell's dialogs with `JS.dispatch("shadcn:show-dialog", to: "#id")` or
+  `show_modal("id")`; in an app shell page plain dialogs close on a backdrop click
+  and every open dialog closes when LiveView navigates to another page.
 
 ### Form components (`ShadcnDaisyui.CoreComponents`)
 
@@ -198,7 +245,8 @@ Platform-portable rules (web + native iOS/iPadOS). Load-bearing values:
   Mobile-first: unprefixed = compact, enhance with `sm:`/`lg:`. One column on compact.
 - Content widths: shell `max-w-7xl`, prose ~65ch, forms `max-w-md`-`max-w-lg`.
   Gutters `px-4 sm:px-6 lg:px-8`.
-- Navigation: compact = bottom dock (3-5 destinations), expanded = sidebar (15rem).
+- Navigation: compact = bottom dock (3-5 destinations), wider = sidebar (`<.app_shell>`:
+  16rem from 48rem, collapsing to a 3rem rail).
   Primary destinations never hide behind a hamburger. Breadcrumbs ≥ medium only.
 - Touch targets: 44pt / 2.75rem minimum effective hit area on touch surfaces.
   `h-9` controls are desktop-fine; compact primary actions use `btn-lg` full-width;
@@ -230,6 +278,15 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
 - `app.css` keeps: `@plugin "…daisyui" { themes: false; }`, the shadcn-daisyui CSS
   import, `@source` covering `deps/shadcn_daisyui/lib`, and the
   `@custom-variant dark (…)` line.
-- `app.js` keeps the `Hooks` import and spreads them into the LiveSocket.
+- `app.js` keeps the `Hooks` import and spreads them into the LiveSocket. The
+  shell's behaviour (`shadcn:toggle-sidebar`, `shadcn:show-dialog`, Cmd/Ctrl+B,
+  closing dialogs on navigation) comes with that import - don't re-add an app
+  copy of it or app-specific events for it.
+- The root layout keeps its pre-paint `<script nonce={assigns[:csp_nonce]}>` in
+  `<head>`: it sets `data-theme` through the `theme-transition` guard and
+  `document.documentElement.dataset.sidebar` from localStorage `shadcn:sidebar`
+  (`"collapsed"` or `"open"`), so the first paint already has the right theme and
+  sidebar. `mix shadcn_daisyui.install` / `mix shadcn_daisyui.upgrade` add the
+  sidebar line.
 - The app's `CoreComponents` module delegates to `ShadcnDaisyui.CoreComponents`;
   override individual functions there if the app needs to, don't fork wholesale.
