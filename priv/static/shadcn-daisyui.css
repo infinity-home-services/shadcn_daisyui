@@ -2363,6 +2363,9 @@ dialog.command-dialog {
     display 0.18s allow-discrete;
 }
 dialog.command-dialog[open] { opacity: 1; transform: none; }
+/* the search input takes the row's free space (not 100% of it), so the icon
+   and the spinner beside it keep their full 16px */
+dialog.command-dialog [data-command-search] { flex: 1 1 0%; min-width: 0; }
 @starting-style {
   dialog.command-dialog[open] { opacity: 0; transform: scale(0.97); }
 }

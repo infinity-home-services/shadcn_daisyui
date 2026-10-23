@@ -2678,7 +2678,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         description: "A command palette for fast keyboard-driven actions.",
         hook: true,
         notes:
-          "Opens with ⌘K (Ctrl+K), which also closes it; shortcut=\"j\" picks another letter and shortcut={nil} none (every palette on the page but one). Opening it closes any other open dialog. Items run phx-click, or go somewhere: navigate / patch / href, or form + name + value (submits that form). label is the dialog's accessible name. The hook drops its key listener when LiveView removes it. The app shell's search is one (/docs/app-shell). Server search (on_search=\"event\"): the hook stops filtering and pushes the typed text, debounced (search_debounce, 250ms), as %{\"id\" => id, \"query\" => text}; the LiveView renders its results as the items and echoes the text they answer as query={@query} - results count only while it matches the input, so a reply to older text never shows as current. <:hint> shows before anything is typed, a spinner and aria-busy while the reply is pending (what was on screen stays, dimmed), <:empty> once the server has answered with nothing; each answer's count is announced politely. Opening clears the input and pushes an empty search. phx-target={@myself} sends the search and the items' phx-click to a LiveComponent. Opt-in item attributes: description (a muted second line), confirm (data-confirm; closes only once accepted), values (phx-value-*), disabled. A LiveView demo is at /lab/command-search when running the docs app.",
+          "Opens with ⌘K (Ctrl+K), which also closes it; shortcut=\"j\" picks another letter and shortcut={nil} none (every palette on the page but one). Opening it closes any other open dialog. Items run phx-click, or go somewhere: navigate / patch / href, or form + name + value (submits that form). label is the dialog's accessible name. The hook drops its key listener when LiveView removes it. The app shell's search is one (/docs/app-shell). icon sets the search row's heroicon (default \"hero-magnifying-glass\"; any class <.icon name> takes, -solid/-mini/-micro too; icon={nil} for none) - write it out in full so Tailwind's heroicons plugin generates it. Server search (on_search=\"event\"): the hook stops filtering and pushes the typed text, debounced (search_debounce, 250ms), as %{\"id\" => id, \"query\" => text}; the LiveView renders its results as the items and echoes the text they answer as query={@query} - results count only while it matches the input, so a reply to older text never shows as current. <:hint> shows before anything is typed, a spinner and aria-busy while the reply is pending (what was on screen stays, dimmed), <:empty> once the server has answered with nothing; each answer's count is announced politely. Opening clears the input and pushes an empty search. phx-target={@myself} sends the search and the items' phx-click to a LiveComponent. Opt-in item attributes: description (a muted second line), confirm (data-confirm; closes only once accepted), values (phx-value-*), disabled. A LiveView demo is at /lab/command-search when running the docs app.",
         examples: [
           %{
             title: "Default",
@@ -2722,6 +2722,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               id="find-person"
               label="Add person"
               placeholder="Name or email"
+              icon="hero-user-plus"
               shortcut={nil}
               on_search="search_people"
               query={@query}
@@ -2753,7 +2754,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             </button>
             <dialog id="command_people" data-command data-shortcut="" data-on-search data-search-debounce="250" aria-label="Add person" class="command-dialog">
               <div class="flex items-center gap-2 border-b border-base-300 px-3">
-                <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+                <span class="hero-user-plus size-4 opacity-50" aria-hidden="true"></span>
                 <input data-command-search autocomplete="off" aria-label="Name or email" class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Name or email" />
                 <span data-command-spinner class="loading loading-spinner loading-xs hidden shrink-0 opacity-50" aria-hidden="true"></span>
               </div>

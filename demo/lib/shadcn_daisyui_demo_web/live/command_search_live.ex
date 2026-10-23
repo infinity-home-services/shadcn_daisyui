@@ -186,6 +186,7 @@ defmodule ShadcnDaisyuiDemoWeb.CommandSearchLive do
           id="find-person"
           label="Add person"
           placeholder="Name or email"
+          icon="hero-user-plus"
           shortcut={nil}
           on_search="search"
           query={@query}

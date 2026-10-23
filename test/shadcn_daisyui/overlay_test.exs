@@ -677,6 +677,24 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       end
     end
 
+    test "icon sets the search row's heroicon, and nil drops it" do
+      assigns = %{}
+
+      default = render(~H|<.command id="a"><:item>One</:item></.command>|)
+      custom = render(~H|<.command id="b" icon="hero-user-plus"><:item>One</:item></.command>|)
+      mini = render(~H|<.command id="c" icon="hero-funnel-mini"><:item>One</:item></.command>|)
+      none = render(~H|<.command id="d" icon={nil}><:item>One</:item></.command>|)
+
+      assert default =~
+               ~s(<span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true">)
+
+      assert custom =~ ~s(<span class="hero-user-plus size-4 opacity-50" aria-hidden="true">)
+      refute custom =~ "hero-magnifying-glass"
+      assert mini =~ ~s(<span class="hero-funnel-mini size-4 opacity-50" aria-hidden="true">)
+      refute none =~ ~r/<span class="[^"]*size-4 opacity-50"/
+      assert none =~ ~s(<input id="d-search")
+    end
+
     test "an <:empty> slot replaces the default text" do
       assigns = %{}
 

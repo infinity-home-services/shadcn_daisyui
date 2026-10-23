@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.2] - 2026-10-23
+
+The command palette's search icon is configurable, and renders at its full
+size.
+
+### Added
+
+- **`icon` on `<.command>`**: the search row's icon, `"hero-magnifying-glass"`
+  by default. Any heroicon class `<.icon name>` takes (`-solid`, `-mini` and
+  `-micro` too), e.g. `icon="hero-user-plus"`, or `icon={nil}` for none. Write
+  it out in full so the app's Tailwind heroicons plugin generates it. Without
+  `icon` the markup is unchanged.
+
+### Fixed
+
+- The command palette's search icon renders at its full 16px: the input took
+  100% of the row and squeezed it to about 15.4px wide. The input now takes
+  the row's free space instead (theme CSS only).
+
 ## [0.21.1] - 2026-10-23
 
 A steadier server search: no empty strip while a search is pending, and

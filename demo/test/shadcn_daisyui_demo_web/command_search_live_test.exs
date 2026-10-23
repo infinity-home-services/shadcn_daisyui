@@ -30,6 +30,9 @@ defmodule ShadcnDaisyuiDemoWeb.CommandSearchLiveTest do
     assert html =~ ~s(data-on-search="search")
     assert html =~ ~s(data-search-debounce="250")
     assert html =~ ~r/<dialog id="find-person"[^>]*phx-target="\d+"/
+    # the search row shows the add-person icon instead of the magnifying glass
+    assert has_element?(view, "#find-person span.hero-user-plus[aria-hidden=true]")
+    refute has_element?(view, "#find-person .hero-magnifying-glass")
     assert has_element?(view, "#find-person [data-command-hint]", "Type a name or email.")
 
     assert has_element?(

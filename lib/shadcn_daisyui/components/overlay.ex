@@ -474,6 +474,11 @@ defmodule ShadcnDaisyui.Components.Overlay do
   `JS.dispatch("shadcn:show-dialog", to: "#id")`; the hook drops its key
   listener when LiveView removes it.
 
+  `icon` is the search row's icon, `"hero-magnifying-glass"` by default: any
+  heroicon class `<.icon name>` takes (`icon="hero-user-plus"`,
+  `icon="hero-funnel-mini"`), or `icon={nil}` for none. Write the class out
+  in full, so Tailwind's heroicons plugin sees it and generates it.
+
   ## Server search
 
   By default the hook filters the items in the browser. For something only
@@ -551,6 +556,13 @@ defmodule ShadcnDaisyui.Components.Overlay do
     doc: "a letter that toggles it with Cmd/Ctrl, or nil for none"
   )
 
+  attr(:icon, :string,
+    default: "hero-magnifying-glass",
+    doc:
+      "the search row's icon: a heroicon class, as `<.icon name>` takes " <>
+        "(`-solid` / `-mini` / `-micro` too), or nil for none"
+  )
+
   attr(:on_search, :string,
     default: nil,
     doc:
@@ -625,7 +637,8 @@ defmodule ShadcnDaisyui.Components.Overlay do
       {command_search_attrs(assigns)}
     >
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
-        <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+        <span :if={@icon not in [nil, ""]} class={[@icon, "size-4 opacity-50"]} aria-hidden="true">
+        </span>
         <input
           id={"#{@id}-search"}
           data-command-search
