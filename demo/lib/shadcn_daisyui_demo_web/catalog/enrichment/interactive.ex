@@ -114,7 +114,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             %{
               part: "Busy state (server search)",
               description:
-                "A spinner at the end of the input row and aria-busy on the list while the reply is pending; the last results stay, dimmed and inert."
+                "A spinner at the end of the input row and aria-busy on the list while the reply is pending; what was on screen (the hint, the empty text or the last results, inert) stays, dimmed. With no rows the list itself is hidden, so no empty strip shows under the input."
             },
             %{
               part: "Status region (server search)",

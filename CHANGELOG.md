@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-10-23
+
+A steadier server search: no empty strip while a search is pending, and
+typed text survives a slow reply.
+
+### Changed
+
+- **`<.command on_search>` no longer shows an empty strip under the input
+  while a search is pending.** What was on screen stays in view, dimmed,
+  until the answer replaces it: the hint (typing the first letter), the empty
+  text, or the last results. The list itself is hidden whenever it has no
+  rows on screen (`aria-expanded` on the input follows it), so the hint and
+  the empty text sit directly under the input.
+
+### Fixed
+
+- **`<.command on_search>` no longer clears what's being typed when a reply
+  is slow.** LiveView sets the dialog's `open` attribute again, unchanged,
+  when it unlocks the dialog after a pushed search; the hook took that for
+  the palette opening, cleared the input and pushed an empty search. Only the
+  attribute being added (a real open) resets the palette now.
+
 ## [0.21.0] - 2026-10-23
 
 Server search in the command palette, for what only the server can search: a

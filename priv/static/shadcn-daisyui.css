@@ -921,7 +921,8 @@
   }
   /* <.command> opt-ins: a muted second line (description), a disabled item
      (50%, no clicks), and while a server search is pending (aria-busy on the
-     list) the last results dimmed and inert until the answer replaces them */
+     list) whatever was on screen - the last results (inert), the hint or the
+     empty text - dimmed until the answer replaces it */
   .command-item-text {
     display: flex;
     min-width: 0;
@@ -941,8 +942,15 @@
     pointer-events: none;
     transition: opacity 0.15s ease;
   }
+  [data-command-list][aria-busy="true"] ~ :is([data-command-hint], [data-command-empty]) {
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+  }
   @media (prefers-reduced-motion: reduce) {
-    [data-command-list][aria-busy="true"] .command-item { transition: none; }
+    [data-command-list][aria-busy="true"] .command-item,
+    [data-command-list][aria-busy="true"] ~ :is([data-command-hint], [data-command-empty]) {
+      transition: none;
+    }
   }
   .popover-panel {
     border: 0;

@@ -1205,9 +1205,11 @@ function initDock(scope) {
   // answers that itself). The server renders its items and echoes the text
   // they answer as `data-query`; they count only while it matches the input,
   // so a reply to older text never shows as current. States: hint (nothing
-  // typed), busy (spinner, aria-busy on the list, what was on screen stays,
-  // dimmed), empty, results (first one active). Each answer's count goes to the
-  // polite status region. Opening clears the input and pushes an empty search.
+  // typed), busy (spinner, aria-busy on the list; what was on screen - the
+  // hint, the empty text or the results - stays, dimmed), empty, results (first
+  // one active). With no rows on screen the list itself is hidden. Each
+  // answer's count goes to the polite status region. Opening clears the input
+  // and pushes an empty search.
   function initCommand(dialog, hook) {
     if (dialog.__sdCommand) {
       if (hook) dialog.__sdCommand.hook = hook
@@ -1280,7 +1282,7 @@ function initDock(scope) {
     const norm = (s) => (s || "").trim()
     let timer = null
     let lastPushed = null   // the text of the last search pushed
-    let shown = false       // whether the items are on screen (kept while busy)
+    let onScreen = "hint"   // hint, empty or results: what shows (kept while busy)
     let busy = false
     let activeFor = null    // the answer the active row belongs to
     let announced = null    // the answer last announced
@@ -1318,14 +1320,22 @@ function initDock(scope) {
       const current = answered !== null && norm(answered) === q
       const count = items().length
       const state = current ? (count ? "results" : q ? "empty" : "hint") : q ? "busy" : "hint"
-      if (state !== "busy") shown = state === "results"
+      // busy keeps what was on screen (dimmed by the theme) until the answer
+      if (state !== "busy") onScreen = state
       busy = state === "busy"
+      const shown = onScreen === "results"
       const listEl = part("list")
       dialog.querySelectorAll("[data-command-list] > li").forEach((li) => li.classList.toggle("hidden", !shown))
-      if (listEl) busy ? listEl.setAttribute("aria-busy", "true") : listEl.removeAttribute("aria-busy")
+      if (listEl) {
+        busy ? listEl.setAttribute("aria-busy", "true") : listEl.removeAttribute("aria-busy")
+        // no rows on screen, no list: not even its padding under the input
+        const open = shown && count > 0
+        listEl.classList.toggle("hidden", !open)
+        if (input) input.setAttribute("aria-expanded", String(open))
+      }
       show("spinner", busy)
-      show("hint", state === "hint")
-      show("empty", state === "empty")
+      show("hint", onScreen === "hint")
+      show("empty", onScreen === "empty")
       if (state === "results") {
         // new results start at the first row; a re-render of the same keeps it
         setActive(activeFor === answered ? Math.max(active, 0) : 0)
@@ -1356,22 +1366,24 @@ function initDock(scope) {
 
     wire()
     // backdrop click is handled by the module-level dialog listener at the top
+    // Only a real open (the attribute added) resets the palette: LiveView sets
+    // `open` again, unchanged, when it unlocks the dialog after a slow reply to
+    // a pushed search, and that must not clear what's being typed.
     const observer = new MutationObserver((records) => {
       const input = search()
-      if (records.some((r) => r.attributeName === "open")) {
-        if (dialog.open && input) {
-          input.value = ""
-          if (server()) { push(""); syncServer() } else filter()
-          input.focus()
-        } else if (!dialog.open) {
-          clearTimeout(timer)
-          timer = null
-        }
+      const toggled = records.filter((r) => r.attributeName === "open")
+      if (dialog.open && input && toggled.some((r) => r.oldValue === null)) {
+        input.value = ""
+        if (server()) { push(""); syncServer() } else filter()
+        input.focus()
+      } else if (!dialog.open && toggled.length) {
+        clearTimeout(timer)
+        timer = null
       }
       // a dead view answers by setting data-query (LiveView patches run refresh())
       if (records.some((r) => r.attributeName === "data-query") && server()) syncServer()
     })
-    observer.observe(dialog, { attributes: true, attributeFilter: ["open", "data-query"] })
+    observer.observe(dialog, { attributes: true, attributeOldValue: true, attributeFilter: ["open", "data-query"] })
     dialog.addEventListener("input", (e) => {
       if (!e.target.matches("[data-command-search]")) return
       if (!server()) return filter()

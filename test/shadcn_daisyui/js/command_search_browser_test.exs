@@ -193,6 +193,8 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
       empty: shown(part(id, "empty")),
       spinner: shown(part(id, "spinner")),
       busy: part(id, "list").getAttribute("aria-busy"),
+      list: shown(part(id, "list")),
+      expanded: part(id, "search").getAttribute("aria-expanded"),
       active: activeId(id),
       status: status(id),
     })
@@ -214,16 +216,24 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
     // last text goes
     type("people", "pa")
     r.typing = { ...state("people"), pushed: queries("people") }
+    // LiveView unlocking the dialog after a slow reply sets `open` again,
+    // unchanged: not an open, so what's typed stays and nothing is pushed
+    $("people").setAttribute("open", "")
+    await sleep(0)
+    r.unlock = { input: part("people", "search").value, pushed: queries("people") }
     type("people", "pat")
     await sleep(120)
     r.debounced = { pushed: queries("people") }
 
-    // a reply to older text is not current
+    // a reply to older text is not current; the hint stays, dimmed
     patch("people", "ans-pa")
-    await sleep(0)
+    await sleep(200)
     clicked.length = 0
     key("people", "Enter")
-    r.stale = { ...state("people"), open: $("people").open, clicked: [...clicked] }
+    r.stale = {
+      ...state("people"), open: $("people").open, clicked: [...clicked],
+      hint_opacity: getComputedStyle(part("people", "hint")).opacity,
+    }
 
     // the answer to the current text: results, first row active, announced
     patch("people", "ans-pat")
@@ -271,6 +281,11 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
     await sleep(0)
     r.empty = { ...state("people"), text: part("people", "empty").textContent.trim() }
 
+    // typing on from no match: the empty text stays, dimmed, until the answer
+    type("people", "zzz")
+    await sleep(200)
+    r.empty_busy = { ...state("people"), empty_opacity: getComputedStyle(part("people", "empty")).opacity }
+
     // a disabled row does nothing; a plain row runs and closes
     type("people", "pat")
     await sleep(80)
@@ -281,6 +296,19 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
     r.disabled = { open: $("people").open, clicked: [...clicked] }
     $("person-1").click()
     r.plain_row = { open: $("people").open, clicked: [...clicked] }
+
+    // typing on from results: the rows stay, dimmed and inert, so the list does
+    $("people").showModal()
+    await sleep(0)
+    type("people", "pat")
+    await sleep(80)
+    patch("people", "ans-pat")
+    await sleep(0)
+    type("people", "pat ri")
+    await sleep(200)
+    r.results_busy = { ...state("people"), row_opacity: getComputedStyle($("person-1")).opacity }
+    $("people").close()
+    await sleep(0)
 
     // closing drops a pending search
     $("people").showModal()
@@ -372,6 +400,8 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
              "empty" => false,
              "spinner" => false,
              "busy" => nil,
+             "list" => false,
+             "expanded" => "false",
              "active" => nil,
              "status" => "",
              "input" => "",
@@ -380,12 +410,22 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
            }
   end
 
-  test "typing is busy at once, with no hint and no empty text", %{r: r} do
-    assert %{"spinner" => true, "busy" => "true", "hint" => false, "empty" => false} =
-             r["typing"]
+  test "typing is busy at once and keeps the hint in view, with no empty list", %{r: r} do
+    assert %{
+             "spinner" => true,
+             "busy" => "true",
+             "hint" => true,
+             "empty" => false,
+             "list" => false,
+             "expanded" => "false",
+             "rows" => []
+           } = r["typing"]
 
-    assert r["typing"]["rows"] == []
     assert r["typing"]["pushed"] == [""]
+  end
+
+  test "LiveView re-setting `open` on an open palette doesn't reset it", %{r: r} do
+    assert r["unlock"] == %{"input" => "pa", "pushed" => [""]}
   end
 
   test "the search waits for the debounce and pushes only the last text", %{r: r} do
@@ -394,6 +434,8 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
 
   test "a reply to older text stays busy and can't be chosen", %{r: r} do
     assert %{"spinner" => true, "busy" => "true", "active" => nil, "status" => ""} = r["stale"]
+    # still the hint, dimmed; the older reply's rows stay out of view
+    assert %{"hint" => true, "hint_opacity" => "0.5", "rows" => [], "list" => false} = r["stale"]
     assert r["stale"]["open"] == true
     assert r["stale"]["clicked"] == []
   end
@@ -405,6 +447,8 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
              "empty" => false,
              "spinner" => false,
              "busy" => nil,
+             "list" => true,
+             "expanded" => "true",
              "active" => "person-1",
              "status" => "3 results"
            }
@@ -449,10 +493,36 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
              "empty" => true,
              "spinner" => false,
              "busy" => nil,
+             "list" => false,
+             "expanded" => "false",
              "active" => nil,
              "status" => ~s(No one matches "zz".),
              "text" => ~s(No one matches "zz".)
            }
+  end
+
+  test "typing on from no match keeps the empty text in view, dimmed", %{r: r} do
+    assert %{
+             "empty" => true,
+             "empty_opacity" => "0.5",
+             "hint" => false,
+             "list" => false,
+             "spinner" => true,
+             "busy" => "true"
+           } = r["empty_busy"]
+  end
+
+  test "typing on from results keeps the rows (and the list), dimmed", %{r: r} do
+    assert %{
+             "rows" => ["Pat Rivera", "Patrick Hale", "Patricia Gomez"],
+             "row_opacity" => "0.5",
+             "list" => true,
+             "hint" => false,
+             "empty" => false,
+             "spinner" => true,
+             "busy" => "true",
+             "active" => nil
+           } = r["results_busy"]
   end
 
   test "a disabled row does nothing; a plain row runs and closes", %{r: r} do
@@ -484,6 +554,7 @@ defmodule ShadcnDaisyui.JS.CommandSearchBrowserTest do
     assert r["dead_searches"] == ["", "pa"]
 
     assert %{"rows" => ["Pat Rivera", "Pam Lee"], "busy" => nil, "spinner" => false} = r["dead"]
+    assert %{"list" => true, "expanded" => "true"} = r["dead"]
     assert r["dead"]["status"] == "2 results"
     assert r["dead"]["active"] =~ "dead-list-opt-0"
   end

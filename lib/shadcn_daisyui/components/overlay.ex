@@ -511,13 +511,15 @@ defmodule ShadcnDaisyui.Components.Overlay do
         {:noreply, assign(socket, query: query, results: Directory.search(query))}
       end
 
-  The palette always says something: `<:hint>` before anything is typed, a
-  spinner (and `aria-busy` on the list, the last results dimmed) while the
-  reply is pending, `<:empty>` (default "No results found.") once the server
-  has answered the current text with no items, else the items with the first
-  one active. Each search's result count is announced in a polite live region.
-  Opening the palette clears the input and pushes an empty search, so the
-  server can drop the last results.
+  The palette always says something: `<:hint>` before anything is typed,
+  `<:empty>` (default "No results found.") once the server has answered the
+  current text with no items, else the items with the first one active. While
+  a reply is pending a spinner shows in the input row (`aria-busy` on the
+  list), and whatever was on screen - the hint, the empty text or the last
+  results - stays in view, dimmed, so the palette doesn't jump. With no rows
+  on screen the list itself is hidden. Each search's result count is
+  announced in a polite live region. Opening the palette clears the input and
+  pushes an empty search, so the server can drop the last results.
 
   A slow search can run in `start_async/3` (a new search replaces the
   pending one, so only the latest answer lands): assign `query` with the
