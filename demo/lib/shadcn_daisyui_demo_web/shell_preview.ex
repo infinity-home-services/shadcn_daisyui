@@ -28,7 +28,7 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
 
   @orders [
     {"1042", "Riverside Dental", "Paid", "$4,120.00"},
-    {"1041", "Northwind Traders", "Open", "$980.50"},
+    {"1041", "Northgate Pharmacy", "Open", "$980.50"},
     {"1040", "Blue Harbor Inn", "Paid", "$12,400.00"},
     {"1039", "Maple & Co.", "Refunded", "$215.00"},
     {"1038", "Summit Outfitters", "Paid", "$3,310.75"},
@@ -36,9 +36,9 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
     {"1036", "Copper Kettle", "Paid", "$1,875.20"},
     {"1035", "Granite Works", "Paid", "$7,060.00"},
     {"1034", "Orchard Lane", "Open", "$420.00"},
-    {"1033", "Harbor Freight Co.", "Paid", "$2,945.10"},
+    {"1033", "Old Mill Hardware", "Paid", "$2,945.10"},
     {"1032", "Pine Street Bakery", "Paid", "$318.40"},
-    {"1031", "Westfield Motors", "Open", "$15,200.00"}
+    {"1031", "Hillcrest Motors", "Open", "$15,200.00"}
   ]
 
   @doc "The navigation, as `<.app_shell nav>` takes it."
@@ -87,6 +87,17 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
   @doc "The orders table's rows."
   def orders,
     do: Enum.map(@orders, fn {n, c, s, t} -> %{number: n, customer: c, status: s, total: t} end)
+
+  @doc "The order record's sections, as `<.section_nav sections>` takes them."
+  def sections do
+    [
+      {"details", "Details", "Order"},
+      {"items", "Items", "Order"},
+      {"shipping", "Shipping", "Delivery"},
+      {"payment", "Payment", "Billing"},
+      {"activity", "Activity", "History"}
+    ]
+  end
 
   @doc "The preview page's address."
   def path(slug), do: ~p"/docs/app-shell/preview/#{slug}"

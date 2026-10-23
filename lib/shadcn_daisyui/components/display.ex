@@ -1,7 +1,7 @@
 defmodule ShadcnDaisyui.Components.Display do
   @moduledoc """
-  Display components: accordion, avatar, item, attachment, chip row, reveal,
-  progress, skeleton, spinner, and the toaster.
+  Display components: accordion, avatar, empty state, item, attachment, chip
+  row, reveal, progress, skeleton, spinner, and the toaster.
 
   Imported by `use ShadcnDaisyui.Components`.
   """
@@ -276,6 +276,51 @@ defmodule ShadcnDaisyui.Components.Display do
 
   defp put_button(payload, key, button) when is_map(button) do
     Map.put(payload, key, Map.take(button, [:label, :event, :value]))
+  end
+
+  # ----------------------------------------------------------------------------
+  # Empty
+  # ----------------------------------------------------------------------------
+  @doc ~S"""
+  An empty state (shadcn's Empty): "nothing here yet" pages, empty lists and
+  empty tables. An icon in a 40px muted circle, a short title, one muted
+  line saying what belongs there, and an optional action.
+
+      <.empty icon="hero-document-text" title="No invoices yet">
+        Invoices you send show up here.
+        <:actions><.button size="sm" navigate={~p"/invoices/new"}>New invoice</.button></:actions>
+      </.empty>
+
+  On its own it is a bordered card (`variant="card"`, the default). Inside a
+  table or card use `variant="plain"`: a centred block without its own
+  border (`<.data_table>`'s `:empty` uses it, below the header, not as a
+  row). `<:media>` replaces the icon with your own content in the circle (an
+  avatar, an SVG).
+  """
+  attr(:icon, :string, default: nil, doc: "a heroicon class in the circle, e.g. \"hero-inbox\"")
+  attr(:title, :string, default: nil)
+  attr(:variant, :string, default: "card", values: ~w(card plain))
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+  slot(:media, doc: "the circle's content, instead of `icon`")
+  slot(:inner_block, doc: "one muted line: what belongs here")
+  slot(:actions, doc: "an action under the text (`size=\"sm\"` buttons)")
+
+  def empty(assigns) do
+    ~H"""
+    <div class={["empty-state", @class]} data-variant={@variant} {@rest}>
+      <div :if={@media != [] or @icon} class="empty-state-media" aria-hidden="true">
+        <%= if @media != [] do %>
+          {render_slot(@media)}
+        <% else %>
+          <span class={[@icon, "size-5"]}></span>
+        <% end %>
+      </div>
+      <p :if={@title} class="empty-state-title">{@title}</p>
+      <div :if={@inner_block != []} class="empty-state-description">{render_slot(@inner_block)}</div>
+      <div :if={@actions != []} class="empty-state-actions">{render_slot(@actions)}</div>
+    </div>
+    """
   end
 
   # ----------------------------------------------------------------------------

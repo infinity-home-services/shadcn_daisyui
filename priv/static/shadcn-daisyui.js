@@ -28,6 +28,10 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
     const el = e.target
     if (el && typeof el.close === "function" && el.open) el.close()
   })
+  // From the server: push_show_modal/2 / push_hide_modal/2 push these (LiveView
+  // dispatches them on window after the patch they came with).
+  window.addEventListener("phx:shadcn:show-modal", (e) => openModal(e.detail && document.getElementById(e.detail.id)))
+  window.addEventListener("phx:shadcn:hide-modal", (e) => serverClose(e.detail && document.getElementById(e.detail.id)))
   // Backdrop click closes a sheet / drawer / command dialog. These <dialog>s ARE
   // the panel, so a click on the ::backdrop and one on the panel's own padding
   // both target the dialog - tell them apart by the click point. One delegated
@@ -45,6 +49,54 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
     const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
     if (!inside || (!panel && d.matches(".modal"))) d.close()
   })
+}
+
+// Server-opened modals. A modal with `show` renders `data-show` while the
+// server wants it open: it opens as it appears (phx-mounted in a LiveView, the
+// scan below in a dead view) and each time the attribute comes back, and
+// closes when it goes. Closing from the server (that, or push_hide_modal/2) is
+// marked so it doesn't run `on_close`; any other close (Esc, the backdrop, a
+// close or Cancel button) clicks the dialog's own hidden [data-on-close]
+// button, so LiveView runs its phx-click (an event or JS) like any click.
+function openModal(el) {
+  if (!el || typeof el.showModal !== "function") return
+  if (!el.open) el.showModal()
+  hostToasts() // toasts follow into the new modal, above it
+}
+function serverClose(el) {
+  if (!el || typeof el.close !== "function" || !el.open) return
+  el.__sdServerClose = true
+  el.close()
+}
+if (typeof window !== "undefined" && typeof MutationObserver !== "undefined" && !window.__shadcnServerModals) {
+  window.__shadcnServerModals = true
+  const shown = (node) =>
+    node.nodeType === 1 ? [node, ...node.querySelectorAll("dialog[data-show]")].filter((n) => n.matches("dialog[data-show]")) : []
+  new MutationObserver((records) => {
+    for (const r of records) {
+      if (r.type === "attributes") {
+        if (!(r.target instanceof HTMLDialogElement)) continue
+        r.target.hasAttribute("data-show") ? openModal(r.target) : serverClose(r.target)
+      } else {
+        r.addedNodes.forEach((n) => shown(n).forEach(openModal))
+      }
+    }
+  }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-show"] })
+  // A dead view opens its `show` modals on load; inside a LiveView phx-mounted
+  // does (after the join patch, which would strip an earlier `open`).
+  const scan = () =>
+    document.querySelectorAll("dialog[data-show]").forEach((d) => { if (!d.closest("[data-phx-session]")) openModal(d) })
+  // (after this module has finished loading: opening reaches the toast layer)
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scan)
+  else queueMicrotask(scan)
+  // close doesn't bubble: listen in the capture phase
+  document.addEventListener("close", (e) => {
+    const d = e.target
+    if (!(d instanceof HTMLDialogElement)) return
+    if (d.__sdServerClose) { d.__sdServerClose = false; return }
+    const action = [...d.querySelectorAll("[data-on-close]")].find((b) => b.closest("dialog") === d)
+    if (action) action.click()
+  }, true)
 }
 
 // App shell (<.app_shell>): the sidebar collapses to a 3rem icon rail and stays
@@ -83,7 +135,7 @@ if (typeof window !== "undefined" && !window.__shadcnShell) {
   window.addEventListener("phx:page-loading-start", (e) => {
     const kind = e.detail && e.detail.kind
     if (kind && kind !== "redirect") return
-    if (hasShell()) document.querySelectorAll("dialog[open]").forEach((d) => d.close())
+    if (hasShell()) document.querySelectorAll("dialog[open]").forEach(serverClose)
   })
 }
 
@@ -2185,6 +2237,8 @@ function fitRow({ widths, avail, gap, moreW, moreAlways, pinned }) {
 function disclosure(root, sel, { flipTo, horizontal, pick }) {
   let isOpen = false
   const get = (s) => root.querySelector(s)
+  // the trigger + panel's container (sel.wrap, or the root itself)
+  const wrapOf = () => (sel.wrap ? get(sel.wrap) : root)
   const items = () => [...root.querySelectorAll(sel.item)].filter((el) => el.offsetParent !== null)
   const sync = () => {
     const t = get(sel.trigger)
@@ -2238,11 +2292,12 @@ function disclosure(root, sel, { flipTo, horizontal, pick }) {
     }
   })
   root.addEventListener("focusout", (e) => {
-    if (isOpen && e.relatedTarget && !e.relatedTarget.closest(sel.wrap)) set(false)
+    const wrap = wrapOf()
+    if (isOpen && e.relatedTarget && !(wrap && wrap.contains(e.relatedTarget))) set(false)
   })
   // composedPath: a click that removes its own target (a chip's ×) still counts as inside
   document.addEventListener("click", (e) => {
-    const wrap = get(sel.wrap)
+    const wrap = wrapOf()
     if (isOpen && !(wrap && e.composedPath().includes(wrap))) set(false)
   })
   return { sync, set, isOpen: () => isOpen }
@@ -2608,6 +2663,499 @@ function initChipRow(root) {
   return api
 }
 
+// ---- Data table (<.data_table>) ---------------------------------------------
+// The server owns what the table shows (rows, sort, ticked rows); this is the
+// browser side. A click on a row, or Enter on it, pushes dt:open with its id -
+// not on links, buttons, inputs, labels or [data-row-ignore], and not a click
+// that ends with text selected; Cmd/Ctrl-click and middle click open its
+// data-href in a new tab. A row's checkbox pushes dt:select with `shift`
+// (Shift-click doesn't select text; a click anywhere in the checkbox cell
+// ticks it). The rows' checkboxes follow the server's data-selected after
+// every patch (unless a tick is still on its way), and the header checkbox -
+// its own phx-click pushes dt:select_all - shows ticked or half-ticked from
+// them. With data-more, the end coming within ~200px (an IntersectionObserver
+// on [data-dt-sentinel]) pushes dt:more once, until the reply. With
+// data-scroll-key the body's scroll position lives in sessionStorage, and a
+// new data-view (sort, search, filters) starts it at the top. The row marked
+// data-active is scrolled into view when it changes. Without a hook (a
+// dead view) each push is a `shadcn:data-table` event, `{ event, payload }`;
+// dt:more then waits for the page to change the rows before asking again.
+const ROW_IGNORE = "a, button, input, select, textarea, label, summary, [contenteditable], [role=button], [data-row-ignore]"
+function initLiveTable(root, hook) {
+  if (root.__sdTable) { if (hook) root.__sdTable.hook = hook; return root.__sdTable }
+  const scroller = () => root.querySelector("[data-dt-scroll]")
+  const rows = () => [...root.querySelectorAll("[data-dt-row]")]
+  const boxOf = (row) => row.querySelector("[data-dt-select]")
+  let pending = 0 // pushes waiting for their reply
+  const ticks = new Map() // row id -> checked, for ticks whose reply hasn't come
+
+  const push = (event, payload, onReply) => {
+    payload = Object.assign({ table: root.id }, payload)
+    root.dispatchEvent(new CustomEvent("shadcn:data-table", { bubbles: true, detail: { event, payload } }))
+    const h = api.hook
+    // a dead view answers by changing the rows (see the observer below)
+    if (!h) return
+    pending++
+    const done = () => {
+      pending = Math.max(0, pending - 1)
+      if (!pending) { ticks.clear(); syncRows() }
+      if (onReply) onReply()
+    }
+    const target = root.getAttribute("phx-target")
+    const sent = target ? h.pushEventTo(target, event, payload) : h.pushEvent(event, payload)
+    if (sent && typeof sent.then === "function") sent.then(done, done)
+    else done()
+  }
+
+  // the header checkbox follows the rows; the rows follow the server
+  const syncHead = () => {
+    const all = root.querySelector("[data-dt-select-all]")
+    if (!all) return
+    const boxes = rows().map(boxOf).filter(Boolean)
+    const on = boxes.filter((b) => b.checked).length
+    all.checked = boxes.length > 0 && on === boxes.length
+    all.indeterminate = on > 0 && on < boxes.length
+  }
+  // (a re-render that comes before a tick's reply keeps that tick)
+  const syncRows = () => {
+    rows().forEach((row) => {
+      const b = boxOf(row)
+      if (b) b.checked = ticks.has(row.dataset.id) ? ticks.get(row.dataset.id) : row.hasAttribute("data-selected")
+    })
+    syncHead()
+  }
+
+  // scroll a row into the body's view, below the sticky header
+  const ensureVisible = (row) => {
+    const s = scroller()
+    if (!s || s.scrollHeight <= s.clientHeight + 1) { row.scrollIntoView({ block: "nearest" }); return }
+    const head = root.querySelector("thead")
+    const box = s.getBoundingClientRect()
+    const top = box.top + (head ? head.offsetHeight : 0)
+    const r = row.getBoundingClientRect()
+    if (r.top < top) s.scrollTop -= top - r.top
+    else if (r.bottom > box.bottom) s.scrollTop += r.bottom - box.bottom
+  }
+
+  const open = (row, newTab) => {
+    if (newTab) { if (row.dataset.href) window.open(row.dataset.href, "_blank", "noopener"); return }
+    push("dt:open", { id: row.dataset.id })
+  }
+  const textSelected = (row) => {
+    const sel = window.getSelection && window.getSelection()
+    return !!sel && !sel.isCollapsed && sel.toString().trim() !== "" &&
+      (row.contains(sel.anchorNode) || row.contains(sel.focusNode))
+  }
+  // tick a row's checkbox as a click on it would (keeping Shift)
+  const tick = (box, shiftKey) =>
+    box.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey }))
+
+  root.addEventListener("mousedown", (e) => {
+    // Shift-click ticks a range: don't extend a text selection
+    if (e.shiftKey && e.target.closest("[data-dt-select], .data-table-check")) e.preventDefault()
+    // a middle click opens a tab: no autoscroll
+    if (e.button === 1) {
+      const row = e.target.closest("[data-dt-row]")
+      if (row && row.dataset.href && !e.target.closest(ROW_IGNORE)) e.preventDefault()
+    }
+  })
+  root.addEventListener("click", (e) => {
+    const box = e.target.closest("[data-dt-select]")
+    if (box) {
+      const row = box.closest("[data-dt-row]")
+      if (!row) return
+      if (e.shiftKey) { const s = window.getSelection && window.getSelection(); if (s) s.removeAllRanges() }
+      if (api.hook) ticks.set(row.dataset.id, box.checked)
+      syncHead()
+      push("dt:select", { id: row.dataset.id, shift: e.shiftKey })
+      return
+    }
+    const row = e.target.closest("[data-dt-row]")
+    if (!row || !root.contains(row)) return
+    const cell = e.target.closest(".data-table-check")
+    if (cell) { const b = boxOf(row); if (b) tick(b, e.shiftKey); return }
+    if (e.target.closest(ROW_IGNORE) || textSelected(row)) return
+    open(row, e.metaKey || e.ctrlKey)
+  })
+  root.addEventListener("auxclick", (e) => {
+    if (e.button !== 1) return
+    const row = e.target.closest("[data-dt-row]")
+    if (row && !e.target.closest(ROW_IGNORE)) { e.preventDefault(); open(row, true) }
+  })
+  // a focused row: Enter opens it, Up/Down move between rows, Space ticks it
+  root.addEventListener("keydown", (e) => {
+    const row = e.target instanceof Element && e.target.matches("[data-dt-row]") ? e.target : null
+    if (!row || e.altKey) return
+    if (e.key === "Enter") {
+      e.preventDefault()
+      open(row, (e.metaKey || e.ctrlKey) && !!row.dataset.href)
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      const list = rows()
+      const next = list[list.indexOf(row) + (e.key === "ArrowDown" ? 1 : -1)]
+      if (!next) return
+      e.preventDefault()
+      next.focus({ preventScroll: true })
+      ensureVisible(next)
+    } else if (e.key === " ") {
+      const b = boxOf(row)
+      if (!b || b.offsetParent === null) return
+      e.preventDefault()
+      tick(b, e.shiftKey)
+    }
+  })
+
+  // scroll position, kept per data-scroll-key with the view it belongs to
+  // ("y" or "y view"); restored for the same view once the rows allow (more
+  // rows may have to load first), unless the person scrolls themself
+  const storeKey = () => (root.dataset.scrollKey ? "data-table:scroll:" + root.dataset.scrollKey : null)
+  let restoreTo = null
+  {
+    const key = storeKey()
+    let saved = null
+    try { saved = key && sessionStorage.getItem(key) } catch (_e) { /* storage blocked */ }
+    const [y, savedView] = String(saved || "").split(" ")
+    if (parseInt(y, 10) > 0 && (savedView === undefined || savedView === (root.dataset.view || ""))) {
+      restoreTo = parseInt(y, 10)
+    }
+  }
+  const restore = () => {
+    const s = scroller()
+    if (restoreTo === null || !s) return
+    s.scrollTop = restoreTo
+    if (Math.abs(s.scrollTop - restoreTo) <= 1 || !root.hasAttribute("data-more")) restoreTo = null
+  }
+  let saveQueued = false
+  root.addEventListener("scroll", (e) => {
+    if (e.target !== scroller()) return
+    const key = storeKey()
+    if (!key || saveQueued || restoreTo !== null) return
+    saveQueued = true
+    requestAnimationFrame(() => {
+      saveQueued = false
+      const s = scroller()
+      const value = String(Math.round(s ? s.scrollTop : 0)) + (root.dataset.view ? " " + root.dataset.view : "")
+      try { sessionStorage.setItem(key, value) } catch (_e) { /* storage blocked */ }
+    })
+  }, { capture: true, passive: true })
+  for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+    root.addEventListener(type, () => { restoreTo = null }, { capture: true, passive: true })
+  }
+
+  // more rows: the sentinel spans the spinner and the 200px above it
+  let loading = false
+  let watched = null
+  const sentinelInView = () => {
+    const el = root.querySelector("[data-dt-sentinel]")
+    if (!el || !root.hasAttribute("data-more")) return false
+    const r = el.getBoundingClientRect()
+    let top = 0
+    let bottom = window.innerHeight
+    for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+      if (/auto|scroll|hidden|clip/.test(getComputedStyle(p).overflowY)) {
+        const pr = p.getBoundingClientRect()
+        top = Math.max(top, pr.top)
+        bottom = Math.min(bottom, pr.bottom)
+      }
+    }
+    return r.bottom > top && r.top < bottom
+  }
+  const loadMore = () => {
+    if (loading || !sentinelInView()) return
+    loading = true
+    // once replied, the new rows may still leave the end in view: go on
+    push("dt:more", {}, () => { loading = false; setTimeout(loadMore, 0) })
+  }
+  const io = typeof IntersectionObserver !== "undefined"
+    ? new IntersectionObserver((entries) => { if (entries.some((en) => en.isIntersecting)) loadMore() })
+    : null
+  // a dead view has no reply: rows added (or the end gone) answer dt:more
+  const mo = typeof MutationObserver !== "undefined"
+    ? new MutationObserver(() => {
+        if (api.hook || !loading) return
+        loading = false
+        watchSentinel()
+        setTimeout(loadMore, 0)
+      })
+    : null
+  if (mo) mo.observe(root, { childList: true, subtree: true })
+  const watchSentinel = () => {
+    const el = root.querySelector("[data-dt-sentinel]")
+    if (el === watched) return
+    if (watched && io) io.unobserve(watched)
+    watched = el
+    if (el && io) io.observe(el)
+  }
+
+  // a new sort, search or filter (data-view) starts the body at the top
+  let view = root.dataset.view
+  const syncView = () => {
+    if (root.dataset.view === view) return
+    view = root.dataset.view
+    restoreTo = null
+    const s = scroller()
+    if (s) s.scrollTop = 0
+  }
+
+  let lastActive = null
+  const syncActive = (force) => {
+    const row = root.querySelector("[data-dt-row][data-active]")
+    const id = row ? row.dataset.id : null
+    if (row && (force || id !== lastActive)) ensureVisible(row)
+    lastActive = id
+  }
+
+  const api = {
+    hook: hook || null,
+    refresh() {
+      syncRows()
+      syncView()
+      restore()
+      syncActive(false)
+      watchSentinel()
+      if (!loading) loadMore()
+    },
+    destroy() {
+      if (io) io.disconnect()
+      if (mo) mo.disconnect()
+      delete root.__sdTable
+    },
+  }
+  root.__sdTable = api
+  syncRows()
+  restore()
+  syncActive(true)
+  watchSentinel()
+  return api
+}
+
+// ---- Section nav (<.section_nav>) -------------------------------------------
+// Marks the section in view: the last one whose top has passed the bottom of
+// the page's pinned header ([data-sticky-top]), or the last one once the page
+// is scrolled to the bottom. Choosing one scrolls there (smoothly, or at once
+// under reduced motion), keeps it marked until the scroll settles (and after,
+// until the person scrolls on: near the bottom it may not reach the header)
+// and moves focus to it. side: the list pins just under that header
+// (--section-nav-top) and, over 10 sections, filters by section and group
+// name. select: a listbox under a full-width trigger naming the section.
+const SECTION_GAP = 16 // between the pinned header and a chosen section
+function initSectionNav(root) {
+  if (root.__sdSectionNav) return root.__sdSectionNav
+  const select = root.dataset.variant === "select"
+  const entries = () => [...root.querySelectorAll("[data-section]")]
+  const sectionEls = () => {
+    const seen = new Set()
+    return entries()
+      .map((e) => e.dataset.section)
+      .filter((id) => !seen.has(id) && seen.add(id))
+      .map((id) => document.getElementById(id))
+      .filter(Boolean)
+  }
+  // the element the sections scroll in (the app shell's #main), or null: the window
+  const scroller = () => {
+    const from = sectionEls()[0] || root
+    const main = from.closest("#main")
+    if (main) return main
+    for (let p = from.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const o = getComputedStyle(p).overflowY
+      if (o === "auto" || o === "scroll") return p
+    }
+    return null
+  }
+  const header = () => (scroller() || document).querySelector("[data-sticky-top]")
+  const line = () => {
+    const h = header()
+    if (h) return h.getBoundingClientRect().bottom
+    const s = scroller()
+    return s ? s.getBoundingClientRect().top : 0
+  }
+  const current = () => {
+    const els = sectionEls()
+    if (!els.length) return null
+    const s = scroller()
+    const y = s ? s.scrollTop : window.scrollY
+    const max = s ? s.scrollHeight - s.clientHeight : document.documentElement.scrollHeight - window.innerHeight
+    if (y > 0 && y >= max - 2) return els[els.length - 1].id
+    const edge = line() + SECTION_GAP + 2
+    let cur = els[0]
+    for (const el of els) {
+      if (el.getBoundingClientRect().top <= edge) cur = el
+      else break
+    }
+    return cur.id
+  }
+
+  let locked = null
+  let marked = null
+  // a chosen section the page couldn't bring up to the header (it hit the
+  // bottom) stays marked until the person scrolls on: { id, y }
+  let chosen = null
+  const mark = (id) => {
+    const changed = id !== marked
+    marked = id
+    let hit = null
+    entries().forEach((e) => {
+      const on = e.dataset.section === id
+      if (on) hit = e
+      if (select) e.setAttribute("aria-selected", String(on))
+      else if (on) e.setAttribute("aria-current", "true")
+      else e.removeAttribute("aria-current")
+    })
+    if (!hit) return
+    if (select) {
+      const label = root.querySelector("[data-section-current]")
+      if (label && label.textContent !== hit.dataset.label) label.textContent = hit.dataset.label
+    } else if (changed && root.scrollHeight > root.clientHeight) {
+      // keep the marked entry in view in a list that scrolls on its own
+      const box = root.getBoundingClientRect()
+      const r = hit.getBoundingClientRect()
+      if (r.top < box.top) root.scrollTop -= box.top - r.top
+      else if (r.bottom > box.bottom) root.scrollTop += r.bottom - box.bottom
+    }
+  }
+  const scrollY = () => { const s = scroller(); return s ? s.scrollTop : window.scrollY }
+  const update = () => {
+    if (locked) return
+    if (chosen && Math.abs(scrollY() - chosen.y) < 2) return mark(chosen.id)
+    chosen = null
+    const id = current()
+    if (id) mark(id)
+  }
+
+  // the chosen section stays marked until the scroll has been still 150ms
+  let settleTimer = null
+  const settle = () => {
+    clearTimeout(settleTimer)
+    settleTimer = setTimeout(() => {
+      chosen = { id: locked, y: scrollY() }
+      locked = null
+      update()
+    }, 150)
+  }
+  let queued = false
+  const onScroll = (e) => {
+    const s = scroller()
+    if (e.target !== (s || document)) return
+    if (locked) settle()
+    if (queued) return
+    queued = true
+    requestAnimationFrame(() => { queued = false; update() })
+  }
+  window.addEventListener("scroll", onScroll, { capture: true, passive: true })
+
+  const choose = (id) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    locked = id
+    mark(id)
+    const s = scroller()
+    const delta = el.getBoundingClientRect().top - (line() + SECTION_GAP)
+    const behavior = reducedMotion() ? "auto" : "smooth"
+    if (s) s.scrollTo({ top: s.scrollTop + delta, behavior })
+    else window.scrollTo({ top: window.scrollY + delta, behavior })
+    settle()
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1")
+    el.setAttribute("data-section-focus", "")
+    el.focus({ preventScroll: true })
+  }
+
+  // side: pin under the page's pinned header, level with the first card
+  const pin = () => {
+    if (select) return
+    const h = header()
+    let top = SECTION_GAP
+    if (h) {
+      const cs = getComputedStyle(h)
+      if (cs.position === "sticky") top = (parseFloat(cs.top) || 0) + h.offsetHeight + SECTION_GAP
+    }
+    const value = Math.round(top) + "px"
+    if (root.style.getPropertyValue("--section-nav-top") !== value) root.style.setProperty("--section-nav-top", value)
+  }
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => { pin(); update() }) : null
+  const watchHeader = () => { const h = header(); if (ro && h) ro.observe(h) }
+
+  // side, over 10 sections: filter by section or group name
+  let query = ""
+  const filter = () => {
+    const q = query.trim().toLowerCase()
+    let any = false
+    root.querySelectorAll(".section-nav-group").forEach((g) => {
+      const groupHit = !!q && (g.dataset.groupLabel || "").toLowerCase().includes(q)
+      let shown = 0
+      g.querySelectorAll("[data-section]").forEach((a) => {
+        const hit = !q || groupHit || (a.dataset.label || "").toLowerCase().includes(q)
+        if (a.hidden === hit) a.hidden = !hit
+        if (hit) shown++
+      })
+      g.hidden = shown === 0
+      if (shown) any = true
+    })
+    const none = root.querySelector("[data-section-none]")
+    if (none) none.hidden = any
+  }
+  root.addEventListener("input", (e) => {
+    if (!e.target.matches("[data-section-filter]")) return
+    e.stopPropagation() // not a form field: keep it away from phx-change
+    query = e.target.value
+    filter()
+  })
+  root.addEventListener("change", (e) => { if (e.target.matches("[data-section-filter]")) e.stopPropagation() })
+
+  const menu = select
+    ? disclosure(root, {
+        trigger: "[data-section-trigger]",
+        panel: "[data-section-panel]",
+        item: "[data-section-panel] [data-section]",
+      }, { flipTo: "start", pick: "[data-section]" })
+    : null
+  root.addEventListener("click", (e) => {
+    const entry = e.target.closest("[data-section]")
+    if (!entry || !root.contains(entry)) return
+    e.preventDefault()
+    choose(entry.dataset.section)
+  })
+
+  const api = {
+    refresh() {
+      if (menu) menu.sync()
+      if (query) filter()
+      pin()
+      watchHeader()
+      if (locked) mark(locked)
+      else { marked = null; update() }
+    },
+    destroy() {
+      window.removeEventListener("scroll", onScroll, { capture: true })
+      if (ro) ro.disconnect()
+      clearTimeout(settleTimer)
+      delete root.__sdSectionNav
+    },
+  }
+  root.__sdSectionNav = api
+  pin()
+  watchHeader()
+  update()
+  root.setAttribute("data-ready", "")
+  return api
+}
+
+// <.record_tabs>: one tab stop; Left/Right (Home/End) move between the tabs,
+// Enter or Space picks one (its phx-click). One delegated listener.
+if (typeof window !== "undefined" && !window.__shadcnRecordTabs) {
+  window.__shadcnRecordTabs = true
+  document.addEventListener("keydown", (e) => {
+    const tab = e.target instanceof Element && e.target.closest("[data-record-tabs] [role=tab]")
+    if (!tab || e.altKey || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return
+    const list = [...tab.closest("[data-record-tabs]").querySelectorAll("[role=tab]")]
+    const rtl = getComputedStyle(tab).direction === "rtl"
+    const i = list.indexOf(tab)
+    const step = (e.key === "ArrowRight") !== rtl ? 1 : -1
+    const j = e.key === "Home" ? 0 : e.key === "End" ? list.length - 1 : (i + step + list.length) % list.length
+    e.preventDefault()
+    list.forEach((t, k) => { t.tabIndex = k === j ? 0 : -1 })
+    list[j].focus()
+  })
+}
+
 // ---- Public API -----------------------------------------------------------
 
 // Switch the active theme without the light↔dark colour fade flickering.
@@ -2654,6 +3202,8 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-chip-row]").forEach(initChipRow)
   root.querySelectorAll("[data-sticky-top]").forEach(initStickyTop)
   root.querySelectorAll("[data-page-back]").forEach(initPageBack)
+  root.querySelectorAll("[data-data-table]").forEach((el) => initLiveTable(el))
+  root.querySelectorAll("[data-section-nav]").forEach(initSectionNav)
   initContextMenu()
   initDock(root)
 }
@@ -2681,7 +3231,20 @@ export const Hooks = {
   ShadcnRangeCalendar: { mounted() { initRangeCalendar(this.el) } },
   // Optional since 0.12: server toasts arrive through a window listener.
   ShadcnToaster: { mounted() { toasterSection() } },
-  ShadcnDataTable: { mounted() { initDataTable(this.el) } },
+  // <.data_table>; updated(): the rows' and header's checkboxes follow the
+  // server, the active row comes into view, more rows load if the end shows.
+  // (Old [data-datatable] showcase markup still gets the docs demo.)
+  ShadcnDataTable: {
+    mounted() { this.api = this.el.hasAttribute("data-datatable") ? (initDataTable(this.el), null) : initLiveTable(this.el, this) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.section_nav>: marks the section in view; updated() re-applies it
+  ShadcnSectionNav: {
+    mounted() { this.api = initSectionNav(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
   ShadcnCarousel: { mounted() { initCarousel(this.el) } },
   ShadcnResizable: { mounted() { initResizable(this.el) } },
   // updated(): re-fit after a patch (labels, counts, the active tab or the

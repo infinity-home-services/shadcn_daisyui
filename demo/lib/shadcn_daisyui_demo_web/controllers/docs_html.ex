@@ -20,9 +20,11 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
       show_modal: 1
     ]
 
-  # the app shell page and its preview
+  # the app shell page and its preview (a list page and a record page)
   import ShadcnDaisyui.Components.Shell
   import ShadcnDaisyui.CoreComponents, only: [page_header: 1]
+  import ShadcnDaisyui.Components.DataTable, only: [data_table: 1, table_toolbar: 1]
+  import ShadcnDaisyui.Components.Record, only: [record_tabs: 1, table_card: 1, section_nav: 1]
 
   embed_templates "docs_html/*"
 

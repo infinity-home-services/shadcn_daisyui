@@ -304,6 +304,15 @@ window.addEventListener("click", (e) => {
   if (row && row.getAttribute("aria-disabled") !== "true") setTimeout(() => toast(row.dataset.demoPerson))
 })
 
+// The app shell preview's static list page: a data table row opens the
+// record (in a LiveView, dt:open goes to the server; a dead view gets this
+// event instead).
+document.addEventListener("shadcn:data-table", (e) => {
+  if (e.detail.event !== "dt:open") return
+  const row = [...e.target.querySelectorAll("[data-dt-row]")].find((r) => r.dataset.id === e.detail.payload.id)
+  if (row && row.dataset.href) window.location.assign(row.dataset.href)
+})
+
 // Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")

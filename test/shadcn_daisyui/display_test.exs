@@ -572,4 +572,49 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~ "data-open"
     end
   end
+
+  describe "empty/1" do
+    test "a card: the icon in its circle, the title, the line and the actions" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.empty icon="hero-document-text" title="No invoices yet">
+          Invoices you send show up here.
+          <:actions><button id="new">New invoice</button></:actions>
+        </.empty>
+        """)
+
+      assert html =~ ~s(<div class="empty-state " data-variant="card">)
+      assert html =~ ~s(<div class="empty-state-media" aria-hidden="true">)
+      assert html =~ ~s(<span class="hero-document-text size-5"></span>)
+      assert html =~ ~s(<p class="empty-state-title">No invoices yet</p>)
+      assert html =~ ~r/<div class="empty-state-description">\s*Invoices you send show up here./
+
+      assert html =~
+               ~s(<div class="empty-state-actions"><button id="new">New invoice</button></div>)
+    end
+
+    test "plain, inside a table or card" do
+      assigns = %{}
+      html = render(~H|<.empty variant="plain" title="Nothing" />|)
+
+      assert html =~ ~s(data-variant="plain")
+      refute html =~ "empty-state-media"
+      refute html =~ "empty-state-description"
+      refute html =~ "empty-state-actions"
+    end
+
+    test "media replaces the icon in the circle" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.empty icon="hero-inbox" title="T"><:media><svg id="art"></svg></:media></.empty>
+        """)
+
+      assert html =~ ~r/empty-state-media" aria-hidden="true">\s*<svg id="art"><\/svg>/
+      refute html =~ "hero-inbox"
+    end
+  end
 end

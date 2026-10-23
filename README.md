@@ -9,7 +9,7 @@ It bundles:
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
 - **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
   stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable,
-  tab nav, chip row, page header, …), plus the app shell's behaviour.
+  tab nav, chip row, page header, data table, section nav, …), plus the app shell's behaviour.
 - **Function components** - `ShadcnDaisyui.Components` (`<.app_shell>` - a signed-in
   app's whole shell - `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
@@ -161,6 +161,22 @@ Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
   </.message>
   <.marker status shimmer>Oliver is typing...</.marker>
 </.message_group>
+```
+
+List pages and record pages have their parts too: `<.table_toolbar>` (views,
+search, a filters sheet, filter chips) over a `<.data_table>` (a body that
+scrolls under a sticky header, sortable columns, rows that open the record,
+ticked rows with a bulk bar, more rows as the end comes into view), with what
+it shows kept in the URL by `ShadcnDaisyui.DataTable.State`; and on the record,
+`<.record_tabs>`, `<.section_nav>`, `<.table_card>`, `<.time_field>` and
+`<.empty>`. A dialog the server decides on opens from the server:
+
+```elixir
+def handle_event("cancel", _params, socket) do
+  if socket.assigns.dirty?,
+    do: {:noreply, push_show_modal(socket, "discard")},
+    else: {:noreply, push_navigate(socket, to: ~p"/orders")}
+end
 ```
 
 Interactive components need an `id` (LiveView hook requirement) and the `Hooks`

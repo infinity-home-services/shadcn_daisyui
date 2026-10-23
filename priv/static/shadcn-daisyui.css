@@ -426,7 +426,9 @@
     color: var(--primary-foreground);     /* ✓ colour (drawn as currentColor) */
   }
   .checkbox:checked,
-  .checkbox[aria-checked="true"] {
+  .checkbox[aria-checked="true"],
+  .checkbox:indeterminate,
+  .checkbox[aria-checked="mixed"] {
     background-color: var(--primary);
     border-color: var(--primary);
   }
@@ -2142,6 +2144,461 @@
   .page-header-badge,
   .page-header-actions { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
   .page-header-actions { margin-inline-start: auto; }
+
+  /* ---- Empty state (<.empty>) ---------------------------------------------
+     shadcn's Empty: an icon in a 40px muted circle, a short title, one muted
+     line, an optional action. On its own a bordered card; plain inside a
+     table or card (no border, no hover: it isn't a row). */
+  .empty-state {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .empty-state[data-variant="card"] {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    background-color: var(--card);
+    color: var(--card-foreground);
+  }
+  .empty-state[data-variant="plain"] { padding-block: 2.5rem; }
+  .empty-state-media {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    place-items: center;
+    margin-bottom: 0.25rem;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
+  .empty-state-media > :where(svg, [class*="hero-"]):not([class*="size-"]) { width: 1.25rem; height: 1.25rem; }
+  .empty-state-title { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+  .empty-state-description {
+    max-width: 24rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--muted-foreground);
+  }
+  .empty-state-description a { text-decoration: underline; text-underline-offset: 4px; }
+  .empty-state-description a:hover { color: var(--foreground); }
+  .empty-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+  /* ---- Data table (<.data_table>) -----------------------------------------
+     A card that fills the space left (in a flex column such as <.app_shell
+     fill>) whose body scrolls under a sticky, opaque header with an inset
+     1px line; never sideways. table-fixed: widths come from the header cells
+     (a column's `w-32`), and cells truncate. data-hide-below hides a column
+     under that width; data-end right-aligns the rightmost column shown at
+     each width (the component works out which). While rows are ticked the
+     bulk bar covers the column labels - absolute, the header row's height -
+     so the rows never move. The checkbox column and the bar are desktop
+     only (from 48rem). */
+  .data-table {
+    --data-table-head: 2.5rem;
+    --data-table-check: 2.75rem;
+    position: relative;
+    display: flex;
+    min-height: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .data-table-scroll { min-height: 0; flex: 1 1 0%; overflow-x: hidden; overflow-y: auto; }
+  .data-table-table { table-layout: fixed; }
+  .data-table :is(th, td) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .data-table thead tr { border-bottom: 0; }
+  .data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: var(--data-table-head);
+    padding-block: 0;
+    background-color: var(--card);
+    box-shadow: inset 0 -1px 0 var(--border-color);
+    text-align: start;
+  }
+  .data-table td { padding-block: 0.625rem; }
+  .data-table tbody tr { border-bottom: 1px solid var(--border-color); }
+  .data-table tbody tr:last-child { border-bottom: 0; }
+  /* rows open the record: pointer, a hover fill (an enhancement), a focus
+     ring; ticked rows bg-muted, the row last opened accent with a 2px
+     primary mark at its start */
+  .data-table tbody tr[data-dt-row] { cursor: pointer; transition: background-color 150ms; }
+  @media (hover: hover) {
+    .data-table tbody tr[data-dt-row]:hover { background-color: color-mix(in oklab, var(--muted) 50%, transparent); }
+  }
+  .data-table tbody tr[data-dt-row][data-selected] { background-color: var(--muted); }
+  .data-table tbody tr[data-dt-row][data-active] { background-color: var(--accent); }
+  .data-table tbody tr[data-active] > td:first-child { box-shadow: inset 2px 0 0 var(--primary); }
+  .data-table tbody tr[data-dt-row]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+  .data-table .data-table-check {
+    box-sizing: border-box;
+    width: var(--data-table-check);
+    padding-inline: 1rem 0;
+    text-overflow: clip;
+  }
+  .data-table .data-table-check .checkbox { vertical-align: middle; }
+  @media (width < 48rem) {
+    .data-table .data-table-check,
+    .data-table .data-table-bulk { display: none; }
+    .data-table tbody tr[data-active] > .data-table-check + td { box-shadow: inset 2px 0 0 var(--primary); }
+    /* a floating bar of the app's own can't cover the last rows */
+    .data-table[data-ticked] .data-table-scroll { padding-bottom: 5rem; }
+  }
+  @media (width < 40rem) { .data-table [data-hide-below="sm"] { display: none; } }
+  @media (width < 48rem) { .data-table [data-hide-below="md"] { display: none; } }
+  @media (width < 64rem) { .data-table [data-hide-below="lg"] { display: none; } }
+  @media (width < 80rem) { .data-table [data-hide-below="xl"] { display: none; } }
+  /* alignment: explicit, else the rightmost column shown at this width. The
+     sort arrow sits outside the label (absolute), after it on start-aligned
+     columns and before it on end-aligned ones, so labels line up with their
+     cells. */
+  .data-table :is(th, td)[data-align="right"],
+  .data-table :is(th, td)[data-end~="base"] {
+    text-align: end;
+    --dt-icon-start: auto;
+    --dt-icon-end: calc(100% + 0.25rem);
+  }
+  @media (width >= 40rem) {
+    .data-table :is(th, td)[data-end]:not([data-end~="sm"]) { text-align: start; --dt-icon-start: calc(100% + 0.25rem); --dt-icon-end: auto; }
+    .data-table :is(th, td)[data-end~="sm"] { text-align: end; --dt-icon-start: auto; --dt-icon-end: calc(100% + 0.25rem); }
+  }
+  @media (width >= 48rem) {
+    .data-table :is(th, td)[data-end]:not([data-end~="md"]) { text-align: start; --dt-icon-start: calc(100% + 0.25rem); --dt-icon-end: auto; }
+    .data-table :is(th, td)[data-end~="md"] { text-align: end; --dt-icon-start: auto; --dt-icon-end: calc(100% + 0.25rem); }
+  }
+  @media (width >= 64rem) {
+    .data-table :is(th, td)[data-end]:not([data-end~="lg"]) { text-align: start; --dt-icon-start: calc(100% + 0.25rem); --dt-icon-end: auto; }
+    .data-table :is(th, td)[data-end~="lg"] { text-align: end; --dt-icon-start: auto; --dt-icon-end: calc(100% + 0.25rem); }
+  }
+  @media (width >= 80rem) {
+    .data-table :is(th, td)[data-end]:not([data-end~="xl"]) { text-align: start; --dt-icon-start: calc(100% + 0.25rem); --dt-icon-end: auto; }
+    .data-table :is(th, td)[data-end~="xl"] { text-align: end; --dt-icon-start: auto; --dt-icon-end: calc(100% + 0.25rem); }
+  }
+  .data-table-sort {
+    position: relative;
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    vertical-align: middle;
+    border-radius: var(--radius-sm);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: color 150ms;
+  }
+  .data-table-sort:hover,
+  .data-table-sort[data-sorted] { color: var(--foreground); }
+  .data-table-sort:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+  .data-table-sort-label,
+  .data-table-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .data-table .data-table-sort-icon {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: var(--dt-icon-start, calc(100% + 0.25rem));
+    inset-inline-end: var(--dt-icon-end, auto);
+    width: 0.875rem;
+    height: 0.875rem;
+    translate: 0 -50%;
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+  .data-table-sort:is(:hover, :focus-visible) .data-table-sort-icon { opacity: 0.5; }
+  .data-table-sort[data-sorted] .data-table-sort-icon { opacity: 1; }
+  .data-table-bulk {
+    position: absolute;
+    top: 0;
+    inset-inline: var(--data-table-check) 0;
+    z-index: 11;
+    display: flex;
+    height: var(--data-table-head);
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 1rem 0.5rem;
+    background-color: var(--card);
+    box-shadow: inset 0 -1px 0 var(--border-color);
+    font-size: 0.875rem;
+  }
+  .data-table-bulk[hidden] { display: none; }
+  .data-table-bulk-count { flex-shrink: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .data-table-bulk-actions { display: flex; min-width: 0; align-items: center; gap: 0.5rem; }
+  .data-table-bulk-clear.btn { margin-inline-start: auto; }
+  .data-table-more { position: relative; display: flex; justify-content: center; padding: 0.75rem; }
+  /* what the IntersectionObserver watches: the spinner and the 200px above it */
+  .data-table-sentinel {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: calc(100% + 12.5rem);
+    pointer-events: none;
+    visibility: hidden;
+  }
+  /* phones: edge to edge, no side borders or rounding (the shell's 1rem gutter) */
+  @media (width < 40rem) {
+    .data-table[data-edge] {
+      margin-inline: calc(-1 * var(--data-table-edge, 1rem));
+      border-inline-width: 0;
+      border-radius: 0;
+    }
+  }
+
+  /* ---- Scrolling table (<.table scroll>) ---------------------------------
+     The table fills the rest of a card that grows; only its body scrolls,
+     under a sticky, opaque header with an inset 1px line. */
+  .table-scroll { min-height: 0; flex: 1 1 0%; overflow: auto; }
+  .table-scroll > .table thead tr { border-bottom: 0; }
+  .table-scroll > .table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--card);
+    box-shadow: inset 0 -1px 0 var(--border-color);
+  }
+
+  /* ---- Table toolbar (<.table_toolbar>) ----------------------------------
+     One row above a data table: views (a tab nav) or the count, the search,
+     the Filters button (with the number on) and trailing controls; then the
+     active filter chips in a reveal. Phones: without views the search takes
+     the row; Filters is icon-only and :more hides. */
+  .table-toolbar,
+  .table-toolbar-form { display: flex; min-width: 0; flex-direction: column; }
+  .table-toolbar-row { display: flex; min-width: 0; align-items: center; gap: 0.5rem; }
+  .table-toolbar-views { min-width: 0; flex: 1 1 0%; }
+  .table-toolbar-count {
+    min-width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+  .table-toolbar-search.input { width: 16rem; min-width: 0; flex-shrink: 1; gap: 0.5rem; }
+  .table-toolbar-search input { min-width: 0; flex: 1 1 0%; }
+  .table-toolbar-filters.btn { flex-shrink: 0; }
+  .table-toolbar-filters-count {
+    display: inline-flex;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.375rem;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .table-toolbar-more { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
+  .table-toolbar-edited {
+    display: inline-block;
+    width: 0.375rem;
+    height: 0.375rem;
+    margin-inline-start: 0.375rem;
+    vertical-align: middle;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--primary);
+  }
+  .table-toolbar-chips { padding-top: 0.5rem; }
+  @media (width < 40rem) {
+    .table-toolbar:not([data-views]) .table-toolbar-count { display: none; }
+    .table-toolbar:not([data-views]) .table-toolbar-search.input { width: auto; flex: 1 1 0%; }
+    .table-toolbar[data-views] .table-toolbar-search.input { width: 7rem; }
+    .table-toolbar-filters.btn { padding-inline: 0.625rem; }
+    .table-toolbar-filters-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .table-toolbar-more { display: none; }
+  }
+  @media (width >= 40rem) { .table-toolbar[data-views] .table-toolbar-search.input { width: 14rem; } }
+  /* the filters sheet: one field per filter, 16px apart; Sort by on phones */
+  .table-toolbar-fields { display: flex; flex-direction: column; gap: 1rem; }
+  .table-toolbar-field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .table-toolbar-field-label { font-size: 0.875rem; font-weight: 500; }
+  @media (width >= 48rem) { .table-toolbar-sort { display: none; } }
+
+  /* ---- Record tabs (<.record_tabs>) --------------------------------------
+     shadcn's line tabs: tabs on a 1px line, the active one underlined with a
+     2px foreground bar. Labels truncate; the row never wraps or scrolls. */
+  .record-tabs { display: flex; min-width: 0; gap: 1rem; border-bottom: 1px solid var(--border-color); }
+  .record-tab {
+    position: relative;
+    display: inline-flex;
+    min-width: 0;
+    height: 2.5rem;
+    align-items: center;
+    gap: 0.375rem;
+    padding-inline: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: color 150ms;
+  }
+  .record-tab:hover,
+  .record-tab[aria-selected="true"] { color: var(--foreground); }
+  .record-tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--foreground);
+  }
+  .record-tab:focus-visible { outline: none; border-radius: var(--radius-sm); box-shadow: var(--ring-shadow); }
+  .record-tab-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .record-tab .tab-count { flex-shrink: 0; }
+  @media (pointer: coarse) { .record-tab { height: 2.75rem; } }
+
+  /* ---- Table card (<.table_card>) -----------------------------------------
+     A card of rows: header (title, description, actions), then the column
+     labels (from 40rem) and the rows, each a grid. Row lines run edge to
+     edge and the last row's own padding is the space under it. Phones stack
+     a row's cells unless the component's `grid` class keeps them side by
+     side; the default columns are zero-specificity, so that class wins. */
+  .table-card { overflow: hidden; }
+  .table-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 1rem;
+  }
+  .table-card-heading { display: flex; min-width: 0; flex-direction: column; gap: 0.375rem; }
+  .table-card-actions { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
+  .table-card-row {
+    display: grid;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.875rem;
+  }
+  :where(.table-card-row) { grid-template-columns: minmax(0, 1fr); }
+  .table-card [role="rowgroup"]:last-child > .table-card-row:last-child { border-bottom: 0; }
+  .table-card-head { display: none; padding-block: 0.5rem; font-weight: 500; color: var(--muted-foreground); }
+  .table-card-cell { min-width: 0; overflow-wrap: anywhere; }
+  .table-card[data-layout="grid"] .table-card-cell[data-align="right"] { text-align: end; }
+  .table-card-empty { padding: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
+  @media (width >= 40rem) {
+    .table-card-head { display: grid; }
+    .table-card[data-layout="stack"] .table-card-cell[data-align="right"] { text-align: end; }
+    :where(.table-card-row[data-cols="2"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :where(.table-card-row[data-cols="3"]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    :where(.table-card-row[data-cols="4"]) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    :where(.table-card-row[data-cols="5"]) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    :where(.table-card-row[data-cols="6"]) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  }
+
+  /* ---- Section nav (<.section_nav>) ---------------------------------------
+     Where an edit form's sections are. side: a list beside the cards from
+     64rem, sticky just under the page's pinned header (ShadcnSectionNav sets
+     --section-nav-top from it) and level with the first card, scrolling on
+     its own when taller than the window. select: below 64rem, a full-width
+     dropdown in the page header with 44px options and a tick. The section in
+     view is marked (aria-current / aria-selected). */
+  .section-nav-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 1.5rem; }
+  .section-nav-content { display: flex; min-width: 0; flex-direction: column; gap: 1.5rem; }
+  .section-nav-side { display: none; }
+  @media (width >= 64rem) {
+    .section-nav-layout { grid-template-columns: 12rem minmax(0, 1fr); }
+    .section-nav-side {
+      position: sticky;
+      top: var(--section-nav-top, 1rem);
+      display: flex;
+      max-height: calc(100dvh - var(--section-nav-top, 1rem) - 1.5rem);
+      flex-direction: column;
+      align-self: start;
+      gap: 1rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    .section-nav-select { display: none; }
+  }
+  .section-nav-filter.input { width: 100%; flex-shrink: 0; gap: 0.5rem; }
+  .section-nav-filter input { min-width: 0; flex: 1 1 0%; }
+  .section-nav-group { display: flex; flex-direction: column; gap: 0.125rem; }
+  .section-nav-group-label { padding: 0 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); }
+  .section-nav-item {
+    display: block;
+    overflow: hidden;
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--radius-md);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    transition: color 150ms, background-color 150ms;
+  }
+  .section-nav-item:hover { color: var(--foreground); }
+  .section-nav-item[aria-current="true"] { background-color: var(--accent); color: var(--accent-foreground); font-weight: 500; }
+  .section-nav-item:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+  .section-nav :is(.section-nav-item, .section-nav-group, .section-nav-none)[hidden] { display: none; }
+  .section-nav-none { padding: 0.375rem 0.5rem; font-size: 0.875rem; color: var(--muted-foreground); }
+  .section-nav-select { position: relative; }
+  .section-nav-trigger.btn {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    background-color: var(--input-background);
+    border-color: var(--input);
+    font-weight: 400;
+  }
+  .section-nav-trigger.btn:hover { background-color: var(--outline-hover); }
+  .section-nav-current { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .section-nav-panel {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    inset-inline: 0;
+    z-index: 50;
+    max-height: min(24rem, 60dvh);
+    overflow-y: auto;
+    padding: 0.25rem;
+  }
+  .section-nav-panel[hidden] { display: none; }
+  .section-nav-panel-group { margin: 0.25rem -0.25rem 0; padding: 0.25rem 0.25rem 0; border-top: 1px solid var(--border-color); }
+  .section-nav-option {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    text-align: start;
+    cursor: pointer;
+  }
+  .section-nav-option:hover,
+  .section-nav-option:focus-visible { outline: none; background-color: var(--accent); color: var(--accent-foreground); }
+  .section-nav-option-label { min-width: 0; flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .section-nav-tick { flex-shrink: 0; opacity: 0; }
+  .section-nav-option[aria-selected="true"] { font-weight: 500; }
+  .section-nav-option[aria-selected="true"] .section-nav-tick { opacity: 1; }
+  /* a chosen section takes focus (for keyboard and screen reader users); the
+     scroll shows where it is, so no ring around the whole card */
+  [data-section-focus]:focus { outline: none; }
+
+  /* ---- Time field (<.time_field>) --------------------------------------- */
+  .time-field { display: flex; min-width: 0; flex-direction: column; gap: 0.5rem; }
+  .time-field-label { font-size: 0.875rem; font-weight: 500; }
 
   /* ---- Theme toggle (ShadcnDaisyui.Components.theme_toggle) ---------------
      System / light / dark, on a card-like track (the card's radius, border

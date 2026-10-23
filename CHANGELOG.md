@@ -8,6 +8,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-10-23
+
+The parts apps kept writing for themselves: a list page's data table and
+toolbar, a state module for what the table shows, an empty state, a record
+page's tabs, table cards, section nav and time field, and modals the server
+opens. All new and opt-in; existing markup renders as before.
+
+### Added
+
+- **Opening modals from the server.** `push_show_modal(socket, id)` and
+  `push_hide_modal(socket, id)` push `shadcn:show-modal` / `shadcn:hide-modal`,
+  which the package JS listens for (as `push_toast/3` works); a modal opens
+  each time it's pushed, even after the person closed it. `show` on
+  `<.dialog>`, `<.sheet>`, `<.drawer>` and `<.command>` keeps it open while
+  true: it opens on mount (a modal rendered with `:if` opens as it appears)
+  and whenever `show` turns true, and closes when it turns false. `on_close`
+  (an event or a `Phoenix.LiveView.JS`) runs when the person closes it - Esc,
+  the backdrop, a close or Cancel button - so the assign can follow; closing
+  from the server doesn't run it. Docs: a button opens from the browser, a
+  decision the server makes opens from the server.
+- **`<.empty>`**, shadcn's Empty: an icon (or `<:media>`) in a 40px muted
+  circle, a title, one muted line and `<:actions>`. `variant="card"` (default)
+  is a bordered card with 48px vertical padding; `variant="plain"` sits inside
+  a table or card. Theme classes: `.empty-state`, `.empty-state-media`,
+  `.empty-state-title`, `.empty-state-description`, `.empty-state-actions`.
+- **`<.data_table>`**: a card that fills the space left (in `<.app_shell
+  fill>`) whose body scrolls under a sticky, opaque header; `table-fixed`,
+  cells truncate. `<:col label sort class align hide_below>`; the rightmost
+  column shown at each width is right-aligned (header and cells) unless
+  `align="left"`, never the first. Sortable headers send `dt:sort` and show
+  an up or down arrow beside the label, outside its layout (before it on
+  right-aligned columns; an up-down arrow on hover), with `aria-sort`. Rows
+  are focusable: a click or Enter sends `dt:open` (not on links, buttons,
+  inputs, labels, `[data-row-ignore]`, or a click that ends with text
+  selected); Cmd/Ctrl-click and middle click open `row_href` in a new tab;
+  `active_id` highlights the row last opened and scrolls it into view.
+  `selectable` adds a checkbox column (from `md`): `dt:select` with `shift`
+  (Shift-click ticks the range without selecting text), a header checkbox
+  (`dt:select_all`) that is ticked or half-ticked from the rows after every
+  update, and a bulk bar that replaces the column labels while rows are ticked
+  so the rows never move: "N selected" (or "All M selected"), "Select all M
+  orders" (`dt:select_matching`) when every loaded row is ticked and
+  `matching` says more match, `:bulk`, Clear (`dt:clear`). `more` sends
+  `dt:more` once the end comes within about 200px, once until the reply.
+  `scroll_key` keeps the body's scroll position (per view) in
+  `sessionStorage`; a new sort, search or filter starts it at the top. `edge`
+  runs it edge to edge on phones; while rows are ticked the body leaves room
+  for a floating bar on phones. `:empty` (with `title` and `icon`) and
+  `:empty_action` use `<.empty>`'s in-table layout. Every event carries
+  `"table" => id`; `target` sends them to a LiveComponent. Hook:
+  `ShadcnDataTable` (old `[data-datatable]` docs-showcase markup still gets the
+  showcase); in a dead view the table dispatches `shadcn:data-table`
+  (`{event, payload}`) instead, and `dt:more` waits for the page to change
+  the rows before asking again. Theme classes: `.data-table`,
+  `.data-table-scroll`, `.data-table-sort`, `.data-table-bulk`, ….
+- **`<.table_toolbar>`**: the one row above a data table, as a form that
+  sends `dt:filter` on change and submit. `views` as a `<.tab_nav>` (patch
+  links with counts, an edited view's dot, a "Views" menu of `menu` entries)
+  or, without views, "N orders" ("N of M" while filtered); the search (`q`,
+  debounced 200ms; it takes the row on phones without views); a Filters button
+  with the number of filters on; `:more` (hidden on phones). The filters that
+  are on show as a `<.chip_row>` in a `<.reveal>` (always rendered, so it
+  collapses around the last chip); removing one sends `dt:unfilter`, `:fixed`
+  chips can't be removed; then `:save` and "Clear all" (`dt:reset`). The
+  filters sheet holds each `:filter` under its label (they apply as they
+  change; the sheet stays open), on phones a "Sort by" select named `sort`
+  (from `sorts`, the first the default order; "As the table is sorted" when
+  the current sort isn't one of them), and "Clear all" / "Show N orders".
+- **`ShadcnDaisyui.DataTable.State`**: plain Elixir for what a table shows.
+  `from_params/2` / `to_params/2` (sort, search and filters in the URL, `q`,
+  `sort`, `dir=desc` and one param per filter, defaults left out), `filtered?/2`,
+  `values/1` (a comma list; `"any"`, `""` and nil are none), `any_of?/2`,
+  `put_search/2`, `put_filters/4`, `chips/3`, `sort_value/1`, `parse_sort/3`
+  (the value first), `toggle_sort/2` (ascending, descending, default), `run/3`
+  (search every word, filter, sort with empty values last and dates and times
+  by value), and the selection: `select/4` (Shift ticks the range from the
+  anchor in the order shown), `select_all/2`, `keep_visible/2`, `clear/1`,
+  `selected?/2`. Ids are kept as strings.
+- **`<.record_tabs>`**: a tab row inside a record (`tabs`, `active`); a tab
+  sends `"tab"` with `%{"tab" => key}` (`event` and `target` change that),
+  `role="tab"` + `aria-selected`, the active tab underlined, one tab stop with
+  arrow keys. Theme classes: `.record-tabs`, `.record-tab`.
+- **`<.table_card>`**: a card with a title, description, `:actions` and rows
+  (`:col` with `label`, `class`, `align`; `:empty`). Row lines run edge to
+  edge, the last row's padding is the space under it, labels show as a header
+  row from `sm`, rows stack on phones unless `grid` keeps them side by side,
+  and the rightmost column is right-aligned unless `align="left"`.
+- **`<.section_nav>`**: where an edit form's sections are. `variant="side"`
+  (from `lg`, beside the cards it's given as its inner block, pinned just
+  under the page's pinned header and level with the first card, scrolling on
+  its own when taller than the window, a "Filter sections" input over 10
+  sections) and `variant="select"` (below `lg`, a full-width dropdown for the
+  page header's `<:below>` naming the section in view, "Group, Section" when
+  grouped, 44px options with a tick). Both mark the section in view
+  (`aria-current`) against the bottom of the pinned header (the last one at
+  the bottom of the page); choosing one scrolls there (smoothly, or at once
+  under reduced motion), keeps it marked until the scroll settles - and,
+  when the page can't bring it up to the header, until the person scrolls on
+  - moves focus to it and closes the select. Hook: `ShadcnSectionNav`.
+- **`<.time_field>`**: a labelled `<.time_picker>` bound to a form field
+  (`id`, `field`, `label`, `minute_step` 15): the label above, the picker full
+  width with "Not set", and the field's errors under it once used or submitted.
+- **`<.table scroll>`**: the table fills the rest of a card that grows and
+  only its body scrolls, under a sticky, opaque header. Theme class:
+  `.table-scroll`. Without `scroll` the markup is unchanged.
+- A single `<.select>` / `<.combobox>` with a `value=""` option ("Default
+  order", "Any") shows it as chosen while the value is blank, and posts `""`.
+- Docs: pages for the data table (replacing the docs-only showcase), table
+  toolbar, empty (replacing the hand-written recipe), record tabs, table card,
+  section nav and time field, "Open from the server" on the Dialog page, a
+  scrolling-body example on the Table page, usage rules for list and record
+  pages, and `/lab/data-table` (a list page and its record page in a connected
+  LiveView, on the dev server).
+
+### Fixed
+
+- Half-ticked checkboxes (`.checkbox:indeterminate`) were invisible: the dash
+  drew in the primary-foreground colour on an empty box. They fill like a
+  ticked box now.
+
+### Checked
+
+- `<.select>` keeps its chosen value across LiveView re-renders, as it has
+  since 0.19.0: a pick survives re-renders that don't know about it, the
+  server's echo and a stale render, and the server's own value or a reset
+  wins. A browser test now covers it; apps need no wrapper.
+
 ## [0.21.2] - 2026-10-23
 
 The command palette's search icon is configurable, and renders at its full

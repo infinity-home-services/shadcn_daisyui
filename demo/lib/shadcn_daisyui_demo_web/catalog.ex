@@ -17,6 +17,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   """
 
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
+  alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
   alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
   alias ShadcnDaisyuiDemoWeb.Catalog.Overflow
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
@@ -29,8 +30,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       title: "Forms & inputs",
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
-                date-picker date-range-picker time-picker range-calendar multi-select chip-row rating filter
-                validator)
+                date-picker date-range-picker time-picker time-field range-calendar multi-select chip-row
+                rating filter validator)
     },
     %{
       title: "Actions",
@@ -39,7 +40,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     %{
       title: "Navigation",
       slugs:
-        ~w(breadcrumb pagination tabs tab-nav navigation-menu menubar sidebar dock link steps navbar)
+        ~w(breadcrumb pagination tabs tab-nav record-tabs section-nav navigation-menu menubar sidebar
+                dock link steps navbar)
     },
     %{
       title: "Overlays",
@@ -52,8 +54,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     },
     %{
       title: "Data display",
-      slugs: ~w(table data-table card avatar item attachment stat chart timeline list kbd
-                accordion collapsible carousel)
+      slugs: ~w(table data-table table-toolbar table-card empty card avatar item attachment stat
+                chart timeline list kbd accordion collapsible carousel)
     },
     %{
       title: "Conversation",
@@ -62,8 +64,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     %{
       title: "Layout",
       slugs:
-        ~w(separator aspect-ratio scroll-area resizable reveal empty stack footer hero typography
-                mockup mask)
+        ~w(separator aspect-ratio scroll-area resizable reveal stack footer hero typography mockup
+                mask)
     }
   ]
 
@@ -103,7 +105,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   def components do
     enrichment = Enrichment.all()
 
-    for c <- all() ++ Composition.all() ++ Pickers.all() ++ Overflow.all(), into: %{} do
+    pages = all() ++ Composition.all() ++ Pickers.all() ++ Overflow.all() ++ DataPages.all()
+
+    for c <- pages, into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
       {c.slug, Spec.new!(spec)}
     end
@@ -877,10 +881,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         guidance: %{
           use_when: [
             "Scanning and comparing records across a few columns",
-            "Static or lightly interactive row data (use <.table> with <:col> slots)"
+            "Static or lightly interactive row data (use <.table> with <:col> slots)",
+            "A long list in a card that fills the window: <.table scroll> keeps the header put while the body scrolls"
           ],
           avoid_when: [
-            "Filtering/sorting/paging needs - use data-table",
+            "A list page with sorting, selection or filters - use data-table",
             "Compact screens with many columns - restructure as a card list"
           ],
           sizing:
@@ -935,7 +940,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               </table>
             </div>
             """
-          }
+          },
+          DataPages.table_scroll_example()
         ]
       },
       %{
@@ -1458,6 +1464,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
             "iOS has no web-style modal - use .sheet (with detents) for tasks and .alert for short confirmations."
         },
         ios_status: :partial,
+        notes:
+          "Open it from the browser when a button opens it (the :trigger slot or phx-click={show_modal(id)}, no round trip), and from the server when the server makes the decision (unsaved changes, a step that needs the server first): push_show_modal(socket, id) / push_hide_modal(socket, id) in an event handler, or show={@assign} with on_close (an event run when the person closes it, so the assign turns false again). Closing from the server doesn't run on_close.",
         examples: [
           %{
             title: "Default",
@@ -1492,7 +1500,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
             """
-          }
+          },
+          DataPages.dialog_from_server_example()
         ]
       },
       %{
@@ -2462,24 +2471,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         ]
       },
       %{
-        slug: "empty",
-        title: "Empty",
-        description: "A placeholder for when there is no content to show.",
-        examples: [
-          %{
-            title: "Default",
-            code: ~S"""
-            <div class="flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-base-300 p-8 text-center">
-              <span class="hero-inbox size-7 text-muted-foreground" aria-hidden="true"></span>
-              <p class="text-sm font-medium">No results found</p>
-              <p class="text-sm text-muted-foreground">Try adjusting your search.</p>
-              <button class="btn btn-outline btn-sm mt-1">Clear filters</button>
-            </div>
-            """
-          }
-        ]
-      },
-      %{
         slug: "typography",
         title: "Typography",
         description: "Styles for headings, prose, lists, and inline code.",
@@ -2785,84 +2776,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <li><button type="button">Reload <span class="text-xs text-muted-foreground">⌘R</span></button></li>
               <li><button type="button" class="text-destructive">Delete</button></li>
             </ul>
-            """
-          }
-        ]
-      },
-      %{
-        slug: "data-table",
-        title: "Data Table",
-        description: "A table with filtering, faceted filters, sorting, and paging.",
-        guidance: %{
-          use_when: [
-            "Working datasets: search, facet filters, sortable columns, paging",
-            "Admin/index screens where the table is the page"
-          ],
-          avoid_when: [
-            "A handful of static rows - plain table",
-            "Compact-first experiences - design the card-list view first"
-          ],
-          sizing:
-            "Toolbar controls are btn-sm/h-8; rows text-sm. Keep the table the only wide element on the page.",
-          responsive:
-            "Below medium: collapse to filterable card list or hide secondary columns - horizontal scrolling is a last resort.",
-          ios: "A searchable List with filter chips/toolbar menus; sorting via a toolbar Menu."
-        },
-        hook: true,
-        examples: [
-          %{
-            title: "Default",
-            center: false,
-            code: ~S"""
-            <div data-datatable class="w-full space-y-3">
-              <div class="flex flex-wrap items-center gap-2">
-                <input data-dt-filter class="input w-full sm:w-64" placeholder="Filter emails…" />
-                <div data-dt-facet="status" class="relative">
-                  <button type="button" data-dt-facet-trigger class="btn btn-outline btn-sm border-dashed font-normal">
-                    <span class="hero-plus-circle size-4" aria-hidden="true"></span>
-                    Status
-                    <span data-dt-facet-badges class="hidden"></span>
-                  </button>
-                  <div data-dt-facet-panel class="popover-panel absolute z-50 mt-1 hidden w-52 p-1">
-                    <ul data-dt-facet-list></ul>
-                    <div data-dt-facet-clear class="hidden">
-                      <div class="my-1 border-t border-base-300"></div>
-                      <button type="button" data-dt-facet-clear-btn class="combo-item justify-center text-center">
-                        Clear filters
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <button type="button" data-dt-reset class="btn btn-ghost btn-sm hidden">
-                  Reset <span class="hero-x-mark size-4" aria-hidden="true"></span>
-                </button>
-              </div>
-              <div class="card overflow-hidden">
-                <table class="table w-full table-fixed">
-                  <thead>
-                    <tr>
-                      <th data-dt-sort="status" class="w-40">
-                        <span class="inline-flex items-center gap-1">Status <span data-dt-sort-icon class="hero-chevron-up-down size-3.5 opacity-50"></span></span>
-                      </th>
-                      <th data-dt-sort="email">
-                        <span class="inline-flex items-center gap-1">Email <span data-dt-sort-icon class="hero-chevron-up-down size-3.5 opacity-50"></span></span>
-                      </th>
-                      <th data-dt-sort="amount" class="w-32 text-right">
-                        <span class="inline-flex items-center justify-end gap-1">Amount <span data-dt-sort-icon class="hero-chevron-up-down size-3.5 opacity-50"></span></span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody data-dt-body></tbody>
-                </table>
-              </div>
-              <div class="flex items-center justify-between">
-                <span data-dt-info class="text-sm text-muted-foreground"></span>
-                <div class="flex gap-2">
-                  <button type="button" data-dt-prev class="btn btn-outline btn-sm">Previous</button>
-                  <button type="button" data-dt-next class="btn btn-outline btn-sm">Next</button>
-                </div>
-              </div>
-            </div>
             """
           }
         ]

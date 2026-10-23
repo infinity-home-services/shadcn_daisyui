@@ -37,7 +37,7 @@ Accessibility floor and writing basics for every screen, both platforms.
 - Destructive confirmations name the object: "Delete 'Q3 report'?" with actions
   "Delete" / "Cancel" - never "Are you sure?" with "Yes" / "No".
 - Empty states say what belongs there and offer the first action, in one or two
-  sentences.
+  sentences (`<.empty title="No invoices yet">Invoices you send show up here.</.empty>`).
 
 ## Reference
 

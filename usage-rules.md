@@ -33,9 +33,23 @@ like shadcn/ui. **Every UI decision goes through this package.**
   animate in and out on their own.
 - A signed-in app's layout is `<.app_shell>` (see App shell). Never hand-roll a
   sidebar, bottom bar, account menu or page header.
-- Interactive components (combobox, select, date picker, time picker, calendar, range calendar,
-  OTP, carousel, resizable, command, context-menu, toaster, tab nav, chip row,
-  page header) REQUIRE a unique `id` attribute and the JS hooks
+- A list page is `<.table_toolbar>` over `<.data_table>` in an `<.app_shell fill>`
+  page, with its sort, search and filters in `ShadcnDaisyui.DataTable.State` (in
+  the URL). Never hand-roll a sticky table header, a select-all checkbox, a
+  bulk-action bar, infinite scroll, a filters sheet or a filter chip row (see
+  List and record pages).
+- A record page is built from `<.page_header>`, `<.record_tabs>`, `<.section_nav>`
+  (where an edit form's sections are), `<.table_card>` and `<.time_field>`. Empty
+  pages, lists and tables are `<.empty>`. Never hand-roll a scrollspy, a section
+  dropdown or an "icon in a circle" empty block.
+- A dialog the server decides on ("discard your changes?", a step that needs the
+  server first) opens from the server: `push_show_modal(socket, id)` /
+  `push_hide_modal/2`, or `show={@confirm?}` with `on_close`. A button opens from
+  the browser (`show_modal/2`). Never toggle a dialog's `open` attribute yourself.
+- Interactive components (combobox, select, date picker, time picker, time field,
+  calendar, range calendar, OTP, carousel, resizable, command, context-menu,
+  toaster, tab nav, chip row, page header, data table, section nav) REQUIRE a
+  unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
 - Never write inline event handlers (`onclick=`, `onsubmit=`, …) or `javascript:`
@@ -70,6 +84,7 @@ Decision order:
 | `<.card>` / `<.card_body>` / `<.card_title>` / `<.card_description>` | compose |
 | `<.separator>` | `orientation="horizontal\|vertical"` |
 | `<.dialog>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:actions>`; open via `show_modal(id)` |
+| opening from the server | `push_show_modal(socket, id)` / `push_hide_modal(socket, id)` (opens each time it's pushed, even after the person closed it), or `show={@open?}` + `on_close="event"` (or a JS) on `<.dialog>` / `<.sheet>` / `<.drawer>` / `<.command>`: open on mount and whenever `show` turns true; `on_close` runs when the person closes it (Esc, backdrop, a close or Cancel button) - set the assign false there; closing from the server doesn't run it |
 | `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:header>` (stays put, e.g. search) + body + `<:footer>` (pinned actions: ghost "Clear all" left, primary `ml-auto grow sm:grow-0`); only the body scrolls, lines show only while content is under the header/footer - never add your own sticky header/footer, borders or shadows; right panel / bottom panel; sheet `size="sm\|default\|lg\|xl"` (20/24/32/40rem from `sm`, 75% on phones, ≤90vw), or a width class (`sm:w-[28rem]`) |
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
@@ -99,7 +114,14 @@ Decision order:
 | `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
 | `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
 | `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
-| `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms |
+| `<.empty>` | an empty state: `icon` (in a 40px muted circle) or `<:media>`, `title`, one muted line (inner block), `<:actions>`; `variant="card"` (on its own, bordered) or `"plain"` (inside a card or table) |
+| `<.data_table>` | `id` (hook), `rows`, `row_id`, `row_href` (Cmd/Ctrl/middle click), `state` (a `DataTable.State`: sort arrows, ticks), `selectable`, `more`, `matching`, `all_matching`, `edge`, `noun={{"order", "orders"}}`, `active_id`, `scroll_key`, `target`; `<:col label sort class="w-32" align hide_below="md">`, `<:bulk>`, `<:empty title icon>`, `<:empty_action>`; sends `dt:sort` `dt:open` `dt:select` `dt:select_all` `dt:select_matching` `dt:clear` `dt:more` (see List and record pages) |
+| `<.table_toolbar>` | `id`, `search`, `placeholder`, `shown`, `total`, `noun`, `views=[%{key, label, count, path, active, edited}]`, `menu=[%{key, label, group, icon, active, path \| click}]`, `chips=[{key, label} \| {key, label, :fixed}]` (`State.chips/3`), `sort` (`State.sort_value/1`), `sorts=[{label, "key:dir"}]` (first = default); `<:filter key label>` (one `<.select>`/`<.combobox>` named `key`), `<:more>`, `<:save>`; a form sending `dt:filter` (+ `dt:unfilter`, `dt:reset`) |
+| `<.record_tabs>` | `id`, `tabs={[{key, label} \| {key, label, count}]}`, `active`; each tab sends `"tab"` with `%{"tab" => key}` (`event`, `target` to change); underlined, one tab stop, arrow keys |
+| `<.table_card>` | a card of rows: `id`, `title`, `description`, `rows`, `row_id`, `row_class`, `grid` (e.g. `grid-cols-[minmax(0,1fr)_auto]`: side by side on phones too); `<:col :let label class align>`, `<:empty>`, `<:actions>`; labels as a header row from `sm`, rows stack on phones, the rightmost column right-aligned |
+| `<.section_nav>` | `id` (hook), `sections=[{id, label} \| {id, label, group}]` (each an element with that id); `variant="side"` (default; give it the cards as its inner block: a list beside them from `lg`, pinned under the page header, "Filter sections" over 10) and `variant="select"` in `<.page_header>`'s `<:below>` (below `lg`, 44px options); marks the section in view, choosing one scrolls there |
+| `<.time_field>` | `id` (hook), `field`, `label`, `minute_step` (15): a labelled full-width `<.time_picker>` ("Not set"), errors under it once used |
+| `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms; a single picker's `value=""` option is the choice for a blank value ("Default order", "Any") |
 | `<.combobox create>` | lets people add a value the list lacks (an insurer, a tag): text no option label matches exactly (case/spaces ignored) shows a last `Add "…"` row (`create_label="Add \"%{value}\""`, `create_max={80}`); choosing it selects + posts the trimmed text (`multiple`: ticks it, stays open); `on_create="event"` also pushes `%{"id" => id, "value" => text}` - save the option there and re-render the slots. Never hand-roll an "Other…" text input next to a picker |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
 | `<.carousel>` | `id` (hook), `<:slide>` slots |
@@ -107,7 +129,8 @@ Decision order:
 
 From your app's `CoreComponents` (delegating to `ShadcnDaisyui.CoreComponents`):
 `<.button>` (variants + `navigate`), `<.input field={...}>`, `<.error>`, `<.header>`,
-`<.table id rows>` with `<:col>` slots, `<.list>`, `<.icon name="hero-...">`, `<.flash>`,
+`<.table id rows>` with `<:col>` slots (`scroll`: fills a growing card, only the
+body scrolls under a sticky header), `<.list>`, `<.icon name="hero-...">`, `<.flash>`,
 `<.page_header crumbs back esc_back>` with `<:badge>` `<:actions>` `<:below>` (every page
 in the shell starts with it), `<.sticky_top id>` (a pinned block of your own).
 
@@ -133,9 +156,9 @@ menu already has one.
 - `#main` is the page's one scroll region: the page itself never scrolls. Pages
   keep a reading width (48rem; a page child's own `max-w-*`, e.g. a `max-w-md`
   form, wins); `wide` uses the full width (tables), and `fill`
-  makes the content fill the window so a table body inside a growing card
-  scrolls instead (`card flex min-h-0 flex-1 flex-col overflow-hidden` >
-  `div.min-h-0.flex-1.overflow-auto` > table, sticky `thead` with `bg-card`).
+  makes the content fill the window so a table body inside it scrolls instead:
+  `<.data_table>` (a list page), or `<.table scroll>` in
+  `<div class="card flex min-h-0 flex-1 flex-col overflow-hidden">`.
 - Every page starts with `<.page_header>`: breadcrumb (from 48rem; group as text,
   then the page; on a record the list is a link and Esc goes there), the title,
   `<:badge>`, `<:actions>` (`size="sm"` buttons) and `<:below>`, pinned while
@@ -152,6 +175,50 @@ menu already has one.
 - Open the shell's dialogs with `JS.dispatch("shadcn:show-dialog", to: "#id")` or
   `show_modal("id")`; in an app shell page plain dialogs close on a backdrop click
   and every open dialog closes when LiveView navigates to another page.
+
+### List and record pages
+
+A list page: `<.page_header>`, `<.table_toolbar>`, then `<.data_table>`, in
+`<.app_shell wide fill>`. What the table shows is a `ShadcnDaisyui.DataTable.State`:
+
+```elixir
+@opts [filters: %{"status" => "any"}, sorts: ~w(number customer total)]
+
+def handle_params(params, _uri, socket) do
+  state = State.from_params(params, @opts)  # sort, search, filters: in the URL
+  {:noreply, assign(socket, state: state, rows: Orders.list(state))}
+end
+
+def handle_event("dt:sort", %{"key" => key}, socket),
+  do: {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(State.toggle_sort(socket.assigns.state, key), @opts)}")}
+
+def handle_event("dt:filter", params, socket) do
+  state = socket.assigns.state |> State.put_search(params["q"]) |> State.put_filters(params, ["status"], @opts)
+  state = State.parse_sort(params["sort"], state, @opts)  # the value comes first
+  {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
+end
+
+def handle_event("dt:select", %{"id" => id} = p, socket),  # ticks: on the page, never in the URL
+  do: {:noreply, update(socket, :state, &State.select(&1, id, p["shift"] == true, Enum.map(socket.assigns.rows, fn r -> r.id end)))}
+```
+
+- Events (each payload also has `"table" => id`): `dt:sort` `%{"key"}`, `dt:open`
+  `%{"id"}` (push_navigate to the record; keep the list's params so its crumb goes
+  back to the same view, and pass `active_id`), `dt:select` `%{"id", "shift"}`,
+  `dt:select_all` (`State.select_all/2`), `dt:select_matching` (set your own
+  `all_matching`), `dt:clear` (`State.clear/1`), `dt:more` (load the next page;
+  `more` while there is one), `dt:filter` (the toolbar form: `q`, each filter,
+  `sort`), `dt:unfilter` `%{"key"}`, `dt:reset`.
+- `State.run(rows, state, spec)` searches, filters and sorts in memory (small
+  tables); a database-backed table does the same in its query. `State.chips/3`
+  gives the toolbar's chips; `State.keep_visible/2` drops ticks a filter hid.
+- Columns: give each a width class (`w-32`; the table is `table-fixed`, cells
+  truncate), `hide_below` the less important ones on phones, and leave alignment
+  alone - the rightmost column shown is right-aligned at every width.
+- A record page: `<.page_header>` (crumbs back to the list, `esc_back={!@dirty}`,
+  `<:below>` with `<.record_tabs>` and the `variant="select"` section nav), then the
+  edit form with `<.section_nav>` around its cards. Cancel with unsaved changes:
+  `push_show_modal(socket, "discard")`.
 
 ### Form components (`ShadcnDaisyui.CoreComponents`)
 
@@ -177,7 +244,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 |---|---|
 | Tabs | `<div role="tablist" class="tabs tabs-box w-fit">` + `<input type="radio" name="…" class="tab" aria-label="…">` |
 | Static table | `<div class="card w-full overflow-hidden"><table class="table">…` |
-| Data table (sortable/faceted/paged) | Build with `<.table>` + LiveView `phx-click` sort/filter/page events. The `ShadcnDataTable` JS hook is docs-demo only (fixed dataset) - do not wire it in apps. |
+| Data table (sortable/faceted/paged) | Not a recipe: `<.table_toolbar>` + `<.data_table>` (see List and record pages). |
 | Sheet sections (raw HTML) | `<dialog class="sheet">` with direct children `.sheet-header` (close button, `h3.sheet-title`, description, `.sheet-header-content`), `.sheet-body` (one wrapper `div` inside), `.sheet-footer`; drawer: `.drawer-handle` `.drawer-header` `.drawer-body` `.drawer-footer` |
 | Modal/dialog | native `<dialog id="d" class="modal"><div class="modal-box">…`, opened by `<button commandfor="d" command="show-modal">` (no inline JS); backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
 | Tooltip | `<div class="tooltip" data-tip="…">` wrapping the trigger |
@@ -202,7 +269,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (89 components) in the docs site (`demo/`) or
+Browse the full gallery (94 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

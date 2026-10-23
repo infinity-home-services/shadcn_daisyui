@@ -72,6 +72,11 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 - `<.time_picker>` takes `field` (or `name` + `value`) and posts a 24-hour ISO
   time (`HH:MM`, or `HH:MM:SS` with `seconds`) that casts to `:time`, whatever
   `hour_cycle` the trigger shows. Every pick emits. Use `minute_step` for slots.
+  In an edit form use `<.time_field id field label>`: the label above, the picker
+  full width ("Not set"), 15-minute steps, and the field's errors under it once
+  it was used or the form submitted.
+- A single `<.select>` / `<.combobox>` with a `value=""` option ("Default order",
+  "Any") shows that option as chosen while the value is blank, and posts `""`.
 - Label a picker with `<.label for={@form[:x].id}>` (the trigger takes the field id)
   or `aria-label`. Errors are not rendered by the picker - wrap it in `<.field>`.
 - Open lists, labels and values survive LiveView re-renders; if the server changes

@@ -267,6 +267,29 @@ defmodule ShadcnDaisyui.CoreComponentsTest do
   end
 
   describe "table/1" do
+    test "keeps the plain wrapper without scroll" do
+      assigns = %{rows: [%{id: 1}]}
+
+      html =
+        render(~H|<.table id="t" rows={@rows}><:col :let={r} label="id">{r.id}</:col></.table>|)
+
+      assert html =~ ~s(<div class="overflow-x-auto">)
+      refute html =~ "table-scroll"
+    end
+
+    test "scroll: the body scrolls under a sticky header (in a card that grows)" do
+      assigns = %{rows: [%{id: 1}]}
+
+      html =
+        render(
+          ~H|<.table id="t" rows={@rows} scroll><:col :let={r} label="id">{r.id}</:col></.table>|
+        )
+
+      assert html =~ ~s(<div class="table-scroll">)
+      assert html =~ ~s(<table class="table">)
+      refute html =~ "overflow-x-auto"
+    end
+
     test "renders column headers and one row per item" do
       assigns = %{rows: [%{id: 1, username: "jane"}, %{id: 2, username: "john"}]}
 

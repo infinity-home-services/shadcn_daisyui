@@ -573,9 +573,21 @@ defmodule ShadcnDaisyui.CoreComponents do
         <:col :let={user} label="id">{user.id}</:col>
         <:col :let={user} label="username">{user.username}</:col>
       </.table>
+
+  `scroll` makes the table fill the rest of the page with only its body
+  scrolling under a sticky, opaque header. Put it in a card that grows (in an
+  `<.app_shell fill>` page):
+
+      <div class="card flex min-h-0 flex-1 flex-col overflow-hidden">
+        <.table id="users" rows={@users} scroll>…</.table>
+      </div>
+
+  For a list page with sorting, selection and filters use
+  `ShadcnDaisyui.Components.DataTable.data_table/1`.
   """
   attr(:id, :string, required: true)
   attr(:rows, :list, required: true)
+  attr(:scroll, :boolean, default: false, doc: "fill the space left; only the body scrolls")
   attr(:row_id, :any, default: nil, doc: "the function for generating the row id")
   attr(:row_click, :any, default: nil, doc: "the function for handling phx-click on each row")
 
@@ -597,7 +609,7 @@ defmodule ShadcnDaisyui.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-x-auto">
+    <div class={if @scroll, do: "table-scroll", else: "overflow-x-auto"}>
       <table class="table">
         <thead>
           <tr>

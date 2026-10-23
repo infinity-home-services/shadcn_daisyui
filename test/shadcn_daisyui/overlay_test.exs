@@ -981,4 +981,78 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
       assert encoded =~ "#y"
     end
   end
+
+  describe "opening from the server" do
+    test "push_show_modal and push_hide_modal push shadcn:show-modal / hide-modal with the id" do
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert %{assigns: %{__changed__: _}} = socket = push_show_modal(socket, "discard")
+      assert [["shadcn:show-modal", %{id: "discard"}]] = socket.private.live_temp.push_events
+
+      socket = push_hide_modal(socket, "discard")
+
+      assert ["shadcn:hide-modal", %{id: "discard"}] in socket.private.live_temp.push_events
+      assert length(socket.private.live_temp.push_events) == 2
+    end
+
+    test "show renders data-show and opens on mount; off renders neither" do
+      assigns = %{}
+
+      html = render(~H|<.dialog id="d" show>Hi</.dialog>|)
+      assert html =~ ~r/<dialog[^>]* data-show[ >]/
+      assert html =~ "shadcn:show-modal"
+
+      html = render(~H|<.dialog id="d" show={false}>Hi</.dialog>|)
+      refute html =~ "data-show"
+      refute html =~ "shadcn:show-modal"
+    end
+
+    test "every modal takes show" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dialog id="a" show>x</.dialog>
+        <.sheet id="b" show>x</.sheet>
+        <.drawer id="c" show>x</.drawer>
+        <.command id="d" show><:item>x</:item></.command>
+        """)
+
+      assert count(html, " data-show") == 4
+      assert count(html, "shadcn:show-modal") == 4
+      # the open attribute is still kept across patches
+      assert count(html, "ignore_attrs") == 4
+    end
+
+    test "on_close renders a hidden button that runs the event or JS" do
+      assigns = %{}
+
+      html = render(~H|<.dialog id="d" on_close="keep_editing">Hi</.dialog>|)
+
+      assert html =~
+               ~s(<button type="button" hidden tabindex="-1" aria-hidden="true" data-on-close phx-click="keep_editing">)
+
+      html =
+        render(~H|<.sheet id="s" on_close={JS.push("closed", target: "#owner")}>Hi</.sheet>|)
+
+      assert html =~ "data-on-close"
+      assert html =~ "&quot;closed&quot;"
+      assert html =~ "#owner"
+    end
+
+    test "without on_close there is no close action" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.dialog id="a">x</.dialog>
+        <.sheet id="b">x</.sheet>
+        <.drawer id="c">x</.drawer>
+        <.command id="d"><:item>x</:item></.command>
+        """)
+
+      refute html =~ "data-on-close"
+      refute html =~ "data-show"
+    end
+  end
 end

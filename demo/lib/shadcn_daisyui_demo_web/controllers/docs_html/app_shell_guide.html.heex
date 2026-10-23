@@ -174,6 +174,27 @@
     </section>
 
     <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">List and record pages</h2>
+      <p class="text-sm text-muted-foreground">
+        A list page is a
+        <a href={~p"/docs/components/table-toolbar"} class="link link-primary">table toolbar</a>
+        over a <a href={~p"/docs/components/data-table"} class="link link-primary">data table</a>
+        in an
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          &lt;.app_shell wide fill&gt;
+        </code>
+        page: the table takes the space left and only its body scrolls. A record page adds
+        <a href={~p"/docs/components/record-tabs"} class="link link-primary">record tabs</a>
+        and a <a href={~p"/docs/components/section-nav"} class="link link-primary">section nav</a>
+        in the page header's <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:below&gt;</code>,
+        and <a href={~p"/docs/components/table-card"} class="link link-primary">table cards</a>
+        for its rows. Open Orders in the previews above; on the dev server
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">/lab/data-table</code>
+        runs both in a LiveView.
+      </p>
+    </section>
+
+    <section class="space-y-3">
       <h2 class="text-xl font-semibold tracking-tight">Command dialog</h2>
       <p class="text-sm text-muted-foreground">
         The shell's search is a <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;.command&gt;</code>.

@@ -282,6 +282,55 @@ defmodule ShadcnDaisyui.ComponentsTest do
   end
 
   describe "select/1" do
+    test "a value=\"\" option is the choice for a blank value, and posts empty" do
+      assigns = %{}
+
+      for value <- [nil, ""] do
+        assigns = Map.put(assigns, :value, value)
+
+        html =
+          render(~H"""
+          <.select id="sort" name="sort" value={@value}>
+            <:option value="">Default order</:option>
+            <:option value="name:asc">Name</:option>
+          </.select>
+          """)
+
+        assert html =~ ~s(<input type="hidden" name="sort" value="" data-select-input>)
+
+        assert html =~
+                 ~r/aria-selected="true" class="combo-item" data-select-item data-value="" data-selected/
+
+        assert html =~ ~r/<span class="truncate">Default order<\/span>/
+        refute html =~ ~r/data-select-label>\s*<span class="truncate">Select/
+      end
+    end
+
+    test "a set value wins over the blank option; multiple ignores it" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.select id="sort" name="sort" value="name:asc">
+          <:option value="">Default order</:option>
+          <:option value="name:asc">Name</:option>
+        </.select>
+        """)
+
+      assert html =~ ~r/data-value="name:asc" data-selected/
+      refute html =~ ~r/data-value="" data-selected/
+
+      html =
+        render(~H"""
+        <.select id="s" name="s" multiple>
+          <:option value="">None</:option>
+          <:option value="a">A</:option>
+        </.select>
+        """)
+
+      refute html =~ "data-selected"
+    end
+
     test "renders hook trigger and listbox items" do
       assigns = %{}
 

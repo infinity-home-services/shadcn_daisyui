@@ -10,6 +10,37 @@ defmodule ShadcnDaisyui.Components.Overlay do
     * `show_modal/2` / `hide_modal/2` from LiveView (`phx-click={show_modal("confirm")}`),
     * plain JS: `document.getElementById("confirm").showModal()`.
 
+  ## Opening from the server
+
+  A button opens a modal from the browser (`show_modal/2`, no round trip). A
+  decision the server makes opens it from the server: "there are unsaved
+  changes, discard them?", or a step that needs the server first. Two ways:
+
+    * `push_show_modal/2` / `push_hide_modal/2` in an event handler - the
+      server asks once, and it opens again each time it asks, even after the
+      person closed it:
+
+          def handle_event("cancel", _params, socket) do
+            if socket.assigns.dirty?,
+              do: {:noreply, push_show_modal(socket, "discard")},
+              else: {:noreply, push_navigate(socket, to: ~p"/orders")}
+          end
+
+    * `show={@confirm?}` - the modal is open while the assign is true: on
+      mount (a modal rendered with `:if` opens as it appears) and each time
+      it turns true. Pair it with `on_close` (an event, or a
+      `Phoenix.LiveView.JS`, run when the person closes it: Esc, the
+      backdrop, a close or Cancel button) so the assign turns false with it
+      and the next `true` opens it again:
+
+          <.dialog id="discard" show={@confirm?} on_close="keep_editing">…</.dialog>
+
+          def handle_event("keep_editing", _params, socket),
+            do: {:noreply, assign(socket, confirm?: false)}
+
+  Closing from the server (`push_hide_modal/2`, `show` turning false) doesn't
+  run `on_close`.
+
   No component renders an inline event handler, so they all work under a
   strict `script-src 'self' 'nonce-…'` Content-Security-Policy. Open/close is a
   `Phoenix.LiveView.JS` dispatch handled by `shadcn-daisyui.js`; that needs
@@ -40,6 +71,31 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   @doc """
+  Opens a modal component (`dialog`, `sheet`, `drawer`, `command`) from the
+  server, by id: for a decision the server makes ("discard your changes?").
+  It opens each time it's pushed, even after the person closed it.
+
+      {:noreply, push_show_modal(socket, "discard")}
+
+  A `shadcn:show-modal` event the package JS listens for (as `push_toast/3`
+  works), so it needs `shadcn-daisyui.js` on the page; the dialog opens after
+  the patch it comes with, so one rendered in the same reply opens too.
+  """
+  def push_show_modal(socket, id) when is_binary(id) do
+    Phoenix.LiveView.push_event(socket, "shadcn:show-modal", %{id: id})
+  end
+
+  @doc """
+  Closes a modal component from the server, by id. Doesn't run its
+  `on_close`.
+
+      {:noreply, socket |> push_hide_modal("discard") |> push_navigate(to: ~p"/orders")}
+  """
+  def push_hide_modal(socket, id) when is_binary(id) do
+    Phoenix.LiveView.push_event(socket, "shadcn:hide-modal", %{id: id})
+  end
+
+  @doc """
   A modal dialog (native `<dialog>`, themed and animated).
 
       <.dialog id="confirm">
@@ -53,10 +109,22 @@ defmodule ShadcnDaisyui.Components.Overlay do
       </.dialog>
 
   Clicking the backdrop closes it. Open from LiveView with
-  `phx-click={show_modal("confirm")}`.
+  `phx-click={show_modal("confirm")}`, or from the server with
+  `push_show_modal/2` or `show` (see "Opening from the server").
   """
   attr(:id, :string, required: true)
   attr(:class, :any, default: nil)
+
+  attr(:show, :boolean,
+    default: false,
+    doc: "open while true: on mount, and each time it turns true (see Opening from the server)"
+  )
+
+  attr(:on_close, :any,
+    default: nil,
+    doc: "an event name (or JS) run when the person closes it"
+  )
+
   attr(:rest, :global)
   slot(:trigger, doc: "optional trigger; clicking it opens the dialog")
   slot(:title)
@@ -69,7 +137,8 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["modal", @class]} phx-mounted={keep_open()} {@rest}>
+    <dialog id={@id} class={["modal", @class]} data-show={@show} phx-mounted={keep_open(@show)} {@rest}>
+      <.close_action :if={@on_close} on_close={@on_close} />
       <div class="modal-box space-y-2">
         <h3 :if={@title != []} class="text-lg font-semibold">{render_slot(@title)}</h3>
         <p :if={@description != []} class="text-sm text-muted-foreground">
@@ -130,6 +199,17 @@ defmodule ShadcnDaisyui.Components.Overlay do
   attr(:id, :string, required: true)
   attr(:size, :string, default: "default", values: Map.keys(@sheet_sizes))
   attr(:class, :any, default: nil)
+
+  attr(:show, :boolean,
+    default: false,
+    doc: "open while true: on mount, and each time it turns true (see Opening from the server)"
+  )
+
+  attr(:on_close, :any,
+    default: nil,
+    doc: "an event name (or JS) run when the person closes it"
+  )
+
   attr(:rest, :global)
   slot(:trigger)
   slot(:title)
@@ -145,7 +225,14 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["sheet", @size_class, @class]} phx-mounted={keep_open_scrolled()} {@rest}>
+    <dialog
+      id={@id}
+      class={["sheet", @size_class, @class]}
+      data-show={@show}
+      phx-mounted={keep_open_scrolled(@show)}
+      {@rest}
+    >
+      <.close_action :if={@on_close} on_close={@on_close} />
       <div class="sheet-header">
         <button
           type="button"
@@ -188,6 +275,17 @@ defmodule ShadcnDaisyui.Components.Overlay do
   """
   attr(:id, :string, required: true)
   attr(:class, :any, default: nil)
+
+  attr(:show, :boolean,
+    default: false,
+    doc: "open while true: on mount, and each time it turns true (see Opening from the server)"
+  )
+
+  attr(:on_close, :any,
+    default: nil,
+    doc: "an event name (or JS) run when the person closes it"
+  )
+
   attr(:rest, :global)
   slot(:trigger)
   slot(:title)
@@ -201,7 +299,14 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <span :if={@trigger != []} phx-click={show_modal(@id)}>
       {render_slot(@trigger)}
     </span>
-    <dialog id={@id} class={["drawer-bottom", @class]} phx-mounted={keep_open_scrolled()} {@rest}>
+    <dialog
+      id={@id}
+      class={["drawer-bottom", @class]}
+      data-show={@show}
+      phx-mounted={keep_open_scrolled(@show)}
+      {@rest}
+    >
+      <.close_action :if={@on_close} on_close={@on_close} />
       <div class="drawer-handle" aria-hidden="true"></div>
       <div :if={@title != [] or @description != [] or @header != []} class="drawer-header">
         <h3 :if={@title != []} class="drawer-title text-lg font-semibold">{render_slot(@title)}</h3>
@@ -587,6 +692,17 @@ defmodule ShadcnDaisyui.Components.Overlay do
   )
 
   attr(:class, :any, default: nil)
+
+  attr(:show, :boolean,
+    default: false,
+    doc: "open while true: on mount, and each time it turns true (see Opening from the server)"
+  )
+
+  attr(:on_close, :any,
+    default: nil,
+    doc: "an event name (or JS) run when the person closes it"
+  )
+
   slot(:trigger_label, doc: "text inside the default trigger button")
   slot(:hint, doc: "with `on_search`: shown before anything is typed")
   slot(:empty, doc: "shown when nothing matches (default \"No results found.\")")
@@ -629,13 +745,15 @@ defmodule ShadcnDaisyui.Components.Overlay do
     <dialog
       id={@id}
       phx-hook="ShadcnCommand"
-      phx-mounted={keep_open()}
+      phx-mounted={keep_open(@show)}
       data-command
+      data-show={@show}
       data-shortcut={@shortcut || ""}
       aria-label={@label}
       class={["command-dialog", @class]}
       {command_search_attrs(assigns)}
     >
+      <.close_action :if={@on_close} on_close={@on_close} />
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
         <span :if={@icon not in [nil, ""]} class={[@icon, "size-4 opacity-50"]} aria-hidden="true">
         </span>
@@ -806,13 +924,29 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   # The browser owns a <dialog>'s `open` attribute (showModal/close); without
-  # this a LiveView patch would strip it and close an open dialog.
-  defp keep_open, do: JS.ignore_attributes(["open"])
+  # this a LiveView patch would strip it and close an open dialog. `show`
+  # opens it as it mounts; later flips of `data-show` are the package JS's.
+  defp keep_open(show), do: JS.ignore_attributes(["open"]) |> open_on_mount(show)
 
   # Sheet / drawer: also keep the scroll-edge state the package JS sets on the
   # dialog (`data-scroll-top` / `data-scroll-bottom`, see shadcn-daisyui.js).
-  defp keep_open_scrolled,
-    do: JS.ignore_attributes(["open", "data-scroll-top", "data-scroll-bottom"])
+  defp keep_open_scrolled(show),
+    do:
+      JS.ignore_attributes(["open", "data-scroll-top", "data-scroll-bottom"])
+      |> open_on_mount(show)
+
+  defp open_on_mount(js, true), do: JS.dispatch(js, "shadcn:show-modal")
+  defp open_on_mount(js, _show), do: js
+
+  attr(:on_close, :any, required: true)
+
+  # `on_close`: a hidden button the package JS clicks when the person closes
+  # the dialog, so LiveView runs it like any phx-click (no inline handler).
+  defp close_action(assigns) do
+    ~H"""
+    <button type="button" hidden tabindex="-1" aria-hidden="true" data-on-close phx-click={@on_close}></button>
+    """
+  end
 
   # Groups consecutive items by their :group attr, preserving order.
   defp command_groups(items) do

@@ -88,32 +88,44 @@
           <button type="button" class="btn btn-primary btn-sm">New order</button>
         </:actions>
       </.page_header>
-      <div class="card flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div class="min-h-0 flex-1 overflow-auto">
-          <table class="table">
-            <thead class="sticky top-0 z-10 bg-card">
-              <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Status</th>
-                <th class="text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={order <- ShadcnDaisyuiDemoWeb.ShellPreview.orders()}>
-                <td>
-                  <a href={ShadcnDaisyuiDemoWeb.ShellPreview.path("order")} class="font-medium">
-                    #{order.number}
-                  </a>
-                </td>
-                <td>{order.customer}</td>
-                <td><span class="badge badge-outline">{order.status}</span></td>
-                <td class="text-right tabular-nums">{order.total}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <%!-- a list page: the toolbar over a data table that fills the window
+           (on a static page the server-driven parts - sort, ticks, filters -
+           don't answer; /lab/data-table runs them in a LiveView) --%>
+      <.table_toolbar
+        id="orders-toolbar"
+        placeholder="Search orders"
+        shown={length(ShadcnDaisyuiDemoWeb.ShellPreview.orders())}
+        noun={{"order", "orders"}}
+        sorts={[{"Newest first", "number:desc"}, {"Customer A–Z", "customer:asc"}]}
+      >
+        <:filter key="status" label="Status">
+          <ShadcnDaisyui.Components.select
+            id="filter-status"
+            name="status"
+            multiple
+            full_width
+            placeholder="Any status"
+          >
+            <:option :for={s <- ~w(Open Paid Refunded)} value={s}>{s}</:option>
+          </ShadcnDaisyui.Components.select>
+        </:filter>
+      </.table_toolbar>
+      <.data_table
+        id="orders"
+        rows={ShadcnDaisyuiDemoWeb.ShellPreview.orders()}
+        row_id={& &1.number}
+        row_href={fn _ -> ShadcnDaisyuiDemoWeb.ShellPreview.path("order") end}
+        noun={{"order", "orders"}}
+        scroll_key="preview-orders"
+        edge
+      >
+        <:col :let={order} label="Order" class="w-24 font-medium">#{order.number}</:col>
+        <:col :let={order} label="Customer">{order.customer}</:col>
+        <:col :let={order} label="Status" hide_below="sm" class="w-28">
+          <span class="badge badge-outline">{order.status}</span>
+        </:col>
+        <:col :let={order} label="Total" class="w-32 tabular-nums">{order.total}</:col>
+      </.data_table>
     <% :record -> %>
       <.page_header crumbs={@preview.crumbs}>
         {@preview.title}
@@ -127,25 +139,77 @@
           </a>
           <button type="button" class="btn btn-primary btn-sm">Save</button>
         </:actions>
+        <:below>
+          <.record_tabs
+            id="order-tabs"
+            tabs={[{"details", "Details"}, {"activity", "Activity", 3}]}
+            active="details"
+          />
+          <.section_nav
+            id="order-sections-select"
+            sections={ShadcnDaisyuiDemoWeb.ShellPreview.sections()}
+            variant="select"
+          />
+        </:below>
       </.page_header>
-      <div :for={card <- ["Details", "Items", "Shipping", "Payment", "Activity"]} class="card">
-        <div class="card-body">
-          <h2 class="card-title text-base">{card}</h2>
-          <p class="text-sm text-muted-foreground">
-            Esc goes back to Orders (the breadcrumb's link), outside fields and open dialogs.
-          </p>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <div class="text-xs font-medium text-muted-foreground">Customer</div>
-              <div class="text-sm">Riverside Dental</div>
-            </div>
-            <div>
-              <div class="text-xs font-medium text-muted-foreground">Placed</div>
-              <div class="text-sm">Oct 19, 2026</div>
+      <.section_nav id="order-sections" sections={ShadcnDaisyuiDemoWeb.ShellPreview.sections()}>
+        <div id="details" class="card">
+          <div class="card-body">
+            <h2 class="card-title text-base">Details</h2>
+            <p class="text-sm text-muted-foreground">
+              Esc goes back to Orders (the breadcrumb's link), outside fields and open dialogs.
+            </p>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <div class="text-xs font-medium text-muted-foreground">Customer</div>
+                <div class="text-sm">Riverside Dental</div>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-muted-foreground">Placed</div>
+                <div class="text-sm">Oct 19, 2026</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <.table_card
+          id="items"
+          title="Items"
+          description="What's on the order."
+          rows={[
+            %{name: "Annual service plan", qty: 1, price: "$2,800.00"},
+            %{name: "Filters, set of 4", qty: 4, price: "$720.00"},
+            %{name: "Delivery", qty: 1, price: "$600.00"}
+          ]}
+          grid="grid-cols-[minmax(0,1fr)_2.5rem_6rem]"
+        >
+          <:col :let={item} label="Item">{item.name}</:col>
+          <:col :let={item} label="Qty" class="tabular-nums">{item.qty}</:col>
+          <:col :let={item} label="Price" class="tabular-nums">{item.price}</:col>
+        </.table_card>
+        <div :for={card <- ["Shipping", "Payment"]} id={String.downcase(card)} class="card">
+          <div class="card-body">
+            <h2 class="card-title text-base">{card}</h2>
+            <p class="text-sm text-muted-foreground">
+              The list beside the cards (the select above them on narrow screens) marks the section in view.
+            </p>
+            <div class="h-40"></div>
+          </div>
+        </div>
+        <.table_card
+          id="activity"
+          title="Activity"
+          description="Everything that happened to this order."
+          rows={[
+            %{what: "Order placed", by: "Pat Lee", at: "Oct 19, 2026"},
+            %{what: "Invoice sent", by: "System", at: "Oct 20, 2026"},
+            %{what: "Paid", by: "Riverside Dental", at: "Oct 22, 2026"}
+          ]}
+        >
+          <:col :let={a} label="Event" class="font-medium">{a.what}</:col>
+          <:col :let={a} label="By" class="text-muted-foreground">{a.by}</:col>
+          <:col :let={a} label="When">{a.at}</:col>
+        </.table_card>
+      </.section_nav>
     <% :empty -> %>
       <.page_header crumbs={@preview.crumbs}>{@preview.title}</.page_header>
       <div class="card">

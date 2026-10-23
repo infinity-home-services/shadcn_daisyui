@@ -630,54 +630,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.MorePrimitives do
         },
         ios_status: :parity
       },
-      "empty" => %{
-        specs: %{
-          anatomy: [
-            %{
-              part: "Container",
-              description: "A centered, dashed-border box for the empty state."
-            },
-            %{
-              part: "Icon",
-              description: "A muted hero icon signaling the empty/missing content."
-            },
-            %{
-              part: "Copy",
-              description:
-                "A title plus muted description, optionally followed by an action button."
-            }
-          ],
-          measurements: [
-            %{property: "Border", value: "1px dashed var(--border-color), var(--radius-lg)"},
-            %{property: "Padding", value: "p-8, centered, gap-2 between elements"},
-            %{property: "Icon size", value: "size-7 in var(--muted-foreground)"},
-            %{property: "Text", value: "text-sm title, text-sm muted description"}
-          ],
-          tokens: ["foreground", "muted-foreground", "border-color", "background"]
-        },
-        accessibility: %{
-          roles:
-            "A structural placeholder block; the icon is aria-hidden and the text carries the meaning.",
-          focus: "Not focusable itself; any recovery action button manages its own focus.",
-          screen_reader:
-            "The title and description are read as text; consider aria-live if the empty state appears after a filter.",
-          touch_target: "Any action button should reach 2.75rem effective area on touch.",
-          reduced_motion: "No motion."
-        },
-        swiftui: %{
-          code: ~S"""
-          ContentUnavailableView {
-            Label("No results found", systemImage: "tray")
-          } description: {
-            Text("Try adjusting your search.")
-          } actions: {
-            Button("Clear filters") { clearFilters() }
-          }
-          """,
-          notes: "Maps directly to ContentUnavailableView, including the optional action button."
-        },
-        ios_status: :parity
-      },
       "typography" => %{
         specs: %{
           anatomy: [

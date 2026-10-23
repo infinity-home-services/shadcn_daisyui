@@ -13,8 +13,10 @@ defmodule ShadcnDaisyui.Components do
   (`btn`, `card`, `tabs tabs-box`, …) - the theme styles them automatically.
 
   `use ShadcnDaisyui.Components` also imports `ShadcnDaisyui.FormComponents`
-  (field-aware form controls) and the app shell (`app_shell/1`, see
-  `ShadcnDaisyui.Components.Shell`). The generator-compatible `button`,
+  (field-aware form controls), the app shell (`app_shell/1`, see
+  `ShadcnDaisyui.Components.Shell`), the list page's `data_table/1` and
+  `table_toolbar/1` (`ShadcnDaisyui.Components.DataTable`) and the record
+  page's parts (`ShadcnDaisyui.Components.Record`). The generator-compatible `button`,
   `input`, `flash`, `table`, `page_header`, … live in
   `ShadcnDaisyui.CoreComponents` - apps normally get those through their own
   `CoreComponents` module.
@@ -33,6 +35,8 @@ defmodule ShadcnDaisyui.Components do
       import(ShadcnDaisyui.Components.Shell)
       import(ShadcnDaisyui.Components.Display)
       import(ShadcnDaisyui.Components.Conversation)
+      import(ShadcnDaisyui.Components.DataTable)
+      import(ShadcnDaisyui.Components.Record)
       import(ShadcnDaisyui.FormComponents)
     end
   end
@@ -759,6 +763,10 @@ defmodule ShadcnDaisyui.Components do
   server's value wins whenever it changes (a reset, a cap); echoes of the
   user's own changes are ignored, so fast toggling never flickers.
 
+  An option with `value=""` is the choice for a blank value (a "Default"
+  or "Any" option): it shows as chosen while the value is `nil` or `""`, and
+  posts `""`.
+
   For the plain HTML control use `<.native_select>` / `<select class="select">`.
   """
   attr(:id, :string, required: true)
@@ -799,6 +807,15 @@ defmodule ShadcnDaisyui.Components do
       end
 
     values = picker_values(value, assigns.multiple)
+
+    # a single picker's `value=""` option (a "Default" or "Any" choice) is the
+    # one chosen while the value is blank
+    values =
+      if values == [] and !assigns.multiple and
+           Enum.any?(assigns.option, &(to_string(&1.value) == "")),
+         do: [""],
+         else: values
+
     name = if name && assigns.multiple, do: String.replace_suffix(name, "[]", ""), else: name
 
     width =
