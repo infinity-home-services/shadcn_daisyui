@@ -35,7 +35,7 @@ fromChrome.on("data", (chunk) => {
   }
 })
 
-const timer = setTimeout(() => { console.error("timed out"); proc.kill("SIGKILL"); process.exit(2) }, 30000)
+const timer = setTimeout(() => { console.error("timed out"); proc.kill("SIGKILL"); process.exit(2) }, 60000)
 try {
   const { targetId } = await send("Target.createTarget", { url: "about:blank" })
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true })

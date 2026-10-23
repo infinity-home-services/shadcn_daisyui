@@ -245,7 +245,10 @@ defmodule ShadcnDaisyui.JS.RecordPageBrowserTest do
 
     script = Path.join(@root, "test/support/chrome_eval.mjs")
     profile = Path.join(dir, "profile")
-    {out, 0} = System.cmd(@node, [script, @chrome, file, profile])
+
+    {out, 0} =
+      ShadcnDaisyui.ChromeSlots.run(fn -> System.cmd(@node, [script, @chrome, file, profile]) end)
+
     JSON.decode!(out)
   end
 
