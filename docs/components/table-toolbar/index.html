@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="fgUvPD07BCI8Ox05AxYzJgMFJCgEAnhpOBYlILvNpqQNGwkQDsqFCxOP">
+    <title data-default="ShadcnDaisyuiDemo" data-suffix=" · Phoenix Framework">Table Toolbar · Phoenix Framework</title>
+    <link phx-track-static rel="stylesheet" href="/shadcn_daisyui/assets/css/app-85c91ebeaa1cafdfdc3739cff8c008c1.css?vsn=d">
+    <script defer phx-track-static type="text/javascript" src="/shadcn_daisyui/assets/js/app-70224df13f4d5982fdb5db18232c3bbd.js?vsn=d">
+    </script>
+    <script>
+      (() => {
+        const setTheme = (theme) => {
+          // Disable transitions for the swap so light↔dark doesn't fade-flicker,
+          // then re-enable on the next frame (mirrors setTheme/0 in shadcn-daisyui.js).
+          const el = document.documentElement;
+          el.classList.add("theme-transition");
+          if (theme === "system") {
+            localStorage.removeItem("phx:theme");
+            el.removeAttribute("data-theme");
+          } else {
+            localStorage.setItem("phx:theme", theme);
+            el.setAttribute("data-theme", theme);
+          }
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => el.classList.remove("theme-transition"))
+          );
+        };
+        if (!document.documentElement.hasAttribute("data-theme")) {
+          setTheme(localStorage.getItem("phx:theme") || "shadcn");
+        }
+        // <.app_shell>: the sidebar's collapsed or open state, before first paint
+        document.documentElement.dataset.sidebar =
+          localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="flex min-h-screen flex-col bg-base-100 text-base-content">
+  <header class="sticky top-0 z-40 w-full border-b border-base-300 bg-base-100/85 backdrop-blur">
+  <div class="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+    <a href="/shadcn_daisyui/" class="flex shrink-0 items-center gap-2">
+      <span class="grid size-7 place-items-center rounded-md bg-primary text-primary-content">
+        <span class="hero-square-3-stack-3d size-4" aria-hidden="true"></span>
+      </span>
+      <span class="whitespace-nowrap text-sm font-semibold tracking-tight">shadcn × daisyUI</span>
+    </a>
+
+    <nav class="hidden shrink-0 items-center gap-5 text-sm md:flex">
+      <a href="/shadcn_daisyui/docs/installation" class="transition-colors hover:text-foreground text-muted-foreground">
+        Installation
+      </a>
+      <a href="/shadcn_daisyui/docs/components/button" class="transition-colors hover:text-foreground font-medium text-foreground">
+        Components
+      </a>
+      <a href="/shadcn_daisyui/docs/themes" class="transition-colors hover:text-foreground text-muted-foreground">
+        Themes
+      </a>
+    </nav>
+
+    
+    <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+      <button type="button" class="btn btn-outline btn-sm min-w-0 gap-2 font-normal text-muted-foreground sm:max-w-[264px] sm:flex-1 sm:justify-start" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#docs-search-palette&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]" aria-label="Search components">
+        <span class="hero-magnifying-glass size-4 shrink-0" aria-hidden="true"></span>
+        <span class="hidden truncate sm:inline">Search</span>
+        <kbd class="kbd kbd-sm shrink-0 sm:ml-auto">⌘K</kbd>
+      </button>
+      <a href="https://github.com/infinity-home-services/shadcn_daisyui" class="btn btn-ghost btn-sm btn-square shrink-0" aria-label="GitHub repository">
+        <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+        </svg>
+      </a>
+      <div class="shrink-0"><div class="relative flex flex-row items-center border border-base-300 bg-base-200 rounded-full" role="group" aria-label="Theme">
+  <div class="absolute w-1/2 h-full rounded-full border border-base-300 bg-base-100 left-0 [[data-theme=shadcn-dark]_&]:left-1/2 transition-[left]"></div>
+
+  <button class="relative flex p-2 cursor-pointer w-1/2 justify-center" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]" data-phx-theme="shadcn" aria-label="Light theme">
+    <span class="hero-sun-micro size-4 opacity-75 hover:opacity-100" aria-hidden="true"></span>
+  </button>
+
+  <button class="relative flex p-2 cursor-pointer w-1/2 justify-center" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]" data-phx-theme="shadcn-dark" aria-label="Dark theme">
+    <span class="hero-moon-micro size-4 opacity-75 hover:opacity-100" aria-hidden="true"></span>
+  </button>
+</div></div>
+    </div>
+  </div>
+</header>
+
+  <div class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10 lg:px-8">
+    
+    <aside class="hidden lg:block">
+      <div data-docs-sidebar class="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto overscroll-contain">
+        <nav class="space-y-6 py-8 pr-2">
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Guides
+            </p>
+            <a href="/shadcn_daisyui/docs/installation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Installation
+            </a><a href="/shadcn_daisyui/docs/adopt" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Adopt the design system
+            </a><a href="/shadcn_daisyui/docs/themes" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Themes
+            </a><a href="/shadcn_daisyui/docs/tokens" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tokens
+            </a><a href="/shadcn_daisyui/docs/dark-mode" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dark mode &amp; CSP
+            </a><a href="/shadcn_daisyui/docs/app-shell" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              App shell
+            </a>
+          </div>
+
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Foundations
+            </p>
+            <a href="/shadcn_daisyui/docs/foundations/platforms" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Platforms
+            </a><a href="/shadcn_daisyui/docs/foundations/accessibility" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Accessibility &amp; content
+            </a><a href="/shadcn_daisyui/docs/foundations/layout" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Layout
+            </a><a href="/shadcn_daisyui/docs/foundations/spacing" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Spacing
+            </a><a href="/shadcn_daisyui/docs/foundations/navigation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Navigation
+            </a><a href="/shadcn_daisyui/docs/foundations/interaction" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Interaction
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Styles
+            </p>
+            <a href="/shadcn_daisyui/docs/styles/color" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Color
+            </a><a href="/shadcn_daisyui/docs/styles/typography" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Typography &amp; icons
+            </a><a href="/shadcn_daisyui/docs/styles/shape-elevation" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Shape &amp; elevation
+            </a><a href="/shadcn_daisyui/docs/styles/motion" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Motion
+            </a>
+          </div>
+
+          <div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Forms &amp; inputs
+            </p>
+            <a href="/shadcn_daisyui/docs/components/calendar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Calendar
+            </a><a href="/shadcn_daisyui/docs/components/checkbox" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Checkbox
+            </a><a href="/shadcn_daisyui/docs/components/chip-row" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Chip Row
+            </a><a href="/shadcn_daisyui/docs/components/combobox" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Combobox
+            </a><a href="/shadcn_daisyui/docs/components/date-picker" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Date Picker
+            </a><a href="/shadcn_daisyui/docs/components/date-range-picker" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Date Range Picker
+            </a><a href="/shadcn_daisyui/docs/components/field" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Field
+            </a><a href="/shadcn_daisyui/docs/components/filter" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Filter
+            </a><a href="/shadcn_daisyui/docs/components/input" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input
+            </a><a href="/shadcn_daisyui/docs/components/input-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input Group
+            </a><a href="/shadcn_daisyui/docs/components/input-otp" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Input OTP
+            </a><a href="/shadcn_daisyui/docs/components/label" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Label
+            </a><a href="/shadcn_daisyui/docs/components/multi-select" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Multi Select
+            </a><a href="/shadcn_daisyui/docs/components/radio-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Radio Group
+            </a><a href="/shadcn_daisyui/docs/components/range-calendar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Range Calendar
+            </a><a href="/shadcn_daisyui/docs/components/rating" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Rating
+            </a><a href="/shadcn_daisyui/docs/components/select" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Select
+            </a><a href="/shadcn_daisyui/docs/components/native-select" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Select Native
+            </a><a href="/shadcn_daisyui/docs/components/slider" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Slider
+            </a><a href="/shadcn_daisyui/docs/components/switch" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Switch
+            </a><a href="/shadcn_daisyui/docs/components/textarea" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Textarea
+            </a><a href="/shadcn_daisyui/docs/components/time-field" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Time Field
+            </a><a href="/shadcn_daisyui/docs/components/time-picker" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Time Picker
+            </a><a href="/shadcn_daisyui/docs/components/toggle" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Toggle
+            </a><a href="/shadcn_daisyui/docs/components/toggle-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Toggle Group
+            </a><a href="/shadcn_daisyui/docs/components/validator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Validator
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Actions
+            </p>
+            <a href="/shadcn_daisyui/docs/components/button" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Button
+            </a><a href="/shadcn_daisyui/docs/components/button-group" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Button Group
+            </a><a href="/shadcn_daisyui/docs/components/command" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Command
+            </a><a href="/shadcn_daisyui/docs/components/dropdown-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dropdown Menu
+            </a><a href="/shadcn_daisyui/docs/components/swap" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Swap
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Navigation
+            </p>
+            <a href="/shadcn_daisyui/docs/components/breadcrumb" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Breadcrumb
+            </a><a href="/shadcn_daisyui/docs/components/dock" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dock
+            </a><a href="/shadcn_daisyui/docs/components/link" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Link
+            </a><a href="/shadcn_daisyui/docs/components/menubar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Menubar
+            </a><a href="/shadcn_daisyui/docs/components/navbar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Navbar
+            </a><a href="/shadcn_daisyui/docs/components/navigation-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Navigation Menu
+            </a><a href="/shadcn_daisyui/docs/components/pagination" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Pagination
+            </a><a href="/shadcn_daisyui/docs/components/record-tabs" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Record Tabs
+            </a><a href="/shadcn_daisyui/docs/components/section-nav" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Section Nav
+            </a><a href="/shadcn_daisyui/docs/components/sidebar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Sidebar
+            </a><a href="/shadcn_daisyui/docs/components/steps" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Steps
+            </a><a href="/shadcn_daisyui/docs/components/tab-nav" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tab Nav
+            </a><a href="/shadcn_daisyui/docs/components/tabs" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tabs
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Overlays
+            </p>
+            <a href="/shadcn_daisyui/docs/components/alert-dialog" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Alert Dialog
+            </a><a href="/shadcn_daisyui/docs/components/context-menu" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Context Menu
+            </a><a href="/shadcn_daisyui/docs/components/dialog" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Dialog
+            </a><a href="/shadcn_daisyui/docs/components/drawer" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Drawer
+            </a><a href="/shadcn_daisyui/docs/components/hover-card" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Hover Card
+            </a><a href="/shadcn_daisyui/docs/components/popover" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Popover
+            </a><a href="/shadcn_daisyui/docs/components/sheet" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Sheet
+            </a><a href="/shadcn_daisyui/docs/components/tooltip" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Tooltip
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Feedback &amp; status
+            </p>
+            <a href="/shadcn_daisyui/docs/components/alert" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Alert
+            </a><a href="/shadcn_daisyui/docs/components/badge" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Badge
+            </a><a href="/shadcn_daisyui/docs/components/countdown" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Countdown
+            </a><a href="/shadcn_daisyui/docs/components/indicator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Indicator
+            </a><a href="/shadcn_daisyui/docs/components/progress" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Progress
+            </a><a href="/shadcn_daisyui/docs/components/radial-progress" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Radial Progress
+            </a><a href="/shadcn_daisyui/docs/components/skeleton" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Skeleton
+            </a><a href="/shadcn_daisyui/docs/components/sonner" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Sonner
+            </a><a href="/shadcn_daisyui/docs/components/spinner" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Spinner
+            </a><a href="/shadcn_daisyui/docs/components/status" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Status
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Data display
+            </p>
+            <a href="/shadcn_daisyui/docs/components/accordion" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Accordion
+            </a><a href="/shadcn_daisyui/docs/components/attachment" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Attachment
+            </a><a href="/shadcn_daisyui/docs/components/avatar" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Avatar
+            </a><a href="/shadcn_daisyui/docs/components/card" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Card
+            </a><a href="/shadcn_daisyui/docs/components/carousel" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Carousel
+            </a><a href="/shadcn_daisyui/docs/components/chart" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Chart
+            </a><a href="/shadcn_daisyui/docs/components/collapsible" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Collapsible
+            </a><a href="/shadcn_daisyui/docs/components/data-table" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Data Table
+            </a><a href="/shadcn_daisyui/docs/components/empty" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Empty
+            </a><a href="/shadcn_daisyui/docs/components/item" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Item
+            </a><a href="/shadcn_daisyui/docs/components/kbd" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Kbd
+            </a><a href="/shadcn_daisyui/docs/components/list" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              List
+            </a><a href="/shadcn_daisyui/docs/components/stat" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Stat
+            </a><a href="/shadcn_daisyui/docs/components/table" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Table
+            </a><a href="/shadcn_daisyui/docs/components/table-card" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Table Card
+            </a><a href="/shadcn_daisyui/docs/components/table-toolbar" class="block rounded-md px-2 py-1.5 text-sm transition-colors bg-muted font-medium text-foreground">
+              Table Toolbar
+            </a><a href="/shadcn_daisyui/docs/components/timeline" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Timeline
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Conversation
+            </p>
+            <a href="/shadcn_daisyui/docs/components/bubble" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Bubble
+            </a><a href="/shadcn_daisyui/docs/components/chat" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Chat
+            </a><a href="/shadcn_daisyui/docs/components/marker" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Marker
+            </a><a href="/shadcn_daisyui/docs/components/message" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Message
+            </a>
+          </div><div class="space-y-1">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+              Layout
+            </p>
+            <a href="/shadcn_daisyui/docs/components/aspect-ratio" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Aspect Ratio
+            </a><a href="/shadcn_daisyui/docs/components/footer" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Footer
+            </a><a href="/shadcn_daisyui/docs/components/hero" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Hero
+            </a><a href="/shadcn_daisyui/docs/components/mask" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Mask
+            </a><a href="/shadcn_daisyui/docs/components/mockup" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Mockup
+            </a><a href="/shadcn_daisyui/docs/components/resizable" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Resizable
+            </a><a href="/shadcn_daisyui/docs/components/reveal" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Reveal
+            </a><a href="/shadcn_daisyui/docs/components/scroll-area" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Scroll Area
+            </a><a href="/shadcn_daisyui/docs/components/separator" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Separator
+            </a><a href="/shadcn_daisyui/docs/components/stack" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Stack
+            </a><a href="/shadcn_daisyui/docs/components/typography" class="block rounded-md px-2 py-1.5 text-sm transition-colors text-muted-foreground hover:bg-muted hover:text-foreground">
+              Typography
+            </a>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    
+    <main data-docs-main class="flex min-w-0 flex-col">
+      <div class="flex-1 py-8 lg:py-10">
+        
+        <details class="dropdown mb-6 w-full lg:hidden">
+          <summary class="btn btn-outline w-full justify-between font-normal">
+            <span>Table Toolbar</span>
+            <span class="hero-chevron-down size-4" aria-hidden="true"></span>
+          </summary>
+          <div class="dropdown-content z-50 mt-1 max-h-[70vh] w-full overflow-y-auto">
+            <div class="p-2">
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Guides
+                </p>
+                <a href="/shadcn_daisyui/docs/installation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Installation
+                </a><a href="/shadcn_daisyui/docs/adopt" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Adopt the design system
+                </a><a href="/shadcn_daisyui/docs/themes" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Themes
+                </a><a href="/shadcn_daisyui/docs/tokens" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tokens
+                </a><a href="/shadcn_daisyui/docs/dark-mode" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dark mode &amp; CSP
+                </a><a href="/shadcn_daisyui/docs/app-shell" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  App shell
+                </a>
+              </div>
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Foundations
+                </p>
+                <a href="/shadcn_daisyui/docs/foundations/platforms" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Platforms
+                </a><a href="/shadcn_daisyui/docs/foundations/accessibility" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Accessibility &amp; content
+                </a><a href="/shadcn_daisyui/docs/foundations/layout" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Layout
+                </a><a href="/shadcn_daisyui/docs/foundations/spacing" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Spacing
+                </a><a href="/shadcn_daisyui/docs/foundations/navigation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Navigation
+                </a><a href="/shadcn_daisyui/docs/foundations/interaction" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Interaction
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Styles
+                </p>
+                <a href="/shadcn_daisyui/docs/styles/color" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Color
+                </a><a href="/shadcn_daisyui/docs/styles/typography" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Typography &amp; icons
+                </a><a href="/shadcn_daisyui/docs/styles/shape-elevation" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Shape &amp; elevation
+                </a><a href="/shadcn_daisyui/docs/styles/motion" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Motion
+                </a>
+              </div>
+              <div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Forms &amp; inputs
+                </p>
+                <a href="/shadcn_daisyui/docs/components/calendar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Calendar
+                </a><a href="/shadcn_daisyui/docs/components/checkbox" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Checkbox
+                </a><a href="/shadcn_daisyui/docs/components/chip-row" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Chip Row
+                </a><a href="/shadcn_daisyui/docs/components/combobox" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Combobox
+                </a><a href="/shadcn_daisyui/docs/components/date-picker" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Date Picker
+                </a><a href="/shadcn_daisyui/docs/components/date-range-picker" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Date Range Picker
+                </a><a href="/shadcn_daisyui/docs/components/field" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Field
+                </a><a href="/shadcn_daisyui/docs/components/filter" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Filter
+                </a><a href="/shadcn_daisyui/docs/components/input" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input
+                </a><a href="/shadcn_daisyui/docs/components/input-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input Group
+                </a><a href="/shadcn_daisyui/docs/components/input-otp" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Input OTP
+                </a><a href="/shadcn_daisyui/docs/components/label" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Label
+                </a><a href="/shadcn_daisyui/docs/components/multi-select" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Multi Select
+                </a><a href="/shadcn_daisyui/docs/components/radio-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Radio Group
+                </a><a href="/shadcn_daisyui/docs/components/range-calendar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Range Calendar
+                </a><a href="/shadcn_daisyui/docs/components/rating" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Rating
+                </a><a href="/shadcn_daisyui/docs/components/select" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Select
+                </a><a href="/shadcn_daisyui/docs/components/native-select" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Select Native
+                </a><a href="/shadcn_daisyui/docs/components/slider" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Slider
+                </a><a href="/shadcn_daisyui/docs/components/switch" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Switch
+                </a><a href="/shadcn_daisyui/docs/components/textarea" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Textarea
+                </a><a href="/shadcn_daisyui/docs/components/time-field" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Time Field
+                </a><a href="/shadcn_daisyui/docs/components/time-picker" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Time Picker
+                </a><a href="/shadcn_daisyui/docs/components/toggle" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Toggle
+                </a><a href="/shadcn_daisyui/docs/components/toggle-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Toggle Group
+                </a><a href="/shadcn_daisyui/docs/components/validator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Validator
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Actions
+                </p>
+                <a href="/shadcn_daisyui/docs/components/button" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Button
+                </a><a href="/shadcn_daisyui/docs/components/button-group" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Button Group
+                </a><a href="/shadcn_daisyui/docs/components/command" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Command
+                </a><a href="/shadcn_daisyui/docs/components/dropdown-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dropdown Menu
+                </a><a href="/shadcn_daisyui/docs/components/swap" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Swap
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Navigation
+                </p>
+                <a href="/shadcn_daisyui/docs/components/breadcrumb" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Breadcrumb
+                </a><a href="/shadcn_daisyui/docs/components/dock" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dock
+                </a><a href="/shadcn_daisyui/docs/components/link" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Link
+                </a><a href="/shadcn_daisyui/docs/components/menubar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Menubar
+                </a><a href="/shadcn_daisyui/docs/components/navbar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Navbar
+                </a><a href="/shadcn_daisyui/docs/components/navigation-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Navigation Menu
+                </a><a href="/shadcn_daisyui/docs/components/pagination" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Pagination
+                </a><a href="/shadcn_daisyui/docs/components/record-tabs" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Record Tabs
+                </a><a href="/shadcn_daisyui/docs/components/section-nav" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Section Nav
+                </a><a href="/shadcn_daisyui/docs/components/sidebar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Sidebar
+                </a><a href="/shadcn_daisyui/docs/components/steps" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Steps
+                </a><a href="/shadcn_daisyui/docs/components/tab-nav" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tab Nav
+                </a><a href="/shadcn_daisyui/docs/components/tabs" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tabs
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Overlays
+                </p>
+                <a href="/shadcn_daisyui/docs/components/alert-dialog" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Alert Dialog
+                </a><a href="/shadcn_daisyui/docs/components/context-menu" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Context Menu
+                </a><a href="/shadcn_daisyui/docs/components/dialog" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Dialog
+                </a><a href="/shadcn_daisyui/docs/components/drawer" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Drawer
+                </a><a href="/shadcn_daisyui/docs/components/hover-card" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Hover Card
+                </a><a href="/shadcn_daisyui/docs/components/popover" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Popover
+                </a><a href="/shadcn_daisyui/docs/components/sheet" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Sheet
+                </a><a href="/shadcn_daisyui/docs/components/tooltip" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Tooltip
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Feedback &amp; status
+                </p>
+                <a href="/shadcn_daisyui/docs/components/alert" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Alert
+                </a><a href="/shadcn_daisyui/docs/components/badge" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Badge
+                </a><a href="/shadcn_daisyui/docs/components/countdown" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Countdown
+                </a><a href="/shadcn_daisyui/docs/components/indicator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Indicator
+                </a><a href="/shadcn_daisyui/docs/components/progress" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Progress
+                </a><a href="/shadcn_daisyui/docs/components/radial-progress" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Radial Progress
+                </a><a href="/shadcn_daisyui/docs/components/skeleton" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Skeleton
+                </a><a href="/shadcn_daisyui/docs/components/sonner" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Sonner
+                </a><a href="/shadcn_daisyui/docs/components/spinner" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Spinner
+                </a><a href="/shadcn_daisyui/docs/components/status" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Status
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Data display
+                </p>
+                <a href="/shadcn_daisyui/docs/components/accordion" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Accordion
+                </a><a href="/shadcn_daisyui/docs/components/attachment" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Attachment
+                </a><a href="/shadcn_daisyui/docs/components/avatar" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Avatar
+                </a><a href="/shadcn_daisyui/docs/components/card" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Card
+                </a><a href="/shadcn_daisyui/docs/components/carousel" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Carousel
+                </a><a href="/shadcn_daisyui/docs/components/chart" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Chart
+                </a><a href="/shadcn_daisyui/docs/components/collapsible" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Collapsible
+                </a><a href="/shadcn_daisyui/docs/components/data-table" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Data Table
+                </a><a href="/shadcn_daisyui/docs/components/empty" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Empty
+                </a><a href="/shadcn_daisyui/docs/components/item" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Item
+                </a><a href="/shadcn_daisyui/docs/components/kbd" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Kbd
+                </a><a href="/shadcn_daisyui/docs/components/list" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  List
+                </a><a href="/shadcn_daisyui/docs/components/stat" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Stat
+                </a><a href="/shadcn_daisyui/docs/components/table" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Table
+                </a><a href="/shadcn_daisyui/docs/components/table-card" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Table Card
+                </a><a href="/shadcn_daisyui/docs/components/table-toolbar" class="block rounded-md px-2 py-1.5 text-sm bg-muted font-medium text-foreground">
+                  Table Toolbar
+                </a><a href="/shadcn_daisyui/docs/components/timeline" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Timeline
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Conversation
+                </p>
+                <a href="/shadcn_daisyui/docs/components/bubble" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Bubble
+                </a><a href="/shadcn_daisyui/docs/components/chat" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Chat
+                </a><a href="/shadcn_daisyui/docs/components/marker" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Marker
+                </a><a href="/shadcn_daisyui/docs/components/message" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Message
+                </a>
+              </div><div class="mb-2 space-y-0.5">
+                <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-foreground">
+                  Layout
+                </p>
+                <a href="/shadcn_daisyui/docs/components/aspect-ratio" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Aspect Ratio
+                </a><a href="/shadcn_daisyui/docs/components/footer" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Footer
+                </a><a href="/shadcn_daisyui/docs/components/hero" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Hero
+                </a><a href="/shadcn_daisyui/docs/components/mask" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Mask
+                </a><a href="/shadcn_daisyui/docs/components/mockup" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Mockup
+                </a><a href="/shadcn_daisyui/docs/components/resizable" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Resizable
+                </a><a href="/shadcn_daisyui/docs/components/reveal" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Reveal
+                </a><a href="/shadcn_daisyui/docs/components/scroll-area" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Scroll Area
+                </a><a href="/shadcn_daisyui/docs/components/separator" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Separator
+                </a><a href="/shadcn_daisyui/docs/components/stack" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Stack
+                </a><a href="/shadcn_daisyui/docs/components/typography" class="block rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Typography
+                </a>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        
+  <div class="space-y-2 border-b border-base-300 pb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Table Toolbar</h1>
+  <p class="text-lg text-muted-foreground">The one row above a data table: saved views or the count, search, a Filters sheet, and the filters that are on as chips.</p>
+</div>
+
+  <div class="mt-6 flex gap-3 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
+  <span class="hero-bolt size-4 shrink-0 translate-y-0.5 text-foreground" aria-hidden="true">
+  </span>
+  <div class="space-y-1">
+    <p class="font-medium text-foreground">Requires JavaScript</p>
+    <p class="text-muted-foreground">
+      This component is interactive. Register the package hooks in your
+      <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">LiveSocket</code>
+      (or call
+      <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">initShadcnDaisyui()</code>
+      for dead views) - see <a href="/shadcn_daisyui/docs/installation" class="link link-primary font-medium">
+        Installation → Wire the JavaScript
+      </a>.
+    </p>
+  </div>
+</div>
+
+  <div class="group/view mt-8">
+    <div role="tablist" class="tabs tabs-box w-fit">
+      <input type="radio" name="view-table-toolbar" class="tab" aria-label="Usage" checked>
+      <input type="radio" name="view-table-toolbar" class="tab" aria-label="Design & specs" data-view="design">
+    </div>
+
+    <div class="pt-8 group-has-[[data-view=design]:checked]/view:hidden">
+      <div class="space-y-10">
+        <section class="space-y-3">
+          <h2 class="text-lg font-medium tracking-tight">
+            With views
+          </h2>
+          <div class="tabs tabs-lift" role="tablist">
+  <input type="radio" name="tab-table-toolbar-0" class="tab [--tab-bg:var(--color-base-100)]" aria-label="Preview" checked>
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-100">
+    <div class="flex min-h-[20rem] w-full gap-4 p-8 flex-col">
+      
+        <div id="orders-toolbar" class="table-toolbar" data-views>
+  <form id="orders-toolbar-form" class="table-toolbar-form" phx-change="dt:filter" phx-submit="dt:filter">
+    <input type="hidden" name="table" value="orders-toolbar">
+    <div class="table-toolbar-row">
+      <nav id="orders-toolbar-views" data-tab-nav aria-label="Views" class="tab-nav table-toolbar-views">
+        <div class="tabs tabs-box tab-nav-list">
+          <div class="tab-nav-tabs" data-tab-nav-tabs>
+            <a href="#all" data-phx-link="patch" data-phx-link-state="push" class="tab" data-index="0" data-tab-nav-item>
+              <span class="tab-nav-label">
+                All orders
+              </span>
+              <span class="tab-count">240</span>
+            </a>
+            <a href="#open" data-phx-link="patch" data-phx-link-state="push" class="tab" data-index="1" data-tab-nav-item>
+              <span class="tab-nav-label">
+                Open
+              </span>
+              <span class="tab-count">48</span>
+            </a>
+            <a href="#overdue" data-phx-link="patch" data-phx-link-state="push" class="tab tab-active" aria-current="page" data-index="2" data-tab-nav-item>
+              <span class="tab-nav-label">
+                Overdue<span class="table-toolbar-edited"><span class="sr-only">(edited)</span></span>
+              </span>
+              <span class="tab-count">19</span>
+            </a>
+            <a href="#mine" data-phx-link="patch" data-phx-link-state="push" class="tab" data-index="3" data-tab-nav-item>
+              <span class="tab-nav-label">
+                Mine
+              </span>
+              <span class="tab-count">60</span>
+            </a>
+          </div>
+          <div class="tab-nav-more" data-tab-nav-more>
+            <button type="button" id="orders-toolbar-views-more" class="tab" aria-expanded="false" aria-controls="orders-toolbar-views-menu" data-tab-nav-trigger>
+              <span class="tab-nav-label" data-tab-nav-default>Views</span>
+              <span class="tab-nav-label" data-tab-nav-current>
+                Overdue<span class="table-toolbar-edited"><span class="sr-only">(edited)</span></span>
+              </span>
+              <span class="tab-count" data-tab-nav-current>
+                19
+              </span>
+              <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
+            </button>
+            <div id="orders-toolbar-views-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+              <div data-tab-nav-overflow hidden>
+                <a href="#all" data-phx-link="patch" data-phx-link-state="push" hidden class="combo-item" tabindex="-1" data-index="0" data-tab-nav-copy>
+                  <span class="truncate">
+                    All orders
+                  </span>
+                  <span class="ml-auto font-mono text-xs text-muted-foreground">
+                    240
+                  </span>
+                </a>
+                <a href="#open" data-phx-link="patch" data-phx-link-state="push" hidden class="combo-item" tabindex="-1" data-index="1" data-tab-nav-copy>
+                  <span class="truncate">
+                    Open
+                  </span>
+                  <span class="ml-auto font-mono text-xs text-muted-foreground">
+                    48
+                  </span>
+                </a>
+                <a href="#overdue" data-phx-link="patch" data-phx-link-state="push" hidden class="combo-item" aria-current="page" tabindex="-1" data-index="2" data-tab-nav-copy>
+                  <span class="truncate">
+                    Overdue<span class="table-toolbar-edited"><span class="sr-only">(edited)</span></span>
+                  </span>
+                  <span class="ml-auto font-mono text-xs text-muted-foreground">
+                    19
+                  </span>
+                  <span class="hero-check size-4" aria-hidden="true">
+                  </span>
+                </a>
+                <a href="#mine" data-phx-link="patch" data-phx-link-state="push" hidden class="combo-item" tabindex="-1" data-index="3" data-tab-nav-copy>
+                  <span class="truncate">
+                    Mine
+                  </span>
+                  <span class="ml-auto font-mono text-xs text-muted-foreground">
+                    60
+                  </span>
+                </a>
+              </div>
+              <div class="tab-nav-sep" data-tab-nav-sep hidden>
+              </div>
+              <div role="group">
+                <a href="#manage-views" data-phx-link="patch" data-phx-link-state="push" class="combo-item" data-tab-nav-entry tabindex="-1">
+                  <span class="hero-cog-6-tooth size-4" aria-hidden="true"></span>
+                  <span class="truncate">
+                    Manage views…
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <label class="input table-toolbar-search">
+        <span class="hero-magnifying-glass size-4 shrink-0 opacity-50" aria-hidden="true"></span>
+        <input type="search" name="q" value="" placeholder="Search orders" aria-label="Search orders" autocomplete="off" phx-debounce="200">
+      </label>
+      <button type="button" class="btn btn-outline table-toolbar-filters" aria-haspopup="dialog" aria-controls="orders-toolbar-filters" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#orders-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]">
+        <span class="hero-funnel size-4" aria-hidden="true"></span>
+        <span class="table-toolbar-filters-label">Filters</span>
+        <span class="table-toolbar-filters-count">
+          1<span class="sr-only"> on</span>
+        </span>
+      </button>
+    </div>
+    <div class="reveal" data-open>
+      <div class="reveal-track"><div class="table-toolbar-chips">
+          <div id="orders-toolbar-chips" data-chip-row role="group" aria-label="Active filters" class="chip-row">
+            <ul class="chip-row-chips" data-chip-row-chips>
+              <li id="orders-toolbar-chips-chip-v-view" class="badge chip badge-secondary" data-index="0" data-value="view" phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]" data-chip>
+                <span id="orders-toolbar-chips-chip-v-view-label" class="chip-label">
+                  Status: Overdue
+                </span>
+              </li>
+              <li id="orders-toolbar-chips-chip-v-owner" class="badge chip badge-secondary" data-index="1" data-value="owner" phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]" data-chip>
+                <span id="orders-toolbar-chips-chip-v-owner-label" class="chip-label">
+                  Owner: Pat Lee
+                </span>
+                <button type="button" id="orders-toolbar-chips-chip-v-owner-remove" class="chip-remove" aria-label="Remove filter: Owner: Pat Lee" phx-click="[[&quot;push&quot;,{&quot;value&quot;:{&quot;table&quot;:&quot;orders-toolbar&quot;,&quot;key&quot;:&quot;owner&quot;},&quot;event&quot;:&quot;dt:unfilter&quot;}]]" data-chip-remove>
+                  <span class="hero-x-mark size-3" aria-hidden="true"></span>
+                </button>
+              </li>
+            </ul>
+            <div class="chip-row-more" data-chip-row-more hidden>
+              <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="orders-toolbar-chips-overflow" data-chip-row-trigger data-more-label="Show {count} more">
+              </button>
+              <div id="orders-toolbar-chips-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+                <ul class="flex flex-wrap gap-2" aria-label="Active filters">
+                  <li id="orders-toolbar-chips-copy-v-view" class="badge chip badge-secondary" data-index="0" data-value="view" hidden phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]" data-chip-copy>
+                    <span id="orders-toolbar-chips-copy-v-view-label" class="chip-label">
+                      Status: Overdue
+                    </span>
+                  </li>
+                  <li id="orders-toolbar-chips-copy-v-owner" class="badge chip badge-secondary" data-index="1" data-value="owner" hidden phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]" data-chip-copy>
+                    <span id="orders-toolbar-chips-copy-v-owner-label" class="chip-label">
+                      Owner: Pat Lee
+                    </span>
+                    <button type="button" id="orders-toolbar-chips-copy-v-owner-remove" class="chip-remove" aria-label="Remove filter: Owner: Pat Lee" phx-click="[[&quot;push&quot;,{&quot;value&quot;:{&quot;table&quot;:&quot;orders-toolbar&quot;,&quot;key&quot;:&quot;owner&quot;},&quot;event&quot;:&quot;dt:unfilter&quot;}]]" data-chip-remove>
+                      <span class="hero-x-mark size-3" aria-hidden="true"></span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div id="orders-toolbar-chips-actions" class="chip-row-actions" data-chip-row-actions phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]">
+              <button class="btn btn-outline btn-sm">
+                Save view
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" phx-click="[[&quot;push&quot;,{&quot;value&quot;:{&quot;table&quot;:&quot;orders-toolbar&quot;},&quot;event&quot;:&quot;dt:reset&quot;}]]">
+                Clear all
+              </button>
+            </div>
+          </div>
+        </div></div>
+    </div>
+    <dialog id="orders-toolbar-filters" class="sheet">
+      <div class="sheet-header">
+        <button type="button" class="btn btn-ghost btn-square btn-sm absolute right-3 top-3" aria-label="Close" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#orders-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:hide-modal&quot;}]]">
+          <span class="hero-x-mark size-4" aria-hidden="true"></span>
+        </button>
+        <h3 class="sheet-title text-lg font-semibold">Filters</h3>
+      </div>
+      <div class="sheet-body">
+        <div>
+          <div class="table-toolbar-fields">
+            <label class="table-toolbar-field" data-filter="status">
+              <span class="table-toolbar-field-label">Status</span>
+              <div id="filter-status" data-select data-multiple data-full-width data-placeholder="Any status" class="relative w-full">
+                <input type="hidden" name="status" value="" data-select-sentinel>
+                <button type="button" id="filter-status-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-status-list" class="btn btn-outline w-full justify-between font-normal" data-select-trigger>
+                  <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-select-label>
+                    <span class="truncate">Any status</span>
+                  </span>
+                  <span class="size-4 shrink-0 opacity-50 hero-chevron-down" aria-hidden="true">
+                  </span>
+                </button>
+                <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
+                  <div id="filter-status-list" role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="open">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Open</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="paid">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Paid</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="overdue">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Overdue</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="refunded">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Refunded</span>
+                    </button>
+                  </div>
+                  <div class="-mx-1 mt-1 border-t border-border px-1 pt-1 hidden" data-select-clear>
+                    <button type="button" class="combo-item justify-center" data-select-clear-btn>Clear</button>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <label class="table-toolbar-field" data-filter="owner">
+              <span class="table-toolbar-field-label">Owner</span>
+              <div id="filter-owner" data-combobox data-multiple data-full-width data-placeholder="Anyone" class="relative w-full">
+                <input type="hidden" name="owner" value="" data-combobox-sentinel>
+                <input type="hidden" name="owner[]" value="Pat Lee" data-combobox-value>
+                <button type="button" id="filter-owner-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-owner-list" class="btn btn-outline w-full justify-between font-normal" data-combobox-trigger>
+                  <span class="flex min-w-0 items-center gap-1" data-combobox-label>
+                    <span class="truncate">Pat Lee</span>
+                  </span>
+                  <span class="size-4 shrink-0 opacity-50 hero-chevron-up-down" aria-hidden="true">
+                  </span>
+                </button>
+                <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-combobox-panel>
+                  <input data-combobox-search class="input mb-1 w-full" placeholder="Anyone" autocomplete="off">
+                  <ul id="filter-owner-list" role="listbox" aria-multiselectable="true" class="max-h-60 overflow-auto" data-combobox-list>
+                    <li>
+                      <button type="button" tabindex="-1" role="option" aria-selected="true" class="combo-item" data-value="Pat Lee" data-selected>
+                        <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                        <span data-label class="truncate">Pat Lee</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-value="Sam Okafor">
+                        <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                        <span data-label class="truncate">Sam Okafor</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-value="Jordan Diaz">
+                        <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                        <span data-label class="truncate">Jordan Diaz</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-value="Riley Chen">
+                        <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                        <span data-label class="truncate">Riley Chen</span>
+                      </button>
+                    </li>
+                  </ul>
+                  <p data-combobox-empty class="hidden p-2 text-center text-sm text-muted-foreground">No results.</p>
+                  <div class="-mx-1 mt-1 border-t border-border px-1 pt-1" data-combobox-clear>
+                    <button type="button" class="combo-item justify-center" data-combobox-clear-btn>Clear</button>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <label class="table-toolbar-field table-toolbar-sort">
+              <span class="table-toolbar-field-label">Sort by</span>
+              <div id="orders-toolbar-sort" data-select data-full-width data-placeholder="Select…" class="relative w-full">
+                <input type="hidden" name="sort" value="" data-select-input>
+                <button type="button" id="orders-toolbar-sort-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="orders-toolbar-sort-list" class="btn btn-outline w-full justify-between font-normal" data-select-trigger>
+                  <span class="flex min-w-0 items-center gap-1" data-select-label>
+                    <span class="truncate">Newest first</span>
+                  </span>
+                  <span class="size-4 shrink-0 opacity-50 hero-chevron-down" aria-hidden="true">
+                  </span>
+                </button>
+                <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
+                  <div id="orders-toolbar-sort-list" role="listbox" class="max-h-72 overflow-auto" data-select-list>
+                    <button type="button" tabindex="-1" role="option" aria-selected="true" class="combo-item" data-select-item data-value="" data-selected>
+                      <span class="hero-check size-4 shrink-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Newest first</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="placed:asc">
+                      <span class="hero-check size-4 shrink-0 opacity-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Oldest first</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="customer:asc">
+                      <span class="hero-check size-4 shrink-0 opacity-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Customer A–Z</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="total:desc">
+                      <span class="hero-check size-4 shrink-0 opacity-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Largest total</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button type="button" class="btn btn-ghost" phx-click="[[&quot;push&quot;,{&quot;value&quot;:{&quot;table&quot;:&quot;orders-toolbar&quot;},&quot;event&quot;:&quot;dt:reset&quot;}]]">
+          Clear all
+        </button>
+        <button type="button" class="btn btn-primary ml-auto grow sm:grow-0" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#orders-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:hide-modal&quot;}]]">
+          Show 7 orders
+        </button>
+      </div>
+      <div id="orders-toolbar-filters-toasts" data-toast-host phx-update="ignore"></div>
+    </dialog>
+  </form>
+</div>
+
+      
+    </div>
+  </div>
+
+  <input type="radio" name="tab-table-toolbar-0" class="tab [--tab-bg:var(--color-base-200)]" aria-label="HEEx">
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+    <div data-code-block class="relative">
+      <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" data-copy-code>
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+      <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">&lt;.table_toolbar
+  id=&quot;orders-toolbar&quot;
+  search={@state.search}
+  placeholder=&quot;Search orders&quot;
+  shown={@matching}
+  total={@total}
+  noun={{&quot;order&quot;, &quot;orders&quot;}}
+  views={
+    for v &lt;- @views do
+      %{key: v.key, label: v.label, count: v.count, path: ~p&quot;/orders?view=#{v.key}&quot;,
+        active: v.key == @view.key, edited: v.key == @view.key and State.filtered?(@state, @opts)}
+    end
+  }
+  menu={[%{key: &quot;manage&quot;, label: &quot;Manage views…&quot;, icon: &quot;hero-cog-6-tooth&quot;, path: ~p&quot;/views&quot;}]}
+  chips={[{&quot;view&quot;, &quot;Status: Overdue&quot;, :fixed} | @chips]}
+  sort={State.sort_value(@state)}
+  sorts={[
+    {&quot;Newest first&quot;, &quot;placed:desc&quot;},
+    {&quot;Oldest first&quot;, &quot;placed:asc&quot;},
+    {&quot;Customer A–Z&quot;, &quot;customer:asc&quot;},
+    {&quot;Largest total&quot;, &quot;total:desc&quot;}
+  ]}
+&gt;
+  &lt;:filter key=&quot;status&quot; label=&quot;Status&quot;&gt;
+    &lt;.select id=&quot;filter-status&quot; name=&quot;status&quot; multiple full_width
+      value={State.values(@state.filters[&quot;status&quot;])} placeholder=&quot;Any status&quot;&gt;
+      &lt;:option :for={{label, value} &lt;- @statuses} value={value}&gt;{label}&lt;/:option&gt;
+    &lt;/.select&gt;
+  &lt;/:filter&gt;
+  &lt;:filter key=&quot;owner&quot; label=&quot;Owner&quot;&gt;
+    &lt;.combobox id=&quot;filter-owner&quot; name=&quot;owner&quot; multiple full_width
+      value={State.values(@state.filters[&quot;owner&quot;])} placeholder=&quot;Anyone&quot;&gt;
+      &lt;:option :for={{label, value} &lt;- @owners} value={value}&gt;{label}&lt;/:option&gt;
+    &lt;/.combobox&gt;
+  &lt;/:filter&gt;
+  &lt;:save&gt;
+    &lt;.button size=&quot;sm&quot; variant=&quot;outline&quot; phx-click=&quot;save_view&quot;&gt;Save view&lt;/.button&gt;
+  &lt;/:save&gt;
+&lt;/.table_toolbar&gt;</code></pre>
+    </div>
+  </div>
+
+  <input type="radio" name="tab-table-toolbar-0" class="tab [--tab-bg:var(--color-base-200)]" aria-label="HTML">
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+    <div data-code-block class="relative">
+      <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" data-copy-code>
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+      <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">&lt;div id=&quot;orders-toolbar&quot; class=&quot;table-toolbar&quot; data-views&gt;
+  &lt;form id=&quot;orders-toolbar-form&quot; class=&quot;table-toolbar-form&quot; phx-change=&quot;dt:filter&quot; phx-submit=&quot;dt:filter&quot;&gt;
+    &lt;input type=&quot;hidden&quot; name=&quot;table&quot; value=&quot;orders-toolbar&quot;&gt;
+    &lt;div class=&quot;table-toolbar-row&quot;&gt;
+      &lt;nav id=&quot;orders-toolbar-views&quot; data-tab-nav aria-label=&quot;Views&quot; class=&quot;tab-nav table-toolbar-views&quot;&gt;
+        &lt;div class=&quot;tabs tabs-box tab-nav-list&quot;&gt;
+          &lt;div class=&quot;tab-nav-tabs&quot; data-tab-nav-tabs&gt;
+            &lt;a href=&quot;#all&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; class=&quot;tab&quot; data-index=&quot;0&quot; data-tab-nav-item&gt;
+              &lt;span class=&quot;tab-nav-label&quot;&gt;
+                All orders
+              &lt;/span&gt;
+              &lt;span class=&quot;tab-count&quot;&gt;240&lt;/span&gt;
+            &lt;/a&gt;
+            &lt;a href=&quot;#open&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; class=&quot;tab&quot; data-index=&quot;1&quot; data-tab-nav-item&gt;
+              &lt;span class=&quot;tab-nav-label&quot;&gt;
+                Open
+              &lt;/span&gt;
+              &lt;span class=&quot;tab-count&quot;&gt;48&lt;/span&gt;
+            &lt;/a&gt;
+            &lt;a href=&quot;#overdue&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; class=&quot;tab tab-active&quot; aria-current=&quot;page&quot; data-index=&quot;2&quot; data-tab-nav-item&gt;
+              &lt;span class=&quot;tab-nav-label&quot;&gt;
+                Overdue&lt;span class=&quot;table-toolbar-edited&quot;&gt;&lt;span class=&quot;sr-only&quot;&gt;(edited)&lt;/span&gt;&lt;/span&gt;
+              &lt;/span&gt;
+              &lt;span class=&quot;tab-count&quot;&gt;19&lt;/span&gt;
+            &lt;/a&gt;
+            &lt;a href=&quot;#mine&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; class=&quot;tab&quot; data-index=&quot;3&quot; data-tab-nav-item&gt;
+              &lt;span class=&quot;tab-nav-label&quot;&gt;
+                Mine
+              &lt;/span&gt;
+              &lt;span class=&quot;tab-count&quot;&gt;60&lt;/span&gt;
+            &lt;/a&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;tab-nav-more&quot; data-tab-nav-more&gt;
+            &lt;button type=&quot;button&quot; id=&quot;orders-toolbar-views-more&quot; class=&quot;tab&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;orders-toolbar-views-menu&quot; data-tab-nav-trigger&gt;
+              &lt;span class=&quot;tab-nav-label&quot; data-tab-nav-default&gt;Views&lt;/span&gt;
+              &lt;span class=&quot;tab-nav-label&quot; data-tab-nav-current&gt;
+                Overdue&lt;span class=&quot;table-toolbar-edited&quot;&gt;&lt;span class=&quot;sr-only&quot;&gt;(edited)&lt;/span&gt;&lt;/span&gt;
+              &lt;/span&gt;
+              &lt;span class=&quot;tab-count&quot; data-tab-nav-current&gt;
+                19
+              &lt;/span&gt;
+              &lt;span class=&quot;hero-chevron-down size-4 opacity-50&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+            &lt;/button&gt;
+            &lt;div id=&quot;orders-toolbar-views-menu&quot; class=&quot;popover-panel tab-nav-menu&quot; data-tab-nav-menu hidden&gt;
+              &lt;div data-tab-nav-overflow hidden&gt;
+                &lt;a href=&quot;#all&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; hidden class=&quot;combo-item&quot; tabindex=&quot;-1&quot; data-index=&quot;0&quot; data-tab-nav-copy&gt;
+                  &lt;span class=&quot;truncate&quot;&gt;
+                    All orders
+                  &lt;/span&gt;
+                  &lt;span class=&quot;ml-auto font-mono text-xs text-muted-foreground&quot;&gt;
+                    240
+                  &lt;/span&gt;
+                &lt;/a&gt;
+                &lt;a href=&quot;#open&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; hidden class=&quot;combo-item&quot; tabindex=&quot;-1&quot; data-index=&quot;1&quot; data-tab-nav-copy&gt;
+                  &lt;span class=&quot;truncate&quot;&gt;
+                    Open
+                  &lt;/span&gt;
+                  &lt;span class=&quot;ml-auto font-mono text-xs text-muted-foreground&quot;&gt;
+                    48
+                  &lt;/span&gt;
+                &lt;/a&gt;
+                &lt;a href=&quot;#overdue&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; hidden class=&quot;combo-item&quot; aria-current=&quot;page&quot; tabindex=&quot;-1&quot; data-index=&quot;2&quot; data-tab-nav-copy&gt;
+                  &lt;span class=&quot;truncate&quot;&gt;
+                    Overdue&lt;span class=&quot;table-toolbar-edited&quot;&gt;&lt;span class=&quot;sr-only&quot;&gt;(edited)&lt;/span&gt;&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;ml-auto font-mono text-xs text-muted-foreground&quot;&gt;
+                    19
+                  &lt;/span&gt;
+                  &lt;span class=&quot;hero-check size-4&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/a&gt;
+                &lt;a href=&quot;#mine&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; hidden class=&quot;combo-item&quot; tabindex=&quot;-1&quot; data-index=&quot;3&quot; data-tab-nav-copy&gt;
+                  &lt;span class=&quot;truncate&quot;&gt;
+                    Mine
+                  &lt;/span&gt;
+                  &lt;span class=&quot;ml-auto font-mono text-xs text-muted-foreground&quot;&gt;
+                    60
+                  &lt;/span&gt;
+                &lt;/a&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;tab-nav-sep&quot; data-tab-nav-sep hidden&gt;
+              &lt;/div&gt;
+              &lt;div role=&quot;group&quot;&gt;
+                &lt;a href=&quot;#manage-views&quot; data-phx-link=&quot;patch&quot; data-phx-link-state=&quot;push&quot; class=&quot;combo-item&quot; data-tab-nav-entry tabindex=&quot;-1&quot;&gt;
+                  &lt;span class=&quot;hero-cog-6-tooth size-4&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                  &lt;span class=&quot;truncate&quot;&gt;
+                    Manage views…
+                  &lt;/span&gt;
+                &lt;/a&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/nav&gt;
+      &lt;label class=&quot;input table-toolbar-search&quot;&gt;
+        &lt;span class=&quot;hero-magnifying-glass size-4 shrink-0 opacity-50&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;input type=&quot;search&quot; name=&quot;q&quot; value=&quot;&quot; placeholder=&quot;Search orders&quot; aria-label=&quot;Search orders&quot; autocomplete=&quot;off&quot; phx-debounce=&quot;200&quot;&gt;
+      &lt;/label&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn btn-outline table-toolbar-filters&quot; aria-haspopup=&quot;dialog&quot; aria-controls=&quot;orders-toolbar-filters&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#orders-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:show-modal&amp;quot;}]]&quot;&gt;
+        &lt;span class=&quot;hero-funnel size-4&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;span class=&quot;table-toolbar-filters-label&quot;&gt;Filters&lt;/span&gt;
+        &lt;span class=&quot;table-toolbar-filters-count&quot;&gt;
+          1&lt;span class=&quot;sr-only&quot;&gt; on&lt;/span&gt;
+        &lt;/span&gt;
+      &lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;reveal&quot; data-open&gt;
+      &lt;div class=&quot;reveal-track&quot;&gt;&lt;div class=&quot;table-toolbar-chips&quot;&gt;
+          &lt;div id=&quot;orders-toolbar-chips&quot; data-chip-row role=&quot;group&quot; aria-label=&quot;Active filters&quot; class=&quot;chip-row&quot;&gt;
+            &lt;ul class=&quot;chip-row-chips&quot; data-chip-row-chips&gt;
+              &lt;li id=&quot;orders-toolbar-chips-chip-v-view&quot; class=&quot;badge chip badge-secondary&quot; data-index=&quot;0&quot; data-value=&quot;view&quot; phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot; data-chip&gt;
+                &lt;span id=&quot;orders-toolbar-chips-chip-v-view-label&quot; class=&quot;chip-label&quot;&gt;
+                  Status: Overdue
+                &lt;/span&gt;
+              &lt;/li&gt;
+              &lt;li id=&quot;orders-toolbar-chips-chip-v-owner&quot; class=&quot;badge chip badge-secondary&quot; data-index=&quot;1&quot; data-value=&quot;owner&quot; phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot; data-chip&gt;
+                &lt;span id=&quot;orders-toolbar-chips-chip-v-owner-label&quot; class=&quot;chip-label&quot;&gt;
+                  Owner: Pat Lee
+                &lt;/span&gt;
+                &lt;button type=&quot;button&quot; id=&quot;orders-toolbar-chips-chip-v-owner-remove&quot; class=&quot;chip-remove&quot; aria-label=&quot;Remove filter: Owner: Pat Lee&quot; phx-click=&quot;[[&amp;quot;push&amp;quot;,{&amp;quot;value&amp;quot;:{&amp;quot;table&amp;quot;:&amp;quot;orders-toolbar&amp;quot;,&amp;quot;key&amp;quot;:&amp;quot;owner&amp;quot;},&amp;quot;event&amp;quot;:&amp;quot;dt:unfilter&amp;quot;}]]&quot; data-chip-remove&gt;
+                  &lt;span class=&quot;hero-x-mark size-3&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/li&gt;
+            &lt;/ul&gt;
+            &lt;div class=&quot;chip-row-more&quot; data-chip-row-more hidden&gt;
+              &lt;button type=&quot;button&quot; class=&quot;badge badge-outline chip chip-more&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;orders-toolbar-chips-overflow&quot; data-chip-row-trigger data-more-label=&quot;Show {count} more&quot;&gt;
+              &lt;/button&gt;
+              &lt;div id=&quot;orders-toolbar-chips-overflow&quot; class=&quot;popover-panel chip-row-panel&quot; data-chip-row-panel hidden&gt;
+                &lt;ul class=&quot;flex flex-wrap gap-2&quot; aria-label=&quot;Active filters&quot;&gt;
+                  &lt;li id=&quot;orders-toolbar-chips-copy-v-view&quot; class=&quot;badge chip badge-secondary&quot; data-index=&quot;0&quot; data-value=&quot;view&quot; hidden phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot; data-chip-copy&gt;
+                    &lt;span id=&quot;orders-toolbar-chips-copy-v-view-label&quot; class=&quot;chip-label&quot;&gt;
+                      Status: Overdue
+                    &lt;/span&gt;
+                  &lt;/li&gt;
+                  &lt;li id=&quot;orders-toolbar-chips-copy-v-owner&quot; class=&quot;badge chip badge-secondary&quot; data-index=&quot;1&quot; data-value=&quot;owner&quot; hidden phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot; data-chip-copy&gt;
+                    &lt;span id=&quot;orders-toolbar-chips-copy-v-owner-label&quot; class=&quot;chip-label&quot;&gt;
+                      Owner: Pat Lee
+                    &lt;/span&gt;
+                    &lt;button type=&quot;button&quot; id=&quot;orders-toolbar-chips-copy-v-owner-remove&quot; class=&quot;chip-remove&quot; aria-label=&quot;Remove filter: Owner: Pat Lee&quot; phx-click=&quot;[[&amp;quot;push&amp;quot;,{&amp;quot;value&amp;quot;:{&amp;quot;table&amp;quot;:&amp;quot;orders-toolbar&amp;quot;,&amp;quot;key&amp;quot;:&amp;quot;owner&amp;quot;},&amp;quot;event&amp;quot;:&amp;quot;dt:unfilter&amp;quot;}]]&quot; data-chip-remove&gt;
+                      &lt;span class=&quot;hero-x-mark size-3&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/li&gt;
+                &lt;/ul&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div id=&quot;orders-toolbar-chips-actions&quot; class=&quot;chip-row-actions&quot; data-chip-row-actions phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot;&gt;
+              &lt;button class=&quot;btn btn-outline btn-sm&quot;&gt;
+                Save view
+              &lt;/button&gt;
+              &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost btn-sm&quot; phx-click=&quot;[[&amp;quot;push&amp;quot;,{&amp;quot;value&amp;quot;:{&amp;quot;table&amp;quot;:&amp;quot;orders-toolbar&amp;quot;},&amp;quot;event&amp;quot;:&amp;quot;dt:reset&amp;quot;}]]&quot;&gt;
+                Clear all
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;dialog id=&quot;orders-toolbar-filters&quot; class=&quot;sheet&quot;&gt;
+      &lt;div class=&quot;sheet-header&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost btn-square btn-sm absolute right-3 top-3&quot; aria-label=&quot;Close&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#orders-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:hide-modal&amp;quot;}]]&quot;&gt;
+          &lt;span class=&quot;hero-x-mark size-4&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;/button&gt;
+        &lt;h3 class=&quot;sheet-title text-lg font-semibold&quot;&gt;Filters&lt;/h3&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;sheet-body&quot;&gt;
+        &lt;div&gt;
+          &lt;div class=&quot;table-toolbar-fields&quot;&gt;
+            &lt;label class=&quot;table-toolbar-field&quot; data-filter=&quot;status&quot;&gt;
+              &lt;span class=&quot;table-toolbar-field-label&quot;&gt;Status&lt;/span&gt;
+              &lt;div id=&quot;filter-status&quot; data-select data-multiple data-full-width data-placeholder=&quot;Any status&quot; class=&quot;relative w-full&quot;&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;status&quot; value=&quot;&quot; data-select-sentinel&gt;
+                &lt;button type=&quot;button&quot; id=&quot;filter-status-trigger&quot; role=&quot;combobox&quot; aria-haspopup=&quot;listbox&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;filter-status-list&quot; class=&quot;btn btn-outline w-full justify-between font-normal&quot; data-select-trigger&gt;
+                  &lt;span class=&quot;flex min-w-0 items-center gap-1 text-muted-foreground&quot; data-select-label&gt;
+                    &lt;span class=&quot;truncate&quot;&gt;Any status&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;size-4 shrink-0 opacity-50 hero-chevron-down&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/button&gt;
+                &lt;div class=&quot;popover-panel absolute z-50 mt-1 hidden w-full p-1&quot; data-select-panel&gt;
+                  &lt;div id=&quot;filter-status-list&quot; role=&quot;listbox&quot; aria-multiselectable=&quot;true&quot; class=&quot;max-h-72 overflow-auto&quot; data-select-list&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;open&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Open&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;paid&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Paid&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;overdue&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Overdue&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;refunded&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Refunded&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;-mx-1 mt-1 border-t border-border px-1 pt-1 hidden&quot; data-select-clear&gt;
+                    &lt;button type=&quot;button&quot; class=&quot;combo-item justify-center&quot; data-select-clear-btn&gt;Clear&lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/label&gt;
+            &lt;label class=&quot;table-toolbar-field&quot; data-filter=&quot;owner&quot;&gt;
+              &lt;span class=&quot;table-toolbar-field-label&quot;&gt;Owner&lt;/span&gt;
+              &lt;div id=&quot;filter-owner&quot; data-combobox data-multiple data-full-width data-placeholder=&quot;Anyone&quot; class=&quot;relative w-full&quot;&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;owner&quot; value=&quot;&quot; data-combobox-sentinel&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;owner[]&quot; value=&quot;Pat Lee&quot; data-combobox-value&gt;
+                &lt;button type=&quot;button&quot; id=&quot;filter-owner-trigger&quot; aria-haspopup=&quot;listbox&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;filter-owner-list&quot; class=&quot;btn btn-outline w-full justify-between font-normal&quot; data-combobox-trigger&gt;
+                  &lt;span class=&quot;flex min-w-0 items-center gap-1&quot; data-combobox-label&gt;
+                    &lt;span class=&quot;truncate&quot;&gt;Pat Lee&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;size-4 shrink-0 opacity-50 hero-chevron-up-down&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/button&gt;
+                &lt;div class=&quot;popover-panel absolute z-50 mt-1 hidden w-full p-1&quot; data-combobox-panel&gt;
+                  &lt;input data-combobox-search class=&quot;input mb-1 w-full&quot; placeholder=&quot;Anyone&quot; autocomplete=&quot;off&quot;&gt;
+                  &lt;ul id=&quot;filter-owner-list&quot; role=&quot;listbox&quot; aria-multiselectable=&quot;true&quot; class=&quot;max-h-60 overflow-auto&quot; data-combobox-list&gt;
+                    &lt;li&gt;
+                      &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;true&quot; class=&quot;combo-item&quot; data-value=&quot;Pat Lee&quot; data-selected&gt;
+                        &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                        &lt;span data-label class=&quot;truncate&quot;&gt;Pat Lee&lt;/span&gt;
+                      &lt;/button&gt;
+                    &lt;/li&gt;
+                    &lt;li&gt;
+                      &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-value=&quot;Sam Okafor&quot;&gt;
+                        &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                        &lt;span data-label class=&quot;truncate&quot;&gt;Sam Okafor&lt;/span&gt;
+                      &lt;/button&gt;
+                    &lt;/li&gt;
+                    &lt;li&gt;
+                      &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-value=&quot;Jordan Diaz&quot;&gt;
+                        &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                        &lt;span data-label class=&quot;truncate&quot;&gt;Jordan Diaz&lt;/span&gt;
+                      &lt;/button&gt;
+                    &lt;/li&gt;
+                    &lt;li&gt;
+                      &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-value=&quot;Riley Chen&quot;&gt;
+                        &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                        &lt;span data-label class=&quot;truncate&quot;&gt;Riley Chen&lt;/span&gt;
+                      &lt;/button&gt;
+                    &lt;/li&gt;
+                  &lt;/ul&gt;
+                  &lt;p data-combobox-empty class=&quot;hidden p-2 text-center text-sm text-muted-foreground&quot;&gt;No results.&lt;/p&gt;
+                  &lt;div class=&quot;-mx-1 mt-1 border-t border-border px-1 pt-1&quot; data-combobox-clear&gt;
+                    &lt;button type=&quot;button&quot; class=&quot;combo-item justify-center&quot; data-combobox-clear-btn&gt;Clear&lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/label&gt;
+            &lt;label class=&quot;table-toolbar-field table-toolbar-sort&quot;&gt;
+              &lt;span class=&quot;table-toolbar-field-label&quot;&gt;Sort by&lt;/span&gt;
+              &lt;div id=&quot;orders-toolbar-sort&quot; data-select data-full-width data-placeholder=&quot;Select…&quot; class=&quot;relative w-full&quot;&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;sort&quot; value=&quot;&quot; data-select-input&gt;
+                &lt;button type=&quot;button&quot; id=&quot;orders-toolbar-sort-trigger&quot; role=&quot;combobox&quot; aria-haspopup=&quot;listbox&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;orders-toolbar-sort-list&quot; class=&quot;btn btn-outline w-full justify-between font-normal&quot; data-select-trigger&gt;
+                  &lt;span class=&quot;flex min-w-0 items-center gap-1&quot; data-select-label&gt;
+                    &lt;span class=&quot;truncate&quot;&gt;Newest first&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;size-4 shrink-0 opacity-50 hero-chevron-down&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/button&gt;
+                &lt;div class=&quot;popover-panel absolute z-50 mt-1 hidden w-full p-1&quot; data-select-panel&gt;
+                  &lt;div id=&quot;orders-toolbar-sort-list&quot; role=&quot;listbox&quot; class=&quot;max-h-72 overflow-auto&quot; data-select-list&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;true&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;&quot; data-selected&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Newest first&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;placed:asc&quot;&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0 opacity-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Oldest first&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;customer:asc&quot;&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0 opacity-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Customer A–Z&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;total:desc&quot;&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0 opacity-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Largest total&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/label&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;sheet-footer&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; phx-click=&quot;[[&amp;quot;push&amp;quot;,{&amp;quot;value&amp;quot;:{&amp;quot;table&amp;quot;:&amp;quot;orders-toolbar&amp;quot;},&amp;quot;event&amp;quot;:&amp;quot;dt:reset&amp;quot;}]]&quot;&gt;
+          Clear all
+        &lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-primary ml-auto grow sm:grow-0&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#orders-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:hide-modal&amp;quot;}]]&quot;&gt;
+          Show 7 orders
+        &lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;orders-toolbar-filters-toasts&quot; data-toast-host phx-update=&quot;ignore&quot;&gt;&lt;/div&gt;
+    &lt;/dialog&gt;
+  &lt;/form&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+  </div>
+</div>
+        </section><section class="space-y-3">
+          <h2 class="text-lg font-medium tracking-tight">
+            Without views
+          </h2>
+          <div class="tabs tabs-lift" role="tablist">
+  <input type="radio" name="tab-table-toolbar-1" class="tab [--tab-bg:var(--color-base-100)]" aria-label="Preview" checked>
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-100">
+    <div class="flex min-h-[20rem] w-full gap-4 p-8 flex-col">
+      
+        <div id="customers-toolbar" class="table-toolbar">
+  <form id="customers-toolbar-form" class="table-toolbar-form" phx-change="dt:filter" phx-submit="dt:filter">
+    <input type="hidden" name="table" value="customers-toolbar">
+    <div class="table-toolbar-row">
+      <p class="table-toolbar-count">
+        3 of 128
+      </p>
+      <label class="input table-toolbar-search">
+        <span class="hero-magnifying-glass size-4 shrink-0 opacity-50" aria-hidden="true"></span>
+        <input type="search" name="q" value="harbor" placeholder="Search customers" aria-label="Search customers" autocomplete="off" phx-debounce="200">
+      </label>
+      <button type="button" class="btn btn-outline table-toolbar-filters" aria-haspopup="dialog" aria-controls="customers-toolbar-filters" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#customers-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]">
+        <span class="hero-funnel size-4" aria-hidden="true"></span>
+        <span class="table-toolbar-filters-label">Filters</span>
+      </button>
+      <div class="table-toolbar-more">
+        <button class="btn btn-outline btn-sm">
+          Export
+        </button>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="reveal-track"><div class="table-toolbar-chips">
+          <div id="customers-toolbar-chips" data-chip-row role="group" aria-label="Active filters" class="chip-row">
+            <ul class="chip-row-chips" data-chip-row-chips>
+            </ul>
+            <div class="chip-row-more" data-chip-row-more hidden>
+              <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="customers-toolbar-chips-overflow" data-chip-row-trigger data-more-label="Show {count} more">
+              </button>
+              <div id="customers-toolbar-chips-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+                <ul class="flex flex-wrap gap-2" aria-label="Active filters">
+                </ul>
+              </div>
+            </div>
+            <div id="customers-toolbar-chips-actions" class="chip-row-actions" data-chip-row-actions phx-remove="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;chip-exit&quot;}],[&quot;transition&quot;,{&quot;time&quot;:180,&quot;transition&quot;:[[&quot;chip-exit&quot;],[],[]]}]]">
+            </div>
+          </div>
+        </div></div>
+    </div>
+    <dialog id="customers-toolbar-filters" class="sheet">
+      <div class="sheet-header">
+        <button type="button" class="btn btn-ghost btn-square btn-sm absolute right-3 top-3" aria-label="Close" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#customers-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:hide-modal&quot;}]]">
+          <span class="hero-x-mark size-4" aria-hidden="true"></span>
+        </button>
+        <h3 class="sheet-title text-lg font-semibold">Filters</h3>
+      </div>
+      <div class="sheet-body">
+        <div>
+          <div class="table-toolbar-fields">
+            <label class="table-toolbar-field" data-filter="plan">
+              <span class="table-toolbar-field-label">Plan</span>
+              <div id="filter-plan" data-select data-multiple data-full-width data-placeholder="Any plan" class="relative w-full">
+                <input type="hidden" name="plan" value="" data-select-sentinel>
+                <button type="button" id="filter-plan-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-plan-list" class="btn btn-outline w-full justify-between font-normal" data-select-trigger>
+                  <span class="flex min-w-0 items-center gap-1 text-muted-foreground" data-select-label>
+                    <span class="truncate">Any plan</span>
+                  </span>
+                  <span class="size-4 shrink-0 opacity-50 hero-chevron-down" aria-hidden="true">
+                  </span>
+                </button>
+                <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
+                  <div id="filter-plan-list" role="listbox" aria-multiselectable="true" class="max-h-72 overflow-auto" data-select-list>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="free">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Free</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="team">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Team</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="business">
+                      <span class="facet-check" aria-hidden="true"><span class="hero-check size-3.5"></span></span>
+                      <span data-label class="truncate">Business</span>
+                    </button>
+                  </div>
+                  <div class="-mx-1 mt-1 border-t border-border px-1 pt-1 hidden" data-select-clear>
+                    <button type="button" class="combo-item justify-center" data-select-clear-btn>Clear</button>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <label class="table-toolbar-field table-toolbar-sort">
+              <span class="table-toolbar-field-label">Sort by</span>
+              <div id="customers-toolbar-sort" data-select data-full-width data-placeholder="Select…" class="relative w-full">
+                <input type="hidden" name="sort" value="" data-select-input>
+                <button type="button" id="customers-toolbar-sort-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="customers-toolbar-sort-list" class="btn btn-outline w-full justify-between font-normal" data-select-trigger>
+                  <span class="flex min-w-0 items-center gap-1" data-select-label>
+                    <span class="truncate">Name A–Z</span>
+                  </span>
+                  <span class="size-4 shrink-0 opacity-50 hero-chevron-down" aria-hidden="true">
+                  </span>
+                </button>
+                <div class="popover-panel absolute z-50 mt-1 hidden w-full p-1" data-select-panel>
+                  <div id="customers-toolbar-sort-list" role="listbox" class="max-h-72 overflow-auto" data-select-list>
+                    <button type="button" tabindex="-1" role="option" aria-selected="true" class="combo-item" data-select-item data-value="" data-selected>
+                      <span class="hero-check size-4 shrink-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Name A–Z</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="orders:desc">
+                      <span class="hero-check size-4 shrink-0 opacity-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Most orders</span>
+                    </button>
+                    <button type="button" tabindex="-1" role="option" aria-selected="false" class="combo-item" data-select-item data-value="joined:desc">
+                      <span class="hero-check size-4 shrink-0 opacity-0" aria-hidden="true"></span>
+                      <span data-label class="truncate">Newest</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button type="button" class="btn btn-ghost" phx-click="[[&quot;push&quot;,{&quot;value&quot;:{&quot;table&quot;:&quot;customers-toolbar&quot;},&quot;event&quot;:&quot;dt:reset&quot;}]]">
+          Clear all
+        </button>
+        <button type="button" class="btn btn-primary ml-auto grow sm:grow-0" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#customers-toolbar-filters&quot;,&quot;event&quot;:&quot;shadcn:hide-modal&quot;}]]">
+          Show 3 customers
+        </button>
+      </div>
+      <div id="customers-toolbar-filters-toasts" data-toast-host phx-update="ignore"></div>
+    </dialog>
+  </form>
+</div>
+
+      
+    </div>
+  </div>
+
+  <input type="radio" name="tab-table-toolbar-1" class="tab [--tab-bg:var(--color-base-200)]" aria-label="HEEx">
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+    <div data-code-block class="relative">
+      <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" data-copy-code>
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+      <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">&lt;.table_toolbar
+  id=&quot;customers-toolbar&quot;
+  search={@state.search}
+  placeholder=&quot;Search customers&quot;
+  shown={length(@rows)}
+  total={@total}
+  noun={{&quot;customer&quot;, &quot;customers&quot;}}
+  chips={State.chips(@state, [&quot;plan&quot;], %{&quot;plan&quot; =&gt; @plans})}
+  sort={State.sort_value(@state)}
+  sorts={[{&quot;Name A–Z&quot;, &quot;name:asc&quot;}, {&quot;Most orders&quot;, &quot;orders:desc&quot;}, {&quot;Newest&quot;, &quot;joined:desc&quot;}]}
+&gt;
+  &lt;:filter key=&quot;plan&quot; label=&quot;Plan&quot;&gt;
+    &lt;.select id=&quot;filter-plan&quot; name=&quot;plan&quot; multiple full_width
+      value={State.values(@state.filters[&quot;plan&quot;])} placeholder=&quot;Any plan&quot;&gt;
+      &lt;:option :for={{label, value} &lt;- @plans} value={value}&gt;{label}&lt;/:option&gt;
+    &lt;/.select&gt;
+  &lt;/:filter&gt;
+  &lt;:more&gt;&lt;.button size=&quot;sm&quot; variant=&quot;outline&quot; phx-click=&quot;export&quot;&gt;Export&lt;/.button&gt;&lt;/:more&gt;
+&lt;/.table_toolbar&gt;</code></pre>
+    </div>
+  </div>
+
+  <input type="radio" name="tab-table-toolbar-1" class="tab [--tab-bg:var(--color-base-200)]" aria-label="HTML">
+  <div class="tab-content rounded-b-lg rounded-tr-lg border-base-300 bg-base-200">
+    <div data-code-block class="relative">
+      <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" data-copy-code>
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+      <pre class="max-h-[28rem] overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">&lt;div id=&quot;customers-toolbar&quot; class=&quot;table-toolbar&quot;&gt;
+  &lt;form id=&quot;customers-toolbar-form&quot; class=&quot;table-toolbar-form&quot; phx-change=&quot;dt:filter&quot; phx-submit=&quot;dt:filter&quot;&gt;
+    &lt;input type=&quot;hidden&quot; name=&quot;table&quot; value=&quot;customers-toolbar&quot;&gt;
+    &lt;div class=&quot;table-toolbar-row&quot;&gt;
+      &lt;p class=&quot;table-toolbar-count&quot;&gt;
+        3 of 128
+      &lt;/p&gt;
+      &lt;label class=&quot;input table-toolbar-search&quot;&gt;
+        &lt;span class=&quot;hero-magnifying-glass size-4 shrink-0 opacity-50&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;input type=&quot;search&quot; name=&quot;q&quot; value=&quot;harbor&quot; placeholder=&quot;Search customers&quot; aria-label=&quot;Search customers&quot; autocomplete=&quot;off&quot; phx-debounce=&quot;200&quot;&gt;
+      &lt;/label&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn btn-outline table-toolbar-filters&quot; aria-haspopup=&quot;dialog&quot; aria-controls=&quot;customers-toolbar-filters&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#customers-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:show-modal&amp;quot;}]]&quot;&gt;
+        &lt;span class=&quot;hero-funnel size-4&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;span class=&quot;table-toolbar-filters-label&quot;&gt;Filters&lt;/span&gt;
+      &lt;/button&gt;
+      &lt;div class=&quot;table-toolbar-more&quot;&gt;
+        &lt;button class=&quot;btn btn-outline btn-sm&quot;&gt;
+          Export
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;reveal&quot;&gt;
+      &lt;div class=&quot;reveal-track&quot;&gt;&lt;div class=&quot;table-toolbar-chips&quot;&gt;
+          &lt;div id=&quot;customers-toolbar-chips&quot; data-chip-row role=&quot;group&quot; aria-label=&quot;Active filters&quot; class=&quot;chip-row&quot;&gt;
+            &lt;ul class=&quot;chip-row-chips&quot; data-chip-row-chips&gt;
+            &lt;/ul&gt;
+            &lt;div class=&quot;chip-row-more&quot; data-chip-row-more hidden&gt;
+              &lt;button type=&quot;button&quot; class=&quot;badge badge-outline chip chip-more&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;customers-toolbar-chips-overflow&quot; data-chip-row-trigger data-more-label=&quot;Show {count} more&quot;&gt;
+              &lt;/button&gt;
+              &lt;div id=&quot;customers-toolbar-chips-overflow&quot; class=&quot;popover-panel chip-row-panel&quot; data-chip-row-panel hidden&gt;
+                &lt;ul class=&quot;flex flex-wrap gap-2&quot; aria-label=&quot;Active filters&quot;&gt;
+                &lt;/ul&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div id=&quot;customers-toolbar-chips-actions&quot; class=&quot;chip-row-actions&quot; data-chip-row-actions phx-remove=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;event&amp;quot;:&amp;quot;chip-exit&amp;quot;}],[&amp;quot;transition&amp;quot;,{&amp;quot;time&amp;quot;:180,&amp;quot;transition&amp;quot;:[[&amp;quot;chip-exit&amp;quot;],[],[]]}]]&quot;&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;dialog id=&quot;customers-toolbar-filters&quot; class=&quot;sheet&quot;&gt;
+      &lt;div class=&quot;sheet-header&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost btn-square btn-sm absolute right-3 top-3&quot; aria-label=&quot;Close&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#customers-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:hide-modal&amp;quot;}]]&quot;&gt;
+          &lt;span class=&quot;hero-x-mark size-4&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+        &lt;/button&gt;
+        &lt;h3 class=&quot;sheet-title text-lg font-semibold&quot;&gt;Filters&lt;/h3&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;sheet-body&quot;&gt;
+        &lt;div&gt;
+          &lt;div class=&quot;table-toolbar-fields&quot;&gt;
+            &lt;label class=&quot;table-toolbar-field&quot; data-filter=&quot;plan&quot;&gt;
+              &lt;span class=&quot;table-toolbar-field-label&quot;&gt;Plan&lt;/span&gt;
+              &lt;div id=&quot;filter-plan&quot; data-select data-multiple data-full-width data-placeholder=&quot;Any plan&quot; class=&quot;relative w-full&quot;&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;plan&quot; value=&quot;&quot; data-select-sentinel&gt;
+                &lt;button type=&quot;button&quot; id=&quot;filter-plan-trigger&quot; role=&quot;combobox&quot; aria-haspopup=&quot;listbox&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;filter-plan-list&quot; class=&quot;btn btn-outline w-full justify-between font-normal&quot; data-select-trigger&gt;
+                  &lt;span class=&quot;flex min-w-0 items-center gap-1 text-muted-foreground&quot; data-select-label&gt;
+                    &lt;span class=&quot;truncate&quot;&gt;Any plan&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;size-4 shrink-0 opacity-50 hero-chevron-down&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/button&gt;
+                &lt;div class=&quot;popover-panel absolute z-50 mt-1 hidden w-full p-1&quot; data-select-panel&gt;
+                  &lt;div id=&quot;filter-plan-list&quot; role=&quot;listbox&quot; aria-multiselectable=&quot;true&quot; class=&quot;max-h-72 overflow-auto&quot; data-select-list&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;free&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Free&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;team&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Team&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;business&quot;&gt;
+                      &lt;span class=&quot;facet-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;hero-check size-3.5&quot;&gt;&lt;/span&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Business&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;-mx-1 mt-1 border-t border-border px-1 pt-1 hidden&quot; data-select-clear&gt;
+                    &lt;button type=&quot;button&quot; class=&quot;combo-item justify-center&quot; data-select-clear-btn&gt;Clear&lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/label&gt;
+            &lt;label class=&quot;table-toolbar-field table-toolbar-sort&quot;&gt;
+              &lt;span class=&quot;table-toolbar-field-label&quot;&gt;Sort by&lt;/span&gt;
+              &lt;div id=&quot;customers-toolbar-sort&quot; data-select data-full-width data-placeholder=&quot;Select…&quot; class=&quot;relative w-full&quot;&gt;
+                &lt;input type=&quot;hidden&quot; name=&quot;sort&quot; value=&quot;&quot; data-select-input&gt;
+                &lt;button type=&quot;button&quot; id=&quot;customers-toolbar-sort-trigger&quot; role=&quot;combobox&quot; aria-haspopup=&quot;listbox&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;customers-toolbar-sort-list&quot; class=&quot;btn btn-outline w-full justify-between font-normal&quot; data-select-trigger&gt;
+                  &lt;span class=&quot;flex min-w-0 items-center gap-1&quot; data-select-label&gt;
+                    &lt;span class=&quot;truncate&quot;&gt;Name A–Z&lt;/span&gt;
+                  &lt;/span&gt;
+                  &lt;span class=&quot;size-4 shrink-0 opacity-50 hero-chevron-down&quot; aria-hidden=&quot;true&quot;&gt;
+                  &lt;/span&gt;
+                &lt;/button&gt;
+                &lt;div class=&quot;popover-panel absolute z-50 mt-1 hidden w-full p-1&quot; data-select-panel&gt;
+                  &lt;div id=&quot;customers-toolbar-sort-list&quot; role=&quot;listbox&quot; class=&quot;max-h-72 overflow-auto&quot; data-select-list&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;true&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;&quot; data-selected&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Name A–Z&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;orders:desc&quot;&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0 opacity-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Most orders&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button type=&quot;button&quot; tabindex=&quot;-1&quot; role=&quot;option&quot; aria-selected=&quot;false&quot; class=&quot;combo-item&quot; data-select-item data-value=&quot;joined:desc&quot;&gt;
+                      &lt;span class=&quot;hero-check size-4 shrink-0 opacity-0&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+                      &lt;span data-label class=&quot;truncate&quot;&gt;Newest&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/label&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;sheet-footer&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; phx-click=&quot;[[&amp;quot;push&amp;quot;,{&amp;quot;value&amp;quot;:{&amp;quot;table&amp;quot;:&amp;quot;customers-toolbar&amp;quot;},&amp;quot;event&amp;quot;:&amp;quot;dt:reset&amp;quot;}]]&quot;&gt;
+          Clear all
+        &lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-primary ml-auto grow sm:grow-0&quot; phx-click=&quot;[[&amp;quot;dispatch&amp;quot;,{&amp;quot;to&amp;quot;:&amp;quot;#customers-toolbar-filters&amp;quot;,&amp;quot;event&amp;quot;:&amp;quot;shadcn:hide-modal&amp;quot;}]]&quot;&gt;
+          Show 3 customers
+        &lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;customers-toolbar-filters-toasts&quot; data-toast-host phx-update=&quot;ignore&quot;&gt;&lt;/div&gt;
+    &lt;/dialog&gt;
+  &lt;/form&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+  </div>
+</div>
+        </section>
+      </div>
+
+      <section class="mt-12 space-y-4 border-t border-base-300 pt-8">
+        <h2 class="text-lg font-medium tracking-tight">Usage guidance</h2>
+        <div class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="rounded-lg border border-success/40 p-4">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-success">Use when</p>
+      <ul class="list-inside list-disc space-y-1 text-sm">
+        <li>Above a &lt;.data_table&gt;: search, filters and saved views of one list</li><li>Filters that belong in the URL, so a view can be bookmarked and Back restores it</li><li>Saved views people switch between (All, Open, Mine), each a patch link with its count</li>
+      </ul>
+    </div>
+    <div class="rounded-lg border border-destructive/40 p-4">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">
+        Don't use for
+      </p>
+      <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+        <li>A short list with nothing to filter - a heading and the table are enough</li><li>Filters that change the whole page (date range for a dashboard) - put them in the page header</li><li>Search that only the server can run across records - use &lt;.command on_search&gt;</li>
+      </ul>
+    </div>
+  </div>
+  <dl class="space-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="w-28 shrink-0 font-medium">Sizing</dt>
+      <dd class="text-muted-foreground">One row, 8px gaps: views (a tab nav) or a muted text-sm count, the h-9 search (16rem; 14rem beside views), an outline Filters button with a 20px primary count pill, then :more. Chips sit 8px under the row in a reveal.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-28 shrink-0 font-medium">Responsive</dt>
+      <dd class="text-muted-foreground">Phones: without views the search takes the row; beside views it shrinks to 7rem. Filters goes icon-only (the label stays for screen readers), :more hides, and the sheet adds a Sort by select (from sorts). The row never wraps: views fold into the Views menu, chips into +N.</dd>
+    </div>
+    <div class="flex gap-2" data-platform="ios">
+      <dt class="w-28 shrink-0 font-medium">iOS</dt>
+      <dd class="text-muted-foreground">.searchable for the search, .searchScopes or a segmented Picker for views, and a toolbar button that opens a filter sheet (a Form of pickers).</dd>
+    </div>
+  </dl>
+</div>
+        
+      </section>
+
+      <section class="mt-12 space-y-3 border-t border-base-300 pt-8">
+        <div class="space-y-1">
+          <h2 class="text-lg font-medium tracking-tight">API reference</h2>
+          <p class="text-sm text-muted-foreground">
+            Props for the
+            <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+              ShadcnDaisyui.Components
+            </code>
+            function component.
+          </p>
+        </div>
+        <div class="overflow-hidden rounded-lg border border-base-300">
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="w-40">Prop</th>
+        <th>Type</th>
+        <th class="w-28">Default</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="font-mono text-sm font-medium">id</td>
+        <td class="font-mono text-xs text-muted-foreground">string (required)</td>
+        <td class="font-mono text-xs text-muted-foreground">-</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">search / placeholder</td>
+        <td class="font-mono text-xs text-muted-foreground">string</td>
+        <td class="font-mono text-xs text-muted-foreground">&quot;&quot; / &quot;Search…&quot;</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">shown / total</td>
+        <td class="font-mono text-xs text-muted-foreground">integer</td>
+        <td class="font-mono text-xs text-muted-foreground">nil (&quot;N orders&quot;, &quot;N of M&quot; when filtered)</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">noun</td>
+        <td class="font-mono text-xs text-muted-foreground">{singular, plural}</td>
+        <td class="font-mono text-xs text-muted-foreground">{&quot;row&quot;, &quot;rows&quot;}</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">views</td>
+        <td class="font-mono text-xs text-muted-foreground">[%{key, label, count, path, active, edited}]</td>
+        <td class="font-mono text-xs text-muted-foreground">[]</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">menu</td>
+        <td class="font-mono text-xs text-muted-foreground">[%{key, label, group, icon, active, path | click}]</td>
+        <td class="font-mono text-xs text-muted-foreground">[]</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">chips</td>
+        <td class="font-mono text-xs text-muted-foreground">[{key, label} | {key, label, :fixed}]</td>
+        <td class="font-mono text-xs text-muted-foreground">[]</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">sort / sorts</td>
+        <td class="font-mono text-xs text-muted-foreground">&quot;key:dir&quot; / [{label, &quot;key:dir&quot;}]</td>
+        <td class="font-mono text-xs text-muted-foreground">&quot;&quot; / []</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">target</td>
+        <td class="font-mono text-xs text-muted-foreground">phx-target</td>
+        <td class="font-mono text-xs text-muted-foreground">nil</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">:filter key label</td>
+        <td class="font-mono text-xs text-muted-foreground">slot (one select or combobox named key)</td>
+        <td class="font-mono text-xs text-muted-foreground">-</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">:more</td>
+        <td class="font-mono text-xs text-muted-foreground">slot (hidden on phones)</td>
+        <td class="font-mono text-xs text-muted-foreground">-</td>
+      </tr><tr>
+        <td class="font-mono text-sm font-medium">:save</td>
+        <td class="font-mono text-xs text-muted-foreground">slot (end of the chips row)</td>
+        <td class="font-mono text-xs text-muted-foreground">-</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+      </section>
+    </div>
+
+    <div class="hidden space-y-12 pt-8 group-has-[[data-view=design]:checked]/view:block">
+      <section class="space-y-4">
+        <h2 class="text-lg font-medium tracking-tight">Specs</h2>
+        <div class="space-y-6">
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anatomy</p>
+    
+    <dl class="divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300">
+      <div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          1
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Views</dt>
+        <dd class="text-sm text-muted-foreground">A &lt;.tab_nav&gt; of patch links with counts; an edited view shows a dot; overflow and the menu entries go in the Views menu.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          2
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Count</dt>
+        <dd class="text-sm text-muted-foreground">Without views: &quot;N orders&quot;, or &quot;N of M&quot; while filtered.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          3
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Search</dt>
+        <dd class="text-sm text-muted-foreground">An input with a magnifier, name q, debounced 200ms.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          4
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Filters button</dt>
+        <dd class="text-sm text-muted-foreground">Outline button that opens the sheet, with the number of filters on.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          5
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">More</dt>
+        <dd class="text-sm text-muted-foreground">Trailing controls (Export, Columns), hidden on phones.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          6
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Chips row</dt>
+        <dd class="text-sm text-muted-foreground">A &lt;.chip_row&gt; in a &lt;.reveal&gt;: removable chips, fixed chips, then :save and Clear all.</dd>
+      </div><div class="flex gap-3 px-4 py-3">
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          7
+        </span>
+        <dt class="w-36 shrink-0 text-sm font-medium">Filters sheet</dt>
+        <dd class="text-sm text-muted-foreground">A &lt;.sheet&gt;: one field per filter, Sort by on phones, Clear all + Show N.</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      Measurements
+    </p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td class="w-40 font-medium">Row</td>
+            <td class="font-mono text-xs text-muted-foreground">flex, 0.5rem gaps, never wraps</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Search</td>
+            <td class="font-mono text-xs text-muted-foreground">16rem (14rem beside views from 40rem, 7rem on phones)</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Filters count</td>
+            <td class="font-mono text-xs text-muted-foreground">1.25rem pill, var(--primary), text-xs</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Edited dot</td>
+            <td class="font-mono text-xs text-muted-foreground">0.375rem, var(--primary)</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Chips row</td>
+            <td class="font-mono text-xs text-muted-foreground">0.5rem under the row, 180ms reveal</td>
+          </tr><tr>
+            <td class="w-40 font-medium">Sheet fields</td>
+            <td class="font-mono text-xs text-muted-foreground">1rem apart, label text-sm 500, 0.5rem above its picker</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      Tokens used
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--muted)">
+        </span>
+        <code class="font-mono">muted</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--muted-foreground)">
+        </span>
+        <code class="font-mono">muted-foreground</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--primary)">
+        </span>
+        <code class="font-mono">primary</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--primary-foreground)">
+        </span>
+        <code class="font-mono">primary-foreground</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--secondary)">
+        </span>
+        <code class="font-mono">secondary</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--input)">
+        </span>
+        <code class="font-mono">input</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--border-color)">
+        </span>
+        <code class="font-mono">border-color</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--popover)">
+        </span>
+        <code class="font-mono">popover</code>
+      </span><span class="inline-flex items-center gap-1.5 rounded-md border border-base-300 py-1 pl-1.5 pr-2.5 text-xs">
+        <span class="size-4 rounded border border-base-300" style="background: var(--ring)">
+        </span>
+        <code class="font-mono">ring</code>
+      </span>
+    </div>
+  </div>
+</div>
+      </section>
+
+      <section class="space-y-4 border-t border-base-300 pt-8">
+        <h2 class="text-lg font-medium tracking-tight">Accessibility</h2>
+        <div class="space-y-6">
+  <div class="space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Keyboard</p>
+    <div class="overflow-hidden rounded-lg border border-base-300">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Tab</kbd></td>
+            <td class="text-sm text-muted-foreground">Views, search, Filters, :more, then the chips</td>
+          </tr><tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Enter / Space</kbd></td>
+            <td class="text-sm text-muted-foreground">Open the Filters sheet</td>
+          </tr><tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Esc</kbd></td>
+            <td class="text-sm text-muted-foreground">Close the sheet (or an open picker inside it first)</td>
+          </tr><tr>
+            <td class="w-44"><kbd class="kbd kbd-sm">Enter in the search</kbd></td>
+            <td class="text-sm text-muted-foreground">Submit the form (dt:filter) at once</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dl class="space-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Role / ARIA</dt>
+      <dd class="text-muted-foreground">The views are a nav named &quot;Views&quot; (aria-current on the active link). The search is type=search labelled by its placeholder. The Filters button has aria-haspopup=dialog and aria-controls the sheet; the count reads &quot;2 on&quot;. Chips are a group named &quot;Active filters&quot;; each × is &quot;Remove filter: Status: Open&quot;.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Focus</dt>
+      <dd class="text-muted-foreground">Opening the sheet moves focus into it; closing returns it to the Filters button. Removing a chip moves focus to its neighbour.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Screen reader</dt>
+      <dd class="text-muted-foreground">The count is plain text (&quot;12 of 240&quot;); the Filters button announces how many filters are on; the views menu names the active view.</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Touch target</dt>
+      <dd class="text-muted-foreground">On phones Filters is a 44px icon button and the sheet&#39;s pickers use full_width (44px on touch).</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="w-36 shrink-0 font-medium">Reduced motion</dt>
+      <dd class="text-muted-foreground">The chips row slides 180ms and chips fade; both drop to instant under prefers-reduced-motion.</dd>
+    </div>
+  </dl>
+</div>
+      </section>
+
+      <section data-platform="ios" class="space-y-4 border-t border-base-300 pt-8">
+        <div class="space-y-1">
+          <h2 class="text-lg font-medium tracking-tight">Native (SwiftUI)</h2>
+          <p class="text-sm text-muted-foreground">
+            The SwiftUI equivalent for the iOS/iPadOS package.
+          </p>
+        </div>
+        <div class="space-y-3">
+  <span class="badge badge-sm badge-warning">
+    Partial parity
+  </span>
+  <div data-code-block class="relative overflow-hidden rounded-lg border border-base-300 bg-base-200">
+    <button type="button" aria-label="Copy code" class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10 bg-base-200" data-copy-code>
+  <span class="hero-clipboard-document size-4" aria-hidden="true"></span>
+</button>
+    <pre class="overflow-auto p-4 text-sm leading-relaxed"><code class="font-mono">@State private var query = &quot;&quot;
+@State private var view: OrderView = .all
+@State private var showFilters = false
+
+OrdersList(query: query, view: view, filters: filters)
+    .searchable(text: $query, prompt: &quot;Search orders&quot;)
+    .searchScopes($view) {
+        ForEach(OrderView.allCases) { Text($0.label).tag($0) }
+    }
+    .toolbar {
+        Button(&quot;Filters&quot;, systemImage: &quot;line.3.horizontal.decrease.circle&quot;) { showFilters = true }
+    }
+    .sheet(isPresented: $showFilters) { FiltersForm(filters: $filters) }
+</code></pre>
+  </div>
+  <p class="text-sm text-muted-foreground">.searchable with .searchScopes covers search and views; filters go in a sheet holding a Form of Pickers (a multi-select is a List with selection). Show active filters as a horizontal row of removable capsules above the list if they matter at a glance.</p>
+</div>
+      </section>
+    </div>
+  </div>
+
+  <div class="mt-12 flex items-center justify-between border-t border-base-300 pt-6 text-sm">
+    <a href="https://ui.shadcn.com/docs/components" class="link link-hover text-muted-foreground">
+      Compare with shadcn/ui →
+    </a>
+    <a href="/shadcn_daisyui/docs/themes" class="link link-hover text-muted-foreground">
+      Themes →
+    </a>
+  </div>
+
+      </div>
+
+      <footer class="border-t border-base-300">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+    <p>
+      Built with
+      <a href="https://daisyui.com" class="link link-hover font-medium text-foreground">
+        daisyUI v5
+      </a>
+      and the
+      <a href="https://github.com/infinity-home-services/shadcn_daisyui" class="link link-hover font-medium text-foreground">
+        shadcn_daisyui
+      </a>
+      theme.
+    </p>
+    <p>Components styled to match shadcn/ui - for Phoenix.</p>
+  </div>
+</footer>
+    </main>
+  </div>
+</div>
+
+    <dialog id="docs-search-palette" data-command class="command-dialog">
+  <div class="flex items-center gap-2 border-b border-base-300 px-3">
+    <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+    <input data-command-search class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Search components…" aria-label="Search components">
+  </div>
+  <ul data-command-list class="max-h-80 overflow-auto p-1">
+    <li class="command-group-label" data-group>Guides</li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/installation">
+        <span class="hero-book-open size-4" aria-hidden="true"></span> Installation
+      </a>
+    </li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/adopt">
+        <span class="hero-puzzle-piece size-4" aria-hidden="true"></span> Adopt the design system
+      </a>
+    </li>
+    <li>
+      <a class="command-item" data-command-item href="/shadcn_daisyui/docs/themes">
+        <span class="hero-swatch size-4" aria-hidden="true"></span> Themes
+      </a>
+    </li>
+    
+      <li class="command-group-label" data-group>Foundations</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/platforms">
+          Platforms
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Dual units, HIG arbitration, and the token map between web and SwiftUI.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/accessibility">
+          Accessibility &amp; content
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Contrast, focus, labels, reduced motion, and how to write UI text.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/layout">
+          Layout
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Breakpoints, window size classes, content widths, and the page scaffold.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/spacing">
+          Spacing
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The 4px grid, the blessed steps, and where each one is used.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/navigation">
+          Navigation
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Where navigation lives at each window size class.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/foundations/interaction">
+          Interaction
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The state ladder, touch targets, and input-method differences.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Styles</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/color">
+          Color
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Semantic token usage, the emphasis ladder, and brand splash rules.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/typography">
+          Typography &amp; icons
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The six-role type ramp and iconography rules.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/shape-elevation">
+          Shape &amp; elevation
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Radius roles and the (deliberately flat) elevation ladder.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/styles/motion">
+          Motion
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Three durations, standard easing, opacity and transform, plus the row reveal.
+          </span>
+        </a>
+      </li>
+    
+    
+      <li class="command-group-label" data-group>Forms &amp; inputs</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/calendar">
+          Calendar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A date-selection calendar.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/checkbox">
+          Checkbox
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A control that toggles between checked and unchecked.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/chip-row">
+          Chip Row
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            One line of removable chips: the ones that don&#39;t fit collapse into a +N chip that opens a popover listing them.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/combobox">
+          Combobox
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input with a searchable, filterable list of options.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/date-picker">
+          Date Picker
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A popover calendar for picking a single date or a range.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/date-range-picker">
+          Date Range Picker
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A popover with two months and optional preset ranges, bound to a form as two ISO dates.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/field">
+          Field
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A grouped set of related form controls.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/filter">
+          Filter
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A radio-button filter group with a reset.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input">
+          Input
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A form input field for collecting text from the user.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input-group">
+          Input Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input with attached addons or actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/input-otp">
+          Input OTP
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A segmented input for one-time passcodes.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/label">
+          Label
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An accessible label associated with a form control.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/multi-select">
+          Multi Select
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Pick several values from a list: multiple on Select and Combobox, with checkbox rows, counts and Clear.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/radio-group">
+          Radio Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of checkable buttons where only one can be selected at a time.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/range-calendar">
+          Range Calendar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A calendar component that allows users to select a range of dates.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/rating">
+          Rating
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A star rating input.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/select">
+          Select
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a list of options for the user to pick from, triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/native-select">
+          Select Native
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The native HTML select control, styled to match.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/slider">
+          Slider
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An input for selecting a value from a range.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/switch">
+          Switch
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A control that toggles between on and off states.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/textarea">
+          Textarea
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A multi-line text input field.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/time-field">
+          Time Field
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A labelled time picker bound to a form field: the label above, the picker full width, the field&#39;s errors under it.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/time-picker">
+          Time Picker
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A field-style trigger that opens hour, minute and AM/PM columns, bound to a form as an ISO time.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/toggle">
+          Toggle
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A two-state button that can be on or off.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/toggle-group">
+          Toggle Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of two-state buttons that can be toggled together.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/validator">
+          Validator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Form-validation visual states with a hint.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Actions</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/button">
+          Button
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a button or a component that looks like a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/button-group">
+          Button Group
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A set of buttons joined into a single segmented control.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/command">
+          Command
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A command palette for fast keyboard-driven actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dropdown-menu">
+          Dropdown Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A menu of actions or links triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/swap">
+          Swap
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated swap between two icons or states.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Navigation</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/breadcrumb">
+          Breadcrumb
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays the path to the current resource.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dock">
+          Dock
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A bottom navigation bar for mobile.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/link">
+          Link
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A styled inline anchor.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/menubar">
+          Menubar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal bar of dropdown menus, like a desktop app.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/navbar">
+          Navbar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A top application bar.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/navigation-menu">
+          Navigation Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal menu with rich dropdown panels.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/pagination">
+          Pagination
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Navigation for moving between pages of content.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/record-tabs">
+          Record Tabs
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A tab row inside a record (Details, Activity, Files): the active tab is underlined and the server owns which one shows.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/section-nav">
+          Section Nav
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Where an edit form&#39;s sections are: a list beside the cards on wide screens, a dropdown in the page header on narrow ones, marking the section in view.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/sidebar">
+          Sidebar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An app navigation sidebar layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/steps">
+          Steps
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A horizontal stepper showing progress through a flow.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/tab-nav">
+          Tab Nav
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A row of link tabs that fits its width: tabs that don&#39;t fit move into a More menu, which also holds extra views.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/tabs">
+          Tabs
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Layered sections of content shown one panel at a time.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Overlays</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/alert-dialog">
+          Alert Dialog
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A modal that interrupts the user to confirm an action.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/context-menu">
+          Context Menu
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A menu shown on right-click.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/dialog">
+          Dialog
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A modal window overlaid on the page.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/drawer">
+          Drawer
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A panel that slides up from the bottom of the screen.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/hover-card">
+          Hover Card
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A card of preview content shown on hover.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/popover">
+          Popover
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Rich floating content triggered by a button.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/sheet">
+          Sheet
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A panel that slides in from the edge of the screen.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/tooltip">
+          Tooltip
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A floating label shown on hover or focus.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Feedback &amp; status</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/alert">
+          Alert
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a callout for user attention.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/badge">
+          Badge
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a badge or a component that looks like a badge.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/countdown">
+          Countdown
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated numeric odometer for countdowns.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/indicator">
+          Indicator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A corner badge overlaid on another element.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/progress">
+          Progress
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays an indicator showing completion progress.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/radial-progress">
+          Radial Progress
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A circular percentage progress ring.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/skeleton">
+          Skeleton
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A placeholder preview while content is loading.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/sonner">
+          Sonner
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An opinionated toast component: stacked, swipeable, auto-dismissing notifications.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/spinner">
+          Spinner
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An animated loading indicator.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/status">
+          Status
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A tiny status dot for online/offline state.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Data display</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/accordion">
+          Accordion
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Vertically stacked, expandable sections.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/attachment">
+          Attachment
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a file or image attachment with media, metadata, upload state, and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/avatar">
+          Avatar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An image element with a text fallback.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/card">
+          Card
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A container for grouping related content and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/carousel">
+          Carousel
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A slideshow of items with previous/next controls.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/chart">
+          Chart
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Simple bar and line charts drawn with the theme colors.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/collapsible">
+          Collapsible
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A single expandable/collapsible section.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/data-table">
+          Data Table
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A list page&#39;s table: the body scrolls under a header that stays put, columns sort, rows open the record, and ticked rows get a bulk bar.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/empty">
+          Empty
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            An empty state: an icon in a muted circle, a short title, one line saying what belongs here, and an optional action.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/item">
+          Item
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A versatile row for displaying content with media, title, description, and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/kbd">
+          Kbd
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays keyboard keys or shortcuts inline.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/list">
+          List
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Vertical rows of items with avatars and actions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/stat">
+          Stat
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Compact blocks for key metrics.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/table">
+          Table
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A responsive table for displaying rows of data.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/table-card">
+          Table Card
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A card of rows with a title and description: a record&#39;s activity, its line items, its contacts.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/table-toolbar">
+          Table Toolbar
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            The one row above a data table: saved views or the count, search, a Filters sheet, and the filters that are on as chips.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/timeline">
+          Timeline
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A vertical or horizontal sequence of events.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Conversation</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/bubble">
+          Bubble
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays conversational content in a message bubble, with variants, alignment, grouping, and reactions.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/chat">
+          Chat
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Chat-bubble message rows aligned left or right.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/marker">
+          Marker
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays an inline status, system note, bordered row, or labeled separator in a conversation.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/message">
+          Message
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Displays a message in a conversation, with optional avatar, header, footer, and alignment.
+          </span>
+        </a>
+      </li>
+    
+      <li class="command-group-label" data-group>Layout</li>
+      <li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/aspect-ratio">
+          Aspect Ratio
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Constrains content to a fixed width/height ratio.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/footer">
+          Footer
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A multi-column page footer layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/hero">
+          Hero
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A full-width hero section layout.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/mask">
+          Mask
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Clip an element to a shape.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/mockup">
+          Mockup
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Browser and code window mockup frames.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/resizable">
+          Resizable
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Panels the user can resize by dragging a handle.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/reveal">
+          Reveal
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Slides a row open and closed in place: grid-template-rows 0fr to 1fr plus opacity, 180ms ease-out.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/scroll-area">
+          Scroll Area
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            A scrollable region with a fixed height.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/separator">
+          Separator
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Visually or semantically separates content.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/stack">
+          Stack
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Overlapping, stacked elements.
+          </span>
+        </a>
+      </li><li>
+        <a class="command-item" data-command-item href="/shadcn_daisyui/docs/components/typography">
+          Typography
+          <span class="ml-auto truncate text-xs text-muted-foreground">
+            Styles for headings, prose, lists, and inline code.
+          </span>
+        </a>
+      </li>
+    
+  </ul>
+  <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+    No results found.
+  </p>
+</dialog>
+    <section id="toaster" phx-hook="ShadcnToaster" phx-update="ignore" data-sonner-section data-position="bottom-right" data-expand="false" data-rich-colors="false" data-close-button="false" data-duration="4000" data-visible-toasts="3" hidden class="">
+</section>
+  </body>
+</html>
