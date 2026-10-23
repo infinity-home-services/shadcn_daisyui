@@ -8,6 +8,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-23
+
+Server search in the command palette, for what only the server can search: a
+directory, a remote API, a table too big to send to the browser. It is
+opt-in; a `<.command>` without `on_search` renders and behaves as in 0.20.0.
+
+### Added
+
+- **`on_search="event"` on `<.command>`**: the hook stops filtering in the
+  browser and pushes the trimmed text, `search_debounce` ms after the last
+  keystroke (default 250), as that event with
+  `%{"id" => id, "query" => text}`. The LiveView renders its results as the
+  `<:item>`s and echoes the text they answer as `query` (required with
+  `on_search`; nil before the first search). Items count only while `query`
+  matches the input, so a reply to older text never shows as current.
+  `phx-target` (e.g. `@myself`) sends the search, and the items' `phx-click`,
+  to a LiveComponent. In a dead view the palette dispatches
+  `shadcn:command-search` (`detail` is `{id, query}`); answer it by rendering
+  the items and setting `data-query` on the dialog.
+- **States, so the palette always says something**: `<:hint>` before anything
+  is typed (never "No results found." there); while the reply is pending a
+  spinner at the end of the input row, `aria-busy` on the list, and whatever
+  was on screen stays, dimmed and inert (no active row, Enter does nothing);
+  `<:empty>` (default "No results found.", also available without
+  `on_search`) once the server has answered the current text with no items;
+  else the items, the first one active, keyboard navigable as before. A
+  re-render of the same answer keeps the active row.
+- **Opening resets it**: the input clears and an empty search is pushed at
+  once, so the server can drop the last results. Closing drops a search still
+  waiting for its debounce.
+- **Each answer is announced** in a polite `role="status"` region ("3
+  results", or the empty text). LiveView leaves its text alone
+  (`phx-update="ignore"`).
+- **Opt-in `<.command>` item attributes**, as `<.dropdown_menu>` items have
+  them; items without them render exactly as before:
+  - `description` - a muted second line under the label (an email under a
+    name).
+  - `confirm` - renders `data-confirm`, asked by `phoenix_html`; the palette
+    closes only once the person accepts, and cancelling keeps it open with the
+    same results.
+  - `values` - one `phx-value-<key>` per entry.
+  - `disabled` - `aria-disabled="true"`, no click (a link or form item renders
+    as an inert button), skipped by the arrow keys, 50% opacity.
+- Theme classes: `.command-item-text` (the label, `.command-item-title`, over
+  `.command-item-description`); `.command-item[aria-disabled="true"]` and
+  `[data-command-list][aria-busy="true"] .command-item` are styled.
+- Docs site: a "Server search" example on the Command page (answered by a
+  stand-in in the static export), and `/lab/command-search`, a LiveView whose
+  LiveComponent searches a made-up directory on the server.
+
 ## [0.20.0] - 2026-10-19
 
 The app shell: the sidebar, phone dock, search, account menu and page header

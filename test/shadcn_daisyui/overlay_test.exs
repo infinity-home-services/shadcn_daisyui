@@ -642,6 +642,233 @@ defmodule ShadcnDaisyui.Components.OverlayTest do
     end
   end
 
+  describe "command/1 without on_search" do
+    # v0.20.0's markup, rendered from the same template before server search
+    # existed (test/fixtures/command_v0.20.0.html). Only blank lines may differ.
+    test "renders exactly what v0.20.0 rendered" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="cmd" label="Search" placeholder="Search pages">
+          <:trigger_label>Search…</:trigger_label>
+          <:item id="page" group="Pages" icon="hero-home" navigate="/home" shortcut="⌘H">Home</:item>
+          <:item id="patched" group="Pages" patch="/home?tab=2">Tab two</:item>
+          <:item id="brand" group="Brands" href="/context/brand?brand=acme">Acme</:item>
+          <:item id="loc" group="Locations" form="loc-form" name="location" value="all">All locations</:item>
+          <:item id="act" phx-click="refresh">Refresh</:item>
+          <:item>Plain</:item>
+        </.command>
+        <.command id="switch" shortcut={nil}><:item>One</:item></.command>
+        """)
+
+      baseline = File.read!(Path.expand("../fixtures/command_v0.20.0.html", __DIR__))
+      assert squash(html) == squash(baseline)
+    end
+
+    test "renders none of the server search parts" do
+      assigns = %{}
+
+      html = render(~H|<.command id="cmd"><:item>One</:item></.command>|)
+
+      for part <- ~w(data-on-search data-search-debounce data-query data-command-spinner
+                     data-command-hint data-command-status phx-target aria-busy) do
+        refute html =~ part
+      end
+    end
+
+    test "an <:empty> slot replaces the default text" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="cmd">
+          <:empty>Nothing here.</:empty>
+          <:item>One</:item>
+        </.command>
+        """)
+
+      assert html =~ ~r{<p data-command-empty[^>]*>\s*Nothing here.\s*</p>}
+      refute html =~ "No results found."
+    end
+  end
+
+  describe "command/1 with on_search" do
+    test "marks the dialog with the event, the debounce and the answered text" do
+      html =
+        render(search_palette(%{query: "pat", results: [], extra: [search_debounce: 400]}))
+
+      assert html =~
+               ~r{<dialog id="people" [^>]*data-on-search="search" data-search-debounce="400" data-query="pat"}
+    end
+
+    test "debounces 250ms by default; no data-query before the first answer" do
+      html = render(search_palette(%{query: nil, results: [], extra: []}))
+
+      assert html =~ ~s(data-search-debounce="250")
+      refute html =~ "data-query"
+    end
+
+    test "an empty answer still echoes the text" do
+      html = render(search_palette(%{query: "", results: [], extra: []}))
+
+      assert html =~ ~s(data-query="")
+    end
+
+    test "renders the hint, a hidden spinner, the empty text and a polite status region" do
+      html = render(search_palette(%{query: "zz", results: [], extra: []}))
+
+      assert html =~
+               ~r{<span data-command-spinner class="loading loading-spinner loading-xs hidden[^"]*" aria-hidden="true">}
+
+      assert html =~ ~r{<p data-command-hint[^>]*>\s*Type a name or email.\s*</p>}
+
+      assert html =~
+               ~r{<p data-command-empty class="hidden[^>]*>\s*No one matches "zz".\s*</p>}
+
+      # LiveView leaves the region's text (set by the hook) alone
+      assert html =~
+               ~s(<div id="people-status" data-command-status role="status" class="sr-only" phx-update="ignore">)
+    end
+
+    test "no hint slot, no hint element; no empty slot, the default text" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="p" on_search="search" query={nil}><:item :for={_ <- []}>x</:item></.command>
+        """)
+
+      refute html =~ "data-command-hint"
+      assert html =~ "No results found."
+    end
+
+    test "renders the server's items with a description and phx-value-*" do
+      results = [%{id: "7", name: "Pat Rivera", email: "pat@example.test"}]
+      html = render(search_palette(%{query: "pat", results: results, extra: []}))
+
+      assert html =~
+               ~s(<button type="button" id="person-7" class="command-item" data-command-item phx-click="add" phx-value-id="7">)
+
+      assert html =~
+               ~r{<span class="command-item-text">\s*<span class="command-item-title">\s*Pat Rivera\s*</span>\s*<span class="command-item-description">pat@example.test</span>}
+    end
+
+    test "phx-target goes on the dialog and on items that run phx-click" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="p" on_search="search" query="a" phx-target="#owner">
+          <:item id="add" phx-click="add">Add</:item>
+          <:item id="open" navigate="/people/1">Open</:item>
+        </.command>
+        """)
+
+      assert html =~ ~r{<dialog id="p" [^>]*phx-target="#owner"}
+      assert html =~ ~r{<button type="button" id="add" [^>]*phx-click="add" phx-target="#owner"}
+      assert html =~ ~r{<a href="/people/1"[^>]*id="open"}
+      refute html =~ ~r{id="open"[^>]*phx-target}
+    end
+
+    test "needs query" do
+      assigns = %{}
+
+      assert_raise ArgumentError, ~r/needs query=/, fn ->
+        render(~H|<.command id="p" on_search="search"><:item>x</:item></.command>|)
+      end
+    end
+
+    test "has no inline event handlers and keeps `open` across patches" do
+      html = render(search_palette(%{query: "pat", results: [], extra: []}))
+
+      assert Regex.scan(~r/<[^>]*\son[a-z]+\s*=/i, html) == []
+      assert count(html, "ignore_attrs") == 1
+    end
+  end
+
+  describe "command/1 item attributes" do
+    test "confirm renders data-confirm" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="p">
+          <:item id="back" phx-click="add" confirm="Add Pat back? They start with no roles.">
+            Add back
+          </:item>
+        </.command>
+        """)
+
+      assert html =~
+               ~s(<button type="button" id="back" class="command-item" data-command-item phx-click="add" data-confirm="Add Pat back? They start with no roles.">)
+    end
+
+    test "disabled: aria-disabled, no click, no confirm, and a link becomes an inert button" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.command id="p" phx-target="#owner">
+          <:item id="a" phx-click="add" values={%{id: 1}} confirm="Sure?" disabled>Add</:item>
+          <:item id="b" navigate="/people/1" disabled>Open</:item>
+          <:item id="c" form="f" name="n" value="v" disabled>Submit</:item>
+        </.command>
+        """)
+
+      for id <- ~w(a b c) do
+        assert html =~
+                 ~s(<button type="button" id="#{id}" class="command-item" data-command-item aria-disabled="true">)
+      end
+
+      for gone <- ~w(phx-click data-confirm phx-value-id phx-target href= type="submit") do
+        refute html =~ gone
+      end
+    end
+
+    test "an item without them renders as before" do
+      assigns = %{}
+
+      html = render(~H|<.command id="p"><:item id="x" phx-click="go">Go</:item></.command>|)
+
+      assert html =~
+               ~s(<button type="button" id="x" class="command-item" data-command-item phx-click="go">)
+
+      refute html =~ "command-item-text"
+    end
+  end
+
+  # a server search palette, as an app renders one
+  defp search_palette(assigns) do
+    ~H"""
+    <.command
+      id="people"
+      placeholder="Name or email"
+      shortcut={nil}
+      on_search="search"
+      query={@query}
+      {@extra}
+    >
+      <:hint>Type a name or email.</:hint>
+      <:empty>No one matches "{@query}".</:empty>
+      <:item
+        :for={p <- @results}
+        id={"person-#{p.id}"}
+        description={p.email}
+        phx-click="add"
+        values={%{id: p.id}}
+      >
+        {p.name}
+      </:item>
+    </.command>
+    """
+  end
+
+  # whitespace runs collapse, and none between tags
+  defp squash(html) do
+    html |> String.replace(~r/\s+/, " ") |> String.replace(~r/>\s+</, "><") |> String.trim()
+  end
+
   describe "toast host" do
     # toasts move into the topmost open modal (outside it they'd be inert);
     # each package dialog gives them a slot LiveView patches leave alone

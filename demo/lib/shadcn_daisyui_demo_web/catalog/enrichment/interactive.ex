@@ -104,7 +104,22 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             },
             %{
               part: "Empty state",
-              description: "Shown when the query matches no command."
+              description:
+                "Shown when the query matches no command (<:empty>, default \"No results found.\"); with on_search, only once the server has answered the current text."
+            },
+            %{
+              part: "Hint (server search)",
+              description: "<:hint>, shown before anything is typed."
+            },
+            %{
+              part: "Busy state (server search)",
+              description:
+                "A spinner at the end of the input row and aria-busy on the list while the reply is pending; the last results stay, dimmed and inert."
+            },
+            %{
+              part: "Status region (server search)",
+              description:
+                "A visually hidden role=status region announcing each answer's result count."
             }
           ],
           measurements: [
@@ -134,12 +149,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             %{keys: "Arrow Up", action: "Move to the previous visible command (wraps)"},
             %{keys: "Enter", action: "Run the active command and close the palette"},
             %{keys: "Esc", action: "Close the dialog (native <dialog> behavior)"},
-            %{keys: "Type", action: "Filter commands; empty groups collapse"}
+            %{
+              keys: "Type",
+              action:
+                "Filter commands; empty groups collapse (with on_search: search on the server)"
+            }
           ],
           focus:
             "Opening focuses the search field (a MutationObserver resets the query on open); the native <dialog> traps focus and restores it to the opener on close.",
           screen_reader:
-            "aria-activedescendant names the highlighted command; the modal dialog role scopes the listbox to the palette.",
+            "aria-activedescendant names the highlighted command; the modal dialog role scopes the listbox to the palette. With on_search the list is aria-busy while a reply is pending, and a polite status region announces each answer's count (\"3 results\", or the empty text). Disabled items are aria-disabled and skipped by the arrow keys.",
           touch_target:
             "Command rows are comfortable to tap; the palette is keyboard-first but works as a tap list on touch.",
           reduced_motion:

@@ -1178,17 +1178,50 @@ function initDock(scope) {
     if (!palettes.size) window.removeEventListener("keydown", onPaletteKey)
   }
 
+  // A command item with data-confirm closes its palette only once the prompt is
+  // accepted. phoenix_html asks in its window click listener and stops the
+  // click there when it's declined, so this window listener - added after it,
+  // when the first palette initialises - only sees accepted clicks.
+  let commandConfirmClose = false
+  function closeCommandOnConfirm() {
+    if (commandConfirmClose) return
+    commandConfirmClose = true
+    window.addEventListener("click", (e) => {
+      const it = e.target instanceof Element && e.target.closest("[data-command-item][data-confirm]")
+      const d = it && it.closest("dialog[data-command]")
+      if (d && d.open && it.getAttribute("aria-disabled") !== "true") d.close()
+    })
+  }
+
   // <.command>: a searchable list in a dialog. Items are read live, so a
   // LiveView patch that changes them is picked up (refresh() re-applies the
   // filter and ARIA). `data-shortcut` is the Cmd/Ctrl letter that toggles it
   // ("" for none; no attribute = "k"). destroy() drops its shortcut.
-  function initCommand(dialog) {
-    if (dialog.__sdCommand) return dialog.__sdCommand
+  //
+  // Server search (`data-on-search`): no filtering here. Typing pushes the
+  // trimmed text, `data-search-debounce` ms (250) after the last keystroke, as
+  // that event with { id, query } (pushEventTo `phx-target` when set), and
+  // dispatches `shadcn:command-search` with the same detail (a dead view
+  // answers that itself). The server renders its items and echoes the text
+  // they answer as `data-query`; they count only while it matches the input,
+  // so a reply to older text never shows as current. States: hint (nothing
+  // typed), busy (spinner, aria-busy on the list, what was on screen stays,
+  // dimmed), empty, results (first one active). Each answer's count goes to the
+  // polite status region. Opening clears the input and pushes an empty search.
+  function initCommand(dialog, hook) {
+    if (dialog.__sdCommand) {
+      if (hook) dialog.__sdCommand.hook = hook
+      return dialog.__sdCommand
+    }
     if (!dialog.id) dialog.id = "sd-cmd-" + (++a11yUid)
+    closeCommandOnConfirm()
     const listId = dialog.id + "-list"
     const search = () => dialog.querySelector("[data-command-search]")
     const items = () => [...dialog.querySelectorAll("[data-command-item]")]
-    const visible = () => items().filter((it) => !it.parentElement.classList.contains("hidden"))
+    // the rows the arrow keys move through: shown and not disabled
+    const visible = () => items().filter((it) =>
+      !it.parentElement.classList.contains("hidden") && it.getAttribute("aria-disabled") !== "true")
+    const server = () => dialog.hasAttribute("data-on-search")
     let active = -1
 
     // a11y: combobox-style palette over a listbox of options
@@ -1208,11 +1241,12 @@ function initDock(scope) {
         it.setAttribute("role", "option")
       })
     }
+    // i = null clears the active row (a pending server search)
     const setActive = (i) => {
       const vis = visible()
       const input = search()
       items().forEach((it) => { it.classList.remove("bg-accent", "text-accent-foreground"); it.setAttribute("aria-selected", "false") })
-      if (!vis.length) { active = -1; input && input.removeAttribute("aria-activedescendant"); return }
+      if (!vis.length || i === null) { active = -1; input && input.removeAttribute("aria-activedescendant"); return }
       active = (i + vis.length) % vis.length
       const el = vis[active]
       el.classList.add("bg-accent", "text-accent-foreground")
@@ -1241,36 +1275,145 @@ function initDock(scope) {
       if (empty) empty.classList.toggle("hidden", total > 0)
       setActive(0)
     }
+
+    // ---- server search
+    const norm = (s) => (s || "").trim()
+    let timer = null
+    let lastPushed = null   // the text of the last search pushed
+    let shown = false       // whether the items are on screen (kept while busy)
+    let busy = false
+    let activeFor = null    // the answer the active row belongs to
+    let announced = null    // the answer last announced
+    const part = (name) => dialog.querySelector("[data-command-" + name + "]")
+    const show = (name, on) => { const el = part(name); if (el) el.classList.toggle("hidden", !on) }
+    const announce = (text) => {
+      const el = part("status")
+      if (!el) return
+      // a trailing no-break space alternates, so the same words announce again
+      el.textContent = text ? text + (el.textContent.endsWith(" ") ? "" : " ") : ""
+    }
+    const debounce = () => {
+      const ms = parseInt(dialog.dataset.searchDebounce, 10)
+      return ms >= 0 ? ms : 250
+    }
+    const push = (text) => {
+      clearTimeout(timer)
+      timer = null
+      lastPushed = text
+      const detail = { id: dialog.id, query: text }
+      dialog.dispatchEvent(new CustomEvent("shadcn:command-search", { bubbles: true, detail }))
+      const h = api.hook
+      const event = dialog.dataset.onSearch
+      if (!h || !event) return
+      const target = dialog.getAttribute("phx-target")
+      const sent = target ? h.pushEventTo(target, event, detail) : h.pushEvent(event, detail)
+      // not connected: the search stays busy until the next one
+      if (sent && typeof sent.catch === "function") sent.catch(() => {})
+    }
+    const syncServer = () => {
+      wire()
+      const input = search()
+      const q = norm(input && input.value)
+      const answered = dialog.getAttribute("data-query")
+      const current = answered !== null && norm(answered) === q
+      const count = items().length
+      const state = current ? (count ? "results" : q ? "empty" : "hint") : q ? "busy" : "hint"
+      if (state !== "busy") shown = state === "results"
+      busy = state === "busy"
+      const listEl = part("list")
+      dialog.querySelectorAll("[data-command-list] > li").forEach((li) => li.classList.toggle("hidden", !shown))
+      if (listEl) busy ? listEl.setAttribute("aria-busy", "true") : listEl.removeAttribute("aria-busy")
+      show("spinner", busy)
+      show("hint", state === "hint")
+      show("empty", state === "empty")
+      if (state === "results") {
+        // new results start at the first row; a re-render of the same keeps it
+        setActive(activeFor === answered ? Math.max(active, 0) : 0)
+        activeFor = answered
+      } else {
+        setActive(null)
+        activeFor = null
+      }
+      if (state === "results" || state === "empty") {
+        if (announced !== answered) {
+          const empty = part("empty")
+          announce(state === "results"
+            ? count + (count === 1 ? " result" : " results")
+            : norm(empty && empty.textContent) || "No results")
+          announced = answered
+        }
+      } else if (state === "hint") {
+        announce("")
+        announced = null
+      }
+    }
+    const searchNow = () => {
+      const q = norm(search().value)
+      clearTimeout(timer)
+      timer = null
+      if (q !== lastPushed) timer = setTimeout(() => push(q), debounce())
+    }
+
     wire()
     // backdrop click is handled by the module-level dialog listener at the top
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((records) => {
       const input = search()
-      if (dialog.open && input) { input.value = ""; filter(); input.focus() }
+      if (records.some((r) => r.attributeName === "open")) {
+        if (dialog.open && input) {
+          input.value = ""
+          if (server()) { push(""); syncServer() } else filter()
+          input.focus()
+        } else if (!dialog.open) {
+          clearTimeout(timer)
+          timer = null
+        }
+      }
+      // a dead view answers by setting data-query (LiveView patches run refresh())
+      if (records.some((r) => r.attributeName === "data-query") && server()) syncServer()
     })
-    observer.observe(dialog, { attributes: true, attributeFilter: ["open"] })
-    dialog.addEventListener("input", (e) => { if (e.target.matches("[data-command-search]")) filter() })
+    observer.observe(dialog, { attributes: true, attributeFilter: ["open", "data-query"] })
+    dialog.addEventListener("input", (e) => {
+      if (!e.target.matches("[data-command-search]")) return
+      if (!server()) return filter()
+      syncServer()
+      searchNow()
+    })
     dialog.addEventListener("keydown", (e) => {
       if (!e.target.matches("[data-command-search]")) return
-      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1) }
-      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1) }
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!busy) setActive(active + 1) }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (!busy) setActive(active - 1) }
       else if (e.key === "Enter") { e.preventDefault(); const v = visible(); if (v[active]) v[active].click() }
     })
     dialog.addEventListener("mousemove", (e) => {
+      if (busy) return
       const i = visible().indexOf(e.target.closest("[data-command-item]"))
       if (i >= 0 && i !== active) setActive(i)
     })
-    // choosing an item closes the palette; its link or form still runs
-    dialog.addEventListener("click", (e) => { if (e.target.closest("[data-command-item]")) dialog.close() })
+    // choosing an item closes the palette; its link or form still runs. A
+    // disabled item does nothing; one with data-confirm closes once accepted
+    // (closeCommandOnConfirm).
+    dialog.addEventListener("click", (e) => {
+      const it = e.target.closest("[data-command-item]")
+      if (!it || it.getAttribute("aria-disabled") === "true" || it.hasAttribute("data-confirm")) return
+      dialog.close()
+    })
     watchPalette(dialog, dialog.hasAttribute("data-shortcut") ? dialog.dataset.shortcut.toLowerCase() : "k")
-    dialog.__sdCommand = {
-      refresh() { wire(); if (dialog.open) filter() },
+    const api = {
+      hook: hook || null,
+      refresh() {
+        if (server()) syncServer()
+        else { wire(); if (dialog.open) filter() }
+      },
       destroy() {
         unwatchPalette(dialog)
         observer.disconnect()
+        clearTimeout(timer)
         delete dialog.__sdCommand
       },
     }
-    return dialog.__sdCommand
+    if (server()) syncServer()
+    dialog.__sdCommand = api
+    return api
   }
 
   function initOtp(root) {
@@ -2485,7 +2628,7 @@ export function initShadcnDaisyui(root) {
   root = root || document
   root.querySelectorAll("[data-combobox]").forEach((el) => initCombobox(el))
   root.querySelectorAll("[data-select]").forEach(initSelect)
-  root.querySelectorAll("[data-command]").forEach(initCommand)
+  root.querySelectorAll("[data-command]").forEach((el) => initCommand(el))
   root.querySelectorAll("[data-otp]").forEach(initOtp)
   root.querySelectorAll("[data-datepicker]").forEach(initDatepicker)
   root.querySelectorAll("[data-daterange]").forEach(initDaterange)
@@ -2509,10 +2652,11 @@ export const Hooks = {
   // label); refresh() re-applies the client state and adopts server changes.
   ShadcnCombobox: { mounted() { this.api = initCombobox(this.el, this) }, updated() { this.api && this.api.refresh() } },
   ShadcnSelect: { mounted() { this.api = initSelect(this.el) }, updated() { this.api && this.api.refresh() } },
-  // updated(): a patch may change the items (refresh re-filters an open one);
-  // destroyed(): drop the shortcut's window listener.
+  // updated(): a patch may change the items (refresh re-filters an open one,
+  // or re-reads a server search's answer); destroyed(): drop the shortcut's
+  // window listener. The hook pushes `data-on-search`.
   ShadcnCommand: {
-    mounted() { this.api = initCommand(this.el) },
+    mounted() { this.api = initCommand(this.el, this) },
     updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },

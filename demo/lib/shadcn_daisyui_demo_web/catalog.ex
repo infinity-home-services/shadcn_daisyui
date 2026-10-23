@@ -2678,7 +2678,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         description: "A command palette for fast keyboard-driven actions.",
         hook: true,
         notes:
-          "Opens with ⌘K (Ctrl+K), which also closes it; shortcut=\"j\" picks another letter and shortcut={nil} none (every palette on the page but one). Opening it closes any other open dialog. Items run phx-click, or go somewhere: navigate / patch / href, or form + name + value (submits that form). label is the dialog's accessible name. The hook drops its key listener when LiveView removes it. The app shell's search is one (/docs/app-shell).",
+          "Opens with ⌘K (Ctrl+K), which also closes it; shortcut=\"j\" picks another letter and shortcut={nil} none (every palette on the page but one). Opening it closes any other open dialog. Items run phx-click, or go somewhere: navigate / patch / href, or form + name + value (submits that form). label is the dialog's accessible name. The hook drops its key listener when LiveView removes it. The app shell's search is one (/docs/app-shell). Server search (on_search=\"event\"): the hook stops filtering and pushes the typed text, debounced (search_debounce, 250ms), as %{\"id\" => id, \"query\" => text}; the LiveView renders its results as the items and echoes the text they answer as query={@query} - results count only while it matches the input, so a reply to older text never shows as current. <:hint> shows before anything is typed, a spinner and aria-busy while the reply is pending, <:empty> once the server has answered with nothing; each answer's count is announced politely. Opening clears the input and pushes an empty search. phx-target={@myself} sends the search and the items' phx-click to a LiveComponent. Opt-in item attributes: description (a muted second line), confirm (data-confirm; closes only once accepted), values (phx-value-*), disabled. A LiveView demo is at /lab/command-search when running the docs app.",
         examples: [
           %{
             title: "Default",
@@ -2712,6 +2712,55 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <li><button type="button" class="command-item" data-command-item><span class="hero-cog-6-tooth size-4" aria-hidden="true"></span> Settings <span class="ml-auto text-xs text-muted-foreground">⌘S</span></button></li>
               </ul>
               <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">No results found.</p>
+            </dialog>
+            """
+          },
+          %{
+            title: "Server search",
+            heex: ~S"""
+            <.command
+              id="find-person"
+              label="Add person"
+              placeholder="Name or email"
+              shortcut={nil}
+              on_search="search_people"
+              query={@query}
+            >
+              <:trigger_label>Add person…</:trigger_label>
+              <:hint>Type a name or email.</:hint>
+              <:empty>No one matches "{@query}".</:empty>
+              <:item
+                :for={person <- @results}
+                id={"person-#{person.id}"}
+                icon="hero-user"
+                description={person.email}
+                phx-click="add"
+                values={%{id: person.id}}
+                confirm={person.removed && "Add #{person.name} back? They start with no roles."}
+              >
+                {person.name}
+              </:item>
+            </.command>
+
+            # in the LiveView: answer the latest text, and echo it
+            def handle_event("search_people", %{"query" => query}, socket) do
+              {:noreply, assign(socket, query: query, results: People.search(query))}
+            end
+            """,
+            code: ~S"""
+            <button class="btn btn-outline w-64 justify-between" commandfor="command_people" command="show-modal">
+              <span class="text-muted-foreground">Add person…</span>
+            </button>
+            <dialog id="command_people" data-command data-shortcut="" data-on-search data-search-debounce="250" aria-label="Add person" class="command-dialog">
+              <div class="flex items-center gap-2 border-b border-base-300 px-3">
+                <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+                <input data-command-search autocomplete="off" aria-label="Name or email" class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Name or email" />
+                <span data-command-spinner class="loading loading-spinner loading-xs hidden shrink-0 opacity-50" aria-hidden="true"></span>
+              </div>
+              <ul data-command-list class="max-h-80 overflow-auto p-1"></ul>
+              <p data-command-hint class="p-6 text-center text-sm text-muted-foreground">Type a name or email.</p>
+              <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">No results found.</p>
+              <div data-command-status role="status" class="sr-only"></div>
             </dialog>
             """
           }

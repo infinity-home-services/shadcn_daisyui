@@ -919,6 +919,31 @@
     font-weight: 500;
     color: var(--muted-foreground);
   }
+  /* <.command> opt-ins: a muted second line (description), a disabled item
+     (50%, no clicks), and while a server search is pending (aria-busy on the
+     list) the last results dimmed and inert until the answer replaces them */
+  .command-item-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+  .command-item-description {
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--muted-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .command-item[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+  [data-command-list][aria-busy="true"] .command-item {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-command-list][aria-busy="true"] .command-item { transition: none; }
+  }
   .popover-panel {
     border: 0;
     border-radius: var(--radius-md);

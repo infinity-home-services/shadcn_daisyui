@@ -237,6 +237,73 @@ document.addEventListener("chip-clear", (e) => {
   if (reveal) reveal.removeAttribute("data-open")
 })
 
+// Command "Server search" preview: the dead-view stand-in for a LiveView with
+// on_search. It answers each `shadcn:command-search` the way the server would:
+// 400ms later (none for the empty search on open), only for the latest text,
+// with the matching rows and the text they answer as data-query. Each row is
+// one action: Add, Add back (confirms first), Open, or nothing while a removal
+// is scheduled (disabled).
+const DEMO_PEOPLE = [
+  ["Alex Morgan", "alex.morgan@example.test", "removed"], ["Casey Nguyen", "casey.nguyen@example.test"],
+  ["Drew Santos", "drew.santos@example.test"], ["Jamie Ortiz", "jamie.ortiz@example.test"],
+  ["Jordan Lee", "jordan.lee@example.test", "active"], ["Morgan Patel", "morgan.patel@example.test"],
+  ["Pat Rivera", "pat.rivera@example.test"], ["Patricia Hale", "patricia.hale@example.test", "removed"],
+  ["Riley Chen", "riley.chen@example.test", "scheduled"], ["Robin Park", "robin.park@example.test"],
+  ["Sam Okafor", "sam.okafor@example.test"], ["Taylor Brooks", "taylor.brooks@example.test"],
+]
+const DEMO_ACTIONS = {undefined: "Add", removed: "Add back", active: "Open", scheduled: "Removal scheduled"}
+const demoPersonRow = ([name, email, status]) => {
+  const li = document.createElement("li")
+  const btn = document.createElement("button")
+  btn.type = "button"
+  btn.className = "command-item"
+  btn.setAttribute("data-command-item", "")
+  btn.dataset.demoPerson = `${DEMO_ACTIONS[status]}: ${name}`
+  if (status === "removed") btn.dataset.confirm = `Add ${name} back? They start with no roles.`
+  if (status === "scheduled") btn.setAttribute("aria-disabled", "true")
+  const icon = document.createElement("span")
+  icon.className = "hero-user size-4"
+  icon.setAttribute("aria-hidden", "true")
+  const text = document.createElement("span")
+  text.className = "command-item-text"
+  const title = document.createElement("span")
+  title.className = "command-item-title"
+  title.textContent = name
+  const desc = document.createElement("span")
+  desc.className = "command-item-description"
+  desc.textContent = email
+  text.append(title, desc)
+  const hint = document.createElement("span")
+  hint.className = "ml-auto text-xs text-muted-foreground"
+  hint.textContent = DEMO_ACTIONS[status]
+  btn.append(icon, text, hint)
+  li.append(btn)
+  return li
+}
+let demoLatestSearch = null
+document.addEventListener("shadcn:command-search", (e) => {
+  const dialog = e.target
+  if (dialog.id !== "command_people") return
+  const query = e.detail.query
+  demoLatestSearch = query
+  setTimeout(() => {
+    if (query !== demoLatestSearch) return
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    const rows = !words.length ? [] : DEMO_PEOPLE.filter(([name, email]) => {
+      const haystack = [email, ...name.toLowerCase().split(" ")]
+      return words.every((w) => haystack.some((h) => h.startsWith(w)))
+    })
+    dialog.querySelector("[data-command-list]").replaceChildren(...rows.map(demoPersonRow))
+    dialog.querySelector("[data-command-empty]").textContent = `No one matches "${query}".`
+    dialog.setAttribute("data-query", query)
+  }, query ? 400 : 0)
+})
+// on window, after phoenix_html's confirm: a declined "Add back" never gets here
+window.addEventListener("click", (e) => {
+  const row = e.target instanceof Element && e.target.closest("#command_people [data-demo-person]")
+  if (row && row.getAttribute("aria-disabled") !== "true") setTimeout(() => toast(row.dataset.demoPerson))
+})
+
 // Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")

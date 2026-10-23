@@ -39,11 +39,13 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
   # LiveView half of the CSP proof (/docs/dark-mode is the static half; the
   # GitHub Pages export can't host a LiveView, so this isn't exported): the
   # overlays under `script-src 'self' 'nonce-…'`, re-rendered twice a second to
-  # show an open dialog survives patches.
+  # show an open dialog survives patches. /lab/command-search is the command
+  # palette's server search, answered by the LiveView.
   scope "/lab", ShadcnDaisyuiDemoWeb do
     pipe_through [:browser, :strict_csp]
 
     live "/csp", CspLive
+    live "/command-search", CommandSearchLive
   end
 
   # AI-consumable plain-text/JSON endpoints. No browser pipeline: these are

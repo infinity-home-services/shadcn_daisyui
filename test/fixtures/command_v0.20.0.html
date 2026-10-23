@@ -1,0 +1,104 @@
+<button type="button" class="btn btn-outline w-64 justify-between" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#cmd&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]">
+  <span class="text-muted-foreground">Search…</span>
+  <kbd class="kbd">⌘K</kbd>
+</button>
+<dialog id="cmd" phx-hook="ShadcnCommand" phx-mounted="[[&quot;ignore_attrs&quot;,{&quot;attrs&quot;:[&quot;open&quot;]}]]" data-command data-shortcut="k" aria-label="Search" class="command-dialog ">
+  <div class="flex items-center gap-2 border-b border-base-300 px-3">
+    <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+    <input id="cmd-search" data-command-search autocomplete="off" aria-label="Search pages" class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Search pages">
+  </div>
+  <ul id="cmd-list" data-command-list class="max-h-80 overflow-auto p-1">
+    
+      <li class="command-group-label" data-group>Pages</li>
+      <li>
+        <a href="/home" data-phx-link="redirect" data-phx-link-state="push" id="page" class="command-item" data-command-item>
+  <span class="hero-home size-4" aria-hidden="true"></span>
+Home
+<span class="ml-auto text-xs text-muted-foreground">
+  ⌘H
+</span>
+</a>
+
+
+      </li><li>
+        <a href="/home?tab=2" data-phx-link="patch" data-phx-link-state="push" id="patched" class="command-item" data-command-item>
+  
+Tab two
+
+</a>
+
+
+      </li>
+    
+      <li class="command-group-label" data-group>Brands</li>
+      <li>
+        <a href="/context/brand?brand=acme" id="brand" class="command-item" data-command-item>
+  
+Acme
+
+</a>
+
+
+      </li>
+    
+      <li class="command-group-label" data-group>Locations</li>
+      <li>
+        
+<button type="submit" id="loc" form="loc-form" name="location" value="all" class="command-item" data-command-item>
+  
+All locations
+
+</button>
+
+      </li>
+    
+      
+      <li>
+        
+
+<button type="button" id="act" class="command-item" data-command-item phx-click="refresh">
+  
+Refresh
+
+</button>
+      </li><li>
+        
+
+<button type="button" class="command-item" data-command-item>
+  
+Plain
+
+</button>
+      </li>
+    
+  </ul>
+  <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+    No results found.
+  </p>
+  <div id="cmd-toasts" data-toast-host phx-update="ignore"></div>
+</dialog>
+
+<dialog id="switch" phx-hook="ShadcnCommand" phx-mounted="[[&quot;ignore_attrs&quot;,{&quot;attrs&quot;:[&quot;open&quot;]}]]" data-command data-shortcut="" class="command-dialog ">
+  <div class="flex items-center gap-2 border-b border-base-300 px-3">
+    <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
+    <input id="switch-search" data-command-search autocomplete="off" aria-label="Type a command or search…" class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Type a command or search…">
+  </div>
+  <ul id="switch-list" data-command-list class="max-h-80 overflow-auto p-1">
+    
+      
+      <li>
+        
+
+<button type="button" class="command-item" data-command-item>
+  
+One
+
+</button>
+      </li>
+    
+  </ul>
+  <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+    No results found.
+  </p>
+  <div id="switch-toasts" data-toast-host phx-update="ignore"></div>
+</dialog>

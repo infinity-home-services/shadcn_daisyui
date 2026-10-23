@@ -473,6 +473,72 @@ defmodule ShadcnDaisyui.Components.Overlay do
   any other open dialog. Open it from a button with `show_modal(id)` or
   `JS.dispatch("shadcn:show-dialog", to: "#id")`; the hook drops its key
   listener when LiveView removes it.
+
+  ## Server search
+
+  By default the hook filters the items in the browser. For something only
+  the server can search (a directory, a remote API, a table too big to send),
+  set `on_search`: the hook stops filtering and pushes what's typed to the
+  LiveView as that event, `%{"id" => id, "query" => text}` (trimmed, after
+  `search_debounce` ms, 250 by default). The LiveView renders its results as
+  the `<:item>`s and echoes the text they answer as `query`. Results count
+  only while `query` matches the input, so a reply to older text never shows
+  as current.
+
+      <.command
+        id="find-person"
+        label="Add person"
+        placeholder="Name or email"
+        shortcut={nil}
+        on_search="search_people"
+        query={@query}
+      >
+        <:hint>Type a name or email.</:hint>
+        <:empty>No one matches "{@query}".</:empty>
+        <:item
+          :for={person <- @results}
+          id={"person-#{person.id}"}
+          description={person.email}
+          phx-click="add"
+          values={%{id: person.id}}
+          confirm={person.removed && "Add #{person.name} back? They start with no roles."}
+        >
+          {person.name}
+        </:item>
+      </.command>
+
+      def handle_event("search_people", %{"query" => query}, socket) do
+        {:noreply, assign(socket, query: query, results: Directory.search(query))}
+      end
+
+  The palette always says something: `<:hint>` before anything is typed, a
+  spinner (and `aria-busy` on the list, the last results dimmed) while the
+  reply is pending, `<:empty>` (default "No results found.") once the server
+  has answered the current text with no items, else the items with the first
+  one active. Each search's result count is announced in a polite live region.
+  Opening the palette clears the input and pushes an empty search, so the
+  server can drop the last results.
+
+  A slow search can run in `start_async/3` (a new search replaces the
+  pending one, so only the latest answer lands): assign `query` with the
+  results, not when the event arrives. Inside a LiveComponent pass
+  `phx-target={@myself}`; the search and the items' `phx-click` go there. In
+  a dead view the palette dispatches `shadcn:command-search` (`detail` is
+  `{id, query}`) instead; answer it by rendering the items into the list,
+  then setting `data-query` on the dialog.
+
+  ## Opt-in item attributes
+
+  Items without these render exactly as before.
+
+    * `description` - a muted second line under the label (an email under a
+      name).
+    * `confirm` - renders `data-confirm`, so the browser asks before
+      `phx-click` runs (`phoenix_html`); the palette closes only when the
+      person accepts, and cancelling keeps it open with the same results.
+    * `values` - a map, one `phx-value-<key>` per entry.
+    * `disabled` - `aria-disabled="true"`, no click (a link or form item
+      renders as an inert button), skipped by the arrow keys, 50% opacity.
   """
   attr(:id, :string, required: true)
   attr(:label, :string, default: nil, doc: "the dialog's accessible name, e.g. \"Search\"")
@@ -483,8 +549,33 @@ defmodule ShadcnDaisyui.Components.Overlay do
     doc: "a letter that toggles it with Cmd/Ctrl, or nil for none"
   )
 
+  attr(:on_search, :string,
+    default: nil,
+    doc:
+      "server search: the event the typed text is pushed as, " <>
+        "`%{\"id\" => id, \"query\" => text}`; the hook stops filtering"
+  )
+
+  attr(:query, :string,
+    doc:
+      "required with `on_search`: the text the rendered items answer " <>
+        "(echo the event's \"query\"; nil before the first search)"
+  )
+
+  attr(:search_debounce, :integer,
+    default: 250,
+    doc: "with `on_search`: milliseconds to wait after the last keystroke"
+  )
+
+  attr(:"phx-target", :any,
+    default: nil,
+    doc: "where `on_search` and the items' `phx-click` go, e.g. `@myself`"
+  )
+
   attr(:class, :any, default: nil)
   slot(:trigger_label, doc: "text inside the default trigger button")
+  slot(:hint, doc: "with `on_search`: shown before anything is typed")
+  slot(:empty, doc: "shown when nothing matches (default \"No results found.\")")
 
   slot :item, required: true do
     attr(:id, :string)
@@ -498,9 +589,19 @@ defmodule ShadcnDaisyui.Components.Overlay do
     attr(:form, :string, doc: "the id of a form this item submits, with `name` and `value`")
     attr(:name, :string)
     attr(:value, :string)
+    attr(:description, :string, doc: "opt in: a muted second line under the label")
+    attr(:confirm, :string, doc: "opt in: data-confirm; the palette closes once it's accepted")
+    attr(:values, :map, doc: "opt in: one phx-value-<key> per entry")
+    attr(:disabled, :boolean, doc: "opt in: aria-disabled, no click, 50% opacity")
   end
 
   def command(assigns) do
+    if assigns.on_search && !Map.has_key?(assigns, :query) do
+      raise ArgumentError,
+            "<.command id=#{inspect(assigns.id)} on_search=…> needs query={…}: " <>
+              "the text the rendered items answer (nil before the first search)"
+    end
+
     ~H"""
     <button
       :if={@trigger_label != []}
@@ -519,6 +620,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
       data-shortcut={@shortcut || ""}
       aria-label={@label}
       class={["command-dialog", @class]}
+      {command_search_attrs(assigns)}
     >
       <div class="flex items-center gap-2 border-b border-base-300 px-3">
         <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true"></span>
@@ -530,38 +632,77 @@ defmodule ShadcnDaisyui.Components.Overlay do
           class="h-11 w-full bg-transparent text-sm outline-none"
           placeholder={@placeholder}
         />
+        <span
+          :if={@on_search}
+          data-command-spinner
+          class="loading loading-spinner loading-xs hidden shrink-0 opacity-50"
+          aria-hidden="true"
+        >
+        </span>
       </div>
       <ul id={"#{@id}-list"} data-command-list class="max-h-80 overflow-auto p-1">
         <%= for {group, items} <- command_groups(@item) do %>
           <li :if={group} class="command-group-label" data-group>{group}</li>
           <li :for={item <- items}>
-            <.command_item item={item} />
+            <.command_item item={item} target={assigns[:"phx-target"]} />
           </li>
         <% end %>
       </ul>
-      <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
-        No results found.
+      <p
+        :if={@on_search && @hint != []}
+        data-command-hint
+        class="p-6 text-center text-sm text-muted-foreground"
+      >
+        {render_slot(@hint)}
       </p>
+      <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+        {if @empty == [], do: "No results found.", else: render_slot(@empty)}
+      </p>
+      <div
+        :if={@on_search}
+        id={"#{@id}-status"}
+        data-command-status
+        role="status"
+        class="sr-only"
+        phx-update="ignore"
+      >
+      </div>
       <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
     """
   end
 
+  # Server search: the event, the debounce, the text the items answer (absent
+  # until there is one) and the target. None of it without `on_search`.
+  defp command_search_attrs(%{on_search: nil}), do: []
+
+  defp command_search_attrs(assigns) do
+    [
+      "data-on-search": assigns.on_search,
+      "data-search-debounce": assigns.search_debounce,
+      "data-query": assigns.query,
+      "phx-target": assigns[:"phx-target"]
+    ]
+    |> Enum.reject(&is_nil(elem(&1, 1)))
+  end
+
   attr(:item, :map, required: true)
+  attr(:target, :any, default: nil)
 
   # A link when the item goes somewhere, a submit button for a form, else a
-  # button running its phx-click.
+  # button running its phx-click. A disabled item is always an inert button.
   defp command_item(assigns) do
     item = assigns.item
 
     kind =
       cond do
+        item[:disabled] -> :button
         item[:navigate] || item[:patch] || item[:href] -> :link
         item[:form] -> :submit
         true -> :button
       end
 
-    assigns = assign(assigns, :kind, kind)
+    assigns = assign(assigns, kind: kind, extra: command_item_attrs(item, assigns.target))
 
     ~H"""
     <.link
@@ -572,6 +713,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
       href={@item[:href]}
       class="command-item"
       data-command-item
+      {@extra}
     >
       <.command_item_label item={@item} />
     </.link>
@@ -584,6 +726,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
       value={@item[:value]}
       class="command-item"
       data-command-item
+      {@extra}
     >
       <.command_item_label item={@item} />
     </button>
@@ -593,14 +736,49 @@ defmodule ShadcnDaisyui.Components.Overlay do
       id={@item[:id]}
       class="command-item"
       data-command-item
-      phx-click={@item[:"phx-click"]}
+      phx-click={!@item[:disabled] && @item[:"phx-click"]}
+      {@extra}
     >
       <.command_item_label item={@item} />
     </button>
     """
   end
 
+  # Opt-in item attributes. With none of them set (and no phx-target on the
+  # palette) an item keeps its old markup exactly.
+  defp command_item_attrs(item, target) do
+    clickable = !item[:disabled]
+
+    values =
+      if clickable,
+        do: for({key, value} <- item[:values] || %{}, do: {:"phx-value-#{key}", value}),
+        else: []
+
+    [
+      "phx-target": clickable && item[:"phx-click"] && target,
+      "data-confirm": clickable && item[:confirm],
+      "aria-disabled": item[:disabled] && "true"
+    ]
+    |> Enum.filter(fn {_, v} -> v not in [nil, false] end)
+    |> Kernel.++(values)
+  end
+
   attr(:item, :map, required: true)
+
+  # With a description, the label and a muted second line stack
+  defp command_item_label(%{item: %{description: description}} = assigns)
+       when is_binary(description) do
+    ~H"""
+    <span :if={@item[:icon]} class={[@item.icon, "size-4"]} aria-hidden="true"></span>
+    <span class="command-item-text">
+      <span class="command-item-title">{render_slot(@item)}</span>
+      <span class="command-item-description">{@item.description}</span>
+    </span>
+    <span :if={@item[:shortcut]} class="ml-auto text-xs text-muted-foreground">
+      {@item.shortcut}
+    </span>
+    """
+  end
 
   defp command_item_label(assigns) do
     ~H"""
