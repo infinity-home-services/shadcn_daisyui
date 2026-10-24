@@ -8,6 +8,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-24
+
+File uploads: the file input now looks like shadcn's, and `<.dropzone>` is a
+file picker people can drop files on, with the picked files as attachment
+tiles. New and opt-in; existing markup renders as before apart from the fixes
+below.
+
+### Added
+
+- **`<.dropzone>`** (in `ShadcnDaisyui.FormComponents`, imported by `use
+  ShadcnDaisyui.Components`): the drop area of Kibo UI's Dropzone and Dice UI's
+  File Upload (shadcn/ui and shadcn-svelte have none), on a LiveView upload.
+  `upload={@uploads.x}`: the zone is a `<label>` around the visually hidden
+  `live_file_input` and the upload's `phx-drop-target`, so a click, a tap,
+  Enter or Space opens the picker (no inline JS). Without slots the title
+  ("Drop a file here, or choose one"; "files" when `max_entries > 1`; "Choose a
+  file" on touch screens, which can't drag) and the description ("One .csv
+  file, up to 1 MB." - accepted types, size limit, how many) come from the
+  upload; `<:title touch="…">` and `<:description>` word your own. Each entry
+  is an `<.attachment>` tile: uploading with its progress, done (an image
+  previews with `live_img_preview`), or an error with the reason; `on_cancel`
+  (an event or a `Phoenix.LiveView.JS`, `target` for a LiveComponent) adds a
+  remove button that pushes `%{"ref" => ref}`. `<:entry :let={entry}>` renders
+  your own (each file's errors then show under the zone). Upload errors (too
+  many files) show under the zone as `text-sm text-error` lines in a polite live
+  region; every error is tied to the input by `aria-describedby`, and
+  `aria-invalid` marks a rejected file. Built-in English for `:too_large`,
+  `:not_accepted`, `:too_many_files` and `:external_client_failure`;
+  `error_text={fn error -> text end}` replaces it (`nil` keeps the default).
+  `size="compact"` is one `h-9` row shaped like an input (44px on touch), the
+  description under it; `disabled` dims it to 50% and takes no picks or drops.
+  Dashed `border-border` at rest, `border-primary` on an `accent` fill while
+  files are over it (150ms, none with reduced motion), the 3px ring while its
+  input has keyboard focus. Hook: `ShadcnDropzone` (or `initShadcnDaisyui()`):
+  `data-dragging` while files are over the zone on every LiveView version
+  (LiveView's own `phx-drop-target-active`, from 1.1.1x, styles it too), a
+  disabled zone refuses the drop, and a drop never makes the browser open the
+  file. Theme classes: `.dropzone`, `.dropzone-area`, `.dropzone-icon`,
+  `.dropzone-title`, `.dropzone-description`, `.dropzone-errors`,
+  `.dropzone-entries`, ….
+- **A plain form's dropzone**: `name` (with `accept` and `multiple`) instead of
+  `upload`, for a non-LiveView multipart form. A drop puts the files the input
+  accepts on the input (added to the chosen ones when it's `multiple`; posts
+  `name[]`), fires `input` + `change`, and the zone names the chosen files; a
+  form reset clears them. The server checks the size.
+- **File input gallery examples** on the Input page (`<.input type="file">`,
+  and `.file-input` default, ghost, sizes, disabled and error), and a Dropzone
+  page (default, compact, uploading, errors, disabled, plain form, with iOS
+  guidance: `.fileImporter` plus `.dropDestination`). Attachment's "don't use
+  for" links to it. `/lab/dropzone` (dev server) runs it on real uploads.
+
+### Fixed
+
+- **`.file-input` started "Choose File" 12px in**, as a full-height grey block
+  after an empty strip of field: the theme's field padding pushed daisyUI's
+  flush button inward. It is now shadcn's `<Input type="file">`: the field
+  keeps its 12px padding and "Choose file" is plain `text-sm font-medium`
+  foreground text (`h-7`, no border, fill, noise or shadow) with 8px before the
+  file name, in light and dark. The same applies to `<.input type="file">`
+  (`.input[type=file]`), which showed the browser's own button. Colour variants
+  keep the foreground text. The ring shows for keyboard focus only
+  (`:focus-visible`), so it no longer stays lit after the picker closes.
+- **`file-input-ghost` and `file-input-xs|sm|lg|xl` did nothing** (the theme's
+  border and fixed `h-9` won): ghost drops the border, fill and shadow; the
+  sizes are `h-6` / `h-8` / `h-10` / `h-12` with the button scaled to match.
+- **Fields showed no error state**: `input-error` (which `<.input>` adds),
+  `textarea-error`, `select-error`, `file-input-error` and `aria-invalid="true"`
+  left the border grey. They now get shadcn's destructive border, and a
+  destructive ring while focused.
+- **Disabled fields were greyed out** (daisyUI's muted fill and faded text):
+  `.input`, `.textarea`, `.select` and `.file-input` now keep their own colours
+  at 50% opacity with a not-allowed cursor, as shadcn's do.
+
 ## [0.22.0] - 2026-10-23
 
 The parts apps kept writing for themselves: a list page's data table and

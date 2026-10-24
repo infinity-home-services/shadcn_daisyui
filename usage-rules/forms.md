@@ -82,6 +82,40 @@ All forms bind to `Phoenix.HTML.FormField` via `ShadcnDaisyui.CoreComponents.inp
 - Open lists, labels and values survive LiveView re-renders; if the server changes
   the value (reset, cap) the server wins. `<.date_picker>` is not form-bound yet.
 
+## File uploads
+
+A file upload is `<.dropzone>` on the LiveView upload: a dashed area people drop
+files on, or click / tap (Enter, Space) to choose. Picked files show under it as
+`<.attachment>` tiles - uploading with progress, done, or the error - and
+`on_cancel` gives each one a remove button:
+
+```elixir
+socket |> allow_upload(:people_csv, accept: ~w(.csv), max_entries: 1, max_file_size: 1_000_000)
+
+def handle_event("import:cancel", %{"ref" => ref}, socket),
+  do: {:noreply, cancel_upload(socket, :people_csv, ref)}
+```
+
+```heex
+<.form for={@form} id="import" phx-change="validate" phx-submit="import">
+  <.dropzone id="import-file" upload={@uploads.people_csv} on_cancel="import:cancel" />
+</.form>
+```
+
+- Leave out the slots: the title ("Drop a file here, or choose one"; "Choose a
+  file" on touch screens) and the description ("One .csv file, up to 1 MB.") come
+  from the upload. Word your own with `<:title touch="…">` and `<:description>`.
+- In tight forms (a row in a sheet, a settings field) use `size="compact"`: one
+  input-height row, labelled like any input (`<.label for={@uploads.logo.ref}>`).
+- Errors are built in: each file's on its tile, the upload's (too many files)
+  under the zone, all tied to the input. `error_text={fn error -> … end}` rewords
+  them (`nil` keeps the default).
+- `<:entry :let={entry}>` for a different tile; keep it an `<.attachment>`.
+- A plain (non-LiveView) multipart form passes `name` instead of `upload`
+  (`accept`, `multiple`).
+- Never hand-roll a drop area (`phx-drop-target` on your own div), show a bare
+  `<.live_file_input>`, or list picked files as plain text.
+
 ## Error translation
 
 The package translates errors via the configured MFA:
@@ -97,6 +131,7 @@ Keep Gettext-based translation in the app and point this config at it.
 ## Never do
 
 - Raw `<input>`/`<select>`/`<textarea>` inside `<.form>`.
+- A bare `<.live_file_input>` or a hand-rolled drop area - use `<.dropzone>`.
 - `Phoenix.HTML.Form.input_value/2` plumbing by hand - pass the `field`.
 - Custom error markup - `<.input>`/`<.field>`/`<.error>` already render
   `text-sm text-error` messages tied to the control via aria.

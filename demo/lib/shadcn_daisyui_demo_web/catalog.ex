@@ -31,7 +31,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       slugs: ~w(input textarea select native-select checkbox radio-group switch toggle
                 toggle-group label field input-group input-otp slider combobox calendar
                 date-picker date-range-picker time-picker time-field range-calendar multi-select chip-row
-                rating filter validator)
+                dropzone rating filter validator)
     },
     %{
       title: "Actions",
@@ -522,6 +522,43 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <span class="text-sm font-medium">Email</span>
               <input type="email" class="input w-full" placeholder="you@example.com" />
             </label>
+            """
+          },
+          %{
+            title: "File",
+            heex: ~S"""
+            <.input field={@form[:picture]} type="file" label="Picture" />
+            """,
+            code: ~S"""
+            <label class="block w-full max-w-sm space-y-1.5">
+              <span class="text-sm font-medium">Picture</span>
+              <input type="file" class="input w-full" />
+            </label>
+            """
+          },
+          %{
+            title: "File input states",
+            heex: ~S"""
+            <input type="file" class="file-input w-full" />
+            <input type="file" class="file-input file-input-ghost w-full" />
+            <input type="file" class="file-input file-input-sm w-full" />
+            <input type="file" class="file-input file-input-lg w-full" />
+            <input type="file" class="file-input w-full" disabled />
+            <input type="file" class="file-input w-full" aria-invalid="true" />
+            """,
+            code: ~S"""
+            <div class="grid w-full max-w-sm gap-4">
+              <label class="grid gap-1.5"><span class="text-sm font-medium">Default</span><input type="file" class="file-input w-full" /></label>
+              <label class="grid gap-1.5"><span class="text-sm font-medium">Ghost</span><input type="file" class="file-input file-input-ghost w-full" /></label>
+              <label class="grid gap-1.5"><span class="text-sm font-medium">Small</span><input type="file" class="file-input file-input-sm w-full" /></label>
+              <label class="grid gap-1.5"><span class="text-sm font-medium">Large</span><input type="file" class="file-input file-input-lg w-full" /></label>
+              <label class="grid gap-1.5"><span class="text-sm font-medium">Disabled</span><input type="file" class="file-input w-full" disabled /></label>
+              <label class="grid gap-1.5">
+                <span class="text-sm font-medium">With an error</span>
+                <input type="file" class="file-input w-full" aria-invalid="true" aria-describedby="file-error" />
+                <span id="file-error" class="text-sm text-error">Choose a file under 1 MB.</span>
+              </label>
+            </div>
             """
           }
         ]

@@ -2,8 +2,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
   @moduledoc """
   Catalog pages for the list-page and record-page parts: `<.data_table>`,
   `<.table_toolbar>`, `<.empty>`, `<.record_tabs>`, `<.table_card>`,
-  `<.section_nav>` and `<.time_field>`. Their design metadata (specs,
-  accessibility, SwiftUI) is inline here.
+  `<.section_nav>` and `<.time_field>`, plus `<.dropzone>` (a form's file
+  upload). Their design metadata (specs, accessibility, SwiftUI) is inline
+  here.
 
   Unlike the hand-written catalog entries, each example's `code` is rendered
   from the real component at runtime (`~H` + `Phoenix.HTML.Safe`), then the
@@ -34,6 +35,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
   import ShadcnDaisyui.Components.Display, only: [empty: 1]
   import ShadcnDaisyui.Components.Overlay, only: [dialog: 1, show_modal: 1, hide_modal: 1]
   import ShadcnDaisyui.CoreComponents, only: [button: 1, table: 1]
+  import ShadcnDaisyui.FormComponents, only: [dropzone: 1]
 
   alias ShadcnDaisyui.DataTable.State
 
@@ -47,11 +49,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
     ShadcnDaisyui.Components.Display,
     ShadcnDaisyui.Components.Overlay,
     ShadcnDaisyui.Components.Navigation,
-    ShadcnDaisyui.CoreComponents
+    ShadcnDaisyui.CoreComponents,
+    ShadcnDaisyui.FormComponents
   ]
 
   @doc """
-  The seven pages. Rendering every example takes a few milliseconds and the
+  The eight pages. Rendering every example takes a few milliseconds and the
   docs sidebar builds the whole catalog on every request, so the result is
   kept in `:persistent_term`, keyed by the rendering modules' checksums (an
   edit to a component in dev shows on the next request).
@@ -78,7 +81,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
       record_tabs(),
       table_card(),
       section_nav(),
-      time_field()
+      time_field(),
+      dropzone()
     ]
   end
 
@@ -1863,5 +1867,325 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
         </div>
         """)
     }
+  end
+
+  # ---------------------------------------------------------------------------
+  # Dropzone
+  # ---------------------------------------------------------------------------
+
+  defp dropzone do
+    %{
+      slug: "dropzone",
+      title: "Dropzone",
+      description:
+        "A file picker people can also drop files on: a dashed area that opens the picker on a click or tap, with picked files as attachment tiles under it.",
+      hook: true,
+      guidance: %{
+        use_when: [
+          "Every file upload in a form: an import, attachments, a logo or avatar",
+          "Tight forms: size=\"compact\", one input-height row"
+        ],
+        avoid_when: [
+          "Showing files already attached - render them as <.attachment> tiles, without a picker",
+          "A bare live_file_input or a hand-rolled drop area - this is the one file picker",
+          "Pasting images into a message composer - handle paste on the composer itself"
+        ],
+        sizing:
+          "Default: at least 8rem tall, 24px padding, rounded-lg, a 32px muted icon box, a text-sm medium title and one text-xs muted line. Compact: h-9 like an input (44px on touch), the description under it in text-sm muted. Tiles are full width, 8px apart.",
+        responsive:
+          "Full width of the form column at every width. Touch screens can't drag, so the title reads \"Choose a file\" there and the compact row grows to 44px.",
+        ios:
+          ".fileImporter(isPresented:allowedContentTypes:allowsMultipleSelection:) behind a bordered button (or PhotosPicker for photos), plus .dropDestination(for: URL.self) for drag and drop on iPad; picked files are attachment rows below it."
+      },
+      props: [
+        %{name: "id", type: "string (required)", default: "-"},
+        %{name: "upload", type: "Phoenix.LiveView.UploadConfig", default: "nil"},
+        %{
+          name: "name / accept / multiple",
+          type: "plain form (instead of upload)",
+          default: "nil"
+        },
+        %{name: "size", type: "default | compact", default: "default"},
+        %{name: "disabled", type: "boolean", default: "false"},
+        %{name: "on_cancel", type: "event | JS (pushes %{\"ref\" => ref})", default: "nil"},
+        %{name: "target", type: "phx-target for on_cancel", default: "nil"},
+        %{name: "error_text", type: "fn error -> text | nil end", default: "nil"},
+        %{name: ":title touch", type: "slot + touch-screen wording", default: "from the upload"},
+        %{name: ":description", type: "slot", default: "types, size limit, count"},
+        %{name: ":entry", type: "slot (:let={entry})", default: "attachment tile"}
+      ],
+      notes:
+        "The zone is the upload's phx-drop-target: a <label> around the visually hidden live_file_input, so a click, a tap, Enter or Space opens the picker - no inline JS. Without slots the title and the description come from the upload (\"One .csv file, up to 1 MB.\"). Each entry is an <.attachment>: uploading with its progress, done, or an error with the reason; on_cancel adds a remove button. Errors for the whole upload (too many files) show under the zone. The ShadcnDropzone hook highlights the zone while files are over it on every LiveView version, and takes a plain form's drops (name instead of upload).",
+      specs: %{
+        anatomy: [
+          %{
+            part: "Zone",
+            description: "Dashed rounded-lg label; the drop target and the picker."
+          },
+          %{part: "Icon", description: "hero-arrow-up-tray in a 32px muted box."},
+          %{part: "Title", description: "text-sm medium: what to drop or choose."},
+          %{part: "Description", description: "text-xs muted: types, size limit, how many."},
+          %{part: "Errors", description: "text-sm destructive lines under the zone."},
+          %{part: "Entries", description: "One full-width attachment tile per file."}
+        ],
+        measurements: [
+          %{property: "Zone", value: "min-height 8rem, 1.5rem padding, var(--radius-lg)"},
+          %{
+            property: "Border",
+            value: "1px dashed var(--border-color); var(--primary) while dragging"
+          },
+          %{property: "Drag fill", value: "var(--accent), 150ms (none with reduced motion)"},
+          %{property: "Icon box", value: "2rem, var(--muted), var(--radius-md), 1rem glyph"},
+          %{property: "Compact", value: "2.25rem row (2.75rem on touch), var(--radius-md)"},
+          %{
+            property: "Focus ring",
+            value: "0 0 0 3px var(--ring) @ 50% while the input has :focus-visible"
+          }
+        ],
+        tokens: [
+          "border-color",
+          "primary",
+          "accent",
+          "muted",
+          "muted-foreground",
+          "input",
+          "ring",
+          "destructive"
+        ]
+      },
+      accessibility: %{
+        roles:
+          "A native file input, visually hidden inside the zone's <label>: the label's title names it, aria-describedby reads the description and the errors, aria-invalid marks a rejected file. Picked files are a list.",
+        keyboard: [
+          %{keys: "Tab", action: "Focus the zone (its input); the ring shows"},
+          %{keys: "Enter / Space", action: "Open the file picker"},
+          %{keys: "Tab", action: "Move on to each file's remove button"}
+        ],
+        focus:
+          "The 3px ring is drawn on the zone while its input has :focus-visible (:has), so a mouse click doesn't leave it lit.",
+        screen_reader:
+          "The input announces its title, then the description and any errors. Upload errors are in a polite live region; each file's tile names it and its state.",
+        touch_target:
+          "The whole zone is the target; compact grows to 44px on touch. Touch screens can't drag, so the title says \"Choose a file\".",
+        reduced_motion: "The 150ms border and fill change is dropped."
+      },
+      swiftui: %{
+        code: ~S"""
+        @State private var importing = false
+        @State private var files: [URL] = []
+
+        Button("Choose a CSV file", systemImage: "square.and.arrow.up") { importing = true }
+            .buttonStyle(.bordered)
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.commaSeparatedText]) { result in
+                if case .success(let url) = result { files = [url] }
+            }
+            .dropDestination(for: URL.self) { urls, _ in
+                files = Array(urls.prefix(1))
+                return !urls.isEmpty
+            }
+
+        ForEach(files, id: \.self) { url in
+            AttachmentRow(name: url.lastPathComponent, size: url.fileSize, progress: upload.progress[url])
+        }
+        """,
+        notes:
+          "iPhone has no drag between apps: the picker button is the control and .dropDestination only adds iPad drag and drop. Show each picked file as a row (icon, name, size, a ProgressView while it uploads, a remove button), as <.attachment> does."
+      },
+      ios_status: :partial,
+      examples: [
+        %{
+          title: "Default",
+          heex: ~S"""
+          <.dropzone id="import-file" upload={@uploads.people_csv} on_cancel="import:cancel">
+            <:title touch="Choose a CSV file">Drop a CSV file here, or choose one</:title>
+            <:description>One .csv file, up to 1 MB.</:description>
+          </.dropzone>
+          """,
+          code: dropzone_default_code()
+        },
+        %{
+          title: "Compact",
+          heex: ~S"""
+          <label for={@uploads.logo.ref} class="text-sm font-medium">Logo</label>
+          <.dropzone id="logo" upload={@uploads.logo} size="compact" on_cancel="cancel-upload" />
+          """,
+          code: dropzone_compact_code()
+        },
+        %{
+          title: "Multiple, uploading",
+          heex: ~S"""
+          <%!-- allow_upload(:files, accept: ~w(image/* .pdf), max_entries: 5, auto_upload: true) --%>
+          <.dropzone id="attachments" upload={@uploads.files} on_cancel="cancel-upload" />
+
+          def handle_event("cancel-upload", %{"ref" => ref}, socket),
+            do: {:noreply, cancel_upload(socket, :files, ref)}
+          """,
+          code: dropzone_entries_code()
+        },
+        %{
+          title: "Errors",
+          heex: ~S"""
+          <.dropzone
+            id="import-file"
+            upload={@uploads.people_csv}
+            on_cancel="import:cancel"
+            error_text={fn
+              :not_accepted -> "That isn't a CSV file. Export the sheet as .csv first."
+              _ -> nil
+            end}
+          />
+          """,
+          code: dropzone_errors_code()
+        },
+        %{
+          title: "Disabled",
+          heex: ~S"""
+          <.dropzone id="import-file" upload={@uploads.people_csv} disabled />
+          """,
+          code: dropzone_disabled_code()
+        },
+        %{
+          title: "Plain form",
+          heex: ~S"""
+          <form action={~p"/documents"} method="post" enctype="multipart/form-data">
+            <.dropzone id="documents" name="documents" accept=".pdf,.txt" multiple />
+          </form>
+          """,
+          code: dropzone_plain_code()
+        }
+      ]
+    }
+  end
+
+  defp dropzone_default_code do
+    assigns = %{}
+
+    dropzone_code(~H"""
+    <.dropzone id="import-file-demo" name="people_csv" accept=".csv" class="w-full max-w-md">
+      <:title touch="Choose a CSV file">Drop a CSV file here, or choose one</:title>
+      <:description>One .csv file, up to 1 MB.</:description>
+    </.dropzone>
+    """)
+  end
+
+  defp dropzone_compact_code do
+    assigns = %{}
+
+    dropzone_code(~H"""
+    <div class="grid w-full max-w-sm gap-2">
+      <label for="logo-demo-input" class="text-sm font-medium">Logo</label>
+      <.dropzone id="logo-demo" name="logo" accept=".png,.svg" size="compact">
+        <:description>One .png or .svg file, up to 500 KB.</:description>
+      </.dropzone>
+    </div>
+    """)
+  end
+
+  defp dropzone_entries_code do
+    entries = [
+      demo_entry("0", "inspection-report.pdf", 2_400_000, done?: true, progress: 100),
+      demo_entry("1", "roof-measurements.pdf", 5_100_000, progress: 64, preflighted?: true),
+      demo_entry("2", "permit-scan.pdf", 820_000, progress: 12, preflighted?: true)
+    ]
+
+    assigns = %{
+      upload: demo_upload(:files, ~w(image/* .pdf), 5, 8_000_000, entries, [], true)
+    }
+
+    dropzone_code(~H"""
+    <.dropzone
+      id="attachments-demo"
+      upload={@upload}
+      on_cancel="cancel-upload"
+      class="w-full max-w-md"
+    />
+    """)
+  end
+
+  defp dropzone_errors_code do
+    entries = [
+      demo_entry("0", "people.xlsx", 48_000, client_type: "application/vnd.ms-excel"),
+      demo_entry("1", "people-2019-2026.csv", 3_400_000)
+    ]
+
+    errors = [{"0", :not_accepted}, {"1", :too_large}, {"phx-demo-people_csv", :too_many_files}]
+
+    assigns = %{upload: demo_upload(:people_csv, ~w(.csv), 1, 1_000_000, entries, errors, false)}
+
+    dropzone_code(~H"""
+    <.dropzone
+      id="import-errors-demo"
+      upload={@upload}
+      on_cancel="import:cancel"
+      class="w-full max-w-md"
+      error_text={
+        fn
+          :not_accepted -> "That isn't a CSV file. Export the sheet as .csv first."
+          _ -> nil
+        end
+      }
+    />
+    """)
+  end
+
+  defp dropzone_disabled_code do
+    assigns = %{}
+
+    dropzone_code(~H"""
+    <.dropzone
+      id="import-disabled-demo"
+      name="people_csv"
+      accept=".csv"
+      disabled
+      class="w-full max-w-md"
+    >
+      <:description>One .csv file, up to 1 MB.</:description>
+    </.dropzone>
+    """)
+  end
+
+  defp dropzone_plain_code do
+    assigns = %{}
+
+    dropzone_code(~H"""
+    <form action="#" class="w-full max-w-md">
+      <.dropzone id="documents-demo" name="documents" accept=".pdf,.txt" multiple />
+    </form>
+    """)
+  end
+
+  defp demo_upload(name, accept, max_entries, max_file_size, entries, errors, auto_upload?) do
+    %Phoenix.LiveView.UploadConfig{
+      name: name,
+      ref: "phx-demo-#{name}",
+      accept: Enum.join(accept, ","),
+      max_entries: max_entries,
+      max_file_size: max_file_size,
+      entries: entries,
+      errors: errors,
+      auto_upload?: auto_upload?
+    }
+  end
+
+  defp demo_entry(ref, name, size, opts \\ []) do
+    struct!(
+      Phoenix.LiveView.UploadEntry,
+      [
+        ref: ref,
+        upload_ref: "phx-demo",
+        client_name: name,
+        client_size: size,
+        client_type: if(String.ends_with?(name, ".pdf"), do: "application/pdf", else: "text/csv"),
+        valid?: true
+      ] ++ opts
+    )
+  end
+
+  # A LiveView upload's markup, as a snapshot: the live_file_input's LiveView
+  # wiring (its hook, refs and the drop target) is dropped from the HTML tab.
+  defp dropzone_code(rendered) do
+    rendered
+    |> code()
+    |> String.replace(~r/ (?:data-phx-[a-z-]+|phx-drop-target)="[^"]*"/, "")
   end
 end

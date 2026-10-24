@@ -3156,6 +3156,91 @@ if (typeof window !== "undefined" && !window.__shadcnRecordTabs) {
   })
 }
 
+// ---- Dropzone ---------------------------------------------------------------
+// <.dropzone>: data-dragging on the zone while files are dragged over it (as
+// LiveView's .phx-drop-target-active does since 1.1.1x, for every version),
+// and a disabled zone refuses the drop. A LiveView upload's drop is
+// LiveView's own (phx-drop-target). A plain form's zone (data-dropzone=
+// "plain") takes the drop itself: the files its input accepts go on the input
+// (added to the chosen ones when it's multiple), input + change fire, and the
+// zone names the chosen files (data-chosen on the root, the names in
+// [data-dropzone-chosen]).
+function acceptsFile(accept, file) {
+  const types = (accept || "").split(",").map((t) => t.trim().toLowerCase()).filter(Boolean)
+  const name = file.name.toLowerCase()
+  const type = (file.type || "").toLowerCase()
+  return !types.length || types.some((t) =>
+    t.startsWith(".") ? name.endsWith(t) : t.endsWith("/*") ? type.startsWith(t.slice(0, -1)) : type === t)
+}
+
+function initDropzone(root) {
+  if (root.__sdDropzone) return root.__sdDropzone
+  const area = root.querySelector("[data-dropzone-area]")
+  if (!area) return null
+  const plain = root.dataset.dropzone === "plain"
+  const input = () => area.querySelector("input[type=file]")
+  const disabled = () => root.hasAttribute("data-disabled")
+  const hasFiles = (e) => !!e.dataTransfer && [...e.dataTransfer.types].includes("Files")
+  // enter/leave fire for every child the pointer crosses: count them
+  let depth = 0
+  const dragging = (on) => { if (area.hasAttribute("data-dragging") !== on) area.toggleAttribute("data-dragging", on) }
+  const onEnter = (e) => { if (hasFiles(e)) { depth++; dragging(!disabled()) } }
+  const onLeave = (e) => { if (hasFiles(e) && --depth <= 0) { depth = 0; dragging(false) } }
+  const onOver = (e) => {
+    if (!hasFiles(e)) return
+    e.preventDefault() // lets the drop land here
+    e.dataTransfer.dropEffect = disabled() ? "none" : "copy"
+  }
+  // never the browser opening the file (LiveView's own drop listener still runs)
+  const onDrop = (e) => {
+    depth = 0
+    dragging(false)
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    const el = input()
+    if (!plain || disabled() || !el || el.disabled) return
+    let files = [...e.dataTransfer.files].filter((f) => acceptsFile(el.accept, f))
+    if (!files.length) return
+    if (!el.multiple) files = files.slice(0, 1)
+    const dt = new DataTransfer()
+    if (el.multiple) [...el.files].forEach((f) => dt.items.add(f))
+    files.forEach((f) => dt.items.add(f))
+    el.files = dt.files
+    el.dispatchEvent(new Event("input", { bubbles: true }))
+    el.dispatchEvent(new Event("change", { bubbles: true }))
+  }
+  const showChosen = () => {
+    const el = input()
+    const out = root.querySelector("[data-dropzone-chosen]")
+    if (!el || !out) return
+    const names = [...el.files].map((f) => f.name)
+    out.textContent = names.join(", ")
+    out.hidden = !names.length
+    root.toggleAttribute("data-chosen", names.length > 0)
+  }
+  // form.reset() clears the files without a change event
+  const form = plain && input() && input().form
+  const onReset = () => setTimeout(showChosen)
+  area.addEventListener("dragenter", onEnter)
+  area.addEventListener("dragleave", onLeave)
+  area.addEventListener("dragover", onOver)
+  area.addEventListener("drop", onDrop)
+  if (plain) area.addEventListener("change", showChosen)
+  if (form) form.addEventListener("reset", onReset)
+  root.__sdDropzone = {
+    destroy() {
+      area.removeEventListener("dragenter", onEnter)
+      area.removeEventListener("dragleave", onLeave)
+      area.removeEventListener("dragover", onOver)
+      area.removeEventListener("drop", onDrop)
+      area.removeEventListener("change", showChosen)
+      if (form) form.removeEventListener("reset", onReset)
+      delete root.__sdDropzone
+    },
+  }
+  return root.__sdDropzone
+}
+
 // ---- Public API -----------------------------------------------------------
 
 // Switch the active theme without the light↔dark colour fade flickering.
@@ -3204,6 +3289,7 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-page-back]").forEach(initPageBack)
   root.querySelectorAll("[data-data-table]").forEach((el) => initLiveTable(el))
   root.querySelectorAll("[data-section-nav]").forEach(initSectionNav)
+  root.querySelectorAll("[data-dropzone]").forEach((el) => initDropzone(el))
   initContextMenu()
   initDock(root)
 }
@@ -3271,6 +3357,11 @@ export const Hooks = {
   // <.page_header>'s breadcrumb: Esc goes back
   ShadcnPageBack: {
     mounted() { this.api = initPageBack(this.el) },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.dropzone>: the drag highlight on every LiveView version, a plain form's drop
+  ShadcnDropzone: {
+    mounted() { this.api = initDropzone(this.el) },
     destroyed() { this.api && this.api.destroy() },
   },
 }

@@ -46,9 +46,12 @@ like shadcn/ui. **Every UI decision goes through this package.**
   server first) opens from the server: `push_show_modal(socket, id)` /
   `push_hide_modal/2`, or `show={@confirm?}` with `on_close`. A button opens from
   the browser (`show_modal/2`). Never toggle a dialog's `open` attribute yourself.
+- A file upload is `<.dropzone upload={@uploads.x}>` (`size="compact"` in tight
+  forms); the picked files show under it as `<.attachment>` tiles. Never show a
+  bare `<.live_file_input>` or hand-roll a drop area (see `usage-rules/forms.md`).
 - Interactive components (combobox, select, date picker, time picker, time field,
   calendar, range calendar, OTP, carousel, resizable, command, context-menu,
-  toaster, tab nav, chip row, page header, data table, section nav) REQUIRE a
+  toaster, tab nav, chip row, page header, data table, section nav, dropzone) REQUIRE a
   unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
@@ -109,6 +112,7 @@ Decision order:
 | `<.range_calendar>` | `id` (hook), inline range picker; `months`, `start`/`end`; form-bind with `start_name`/`end_name` (ISO dates) |
 | `<.item>` / `<.item_group>` / `<.item_separator>` | row with `<:media variant="icon\|image">` `<:title>` `<:description>` `<:actions>` (`<:header>`/`<:footer>`); `variant="default\|outline\|muted"`, `size="default\|sm\|xs"`, `href`/`navigate` makes it a link |
 | `<.attachment>` / `<.attachment_group>` / `<.attachment_action>` | file tile: `state="idle\|uploading\|processing\|error\|done"`, `size`, `orientation`, `<:media>` `<:title>` `<:description>` `<:actions>` `<:trigger label>` |
+| `<.dropzone>` | `id` (hook), `upload={@uploads.x}`: a dashed `<label>` around the hidden `live_file_input` (the `phx-drop-target`; click / tap / Enter / Space opens the picker); title + description default from the upload ("One .csv file, up to 1 MB."; "Choose a file" on touch) or `<:title touch="…">` / `<:description>`; entries as `<.attachment>` tiles (uploading %, done, error), `on_cancel` (event or JS, pushes `%{"ref" => ref}`, `target`) adds remove; upload errors under the zone, `error_text={fn err -> text \| nil end}`; `<:entry :let={entry}>`; `size="default\|compact"` (one `h-9` row), `disabled`; plain forms: `name` + `accept` + `multiple` instead of `upload` |
 | `<.message>` / `<.message_group>` | chat turn: `align="start\|end"`, `<:avatar>` `<:header>` `<:footer>`; `role="log"` on the group for live transcripts |
 | `<.bubble>` / `<.bubble_group>` | `variant="default\|secondary\|muted\|tinted\|outline\|ghost\|destructive"`, `align`, `as="button"` for suggested replies, `<:reactions label>` |
 | `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
@@ -269,7 +273,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (94 components) in the docs site (`demo/`) or
+Browse the full gallery (95 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

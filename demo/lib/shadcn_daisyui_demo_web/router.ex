@@ -41,12 +41,14 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
   # overlays under `script-src 'self' 'nonce-…'`, re-rendered twice a second to
   # show an open dialog survives patches. /lab/command-search is the command
   # palette's server search, answered by the LiveView. /lab/data-table is a
-  # list page (toolbar + data table) and its record page.
+  # list page (toolbar + data table) and its record page. /lab/dropzone is
+  # <.dropzone> on real uploads.
   scope "/lab", ShadcnDaisyuiDemoWeb do
     pipe_through [:browser, :strict_csp]
 
     live "/csp", CspLive
     live "/command-search", CommandSearchLive
+    live "/dropzone", DropzoneLive
 
     live_session :lab_orders do
       live "/data-table", OrdersLive

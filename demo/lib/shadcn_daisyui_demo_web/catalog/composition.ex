@@ -291,7 +291,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Composition do
           "Showing a file's name, type, and size with remove / download / retry actions"
         ],
         avoid_when: [
-          "The file input itself - use a file input or drop zone, then render picked files as attachments",
+          "The file picker itself - use [<.dropzone>](/docs/components/dropzone), which shows the picked files as attachments",
           "Image galleries - use a grid of images or a carousel"
         ],
         sizing:

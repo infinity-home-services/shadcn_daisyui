@@ -409,7 +409,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
         <div :if={@guidance[:use_when]} class="rounded-lg border border-success/40 p-4">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-success">Use when</p>
           <ul class="list-inside list-disc space-y-1 text-sm">
-            <li :for={item <- @guidance.use_when}>{item}</li>
+            <li :for={item <- @guidance.use_when}>{guidance_text(item)}</li>
           </ul>
         </div>
         <div :if={@guidance[:avoid_when]} class="rounded-lg border border-destructive/40 p-4">
@@ -417,7 +417,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
             Don't use for
           </p>
           <ul class="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li :for={item <- @guidance.avoid_when}>{item}</li>
+            <li :for={item <- @guidance.avoid_when}>{guidance_text(item)}</li>
           </ul>
         </div>
       </div>
@@ -437,6 +437,31 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       </dl>
     </div>
     """
+  end
+
+  # A use-when / avoid-when item may link a component page, markdown style:
+  # "[<.dropzone>](/docs/components/dropzone)" (the .md export keeps it as is).
+  # Built as escaped HTML, not HEEx, so no whitespace lands around the link.
+  defp guidance_text(text) do
+    link = ~r{\[([^\]]+)\]\(/docs/components/([a-z0-9-]+)\)}
+    escape = &(&1 |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string())
+
+    html =
+      link
+      |> Regex.split(text, include_captures: true)
+      |> Enum.map(fn part ->
+        case Regex.run(link, part) do
+          [^part, label, slug] ->
+            ~s(<a href="#{escape.(~p"/docs/components/#{slug}")}" ) <>
+              ~s(class="font-medium text-foreground underline underline-offset-4">) <>
+              escape.(label) <> "</a>"
+
+          _ ->
+            escape.(part)
+        end
+      end)
+
+    {:safe, html}
   end
 
   @doc """

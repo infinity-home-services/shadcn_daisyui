@@ -9,11 +9,11 @@ It bundles:
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
 - **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
   stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable,
-  tab nav, chip row, page header, data table, section nav, …), plus the app shell's behaviour.
+  tab nav, chip row, page header, data table, section nav, dropzone, …), plus the app shell's behaviour.
 - **Function components** - `ShadcnDaisyui.Components` (`<.app_shell>` - a signed-in
   app's whole shell - `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
-  `<.radio_group>`, …), and `ShadcnDaisyui.CoreComponents` - a **drop-in replacement
+  `<.radio_group>`, `<.dropzone>`, …), and `ShadcnDaisyui.CoreComponents` - a **drop-in replacement
   for Phoenix 1.8's generated core components** (`<.input field={@form[:email]}>`,
   `<.button>`, `<.table>`, `<.flash>`, plus `<.page_header>`), so `phx.gen.live` /
   `phx.gen.html` output works unmodified.
@@ -177,6 +177,14 @@ def handle_event("cancel", _params, socket) do
     do: {:noreply, push_show_modal(socket, "discard")},
     else: {:noreply, push_navigate(socket, to: ~p"/orders")}
 end
+```
+
+A file upload is `<.dropzone>`: a dashed area people drop files on or click to
+choose, wired to a LiveView upload, with the picked files as attachment tiles
+(progress, errors, a remove button) under it:
+
+```heex
+<.dropzone id="import-file" upload={@uploads.people_csv} on_cancel="import:cancel" />
 ```
 
 Interactive components need an `id` (LiveView hook requirement) and the `Hooks`
