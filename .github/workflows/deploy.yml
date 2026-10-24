@@ -48,6 +48,21 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      # GitHub's release-download redirect carries ~10.7 KB of headers (its
+      # content-security-policy alone is ~9 KB), over the 10 KB header limit of
+      # the Erlang :httpc client `mix tailwind.install` downloads with, so that
+      # fails with {:header_too_long, ...}. Fetch the configured version with
+      # curl instead, where the tailwind package looks for it; assets.setup's
+      # `tailwind.install --if-missing` then finds it and skips the download.
+      - name: Fetch tailwind
+        run: |
+          version=$(awk '/^config :tailwind,/{f=1} f && /version:/{gsub(/.*version: "|".*/, ""); print; exit}' config/config.exs)
+          mkdir -p _build
+          curl -fsSL --retry 3 -o _build/tailwind-linux-x64 \
+            "https://github.com/tailwindlabs/tailwindcss/releases/download/v${version}/tailwindcss-linux-x64"
+          chmod +x _build/tailwind-linux-x64
+          _build/tailwind-linux-x64 --help | head -1
+
       - name: Install asset tooling (tailwind + esbuild)
         run: mix assets.setup
 
