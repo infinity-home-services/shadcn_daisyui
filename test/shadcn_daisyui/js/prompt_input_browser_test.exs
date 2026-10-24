@@ -89,6 +89,17 @@ defmodule ShadcnDaisyui.JS.PromptInputBrowserTest do
     #{js}
     const $ = (id) => document.getElementById(id)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    // every time-based CSS transition or animation now running has finished
+    // (a fixed wait can end mid-transition when the machine is busy; endless
+    // and scroll-driven ones never finish, so they don't count)
+    const settle = async () => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => r()))
+      await frame()
+      await Promise.all(document.getAnimations()
+        .filter((a) => a.timeline === document.timeline && a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished.catch(() => {})))
+      await frame()
+    }
     const frames = (n = 3) => new Promise((r) => { const f = () => (--n ? requestAnimationFrame(f) : r()); requestAnimationFrame(f) })
     const css = (el, prop) => getComputedStyle(el).getPropertyValue(prop)
     const probe = document.createElement("div")
@@ -131,7 +142,7 @@ defmodule ShadcnDaisyui.JS.PromptInputBrowserTest do
       gap: Math.round(box.getBoundingClientRect().top - $("main").querySelector("[data-slot=prompt-input-suggestions]").getBoundingClientRect().bottom),
     }
     field("main").focus()
-    await sleep(250) // past the 150ms border transition
+    await settle()
     r.focusRing = { border: css(box, "border-top-color"), ring: color("--ring"), shadow: css(box, "box-shadow") !== "none" }
 
     // ---- empty: Send does nothing ----
@@ -253,7 +264,7 @@ defmodule ShadcnDaisyui.JS.PromptInputBrowserTest do
     const drag = new DataTransfer()
     drag.items.add(new File(["x"], "a.pdf", { type: "application/pdf" }))
     filesBox.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: drag }))
-    await sleep(200)
+    await settle()
     r.dragging = { on: filesBox.hasAttribute("data-dragging"), border: css(filesBox, "border-top-color"), primary: color("--primary") }
     filesBox.dispatchEvent(new DragEvent("dragleave", { bubbles: true, cancelable: true, dataTransfer: drag }))
     r.dragLeft = filesBox.hasAttribute("data-dragging")

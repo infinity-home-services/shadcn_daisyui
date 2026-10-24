@@ -117,6 +117,17 @@ defmodule ShadcnDaisyui.JS.CodeBlockBrowserTest do
     initShadcnDaisyui()
     const $ = (id) => document.getElementById(id)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    // every time-based CSS transition or animation now running has finished
+    // (a fixed wait can end mid-transition when the machine is busy; endless
+    // and scroll-driven ones never finish, so they don't count)
+    const settle = async () => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => r()))
+      await frame()
+      await Promise.all(document.getAnimations()
+        .filter((a) => a.timeline === document.timeline && a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished.catch(() => {})))
+      await frame()
+    }
     const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
     const css = (el, prop, pseudo) => getComputedStyle(el, pseudo || null).getPropertyValue(prop)
     const probe = document.createElement("div")
@@ -243,7 +254,7 @@ defmodule ShadcnDaisyui.JS.CodeBlockBrowserTest do
     const floating = $("short").querySelector('[data-slot="code-block-actions"]')
     r.floating = { position: css(floating, "position"), rest: css(floating, "opacity") }
     copyBtn("short").focus()
-    await sleep(200)
+    await settle()
     r.floating.focused = css(floating, "opacity")
     r.copy_size = [css(copyBtn("short"), "width"), css(copyBtn("short"), "height")]
 

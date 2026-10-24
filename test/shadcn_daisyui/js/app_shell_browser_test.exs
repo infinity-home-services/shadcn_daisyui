@@ -3,8 +3,13 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
   # with the real theme CSS and JS (same harness as the other *_browser_test
   # files; no Tailwind or daisyUI, so only the package's own rules apply).
   # LiveView's JS.dispatch fires its event on the clicked element, bubbling;
-  # the pages do the same. A page that navigates (Enter in the palette, Esc
-  # back, a reload) hands its results to the next page through sessionStorage.
+  # the pages do the same. Results never cross a page load through storage:
+  # a page loaded in a new process can miss what the page before it wrote to
+  # sessionStorage just before leaving (it did, now and then, under load). A
+  # reload carries them in the URL's hash; a link click that would navigate
+  # (Enter in the palette, Esc back) is caught instead (navigatesTo): the
+  # test records where it was headed, unless something prevented it, and
+  # stays on the page.
   # Skipped when Node or Chrome/Chromium is missing (set CHROME to point at one).
   use ExUnit.Case, async: true
 
@@ -110,8 +115,22 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
       target.dispatchEvent(e)
       return e.defaultPrevented
     }
-    const out = JSON.parse(sessionStorage.getItem("out") || "{}")
-    const save = () => sessionStorage.setItem("out", JSON.stringify(out))
+    const out = {}
+    // the href a link click during act() would navigate to (null: prevented,
+    // or no link clicked); the navigation itself is stopped
+    const navigatesTo = (act) => new Promise((resolve) => {
+      const done = (href) => { window.removeEventListener("click", onClick); resolve(href) }
+      const onClick = (e) => {
+        const a = e.target instanceof Element && e.target.closest("a[href]")
+        if (!a) return
+        const href = e.defaultPrevented ? null : a.getAttribute("href")
+        e.preventDefault()
+        done(href)
+      }
+      window.addEventListener("click", onClick)
+      act()
+      setTimeout(() => done(null), 1000)
+    })
     #{test}
     </script>
     </body>
@@ -119,13 +138,12 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
     """
   end
 
-  # target.html: where links land; reports what the page before it saved
+  # target.html: where a link lands if one navigates after all; it reports
+  # only that, so a stray navigation fails the asserts instead of hanging
   @target """
   <!doctype html>
   <html><head><meta charset="utf-8"></head><body>
-  <script>
-  window.__result = JSON.stringify({ ...JSON.parse(sessionStorage.getItem("out") || "{}"), landed: location.hash })
-  </script>
+  <script>window.__result = JSON.stringify({ landed: location.hash })</script>
   </body></html>
   """
 
@@ -157,16 +175,18 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
         const sidebar = document.getElementById("sidebar")
         const width = () => Math.round(sidebar.getBoundingClientRect().width)
         const label = () => getComputedStyle(document.querySelector("#nav-orders .app-shell-label")).display
-        if (!sessionStorage.getItem("reloaded")) {
+        const reloaded = location.hash.startsWith("#reloaded=")
+        if (!reloaded) {
           out.first = { atParse: window.__atParse, width: width(), label: label(), stored: localStorage.getItem("shadcn:sidebar") }
           // the "Collapse sidebar" row: phx-click={JS.dispatch("shadcn:toggle-sidebar")}
           document.getElementById("sidebar-toggle").dispatchEvent(new CustomEvent("shadcn:toggle-sidebar", { bubbles: true }))
           await wait(400)
           out.collapsed = { attr: root.dataset.sidebar, width: width(), label: label(), stored: localStorage.getItem("shadcn:sidebar") }
-          sessionStorage.setItem("reloaded", "1")
-          save()
+          // the results so far ride along in the URL across the reload
+          location.hash = "reloaded=" + encodeURIComponent(JSON.stringify(out))
           location.reload()
         } else {
+          Object.assign(out, JSON.parse(decodeURIComponent(location.hash.slice("#reloaded=".length))))
           // set before the body parsed, so the first paint is already the rail
           out.reloaded = { atParse: window.__atParse, width: width(), label: label() }
           out.cmdB = { prevented: key(document.body, { key: "b", metaKey: true }), attr: root.dataset.sidebar }
@@ -261,8 +281,8 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
         search.dispatchEvent(new CustomEvent("shadcn:show-dialog", { bubbles: true }))
         out.showDialog = search.open && document.activeElement === input
         type("cust")
-        save()
-        key(input, { key: "Enter" })
+        out.goesTo = await navigatesTo(() => key(input, { key: "Enter" }))
+        window.__result = JSON.stringify(out)
         """)
       )
 
@@ -293,7 +313,7 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
     assert r["switcherNeverOpened"] == true
     assert r["showDialog"] == true
     # Enter clicked the selected item, a navigate link
-    assert r["landed"] == "#customers"
+    assert r["goesTo"] == "target.html#customers"
   end
 
   test "the page header pins and gets data-stuck once #main scrolls; Esc goes back" do
@@ -361,8 +381,8 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
         out.backdropCloses = !plain.open
 
         allowBack = true
-        save()
-        key(document.body, { key: "Escape" })
+        out.goesTo = await navigatesTo(() => key(document.body, { key: "Escape" }))
+        window.__result = JSON.stringify(out)
         """)
       )
 
@@ -375,7 +395,7 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
     assert r["closedOnNavigation"] == true
     assert r["boxClickKeepsOpen"] == true
     assert r["backdropCloses"] == true
-    assert r["landed"] == "#orders"
+    assert r["goesTo"] == "target.html#orders"
   end
 
   test "outside the shell a sticky top follows the document's scroll" do

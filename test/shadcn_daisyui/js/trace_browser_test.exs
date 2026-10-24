@@ -75,6 +75,17 @@ defmodule ShadcnDaisyui.JS.TraceBrowserTest do
     #{js}
     const $ = (id) => document.getElementById(id)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    // every time-based CSS transition or animation now running has finished
+    // (a fixed wait can end mid-transition when the machine is busy; endless
+    // and scroll-driven ones never finish, so they don't count)
+    const settle = async () => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => r()))
+      await frame()
+      await Promise.all(document.getAnimations()
+        .filter((a) => a.timeline === document.timeline && a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished.catch(() => {})))
+      await frame()
+    }
     const css = (el, prop) => getComputedStyle(el).getPropertyValue(prop)
     const probe = document.createElement("div")
     document.body.appendChild(probe)
@@ -99,7 +110,7 @@ defmodule ShadcnDaisyui.JS.TraceBrowserTest do
     r.closed = state("steps")
     r.closedFocusable = $("inner-trigger").checkVisibility({ visibilityProperty: true })
     $("steps-trigger").click()
-    await sleep(300)
+    await settle()
     r.open = state("steps")
     r.chevron = css($("steps-trigger").querySelector("[data-chevron]"), "rotate")
     r.innerClosed = state("inner")
@@ -108,7 +119,7 @@ defmodule ShadcnDaisyui.JS.TraceBrowserTest do
     await sleep(300)
     r.innerOpen = { inner: state("inner"), outer: $("steps-trigger").getAttribute("aria-expanded"), link: $("inner-link").checkVisibility({ visibilityProperty: true }) }
     $("steps-trigger").click()
-    await sleep(300)
+    await settle()
     r.reclosed = { outer: state("steps"), inner: $("inner-trigger").getAttribute("aria-expanded") }
     // keyboard: the trigger is a real button (Enter / Space click it)
     $("steps-trigger").focus()

@@ -79,6 +79,17 @@ defmodule ShadcnDaisyui.JS.DropzoneBrowserTest do
     initShadcnDaisyui()
     const $ = (id) => document.getElementById(id)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    // every time-based CSS transition or animation now running has finished
+    // (a fixed wait can end mid-transition when the machine is busy; endless
+    // and scroll-driven ones never finish, so they don't count)
+    const settle = async () => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => r()))
+      await frame()
+      await Promise.all(document.getAnimations()
+        .filter((a) => a.timeline === document.timeline && a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished.catch(() => {})))
+      await frame()
+    }
     const css = (el, prop, pseudo) => getComputedStyle(el, pseudo || null).getPropertyValue(prop)
     // a token's computed colour, as the browser resolves it on a probe
     const probe = document.createElement("div")
@@ -131,10 +142,10 @@ defmodule ShadcnDaisyui.JS.DropzoneBrowserTest do
     const child = z.querySelector(".dropzone-title")
     drag(z, "dragenter", [file("a.csv", "text/csv")])
     r.over = drag(z, "dragover", [file("a.csv", "text/csv")])
-    await sleep(220)
-    r.dragging = { on: z.hasAttribute("data-dragging"), border: css(z, "border-top-color"), bg: css(z, "background-color") }
     r.primary = color("--primary")
     r.accent = color("--accent")
+    await settle()
+    r.dragging = { on: z.hasAttribute("data-dragging"), border: css(z, "border-top-color"), bg: css(z, "background-color") }
     // crossing into a child: enter the child, then leave the zone - still over it
     drag(child, "dragenter", [file("a.csv", "text/csv")])
     drag(z, "dragleave", [file("a.csv", "text/csv")])
