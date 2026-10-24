@@ -349,6 +349,23 @@ defmodule ShadcnDaisyui.Components.ChatTest do
       assert html =~ "12 overdue"
     end
 
+    test "extra attributes go on the button, the link, or a plain row's item" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.trace>
+          <.trace_line data-step="plain">Searched</.trace_line>
+          <.trace_line href="/orders" data-step="link">Orders</.trace_line>
+          <.trace_line id="d" data-step="button">Ran <:detail>ok</:detail></.trace_line>
+        </.trace>
+        """)
+
+      assert tag(html, ~s(data-step="plain")) =~ ~s(data-slot="trace-item")
+      assert tag(html, ~s(data-step="link")) =~ ~s(data-slot="trace-link")
+      assert tag(html, ~s(data-step="button")) =~ ~s(data-slot="trace-collapsible-trigger")
+    end
+
     test "a row with detail needs an id" do
       assigns = %{}
 

@@ -951,7 +951,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChatPages do
 
   defp prompt_attachments_code do
     entries = [
-      demo_entry("0", "roof-photo.jpg", 1_800_000, "image/jpeg", done?: true, progress: 100),
+      demo_entry("0", "roof-measurements.pdf", 1_800_000, "application/pdf",
+        done?: true,
+        progress: 100
+      ),
       demo_entry("1", "invoice-1034.pdf", 420_000, "application/pdf",
         progress: 62,
         preflighted?: true

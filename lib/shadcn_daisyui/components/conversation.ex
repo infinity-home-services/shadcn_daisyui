@@ -556,10 +556,16 @@ defmodule ShadcnDaisyui.Components.Conversation do
   end
 
   def trace_line(assigns) do
-    assigns = assign(assigns, :link?, !!(assigns.href || assigns.navigate || assigns.patch))
+    link? = !!(assigns.href || assigns.navigate || assigns.patch)
+
+    assigns =
+      assigns
+      |> assign(:link?, link?)
+      # rest goes on the button or the link; a plain row takes it on the item
+      |> assign(:item_rest, if(assigns.detail == [] and not link?, do: assigns.rest, else: %{}))
 
     ~H"""
-    <div role="listitem" data-slot="trace-item" class={@class}>
+    <div role="listitem" data-slot="trace-item" class={@class} {@item_rest}>
       <%= cond do %>
         <% @detail != [] -> %>
           <div id={@id} data-slot="trace-collapsible">

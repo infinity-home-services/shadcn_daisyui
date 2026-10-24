@@ -3287,7 +3287,7 @@ function initMessageScroller(root) {
   let opened = false
   let following = false
   let ref = null       // { el, offset }: the first visible row and where it sat
-  let known = null     // the last anchored row seen
+  let lastRow = null   // the last row at the previous check
   let room = null      // the live anchor the spacer makes room for
   let lastSet = null   // the scrollTop our last write left (null: the reader moved it since)
   let smoothing = null // { y, end }: a smooth scroll of ours in flight
@@ -3385,11 +3385,11 @@ function initMessageScroller(root) {
 
   const open = () => {
     opened = true
-    known = lastAnchor()
+    const anchor = lastAnchor()
     const pos = root.dataset.defaultPosition || "end"
     const fits = (a) => viewport.scrollHeight - offsetOf(a) <= viewport.clientHeight + 1
     if (pos === "start") setScroll(0)
-    else if (pos === "last-anchor" && known && !fits(known)) setScroll(offsetOf(known))
+    else if (pos === "last-anchor" && anchor && !fits(anchor)) setScroll(offsetOf(anchor))
     else setScroll(maxTop())
     following = follows && atEnd()
     reveal()
@@ -3407,10 +3407,11 @@ function initMessageScroller(root) {
       if (!list.length) reveal()
       else if (viewport.clientHeight > 0) open()
     } else {
+      // a new anchored turn: a row we hadn't seen, after the rows we had (not
+      // an older anchor left last because the newest was deleted)
       const anchor = lastAnchor()
-      const appended = anchor && anchor !== known &&
-        (!known || !known.isConnected || (known.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING))
-      if (anchor !== known) known = anchor
+      const appended = anchor && !seen.has(anchor) &&
+        (!lastRow || !lastRow.isConnected || (lastRow.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING))
       if (appended) {
         room = anchor
         roomFor(room)
@@ -3430,6 +3431,7 @@ function initMessageScroller(root) {
     }
     seen = new WeakSet(list)
     seenAny = list.length > 0
+    lastRow = list[list.length - 1] || null
     if (!smoothing) remember()
     sync()
   }

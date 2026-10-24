@@ -254,6 +254,16 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
     grow(answer, 600)
     await frames()
     r.outgrown = { spacer: spacer.offsetHeight, gap: gap("live"), anchorTop: top(anchor, "live") }
+    // deleting the newest turn (stream_delete) leaves the reader where they
+    // were, rather than jumping to the anchor that is now last
+    vp("live").scrollTop = 400
+    await frames()
+    const liveRow = [...$("live-items").children].find((el) => el.getBoundingClientRect().bottom > vp("live").getBoundingClientRect().top + 1)
+    const liveRowTop = top(liveRow, "live")
+    $("live-32").remove()
+    $("live-31").remove()
+    await sleep(300)
+    r.deleted = { moved: top(liveRow, "live") - liveRowTop, top: vp("live").scrollTop, smoothing: vp("live").hasAttribute("data-autoscrolling") }
 
     // ---- shadcn:scroll-to jumps to a row ----
     $("start").dispatchEvent(new CustomEvent("shadcn:scroll-to", { detail: { to: "start-10" } }))
@@ -401,6 +411,8 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
     assert r["outgrown"]["spacer"] == 0
     assert r["outgrown"]["gap"] == 0
     assert r["outgrown"]["anchorTop"] < 0
+    # deleting that turn again doesn't send the view to the previous anchor
+    assert r["deleted"] == %{"moved" => 0, "top" => 400, "smoothing" => false}
   end
 
   test "shadcn:scroll-to jumps to a row; the start button goes to the top", %{r: r} do
