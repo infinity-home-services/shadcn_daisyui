@@ -566,6 +566,37 @@ defmodule ShadcnDaisyui.FormComponents do
     """
   end
 
+  # <.prompt_input>'s attached files: the dropzone's entry tiles, one list item
+  # each (ShadcnDaisyui.Components.Conversation.prompt_input/1)
+  @doc false
+  attr(:id, :string, required: true)
+  attr(:upload, Phoenix.LiveView.UploadConfig, required: true)
+  attr(:on_cancel, :any, default: nil)
+  attr(:target, :any, default: nil)
+  attr(:error_text, :any, default: nil)
+
+  def upload_tiles(assigns) do
+    {_messages, entry_errors} = dropzone_errors(assigns.upload, assigns.error_text)
+    assigns = assign(assigns, :entry_errors, entry_errors)
+
+    ~H"""
+    <div :for={entry <- @upload.entries} role="listitem">
+      <.dropzone_entry
+        id={@id}
+        entry={entry}
+        errors={@entry_errors[entry.ref]}
+        on_cancel={@on_cancel}
+        target={@target}
+      />
+    </div>
+    """
+  end
+
+  # The upload's own errors (too many files) as text, for <.prompt_input>
+  @doc false
+  def upload_messages(upload, error_text \\ nil),
+    do: upload |> dropzone_errors(error_text) |> elem(0)
+
   defp dropzone_title("compact", true), do: "Choose files or drop them here"
   defp dropzone_title("compact", false), do: "Choose a file or drop it here"
   defp dropzone_title(_, true), do: "Drop files here, or choose them"
