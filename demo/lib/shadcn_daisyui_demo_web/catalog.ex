@@ -18,6 +18,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
 
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
+  alias ShadcnDaisyuiDemoWeb.Catalog.CodeBlockPage
   alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
   alias ShadcnDaisyuiDemoWeb.Catalog.Overflow
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
@@ -55,7 +56,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     %{
       title: "Data display",
       slugs: ~w(table data-table table-toolbar table-card empty card avatar item attachment stat
-                chart timeline list kbd accordion collapsible carousel)
+                code-block chart timeline list kbd accordion collapsible carousel)
     },
     %{
       title: "Conversation",
@@ -106,6 +107,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     enrichment = Enrichment.all()
 
     pages = all() ++ Composition.all() ++ Pickers.all() ++ Overflow.all() ++ DataPages.all()
+    pages = pages ++ CodeBlockPage.all()
 
     for c <- pages, into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))

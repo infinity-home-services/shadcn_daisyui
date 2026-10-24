@@ -2364,6 +2364,255 @@
   .empty-state-description a:hover { color: var(--foreground); }
   .empty-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
 
+  /* ---- Code block (<.code_block>) -----------------------------------------
+     shadcn's Code Block: an optional header (title + actions), the <pre>
+     that scrolls or wraps, an optional footer. data-slot / data-variant /
+     data-size like the composition components, every selector in :where()
+     (zero specificity: content_class="max-h-72" and other utilities win).
+     Default: 1px border-input, rounded-lg, transparent (dark: input/30),
+     text-sm; sm: text-xs and 12px padding. Line numbers (::before, from
+     data-line) and diff markers (::after) are generated content, so a
+     selection never picks them up; alt text keeps the numbers silent and reads
+     the markers as "Added" / "Removed" (--code-block-added-label /
+     --code-block-removed-label translate them). Highlighted and added lines
+     tint muted, removed lines destructive/10; lines run edge to edge (-mx +
+     px) so the tint reaches the block's sides. */
+  :where([data-slot="code-block"]) {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--input);
+    border-radius: var(--radius-lg);
+    color: var(--foreground);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  :where([data-theme*="dark"], .dark) :where([data-slot="code-block"][data-variant="default"]) {
+    background-color: color-mix(in oklab, var(--input) 30%, transparent);
+  }
+  :where([data-slot="code-block"][data-variant="destructive"]) {
+    border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
+    color: var(--destructive);
+  }
+  :where([data-theme*="dark"], .dark) :where([data-slot="code-block"][data-variant="destructive"]) {
+    border-color: color-mix(in oklab, var(--destructive) 40%, transparent);
+  }
+  :where([data-slot="code-block"][data-size="sm"]) { font-size: 0.75rem; line-height: 1rem; }
+  /* keyboard focus on the scroll region rings the whole block */
+  :where([data-slot="code-block"]:has(> [data-slot="code-block-content"]:focus-visible)) { box-shadow: var(--ring-shadow); }
+  :where([data-slot="code-block"][data-variant="default"]:has(> [data-slot="code-block-content"]:focus-visible)) { border-color: var(--ring); }
+
+  :where([data-slot="code-block-header"]) {
+    display: flex;
+    min-width: 0;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1rem 0;
+    color: var(--muted-foreground);
+  }
+  :where([data-slot="code-block"][data-size="sm"] > [data-slot="code-block-header"]) { padding: 0.75rem 0.75rem 0; }
+  :where([data-slot="code-block-title"]) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+  :where([data-slot="code-block"][data-size="sm"]) :where([data-slot="code-block-title"]) { font-size: 0.75rem; line-height: 1rem; }
+  :where([data-slot="code-block"][data-variant="destructive"]) :where([data-slot="code-block-header"], [data-slot="code-block-title"]) { color: var(--destructive); }
+  :where([data-slot="code-block-title"]) > :is(svg, [class*="hero-"]):not([class*="size-"]) {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-inline-end: 0.375rem;
+    vertical-align: -0.1875rem;
+  }
+  :where([data-slot="code-block"][data-size="sm"]) :where([data-slot="code-block-title"]) > :is(svg, [class*="hero-"]):not([class*="size-"]) {
+    width: 0.875rem;
+    height: 0.875rem;
+    vertical-align: -0.125rem;
+  }
+
+  :where([data-slot="code-block-actions"]) {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    margin-block: -0.25rem;
+    margin-inline: auto -0.375rem;
+  }
+  /* without a header the actions float at the top end: shown on hover, on
+     focus inside the block and while "Copied" shows; always on touch screens */
+  :where([data-slot="code-block"] > [data-slot="code-block-actions"]) {
+    position: absolute;
+    z-index: 10;
+    top: 0.75rem;
+    inset-inline-end: 0.75rem;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  :where([data-slot="code-block"][data-size="sm"] > [data-slot="code-block-actions"]) { top: 0.5rem; inset-inline-end: 0.5rem; }
+  :where([data-slot="code-block"]:is(:hover, :focus-within) > [data-slot="code-block-actions"]),
+  :where([data-slot="code-block"] > [data-slot="code-block-actions"]:has([data-copied])) { opacity: 1; }
+  @media (pointer: coarse) {
+    :where([data-slot="code-block"] > [data-slot="code-block-actions"]) { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-slot="code-block"] > [data-slot="code-block-actions"]) { transition: none; }
+  }
+
+  /* The copy button, and the recipe for buttons in <:actions>: shadcn's ghost
+     icon-xs button - 24px, muted icon, muted fill on hover / when pressed,
+     the 3px ring on keyboard focus, a 44px hit area on touch. Floating, it
+     sits on the background with a 1px foreground/10 ring. */
+  .code-block-action {
+    position: relative;
+    display: inline-flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: min(var(--radius-md), 10px);
+    background-color: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition-property: color, background-color, box-shadow;
+    transition-duration: 150ms;
+  }
+  :where([data-slot="code-block"] > [data-slot="code-block-actions"]) .code-block-action {
+    background-color: var(--background);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+  .code-block-action:hover,
+  .code-block-action[aria-pressed="true"] { background-color: var(--muted); color: var(--foreground); }
+  :where([data-theme*="dark"], .dark) .code-block-action:hover,
+  :where([data-theme*="dark"], .dark) .code-block-action[aria-pressed="true"] {
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+  .code-block-action:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+  .code-block-action:disabled { opacity: 0.5; pointer-events: none; }
+  .code-block-action > :is(svg, [class*="hero-"]):not([class*="size-"]) { width: 0.875rem; height: 0.875rem; }
+  [data-slot="code-block-copy"]:not([data-copied]) > [data-icon="copied"],
+  [data-slot="code-block-copy"][data-copied] > [data-icon="copy"] { display: none; }
+  @media (pointer: coarse) {
+    .code-block-action::after { content: ""; position: absolute; inset: -0.625rem; }
+  }
+
+  :where([data-slot="code-block-content"]) {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    overflow: auto;
+    padding: 1rem;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-size: inherit;
+    line-height: 1.625;
+    text-align: start;
+    white-space: pre;
+    outline: none;
+    scrollbar-width: thin;
+  }
+  :where([data-slot="code-block"]:has(> [data-slot="code-block-header"]) > [data-slot="code-block-content"]) { padding-top: 0.5rem; }
+  :where([data-slot="code-block"]:has(> [data-slot="code-block-footer"]) > [data-slot="code-block-content"]) { padding-bottom: 0.5rem; }
+  :where([data-slot="code-block"][data-size="sm"] > [data-slot="code-block-content"]) { padding: 0.75rem; }
+  :where([data-slot="code-block"][data-size="sm"]:has(> [data-slot="code-block-header"]) > [data-slot="code-block-content"]) { padding-top: 0.375rem; }
+  :where([data-slot="code-block"][data-size="sm"]:has(> [data-slot="code-block-footer"]) > [data-slot="code-block-content"]) { padding-bottom: 0.5rem; }
+  :where([data-slot="code-block-content"][data-wrap]) { white-space: pre-wrap; overflow-wrap: break-word; }
+  /* the edges fade while there is more to scroll to (scroll-driven: no
+     overflow, no fade; browsers without animation-timeline just scroll) */
+  @supports (animation-timeline: scroll()) {
+    :where([data-slot="code-block-content"]) {
+      --code-block-fade: min(12%, 2.5rem);
+      -webkit-mask-image:
+        linear-gradient(to right, transparent 0, #000 var(--code-block-fade-s), #000 calc(100% - var(--code-block-fade-e)), transparent 100%),
+        linear-gradient(to bottom, transparent 0, #000 var(--code-block-fade-t), #000 calc(100% - var(--code-block-fade-b)), transparent 100%);
+      mask-image:
+        linear-gradient(to right, transparent 0, #000 var(--code-block-fade-s), #000 calc(100% - var(--code-block-fade-e)), transparent 100%),
+        linear-gradient(to bottom, transparent 0, #000 var(--code-block-fade-t), #000 calc(100% - var(--code-block-fade-b)), transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-composite: intersect;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      animation:
+        code-block-fade-s 1ms linear both,
+        code-block-fade-e 1ms linear both,
+        code-block-fade-t 1ms linear both,
+        code-block-fade-b 1ms linear both;
+      animation-timeline: scroll(self inline), scroll(self inline), scroll(self block), scroll(self block);
+      animation-range: 0 6rem, calc(100% - 6rem) 100%, 0 6rem, calc(100% - 6rem) 100%;
+    }
+  }
+
+  :where([data-slot="code-block-code"]) {
+    display: grid;
+    min-width: max-content;
+    min-height: 1lh;
+    align-content: start;
+    font: inherit;
+  }
+  :where([data-slot="code-block-content"][data-wrap] > [data-slot="code-block-code"]) { min-width: 0; }
+  :where([data-slot="code-block-content"][data-numbered] > [data-slot="code-block-code"]) { grid-template-columns: auto 1fr; }
+  :where([data-slot="code-block-line"]) {
+    position: relative;
+    display: block;
+    min-height: 1lh;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+  }
+  :where([data-slot="code-block"][data-size="sm"]) :where([data-slot="code-block-line"]) { margin-inline: -0.75rem; padding-inline: 0.75rem; }
+  :where([data-slot="code-block-line-content"]) { min-width: 0; }
+  :where([data-slot="code-block-content"][data-numbered]) :where([data-slot="code-block-line"]) {
+    display: grid;
+    grid-column: span 2;
+    grid-template-columns: subgrid;
+    column-gap: 0.75rem;
+  }
+  :where([data-slot="code-block-line"][data-line])::before {
+    content: attr(data-line);
+    min-width: 1.5rem;
+    color: var(--muted-foreground);
+    text-align: end;
+    user-select: none;
+  }
+  :where([data-slot="code-block-line"]:is([data-variant="highlighted"], [data-variant="added"])) { background-color: var(--muted); }
+  :where([data-slot="code-block-line"][data-variant="removed"]) { background-color: color-mix(in oklab, var(--destructive) 10%, transparent); }
+  :where([data-slot="code-block-line"]:is([data-variant="added"], [data-variant="removed"]))::after {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0.25rem;
+    color: var(--muted-foreground);
+    user-select: none;
+  }
+  :where([data-slot="code-block-line"][data-variant="added"])::after { content: "+"; }
+  :where([data-slot="code-block-line"][data-variant="removed"])::after { content: "\2212"; color: var(--destructive); }
+  @supports (content: "" / "") {
+    :where([data-slot="code-block-line"][data-line])::before { content: attr(data-line) / ""; }
+    :where([data-slot="code-block-line"][data-variant="added"])::after { content: "+" / var(--code-block-added-label, "Added"); }
+    :where([data-slot="code-block-line"][data-variant="removed"])::after { content: "\2212" / var(--code-block-removed-label, "Removed"); }
+  }
+
+  :where([data-slot="code-block-footer"]) {
+    display: flex;
+    min-width: 0;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem 1rem;
+    color: var(--muted-foreground);
+  }
+  :where([data-slot="code-block"][data-size="sm"] > [data-slot="code-block-footer"]) { padding: 0 0.75rem 0.75rem; }
+
   /* ---- Data table (<.data_table>) -----------------------------------------
      A card that fills the space left (in a flex column such as <.app_shell
      fill>) whose body scrolls under a sticky, opaque header with an inset
@@ -2836,6 +3085,23 @@
   from { opacity: 1; transform: none; }
   to   { opacity: 0; transform: translateX(0.75rem) scale(0.98); }
 }
+
+/* ---------------------------------------------------------------------------
+   Code block edge fade (top-level: @property and keyframes can't be layered).
+   Each edge's fade size is a registered length so it can animate; the
+   keyframes run on the <pre>'s own scroll timelines (see "Code block" in the
+   override layer): the start edges grow over the first 6rem scrolled, the end
+   edges shrink over the last 6rem. With nothing to scroll the timeline is
+   inactive and every size stays 0 - no fade.
+   --------------------------------------------------------------------------- */
+@property --code-block-fade-s { syntax: "<length-percentage>"; inherits: false; initial-value: 0px; }
+@property --code-block-fade-e { syntax: "<length-percentage>"; inherits: false; initial-value: 0px; }
+@property --code-block-fade-t { syntax: "<length-percentage>"; inherits: false; initial-value: 0px; }
+@property --code-block-fade-b { syntax: "<length-percentage>"; inherits: false; initial-value: 0px; }
+@keyframes code-block-fade-s { from { --code-block-fade-s: 0px; } to { --code-block-fade-s: var(--code-block-fade); } }
+@keyframes code-block-fade-e { from { --code-block-fade-e: var(--code-block-fade); } to { --code-block-fade-e: 0px; } }
+@keyframes code-block-fade-t { from { --code-block-fade-t: 0px; } to { --code-block-fade-t: var(--code-block-fade); } }
+@keyframes code-block-fade-b { from { --code-block-fade-b: var(--code-block-fade); } to { --code-block-fade-b: 0px; } }
 
 /* ---------------------------------------------------------------------------
    Sheet — a right-side slide-over built on <dialog>. Animates in AND out via

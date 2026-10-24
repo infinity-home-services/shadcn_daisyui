@@ -187,6 +187,15 @@ choose, wired to a LiveView upload, with the picked files as attachment tiles
 <.dropzone id="import-file" upload={@uploads.people_csv} on_cancel="import:cancel" />
 ```
 
+Code, logs, payloads and diffs are `<.code_block>`: rendered on the server (no
+syntax highlighting; pass pre-highlighted lines if you need colour), with an
+optional title, line numbers, a copy button that copies the plain text, and
+`:added` / `:removed` lines for a before/after change:
+
+```heex
+<.code_block id="webhook-payload" title="payload.json" code={@payload} line_numbers />
+```
+
 Interactive components need an `id` (LiveView hook requirement) and the `Hooks`
 registered (the installer does this).
 
@@ -203,9 +212,10 @@ See `usage-rules/theming.md` and the interactive theme creator on the docs site.
 
 ## What's included
 
-Every component in shadcn-svelte's catalog (61 as of October 2026, including Item,
-the Message / Bubble / Marker / Attachment chat set, Sonner, and Range Calendar) is
-reproducible with this theme - function-component wrappers exist for the common
+shadcn-svelte's catalog lists 66 components (late October 2026). All but three -
+Trace, Message Scroller and Questionnaire - are reproducible with this theme,
+including Code Block, Item, the Message / Bubble / Marker / Attachment chat set,
+Sonner, and Range Calendar. Function-component wrappers exist for the common
 primitives, forms, overlays, navigation, conversation, and the interactive
 components; everything else is raw daisyUI classes that the theme
 styles (recipes in `usage-rules.md`). See the docs site for a live gallery of

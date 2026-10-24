@@ -228,7 +228,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
 
   @void ~w(area base br col embed hr img input link meta source track wbr)
 
-  defp code(rendered) do
+  # public for the other rendered pages (CodeBlockPage)
+  @doc false
+  def code(rendered) do
     html =
       rendered
       |> Phoenix.HTML.Safe.to_iodata()
@@ -255,7 +257,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
   end
 
   # Re-indent by tag depth. Only whitespace next to a newline changes, which
-  # renders the same (none of these components holds a <pre> or <textarea>).
+  # renders the same (none of these components holds a <textarea>, and a
+  # <.code_block>'s <pre> renders on one line, so its text keeps its spaces).
   defp reindent(html) do
     html
     |> String.split("\n")

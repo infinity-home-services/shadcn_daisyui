@@ -49,9 +49,14 @@ like shadcn/ui. **Every UI decision goes through this package.**
 - A file upload is `<.dropzone upload={@uploads.x}>` (`size="compact"` in tight
   forms); the picked files show under it as `<.attachment>` tiles. Never show a
   bare `<.live_file_input>` or hand-roll a drop area (see `usage-rules/forms.md`).
+- Code, logs, payloads (webhook / API bodies, import error reports) and
+  before/after diffs are `<.code_block>` (`lines` with `:added` / `:removed`
+  for a diff, `size="sm"` in a card or chat reply). Never hand-roll a `<pre>`, a
+  copy button, line numbers or diff colours.
 - Interactive components (combobox, select, date picker, time picker, time field,
   calendar, range calendar, OTP, carousel, resizable, command, context-menu,
-  toaster, tab nav, chip row, page header, data table, section nav, dropzone) REQUIRE a
+  toaster, tab nav, chip row, page header, data table, section nav, dropzone,
+  code block) REQUIRE a
   unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
@@ -119,6 +124,7 @@ Decision order:
 | `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
 | `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
 | `<.empty>` | an empty state: `icon` (in a 40px muted circle) or `<:media>`, `title`, one muted line (inner block), `<:actions>`; `variant="card"` (on its own, bordered) or `"plain"` (inside a card or table) |
+| `<.code_block>` | `id` (hook), `code` (a string: split into lines, escaped; no syntax highlighting) or `lines` (strings, `{:added \| :removed \| :highlighted, text}`, or `Phoenix.HTML.raw/1` pre-highlighted lines - build the list in Elixir, a literal `{` in a HEEx attribute opens an expression); `title` + `icon` (header; without one Copy floats top-end), `line_numbers` `start_line`, `highlight={[42, 50..52]}`, `wrap`, `content_class="max-h-72"` (scrolls inside, edges fade), `variant="default\|destructive"`, `size="default\|sm"`, `label` (names the focusable scroll region), `copy={false}`, `copy_text`; `<:actions>` (`class="code-block-action"` 24px icon buttons, `aria-pressed` for a toggle), `<:footer>`; Copy copies the plain text (no numbers or markers) |
 | `<.data_table>` | `id` (hook), `rows`, `row_id`, `row_href` (Cmd/Ctrl/middle click), `state` (a `DataTable.State`: sort arrows, ticks), `selectable`, `more`, `matching`, `all_matching`, `edge`, `noun={{"order", "orders"}}`, `active_id`, `scroll_key`, `target`; `<:col label sort class="w-32" align hide_below="md">`, `<:bulk>`, `<:empty title icon>`, `<:empty_action>`; sends `dt:sort` `dt:open` `dt:select` `dt:select_all` `dt:select_matching` `dt:clear` `dt:more` (see List and record pages) |
 | `<.table_toolbar>` | `id`, `search`, `placeholder`, `shown`, `total`, `noun`, `views=[%{key, label, count, path, active, edited}]`, `menu=[%{key, label, group, icon, active, path \| click}]`, `chips=[{key, label} \| {key, label, :fixed}]` (`State.chips/3`), `sort` (`State.sort_value/1`), `sorts=[{label, "key:dir"}]` (first = default); `<:filter key label>` (one `<.select>`/`<.combobox>` named `key`), `<:more>`, `<:save>`; a form sending `dt:filter` (+ `dt:unfilter`, `dt:reset`) |
 | `<.record_tabs>` | `id`, `tabs={[{key, label} \| {key, label, count}]}`, `active`; each tab sends `"tab"` with `%{"tab" => key}` (`event`, `target` to change); underlined, one tab stop, arrow keys |
@@ -273,7 +279,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (95 components) in the docs site (`demo/`) or
+Browse the full gallery (96 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

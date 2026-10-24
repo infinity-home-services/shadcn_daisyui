@@ -8,6 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`<.code_block>`** (`ShadcnDaisyui.Components.CodeBlock`, imported by `use
+  ShadcnDaisyui.Components`): shadcn/ui's Code Block, for webhook and API
+  payloads, integration logs, import error reports, before/after diffs in a
+  record's history and code in chat replies. Rendered on the server with no
+  syntax highlighting (shadcn's Shiki is a heavy client dependency): `code`
+  is split into lines and HTML-escaped; `lines` gives each line a variant -
+  strings, `{:added | :removed | :highlighted, text}`, or `Phoenix.HTML.raw/1`
+  lines an app highlighted itself (e.g. Makeup, one fragment per line). Added
+  and removed lines get a `+` / `−` marker and a tint (muted, destructive/10),
+  never colour alone; `highlight={[42, 50..52]}` tints lines by number.
+  `line_numbers` (from `start_line`, the gutter widening to the widest
+  number), `wrap`, and `content_class="max-h-72"` to cap the height: the
+  scroll region's edges fade while there is more to scroll to (scroll-driven,
+  so no overflow means no fade). An optional header holds `title` (a filename
+  or label, truncating) with an `icon` and the actions - `<:actions>` buttons
+  (the `code-block-action` class: shadcn's 24px ghost icon button, 44px hit
+  area on touch) and Copy; without a title the actions float at the top end,
+  showing on hover or focus (always on touch screens). `<:footer>` for a Show
+  more or Download row. `variant="destructive"` for error output, `size="sm"`
+  (text-xs, 12px padding) inside a card, sheet or chat reply. The scroll
+  region is a `<pre role="region" tabindex="0" dir="ltr">` named by the title
+  (or `label`, default "Code"); its keyboard focus rings the whole block.
+  Line numbers and diff markers are CSS generated content, so a selection
+  never picks them up; the numbers are silent to screen readers and the
+  markers read "Added" / "Removed" (`--code-block-added-label` /
+  `--code-block-removed-label` translate them). Copy copies every line's
+  plain text (no numbers or markers, highlighting stripped, blank lines kept)
+  or `copy_text`, through `navigator.clipboard` with an `execCommand` fallback
+  (insecure contexts, iframes that refuse clipboard access), then swaps to a
+  check for 2s while a polite live region says "Copied" (`copy_label` /
+  `copied_label`) and dispatches `code-block:copied`; `copy={false}` drops it.
+  Hook: `ShadcnCodeBlock` (or `initShadcnDaisyui()` in a dead view). A gallery
+  page (`/docs/components/code-block`, under Data display) shows a payload,
+  line numbers, a diff, a wrapped log, error output and a small block in a
+  card, with SwiftUI guidance (monospaced `Text` in a `ScrollView`,
+  `.textSelection(.enabled)`, a copy button).
+
+### Changed
+
+- README: the "What's included" claim now matches shadcn-svelte's current
+  catalog (66 components, all but Trace, Message Scroller and Questionnaire
+  reproducible).
+
 ## [0.23.0] - 2026-10-24
 
 File uploads: the file input now looks like shadcn's, and `<.dropzone>` is a

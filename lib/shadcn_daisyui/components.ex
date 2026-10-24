@@ -16,7 +16,8 @@ defmodule ShadcnDaisyui.Components do
   (field-aware form controls), the app shell (`app_shell/1`, see
   `ShadcnDaisyui.Components.Shell`), the list page's `data_table/1` and
   `table_toolbar/1` (`ShadcnDaisyui.Components.DataTable`) and the record
-  page's parts (`ShadcnDaisyui.Components.Record`). The generator-compatible `button`,
+  page's parts (`ShadcnDaisyui.Components.Record`), and `code_block/1`
+  (`ShadcnDaisyui.Components.CodeBlock`). The generator-compatible `button`,
   `input`, `flash`, `table`, `page_header`, … live in
   `ShadcnDaisyui.CoreComponents` - apps normally get those through their own
   `CoreComponents` module.
@@ -37,6 +38,7 @@ defmodule ShadcnDaisyui.Components do
       import(ShadcnDaisyui.Components.Conversation)
       import(ShadcnDaisyui.Components.DataTable)
       import(ShadcnDaisyui.Components.Record)
+      import(ShadcnDaisyui.Components.CodeBlock)
       import(ShadcnDaisyui.FormComponents)
     end
   end

@@ -3241,6 +3241,88 @@ function initDropzone(root) {
   return root.__sdDropzone
 }
 
+// ---- Code block (<.code_block>) ---------------------------------------------
+// The copy button copies the block's plain text: each line's text joined with
+// "\n" (line numbers and diff markers are CSS generated content, so they never
+// get in; pre-highlighted markup is reduced to its text; an empty line holds a
+// "\n" for selections, dropped here), or the root's data-copy-text when the
+// server set one. Then the button shows its check (data-copied, its label
+// becomes "Copied") and the block's polite live region says so, for 2s. One
+// listener on the root, so a LiveView patch that replaces the button keeps
+// working; the component keeps data-copied / aria-label across patches.
+const CODE_COPIED_MS = 2000
+const CODE_BLOCK = '[data-slot="code-block"]'
+
+function codeBlockText(root) {
+  if (root.hasAttribute("data-copy-text")) return root.getAttribute("data-copy-text")
+  return [...root.querySelectorAll('[data-slot="code-block-line-content"]')]
+    .filter((el) => el.closest(CODE_BLOCK) === root)
+    .map((el) => el.textContent.replace(/\n$/, ""))
+    .join("\n")
+}
+
+// navigator.clipboard needs a secure context (https, localhost) and may be
+// refused (an iframe without clipboard-write); then a selected offscreen
+// textarea and execCommand("copy") (focus comes back).
+function copyToClipboard(text) {
+  const legacy = () => legacyCopy(text)
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).catch(legacy)
+  return legacy()
+}
+
+function legacyCopy(text) {
+  return new Promise((resolve, reject) => {
+    const back = document.activeElement
+    const ta = document.createElement("textarea")
+    ta.value = text
+    ta.setAttribute("readonly", "")
+    ta.style.position = "fixed"
+    ta.style.insetInlineStart = "-9999px"
+    document.body.appendChild(ta)
+    ta.select()
+    let ok = false
+    try { ok = document.execCommand("copy") } catch (_e) { ok = false }
+    ta.remove()
+    if (back instanceof HTMLElement) back.focus({ preventScroll: true })
+    ok ? resolve() : reject(new Error("copy failed"))
+  })
+}
+
+function initCodeBlock(root) {
+  if (root.__sdCodeBlock) return root.__sdCodeBlock
+  let timer = null
+  const onClick = (e) => {
+    const btn = e.target instanceof Element && e.target.closest('[data-slot="code-block-copy"]')
+    if (!btn || btn.closest(CODE_BLOCK) !== root || btn.disabled) return
+    const text = codeBlockText(root)
+    copyToClipboard(text).then(() => {
+      // the button may have been re-rendered while the copy ran
+      const live = root.querySelector('[data-slot="code-block-copy"]') || btn
+      const status = root.querySelector("[data-code-block-status]")
+      const copied = live.dataset.copiedLabel || "Copied"
+      clearTimeout(timer)
+      live.setAttribute("data-copied", "")
+      live.setAttribute("aria-label", copied)
+      if (status) status.textContent = copied
+      root.dispatchEvent(new CustomEvent("code-block:copied", { bubbles: true, detail: { text } }))
+      timer = setTimeout(() => {
+        live.removeAttribute("data-copied")
+        live.setAttribute("aria-label", live.dataset.copyLabel || "Copy")
+        if (status) status.textContent = ""
+      }, CODE_COPIED_MS)
+    }).catch(() => {})
+  }
+  root.addEventListener("click", onClick)
+  root.__sdCodeBlock = {
+    destroy() {
+      root.removeEventListener("click", onClick)
+      clearTimeout(timer)
+      delete root.__sdCodeBlock
+    },
+  }
+  return root.__sdCodeBlock
+}
+
 // ---- Public API -----------------------------------------------------------
 
 // Switch the active theme without the light↔dark colour fade flickering.
@@ -3290,6 +3372,7 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll("[data-data-table]").forEach((el) => initLiveTable(el))
   root.querySelectorAll("[data-section-nav]").forEach(initSectionNav)
   root.querySelectorAll("[data-dropzone]").forEach((el) => initDropzone(el))
+  root.querySelectorAll('[data-slot="code-block"]').forEach((el) => initCodeBlock(el))
   initContextMenu()
   initDock(root)
 }
@@ -3362,6 +3445,11 @@ export const Hooks = {
   // <.dropzone>: the drag highlight on every LiveView version, a plain form's drop
   ShadcnDropzone: {
     mounted() { this.api = initDropzone(this.el) },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.code_block>: the copy button
+  ShadcnCodeBlock: {
+    mounted() { this.api = initCodeBlock(this.el) },
     destroyed() { this.api && this.api.destroy() },
   },
 }
