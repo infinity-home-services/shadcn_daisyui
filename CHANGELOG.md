@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-24
+
 Confirmations, code and AI chat: `<.alert_dialog>` and styled `data-confirm`,
 `<.code_block>`, and the chat kit - `<.message_scroller>`, `<.trace>` and
 `<.prompt_input>` (in `ShadcnDaisyui.Components.Conversation`). All new and
