@@ -8,6 +8,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+AI chat: the transcript, the assistant's steps and the composer. New and
+opt-in (in `ShadcnDaisyui.Components.Conversation`, imported by `use
+ShadcnDaisyui.Components`); existing markup renders as before.
+
+- **`<.message_scroller>`**: shadcn/ui's Message Scroller. A viewport that
+  fills its parent (a labelled `role="region"`, a tab stop for keyboard
+  scrolling), the rows in a `role="log"` live region (`aria-relevant=
+  "additions"`, `aria-busy` while `busy`), and a scroll-to-latest button
+  (`button="end|start|both|none"`) that is inert and out of the tab order
+  while there is nothing that way. `items` is a list (keyed by `item.id`, or
+  `item_id`) or a LiveView stream (`phx-update="stream"`, keyed by its DOM
+  ids); the inner block renders a row (`:let`); `anchor` marks turn anchors;
+  `<:above>` / `<:below>` rows sit inside the log (load earlier, a typing
+  marker). Hook `ShadcnMessageScroller` (or `initShadcnDaisyui()`): opens at
+  `default_position` - `"end"`, `"start"` or `"last-anchor"` (the last
+  anchored turn at the top; the end when it fits) - hidden until positioned
+  (shown after 2s regardless, if no script runs), and waits for a size (a
+  scroller in a sheet that opens later); follows growing content (a streaming
+  reply) only while the reader is at the live edge (`follow`), released by a
+  wheel, touch, scroll keys or the scrollbar and picked up again at the end or
+  by the button; a new anchored turn moves near the top with `peek` px (64) of
+  the row above still showing, with room made under it for the reply; rows
+  added above (a stream insert `at: 0`) keep the row being read in place, on
+  every browser (native scroll anchoring is off); a reset stream reopens it.
+  `data-scrollable` and `data-autoscrolling` for styling; the bottom edge
+  fades while there is more below; `shadcn:scroll-to` (`detail: %{to: "end" |
+  "start" | dom_id}`) jumps. Smooth jumps are instant with reduced motion.
+- **`<.trace>` / `<.trace_line>`**: shadcn/ui's Trace, for an assistant's
+  steps, tool calls, sources and plans. `<:line status icon description href
+  navigate patch target>` rows: done (no status), `running` (the title
+  shimmers and the glyph pulses, as a working sparkle; neither with reduced
+  motion), `pending` (60%) or `error` (destructive); text-sm muted, 16px
+  icons, rows 8px apart; the title is one truncated line, the description
+  (70% muted, tabular figures) never truncates; a source line is a link (a
+  new tab says so to screen readers). `<.trace_line id>` with `<:icon>`,
+  `<:description>` and `<:detail>` is a disclosure: a button with
+  `aria-expanded` / `aria-controls` and a chevron that opens the detail under
+  it (the 180ms row reveal; closed detail is out of the tab order), indented
+  with a line on its left; rows nest. One delegated listener toggles it (no
+  hook), and the reader's choice survives LiveView patches.
+- **`<.prompt_input>`**: the chat composer (Vercel AI Elements' PromptInput,
+  on shadcn's field metrics). A form-bound field (`field`, or `name` /
+  `value`) that grows with its text from 4rem to 12rem, then scrolls (CSS
+  `field-sizing: content`, or the hook where it's missing); Enter sends and
+  Shift+Enter adds a line, never while an input method is composing; Send is
+  `aria-disabled` (50%) while there is nothing to send; the field clears once
+  the message is on its way and keeps focus. `busy` makes the same button
+  Stop (it pushes `on_stop`, default `"stop"`, or a JS; `target` for a
+  LiveComponent) and Enter waits. `upload` adds an attach button (a label
+  around the hidden `live_file_input`), makes the field the upload's drop
+  target (primary border on accent while files are over it) and takes pasted
+  files (LiveView's `track-uploads`); picked files are `<.attachment>` tiles
+  above the text, like `<.dropzone>`'s (`on_cancel`, `error_text`).
+  `<:suggestion value>` chips are `<.bubble as="button">`s that fill the field
+  and send it (`send={false}` only fills it), or take your own `phx-click`;
+  `<:tools>` sits beside the attach button. Toolbar buttons get a 44px hit
+  area on touch screens; `enterkeyhint="send"`. Hook `ShadcnPromptInput`.
+- **Usage rules: an AI chat page** section (the layout in `<.app_shell
+  fill>`, the rows, trace for steps and sources, streaming a reply from
+  LiveView with a stream insert per message and `start_async`, `aria-busy`
+  until it's done, Stop as `cancel_async`, history and the composer), a "never
+  hand-roll a chat scroller, step list or composer" rule, table rows for the
+  three, and the two hooks in the list of components that need an `id`.
+- **Docs**: Message Scroller (with a streaming preview), Trace (steps, tool
+  calls, sources, plan, a whole turn) and Prompt Input (suggestions, busy,
+  attachments, disabled) pages in the Conversation group, each with specs,
+  accessibility and SwiftUI guidance, and `/lab/chat` (dev server): a made-up
+  assistant that answers from the lab's orders, streaming its steps and text,
+  with Stop, earlier messages and attachments.
+
 ## [0.23.0] - 2026-10-24
 
 File uploads: the file input now looks like shadcn's, and `<.dropzone>` is a

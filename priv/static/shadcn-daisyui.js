@@ -3289,7 +3289,7 @@ function initMessageScroller(root) {
   let ref = null       // { el, offset }: the first visible row and where it sat
   let known = null     // the last anchored row seen
   let room = null      // the live anchor the spacer makes room for
-  let lastSet = -1     // the scrollTop our last write left
+  let lastSet = null   // the scrollTop our last write left (null: the reader moved it since)
   let smoothing = null // { y, end }: a smooth scroll of ours in flight
   let smoothTimer = null
   let touching = false
@@ -3440,9 +3440,9 @@ function initMessageScroller(root) {
       else sync()
       return
     }
-    if (Math.abs(viewport.scrollTop - lastSet) > 1) {
+    if (lastSet === null || Math.abs(viewport.scrollTop - lastSet) > 1) {
       // the reader scrolled (wheel, touch, keys, scrollbar, a find-in-page)
-      lastSet = -1
+      lastSet = null
       if (touching || dragging) { if (!atEnd()) following = false }
       else following = follows && atEnd()
     }

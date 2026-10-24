@@ -1908,8 +1908,9 @@
      truncates. error = destructive, pending = 60% opacity. A link row or a
      disclosure trigger is the row's own width, rounded-md, foreground on
      hover, with the 3px ring for the keyboard. A disclosure's chevron turns
-     90deg as it opens; its detail opens under it (grid rows 0fr -> 1fr,
-     200ms; hidden from the tab order and screen readers while closed),
+     90deg as it opens; its detail opens under it (the row reveal: grid rows
+     0fr -> 1fr and opacity, 180ms ease-out; hidden from the tab order and
+     screen readers while closed),
      indented 7px with a 1px line on its left and 16px of padding, relaxed
      muted text. aria-expanded on the trigger is the only state. */
   :where([data-slot="trace"]) {
@@ -1983,7 +1984,7 @@
   :where([data-slot="trace-link"], [data-slot="trace-collapsible-trigger"]):hover { color: var(--foreground); }
   :where([data-slot="trace-collapsible-trigger"]:has([data-status="error"])) { color: var(--destructive); }
   :where([data-slot="trace-link"], [data-slot="trace-collapsible-trigger"]):focus-visible { box-shadow: var(--ring-shadow); }
-  :where([data-slot="trace-icon"][data-chevron]) { transition: rotate 200ms; }
+  :where([data-slot="trace-icon"][data-chevron]) { transition: rotate 180ms ease-out; }
   :where([data-slot="trace-collapsible-trigger"][aria-expanded="true"] > [data-slot="trace-icon"][data-chevron]) { rotate: 90deg; }
   :where([dir="rtl"] [data-slot="trace-icon"][data-chevron]) { scale: -1 1; }
   :where([dir="rtl"] [data-slot="trace-collapsible-trigger"][aria-expanded="true"] > [data-slot="trace-icon"][data-chevron]) { rotate: -90deg; }
@@ -1992,11 +1993,13 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 0fr;
+    opacity: 0;
     visibility: hidden;
-    transition: grid-template-rows 200ms ease-out, visibility 0s linear 200ms;
+    transition: grid-template-rows 180ms ease-out, opacity 180ms ease-out, visibility 0s linear 180ms;
   }
   :where([data-slot="trace-collapsible-trigger"][aria-expanded="true"] + [data-slot="trace-collapsible-content"]) {
     grid-template-rows: 1fr;
+    opacity: 1;
     visibility: visible;
     transition-delay: 0s;
   }

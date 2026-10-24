@@ -208,6 +208,15 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
     vp("follow").scrollTop -= 250
     await frames()
     r.scrollbarReleased = api("follow").following
+    // back to the end and then all the way to the top, both by the reader
+    vp("follow").scrollTop = max("follow")
+    await frames()
+    vp("follow").scrollTop = 0
+    await frames()
+    r.toTop = { following: api("follow").following, top: vp("follow").scrollTop }
+    grow(reply, 40)
+    await frames()
+    r.toTopHeld = vp("follow").scrollTop
 
     // ---- rows prepended (stream insert at: 0) keep the row being read in place ----
     vp("pre").scrollTop = 500
@@ -367,6 +376,9 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
     refute r["keyReleased"]
     assert r["backAtEnd"]
     refute r["scrollbarReleased"]
+    # all the way to the top is a release too (scrollTop 0 is the reader's)
+    assert r["toTop"] == %{"following" => false, "top" => 0}
+    assert r["toTopHeld"] == 0
   end
 
   test "rows prepended above keep the row being read in place", %{r: r} do

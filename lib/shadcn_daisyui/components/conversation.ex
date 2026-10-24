@@ -674,10 +674,16 @@ defmodule ShadcnDaisyui.Components.Conversation do
   attr(:class, :any, default: nil)
   attr(:rest, :global)
 
-  slot(:suggestion,
-    doc:
-      "a chip: `value` (put in the field and sent), `send={false}`, `variant`, or your own `phx-click`"
-  )
+  slot :suggestion, doc: "a chip: `value` (put in the field and sent), or your own `phx-click`" do
+    attr(:value, :string, doc: "the text it puts in the field and sends")
+    attr(:send, :boolean, doc: "`false`: only fill the field")
+    attr(:variant, :string, doc: "a bubble variant; `outline` by default")
+    attr(:id, :string)
+    attr(:"phx-click", :any)
+    attr(:"phx-target", :any)
+    attr(:"phx-value-id", :any)
+    attr(:"phx-value-text", :any)
+  end
 
   slot(:tools, doc: "controls beside the attach button")
 
