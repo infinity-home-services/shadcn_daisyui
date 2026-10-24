@@ -1,0 +1,45 @@
+name: Release
+
+# Every version gets a tag and a GitHub release - no gaps. On each push to
+# main, scripts/github_release.sh reads @version from mix.exs: a version with
+# no vX.Y.Z tag yet is tagged at the commit that set it, and a tag with no
+# GitHub release gets one (titled from "Release X.Y.Z - summary", notes from
+# CHANGELOG.md's "## [X.Y.Z]" section). It fails if that section is missing.
+# A pushed tag runs it too. Run it by hand with "backfill" to create releases
+# for older tags that never got one.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Also create releases for older v* tags that have none"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# one at a time, so a push to main and its tag push don't both create the release
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # all history and tags
+
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=()
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then args+=("$GITHUB_REF_NAME"); fi
+          if [ "${{ inputs.backfill }}" = "true" ]; then args+=(--backfill); fi
+          scripts/github_release.sh "${args[@]}"

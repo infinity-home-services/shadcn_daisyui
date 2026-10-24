@@ -4,4 +4,6 @@ erl_crash.dump
 *.beam
 /doc/
 *.tar
-/.claude/
+# local Claude Code state; the project skills are shared
+/.claude/*
+!/.claude/skills/

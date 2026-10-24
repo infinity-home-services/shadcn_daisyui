@@ -69,3 +69,21 @@ cd demo && mix setup && mix test  # demo/docs site tests
 cd demo && mix phx.server        # docs site at localhost:4000
 mix hex.build                     # package dry-run
 ```
+
+## Releasing
+
+Every version gets a `vX.Y.Z` tag **and** a GitHub release - no gaps (v0.20.0
+to v0.23.0 once shipped with tags only). Release with the `/release` skill
+(`.claude/skills/release/SKILL.md`): checks, the version in `mix.exs` and
+`package.json`, the `## [X.Y.Z] - date` CHANGELOG section, a
+`Release X.Y.Z - summary` commit, then `git tag vX.Y.Z` and push `main` and
+the tag. The Release workflow (`.github/workflows/release.yml`) runs
+`scripts/github_release.sh` on every push to `main`: it tags the version in
+`mix.exs` if the tag is missing and creates the GitHub release from the
+CHANGELOG section if that's missing, and it fails when the section isn't
+there. Confirm with `gh release view vX.Y.Z`.
+
+```bash
+DRY_RUN=1 scripts/github_release.sh   # what it would tag and release
+scripts/github_release.sh --backfill  # releases for older tags that have none
+```
