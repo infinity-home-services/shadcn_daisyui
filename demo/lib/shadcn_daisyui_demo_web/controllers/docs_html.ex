@@ -11,6 +11,7 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
   import ShadcnDaisyui.Components.Overlay,
     only: [
       dialog: 1,
+      alert_dialog: 1,
       sheet: 1,
       drawer: 1,
       popover: 1,

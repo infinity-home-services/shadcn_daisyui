@@ -24,11 +24,17 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
   clickable: the buttons inside them `put_flash` and `push_toast` while the
   patches keep running (the toast layer sits in the dialog's ignored
   `[data-toast-host]`, so patches must not drop it).
+
+  An `<.alert_dialog>` must stay open across the patches too, ignore a
+  backdrop click, and close on Cancel, Esc or its action (which flashes). The
+  `data-confirm` button asks in the package's alert dialog (the demo's
+  app.js calls `initConfirmDialog()`), with a message the patches keep
+  changing; confirming flashes the error, cancelling does nothing.
   """
   use ShadcnDaisyuiDemoWeb, :live_view
 
   import ShadcnDaisyui.Components.Overlay,
-    only: [dialog: 1, sheet: 1, show_modal: 1, hide_modal: 1]
+    only: [dialog: 1, alert_dialog: 1, sheet: 1, show_modal: 1, hide_modal: 1]
 
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1, date_range: 1]
   import ShadcnDaisyui.Components.Navigation, only: [tab_nav: 1]
@@ -201,6 +207,33 @@ defmodule ShadcnDaisyuiDemoWeb.CspLive do
         <%!-- a custom trigger wired with the show_modal/1 JS command --%>
         <button type="button" class="btn btn-primary" phx-click={show_modal("live-dialog")}>
           show_modal("live-dialog")
+        </button>
+      </div>
+
+      <%!-- the alert dialog stays open across the patches; its action and the
+           styled data-confirm (initConfirmDialog in app.js) send phx-click --%>
+      <div class="flex flex-wrap gap-3">
+        <.alert_dialog id="live-alert">
+          <:trigger>
+            <button type="button" class="btn btn-outline">Open alert dialog</button>
+          </:trigger>
+          <:title>Save the profile?</:title>
+          <:description>
+            Patches while open: <span id="alert-ticks">{@ticks}</span>
+          </:description>
+          <:action id="live-alert-save" phx-click="flash" phx-value-kind="info">Save profile</:action>
+        </.alert_dialog>
+        <button
+          id="confirm-error"
+          type="button"
+          class="btn btn-outline"
+          phx-click="flash"
+          phx-value-kind="error"
+          data-confirm={"Show an error flash at tick #{@ticks}?"}
+          data-confirm-action="Show error"
+          data-variant="destructive"
+        >
+          data-confirm
         </button>
       </div>
 

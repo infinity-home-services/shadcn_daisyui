@@ -109,15 +109,12 @@ And the component library:
 <.badge variant="secondary">Paid</.badge>
 <.alert variant="destructive"><:title>Error</:title>Session expired.</.alert>
 
-<.dialog id="confirm">
+<.alert_dialog id="delete-report">
   <:trigger><.button variant="outline">Delete…</.button></:trigger>
-  <:title>Are you absolutely sure?</:title>
+  <:title>Delete Q3 report?</:title>
   <:description>This action cannot be undone.</:description>
-  <:actions>
-    <form method="dialog"><.button variant="outline">Cancel</.button></form>
-    <.button variant="destructive" phx-click="delete">Delete</.button>
-  </:actions>
-</.dialog>
+  <:action variant="destructive" phx-click="delete">Delete report</:action>
+</.alert_dialog>
 
 <.tabs id="settings">
   <:tab label="Account" checked>…</:tab>
@@ -234,8 +231,10 @@ every component, and `/llms.txt` there for the AI-readable index.
 
 ```js
 // assets/js/app.js
-import { Hooks as ShadcnHooks } from "shadcn_daisyui"
+import { Hooks as ShadcnHooks, initConfirmDialog } from "shadcn_daisyui"
 const liveSocket = new LiveSocket("/live", Socket, { params: {...}, hooks: { ...ShadcnHooks } })
+// opt in: data-confirm asks in the package's alert dialog, not the browser's confirm()
+initConfirmDialog()
 ```
 
 ```heex

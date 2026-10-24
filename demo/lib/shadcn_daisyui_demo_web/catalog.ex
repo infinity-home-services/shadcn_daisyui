@@ -21,6 +21,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   alias ShadcnDaisyuiDemoWeb.Catalog.CodeBlockPage
   alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
   alias ShadcnDaisyuiDemoWeb.Catalog.Overflow
+  alias ShadcnDaisyuiDemoWeb.Catalog.Overlays
   alias ShadcnDaisyuiDemoWeb.Catalog.Enrichment
   alias ShadcnDaisyuiDemoWeb.Catalog.Spec
 
@@ -106,8 +107,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   def components do
     enrichment = Enrichment.all()
 
-    pages = all() ++ Composition.all() ++ Pickers.all() ++ Overflow.all() ++ DataPages.all()
-    pages = pages ++ CodeBlockPage.all()
+    pages =
+      all() ++
+        Composition.all() ++
+        Pickers.all() ++
+        Overflow.all() ++ DataPages.all() ++ Overlays.all() ++ CodeBlockPage.all()
 
     for c <- pages, into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
@@ -2540,34 +2544,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 Install with <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">npm i shadcn-daisyui</code>.
               </p>
             </article>
-            """
-          }
-        ]
-      },
-      %{
-        slug: "alert-dialog",
-        title: "Alert Dialog",
-        description: "A modal that interrupts the user to confirm an action.",
-        examples: [
-          %{
-            title: "Default",
-            code: ~S"""
-            <button class="btn btn-outline" commandfor="alert_dialog_demo" command="show-modal">Delete account</button>
-            <dialog id="alert_dialog_demo" class="modal">
-              <div class="modal-box space-y-2">
-                <h3 class="text-lg font-semibold">Are you absolutely sure?</h3>
-                <p class="text-sm text-muted-foreground">
-                  This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-                </p>
-                <div class="modal-action">
-                  <form method="dialog" class="flex gap-3">
-                    <button class="btn btn-outline">Cancel</button>
-                    <button class="btn btn-error">Yes, delete account</button>
-                  </form>
-                </div>
-              </div>
-              <form method="dialog" class="modal-backdrop"><button>close</button></form>
-            </dialog>
             """
           }
         ]

@@ -39,10 +39,11 @@ if (typeof window !== "undefined" && !window.__shadcnDialogEvents) {
   // (.modal dialogs close via their <form method="dialog" class="modal-backdrop">.)
   // On an app shell page every other dialog closes on a backdrop click too: a
   // .modal fills the screen, so a click on the dialog itself is outside its box;
-  // any other dialog is the box, so the click point tells.
+  // any other dialog is the box, so the click point tells. An alert dialog
+  // never closes on a backdrop click.
   document.addEventListener("click", (e) => {
     const d = e.target
-    if (!(d instanceof HTMLDialogElement) || !d.open || e.detail === 0) return
+    if (!(d instanceof HTMLDialogElement) || !d.open || e.detail === 0 || d.matches(".alert-dialog")) return
     const panel = d.matches(".sheet, .drawer-bottom, .command-dialog")
     if (!panel && !hasShell()) return
     const r = d.getBoundingClientRect()
@@ -258,6 +259,161 @@ if (typeof window !== "undefined" && !window.__shadcnDropdownClose) {
     const active = document.activeElement
     if (active instanceof HTMLElement && menu.contains(active)) active.blur()
   })
+}
+
+// ---- Alert dialog + styled confirmations -----------------------------------
+// <.alert_dialog>: Cancel ([data-alert-dialog-cancel]) and the action
+// ([data-alert-dialog-action], unless data-keep-open) close their dialog, with
+// returnValue "cancel" / "confirm". One delegated listener on document, so it
+// runs before LiveView's window listener sends the action's phx-click, and a
+// link or submit button still navigates / submits. A backdrop click doesn't
+// close an alert dialog (it has no .modal-backdrop, and the app shell's
+// backdrop listener at the top skips it); Esc cancels natively. Focus lands
+// on Cancel (autofocus) and the browser returns it to the opener on close.
+if (typeof window !== "undefined" && !window.__shadcnAlertDialog) {
+  window.__shadcnAlertDialog = true
+  document.addEventListener("click", (e) => {
+    const btn = e.target instanceof Element && e.target.closest("[data-alert-dialog-cancel], [data-alert-dialog-action]")
+    const d = btn && btn.closest("dialog")
+    if (!d || !d.open || btn.hasAttribute("data-keep-open")) return
+    d.close(btn.hasAttribute("data-alert-dialog-action") ? "confirm" : "cancel")
+  })
+}
+
+// confirmDialog(message, options) -> Promise<boolean>: asks in the package's
+// own alert dialog (built once, appended to <body>, the same markup as
+// <.alert_dialog>) and resolves true for the action, false for Cancel, Esc or
+// any other close. Options: description (a muted line under the question),
+// action (label, default "Continue"), cancel (default "Cancel"), variant
+// ("destructive" for a btn-error action). Asking again while it's open
+// answers the open question false.
+//
+//   import { confirmDialog } from "shadcn-daisyui"
+//   if (await confirmDialog("Delete Q3 report?", { action: "Delete", variant: "destructive" })) …
+const CONFIRM_ID = "shadcn-confirm"
+const confirmDefaults = { action: "Continue", cancel: "Cancel" }
+// The dialog keeps the resolver of the question on screen (__sdAnswer).
+function confirmDialogEl() {
+  let d = document.getElementById(CONFIRM_ID)
+  if (d) return d
+  const make = (tag, cls, attrs) => {
+    const el = document.createElement(tag)
+    if (cls) el.className = cls
+    Object.entries(attrs || {}).forEach(([k, v]) => el.setAttribute(k, v))
+    return el
+  }
+  d = make("dialog", "modal alert-dialog", { id: CONFIRM_ID, role: "alertdialog", "aria-labelledby": CONFIRM_ID + "-title" })
+  const box = make("div", "modal-box")
+  const header = make("div", "alert-dialog-header")
+  header.append(
+    make("h2", "alert-dialog-title", { id: CONFIRM_ID + "-title" }),
+    make("p", "alert-dialog-description", { id: CONFIRM_ID + "-description" }),
+  )
+  const footer = make("div", "alert-dialog-footer")
+  footer.append(
+    make("button", "btn btn-outline", { type: "button", "data-alert-dialog-cancel": "", autofocus: "" }),
+    make("button", "btn btn-primary", { type: "button", "data-alert-dialog-action": "" }),
+  )
+  box.append(header, footer)
+  d.append(box, make("div", null, { "data-toast-host": "" }))
+  // the answer is the returnValue the buttons close it with ("" for Esc); a
+  // close event that lands after it was opened again is stale
+  d.addEventListener("close", () => { if (!d.open) answerConfirm(d, d.returnValue === "confirm") })
+  document.body.appendChild(d)
+  return d
+}
+function answerConfirm(d, ok) {
+  const answer = d.__sdAnswer
+  d.__sdAnswer = null
+  if (answer) answer(ok)
+}
+export function confirmDialog(message, options) {
+  const o = Object.assign({}, confirmDefaults, options || {})
+  const d = confirmDialogEl()
+  // a question already open is superseded; one closed but not yet answered
+  // (its close event pending) keeps the answer it was closed with
+  if (d.__sdAnswer) answerConfirm(d, !d.open && d.returnValue === "confirm")
+  d.querySelector(".alert-dialog-title").textContent = message == null ? "" : String(message)
+  const desc = d.querySelector(".alert-dialog-description")
+  desc.textContent = o.description || ""
+  desc.hidden = !o.description
+  o.description ? d.setAttribute("aria-describedby", desc.id) : d.removeAttribute("aria-describedby")
+  const cancel = d.querySelector("[data-alert-dialog-cancel]")
+  const action = d.querySelector("[data-alert-dialog-action]")
+  cancel.textContent = o.cancel
+  action.textContent = o.action
+  action.className = "btn " + (o.variant === "destructive" ? "btn-error" : "btn-primary")
+  return new Promise((resolve) => {
+    d.__sdAnswer = resolve
+    d.returnValue = ""
+    openModal(d)
+    cancel.focus()
+  })
+}
+
+// initConfirmDialog(defaults): opt in to styled confirmations. A click on
+// [data-confirm] (phoenix_html asks with window.confirm(); dropdown and
+// command items' `confirm`, <.link data-confirm>, any button) is stopped in
+// the capture phase, before phoenix_html or LiveView see it, and the message
+// is asked with confirmDialog(). Cancel (or Esc) does nothing. The action
+// replays the click on the same element, with the same modifier keys and its
+// data-confirm lifted for that one click, so phx-click, data-method links,
+// plain links and form submits run exactly as they would have after the
+// browser's confirm(). A command palette item still closes its palette only
+// once accepted: the replayed click is an ordinary item click.
+//
+// Per element: data-confirm-description, data-confirm-action (the action's
+// label), data-confirm-cancel, data-confirm-variant ("destructive" or
+// "default"; unset, a destructive element - data-variant="destructive",
+// .btn-error, .text-destructive - gets a destructive action). `defaults`
+// sets the labels for every confirmation ({ action: "Continue", cancel:
+// "Cancel" }). CSP-safe (no inline handlers). Call it once in app.js:
+//
+//   import { Hooks, initConfirmDialog } from "shadcn-daisyui"
+//   initConfirmDialog()
+//
+// or in a dead view: initShadcnDaisyui({ confirm: true }).
+const CONFIRM_DESTRUCTIVE = '[data-variant="destructive"], .btn-error, .text-destructive'
+function confirmOptions(el) {
+  const d = el.dataset
+  const variant = d.confirmVariant || (el.matches(CONFIRM_DESTRUCTIVE) ? "destructive" : "default")
+  const o = { variant, description: d.confirmDescription }
+  if (d.confirmAction) o.action = d.confirmAction
+  if (d.confirmCancel) o.cancel = d.confirmCancel
+  return o
+}
+function replayConfirmed(e, target, el) {
+  // a LiveView patch may have replaced the element while the question was open
+  if (!target.isConnected) target = el.isConnected ? el : (el.id && document.getElementById(el.id)) || null
+  if (!target) return
+  const lifted = []
+  for (let n = target; n instanceof Element; n = n.parentElement) {
+    if (n.hasAttribute("data-confirm")) { lifted.push([n, n.getAttribute("data-confirm")]); n.removeAttribute("data-confirm") }
+  }
+  try {
+    target.dispatchEvent(new MouseEvent("click", {
+      bubbles: true, cancelable: true, composed: true, view: window, detail: 0,
+      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey,
+    }))
+  } finally {
+    lifted.forEach(([n, v]) => n.setAttribute("data-confirm", v))
+  }
+}
+function onConfirmClick(e) {
+  if (e.defaultPrevented) return
+  const target = e.target instanceof Element ? e.target : null
+  const el = target && target.closest("[data-confirm]")
+  if (!el || el.getAttribute("aria-disabled") === "true") return
+  e.preventDefault()
+  e.stopImmediatePropagation()
+  confirmDialog(el.getAttribute("data-confirm"), confirmOptions(el)).then((ok) => { if (ok) replayConfirmed(e, target, el) })
+}
+export function initConfirmDialog(defaults) {
+  if (typeof window === "undefined") return
+  Object.assign(confirmDefaults, defaults || {})
+  if (window.__shadcnConfirm) return
+  window.__shadcnConfirm = true
+  window.addEventListener("click", onConfirmClick, true)
 }
 
 // ---- Sonner (toast) --------------------------------------------------------
@@ -3350,8 +3506,13 @@ export function setTheme(theme) {
 }
 
 // Wire every component found under `root` (default: whole document). For dead
-// views / plain HTML. Safe to call once on page load.
-export function initShadcnDaisyui(root) {
+// views / plain HTML. Safe to call once on page load. Options (as the last
+// argument, or the only one): `confirm: true` (or the labels,
+// `{ action, cancel }`) opts in to styled confirmations (initConfirmDialog).
+//
+//   initShadcnDaisyui()  ·  initShadcnDaisyui(el)  ·  initShadcnDaisyui({ confirm: true })
+export function initShadcnDaisyui(root, options) {
+  if (root && typeof root === "object" && !(root instanceof Node)) { options = root; root = null }
   root = root || document
   root.querySelectorAll("[data-combobox]").forEach((el) => initCombobox(el))
   root.querySelectorAll("[data-select]").forEach(initSelect)
@@ -3375,6 +3536,7 @@ export function initShadcnDaisyui(root) {
   root.querySelectorAll('[data-slot="code-block"]').forEach((el) => initCodeBlock(el))
   initContextMenu()
   initDock(root)
+  if (options && options.confirm) initConfirmDialog(options.confirm === true ? null : options.confirm)
 }
 
 // Phoenix LiveView hooks. Attach with phx-hook="ShadcnCombobox" etc.
