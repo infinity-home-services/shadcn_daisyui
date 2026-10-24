@@ -101,6 +101,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   catalog (66 components, all but Trace, Message Scroller and Questionnaire
   reproducible).
 
+### Fixed
+
+- **Lifted tabs showed a brighter line under the tabs in dark mode**: with
+  `.tab-content` panels, daisyUI's `tabs-lift` draws a bottom border under each
+  inactive tab on the same row as the panel's top border, and the translucent
+  dark border colour doubled up there. The panel's border is now the only line.
+
 ## [0.23.0] - 2026-10-24
 
 File uploads: the file input now looks like shadcn's, and `<.dropzone>` is a

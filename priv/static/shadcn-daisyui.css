@@ -594,6 +594,14 @@
     box-shadow: none;
   }
   .tabs-box:not(:has(> .tab-content)) { height: 2.25rem; align-items: center; }
+  /* daisyUI's lifted tabs draw a bottom border under each inactive tab, and a
+     .tab-content panel is pulled up 1px so its top border lands on the same
+     row. The dark border colour is translucent (white/10%), so the two add up
+     to a brighter line under the tabs than along the rest of the panel. With
+     panels, the panel's border is the line. */
+  .tabs-lift:has(> .tab-content) > .tab:not(:checked, .tab-active, [aria-selected="true"]) {
+    border-bottom-color: transparent;
+  }
   /* TabsTrigger: h-[calc(100%-1px)] of that list, border border-transparent,
      text-foreground/60 (dark: text-muted-foreground), hover text-foreground */
   .tabs-box .tab {
