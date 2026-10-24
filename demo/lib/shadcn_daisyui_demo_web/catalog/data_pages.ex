@@ -228,7 +228,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
 
   @void ~w(area base br col embed hr img input link meta source track wbr)
 
-  defp code(rendered) do
+  # (public for the other generated pages, e.g. Catalog.Overlays)
+  @doc false
+  def code(rendered) do
     html =
       rendered
       |> Phoenix.HTML.Safe.to_iodata()

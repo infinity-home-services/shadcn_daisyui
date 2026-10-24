@@ -688,6 +688,61 @@
   .modal:is([open], .modal-open, :target),
   .modal-toggle:checked + .modal { background-color: oklch(0 0 0 / 0.5); }
 
+  /* ---- Alert dialog (<.alert_dialog>, initConfirmDialog()) ---------------
+     shadcn's AlertDialog on the .modal box: header and footer 16px apart,
+     24px padding, the full width less 2rem on phones, up to 32rem (max-w-lg)
+     from sm. Phones centre the header and stack Cancel under the action;
+     from sm the text aligns left and the buttons sit in a row on the right.
+     size="sm" (.alert-dialog-sm): 20rem (max-w-xs), always centred, the two
+     buttons side by side in equal columns. <:media> is a 64px muted square
+     above the title, left of the title and description from sm. There is no
+     .modal-backdrop, so a backdrop click leaves it open; Esc cancels. */
+  .alert-dialog > .modal-box {
+    display: grid;
+    gap: 1rem;
+    width: calc(100% - 2rem);
+    max-width: 32rem;
+    padding: 1.5rem;
+  }
+  .alert-dialog-sm > .modal-box { max-width: 20rem; }
+  .alert-dialog-header {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    place-items: center;
+    gap: 0.375rem;
+    text-align: center;
+  }
+  .alert-dialog-header:has(> .alert-dialog-media) { grid-template-rows: auto auto 1fr; column-gap: 1.5rem; }
+  .alert-dialog-media {
+    display: inline-flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
+  }
+  .alert-dialog-media > :is(svg, [class*="hero-"]):not([class*="size-"]) { width: 2rem; height: 2rem; }
+  .alert-dialog-title { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
+  .alert-dialog-description { font-size: 0.875rem; line-height: 1.25rem; color: var(--muted-foreground); }
+  .alert-dialog-footer { display: flex; flex-direction: column-reverse; gap: 0.5rem; }
+  .alert-dialog-sm .alert-dialog-footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (width >= 40rem) {
+    .alert-dialog:not(.alert-dialog-sm) .alert-dialog-header { place-items: start; text-align: start; }
+    .alert-dialog:not(.alert-dialog-sm) .alert-dialog-header:has(> .alert-dialog-media) {
+      grid-template-rows: auto 1fr;
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .alert-dialog:not(.alert-dialog-sm) .alert-dialog-media { grid-row: span 2 / span 2; }
+    .alert-dialog:not(.alert-dialog-sm) .alert-dialog-media ~ .alert-dialog-title { grid-column-start: 2; }
+    .alert-dialog-footer { flex-direction: row; justify-content: flex-end; }
+  }
+  /* reduced motion: a fade, without the box's zoom */
+  @media (prefers-reduced-motion: reduce) {
+    .alert-dialog > .modal-box { scale: 1; translate: none; transition: opacity 0.2s ease-out; }
+  }
+
   /* ---- Progress / range / tooltip / divider ------------------------------ */
   .progress { border-radius: 9999px; background-color: var(--muted); color: var(--primary); }
   .progress::-webkit-progress-value { background-color: var(--primary); }

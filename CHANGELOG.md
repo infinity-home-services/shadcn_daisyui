@@ -8,6 +8,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`<.alert_dialog>`** (in `ShadcnDaisyui.Components.Overlay`, imported by
+  `use ShadcnDaisyui.Components`): shadcn's AlertDialog on a native modal
+  `<dialog role="alertdialog">`, `aria-labelledby` its `<:title>` (required,
+  the question) and `aria-describedby` its `<:description>`. Cancel comes
+  first and takes focus when it opens (`cancel="Keep editing"` relabels it);
+  `<:action variant="default|destructive">` (required) is a button, or a link
+  when it has `navigate` / `patch` / `href` (+ `method`), and passes every
+  other attribute through - `phx-click` (+ `phx-value-*`), `type="submit"` +
+  `form`, `id`, `disabled`. Choosing it closes the dialog; `close={false}`
+  leaves that to the server (`push_hide_modal/2`). Esc cancels, a backdrop
+  click doesn't close it (on an app shell page too), and the browser returns
+  focus to whatever opened it. Opens like the other modals: `<:trigger>`,
+  `show_modal/2`, `push_show_modal/2`, or `show` + `on_close` (Cancel, Esc and
+  the action each run `on_close`). `size="sm"` (20rem, centred, the buttons
+  side by side) and `<:media>` (a 64px muted square above the title, left of
+  it from `sm`) as in shadcn. Theme classes: `.alert-dialog`,
+  `.alert-dialog-sm`, `.alert-dialog-header`, `.alert-dialog-media`,
+  `.alert-dialog-title`, `.alert-dialog-description`, `.alert-dialog-footer`
+  (phones: centred header, the action above Cancel, both full width; from
+  640px left-aligned with the buttons in a row on the right). With reduced
+  motion it fades without the zoom. No inline handlers: Cancel and the action
+  close it through one delegated listener in `shadcn-daisyui.js`.
+- **Styled confirmations (opt-in)**: `initConfirmDialog()` (exported from
+  `shadcn-daisyui.js`; call it once in `app.js`, or pass
+  `initShadcnDaisyui({ confirm: true })` in a dead view) replaces the
+  browser's `confirm()` for every `data-confirm` - dropdown and command
+  items' `confirm`, `<.link data-confirm>`, any button - with the package's
+  alert dialog. The click is stopped in the capture phase before
+  `phoenix_html` or LiveView see it; Cancel or Esc does nothing, and the
+  action replays the click on the same element (its `data-confirm` lifted for
+  that one click), so `phx-click`, `data-method` links, plain links and form
+  submits run exactly as before. A command palette item still closes its
+  palette only once accepted. Per element: `data-confirm-description`,
+  `data-confirm-action` (the action's label, default "Continue"),
+  `data-confirm-cancel`, `data-confirm-variant` (a destructive dropdown item
+  or `btn-error` button gets a destructive action by default);
+  `initConfirmDialog({ action, cancel })` sets the default labels.
+  `confirmDialog(message, options)` asks the same way from your own code and
+  returns a promise of the answer. Works under a strict `script-src` policy.
+- **Docs**: the Alert Dialog page is now the component (default, destructive,
+  small with media, opened from the server, styled `data-confirm`), rendered
+  from `<.alert_dialog>` in place of the class recipe. The docs site and the
+  `/lab/csp` LiveView turn on `initConfirmDialog()`, so every `data-confirm`
+  there (the command palette's "Add back", dropdown items) asks in the alert
+  dialog; `/docs/dark-mode` and `/lab/csp` carry an alert dialog. Usage rules:
+  a confirmation is `<.alert_dialog>` (or `data-confirm` with
+  `initConfirmDialog()` on), never a plain dialog or the browser's
+  `confirm()`.
+
 ## [0.23.0] - 2026-10-24
 
 File uploads: the file input now looks like shadcn's, and `<.dropzone>` is a

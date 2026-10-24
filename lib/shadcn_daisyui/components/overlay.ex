@@ -1,10 +1,11 @@
 defmodule ShadcnDaisyui.Components.Overlay do
   @moduledoc """
-  Overlay components: dialog, sheet, drawer, popover, tooltip, dropdown menu,
-  and the command palette.
+  Overlay components: dialog, alert dialog, sheet, drawer, popover, tooltip,
+  dropdown menu, and the command palette.
 
-  The modal family (`dialog`, `sheet`, `drawer`, `command`) renders native
-  `<dialog>` elements animated by the theme. Open them three ways:
+  The modal family (`dialog`, `alert_dialog`, `sheet`, `drawer`, `command`)
+  renders native `<dialog>` elements animated by the theme. Open them three
+  ways:
 
     * the `:trigger` slot (wired automatically),
     * `show_modal/2` / `hide_modal/2` from LiveView (`phx-click={show_modal("confirm")}`),
@@ -57,7 +58,7 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   @doc """
   Returns a `Phoenix.LiveView.JS` command that opens a modal component
-  (`dialog`, `sheet`, `drawer`, `command`) by id.
+  (`dialog`, `alert_dialog`, `sheet`, `drawer`, `command`) by id.
 
       <.button phx-click={show_modal("confirm")}>Delete…</.button>
   """
@@ -71,8 +72,8 @@ defmodule ShadcnDaisyui.Components.Overlay do
   end
 
   @doc """
-  Opens a modal component (`dialog`, `sheet`, `drawer`, `command`) from the
-  server, by id: for a decision the server makes ("discard your changes?").
+  Opens a modal component (`dialog`, `alert_dialog`, `sheet`, `drawer`,
+  `command`) from the server, by id: for a decision the server makes ("discard your changes?").
   It opens each time it's pushed, even after the person closed it.
 
       {:noreply, push_show_modal(socket, "discard")}
@@ -110,7 +111,8 @@ defmodule ShadcnDaisyui.Components.Overlay do
 
   Clicking the backdrop closes it. Open from LiveView with
   `phx-click={show_modal("confirm")}`, or from the server with
-  `push_show_modal/2` or `show` (see "Opening from the server").
+  `push_show_modal/2` or `show` (see "Opening from the server"). A
+  confirmation that must be answered is `alert_dialog/1`.
   """
   attr(:id, :string, required: true)
   attr(:class, :any, default: nil)
@@ -152,6 +154,155 @@ defmodule ShadcnDaisyui.Components.Overlay do
       <form method="dialog" class="modal-backdrop"><button>close</button></form>
       <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
     </dialog>
+    """
+  end
+
+  @doc """
+  An alert dialog - a modal that interrupts to confirm an action (shadcn's
+  `AlertDialog`): a title, a description, Cancel and the action.
+
+      <.alert_dialog id="delete-account">
+        <:trigger><.button variant="outline">Delete account</.button></:trigger>
+        <:title>Delete your account?</:title>
+        <:description>
+          This permanently deletes your account and removes your data from our servers.
+        </:description>
+        <:action variant="destructive" phx-click="delete_account">Delete account</:action>
+      </.alert_dialog>
+
+  Unlike `dialog/1` it is a `role="alertdialog"` named by `:title` and
+  described by `:description`, and a backdrop click doesn't close it: only
+  Cancel, Esc (which cancels) or the action do. Focus lands on Cancel when it
+  opens (the safe choice) and goes back to what opened it when it closes.
+
+  The action renders as a button, or a link when it has `navigate`, `patch`
+  or `href` (with `method` too), and takes whatever attributes you give it:
+  `phx-click` (+ `phx-value-*`, `phx-target`), `type="submit"` + `form` (it
+  submits that form), `id`, `disabled`, `data-*`. `variant` is `"default"`
+  (primary) or `"destructive"`. Choosing it closes the dialog; `close={false}`
+  keeps it open until the server closes it (`push_hide_modal/2`), e.g. to show
+  an error inside it.
+
+      <:action navigate={~p"/orders"}>Discard changes</:action>
+      <:action type="submit" form="order-form">Place order</:action>
+      <:action variant="destructive" phx-click="delete" close={false}>Delete</:action>
+
+  Open it like any modal: the `:trigger` slot, `phx-click={show_modal(id)}`,
+  or from the server with `push_show_modal/2` or `show` + `on_close` (see
+  "Opening from the server"). Cancel, Esc and the action are the person
+  closing it, so each runs `on_close`.
+
+  `size="sm"` is a 20rem dialog, centred, the two buttons side by side.
+  `<:media>` puts an icon (`<.icon name="hero-trash" />`) or image in a 64px
+  muted square above the title, left of it from `sm`. Cancel and the action
+  close the dialog through `shadcn-daisyui.js` (one delegated listener, no
+  inline handlers).
+
+  For `data-confirm` on links and buttons (dropdown and command items'
+  `confirm`) the package JS can show this dialog instead of the browser's
+  `confirm()`: see `initConfirmDialog()` in `shadcn-daisyui.js`.
+  """
+  @alert_action_variants %{"default" => "btn-primary", "destructive" => "btn-error"}
+
+  attr(:id, :string, required: true)
+  attr(:size, :string, default: "default", values: ~w(default sm))
+  attr(:cancel, :string, default: "Cancel", doc: "the Cancel button's label")
+  attr(:class, :any, default: nil)
+
+  attr(:show, :boolean,
+    default: false,
+    doc: "open while true: on mount, and each time it turns true (see Opening from the server)"
+  )
+
+  attr(:on_close, :any,
+    default: nil,
+    doc: "an event name (or JS) run when the person closes it (Cancel, Esc, the action)"
+  )
+
+  attr(:rest, :global)
+  slot(:trigger, doc: "optional trigger; clicking it opens the alert dialog")
+  slot(:media, doc: "an icon or image above the title (left of it from `sm`)")
+  slot(:title, required: true, doc: "the question; names the dialog")
+  slot(:description, doc: "the consequence; describes the dialog")
+  slot(:inner_block, doc: "anything else, between the description and the buttons")
+
+  slot(:action,
+    required: true,
+    validate_attrs: false,
+    doc:
+      "the action button: `variant` (\"default\" | \"destructive\"), `close={false}`, " <>
+        "and any button or `<.link>` attributes (`phx-click`, `type` + `form`, `navigate`, …)"
+  )
+
+  def alert_dialog(assigns) do
+    ~H"""
+    <span :if={@trigger != []} phx-click={show_modal(@id)}>
+      {render_slot(@trigger)}
+    </span>
+    <dialog
+      id={@id}
+      class={["modal alert-dialog", @size == "sm" && "alert-dialog-sm", @class]}
+      role="alertdialog"
+      aria-labelledby={"#{@id}-title"}
+      aria-describedby={@description != [] && "#{@id}-description"}
+      data-show={@show}
+      phx-mounted={keep_open(@show)}
+      {@rest}
+    >
+      <.close_action :if={@on_close} on_close={@on_close} />
+      <div class="modal-box">
+        <div class="alert-dialog-header">
+          <div :if={@media != []} class="alert-dialog-media">{render_slot(@media)}</div>
+          <h2 id={"#{@id}-title"} class="alert-dialog-title">{render_slot(@title)}</h2>
+          <p :if={@description != []} id={"#{@id}-description"} class="alert-dialog-description">
+            {render_slot(@description)}
+          </p>
+        </div>
+        {render_slot(@inner_block)}
+        <div class="alert-dialog-footer">
+          <button type="button" class="btn btn-outline" data-alert-dialog-cancel autofocus>
+            {@cancel}
+          </button>
+          <.alert_dialog_action :for={action <- @action} action={action} />
+        </div>
+      </div>
+      <div id={"#{@id}-toasts"} data-toast-host phx-update="ignore"></div>
+    </dialog>
+    """
+  end
+
+  attr(:action, :map, required: true)
+
+  # The action: a link when it goes somewhere, else a button (type="button"
+  # unless it says otherwise), with every attribute the slot was given.
+  defp alert_dialog_action(assigns) do
+    action = assigns.action
+    variant = Map.get(action, :variant, "default")
+
+    vclass =
+      Map.get(@alert_action_variants, variant) ||
+        raise ArgumentError,
+              "<:action variant=#{inspect(variant)}> in <.alert_dialog>: " <>
+                "expected \"default\" or \"destructive\""
+
+    attrs = Map.drop(action, [:__slot__, :inner_block, :variant, :class, :close])
+    link? = !!(attrs[:navigate] || attrs[:patch] || attrs[:href])
+
+    assigns =
+      assign(assigns,
+        class: ["btn", vclass, action[:class]],
+        keep: Map.get(action, :close) == false,
+        link?: link?,
+        attrs: if(link?, do: attrs, else: Map.put_new(attrs, :type, "button"))
+      )
+
+    ~H"""
+    <.link :if={@link?} class={@class} data-alert-dialog-action data-keep-open={@keep} {@attrs}>
+      {render_slot(@action)}
+    </.link>
+    <button :if={!@link?} class={@class} data-alert-dialog-action data-keep-open={@keep} {@attrs}>
+      {render_slot(@action)}
+    </button>
     """
   end
 
@@ -418,7 +569,9 @@ defmodule ShadcnDaisyui.Components.Overlay do
     * `confirm` - renders `data-confirm`, so the browser asks before
       `phx-click` is sent (handled by `phoenix_html`, imported in a stock
       Phoenix `app.js`). Name the object: "Remove Acme Marketing from Pat?",
-      not "Are you sure?".
+      not "Are you sure?". With `initConfirmDialog()` (`shadcn-daisyui.js`)
+      it asks in the package's alert dialog instead of the browser's
+      `confirm()`, with a destructive action button on a destructive item.
     * `values` - a map, one `phx-value-<key>` per entry, for events that need
       more than an id. `phx-value-id` still works; when both are given,
       `values` wins for its own keys only.
@@ -648,6 +801,8 @@ defmodule ShadcnDaisyui.Components.Overlay do
     * `confirm` - renders `data-confirm`, so the browser asks before
       `phx-click` runs (`phoenix_html`); the palette closes only when the
       person accepts, and cancelling keeps it open with the same results.
+      With `initConfirmDialog()` it asks in the package's alert dialog, over
+      the palette, by the same rule.
     * `values` - a map, one `phx-value-<key>` per entry.
     * `disabled` - `aria-disabled="true"`, no click (a link or form item
       renders as an inert button), skipped by the arrow keys, 50% opacity.

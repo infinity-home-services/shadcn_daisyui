@@ -686,68 +686,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.MorePrimitives do
         },
         ios_status: :guidance_only
       },
-      "alert-dialog" => %{
-        specs: %{
-          anatomy: [
-            %{part: "Trigger", description: "An element that calls showModal() on the dialog."},
-            %{
-              part: "Box",
-              description: "A `.modal-box` surface with title and muted description."
-            },
-            %{
-              part: "Actions",
-              description:
-                "A `.modal-action` row: a cancel and a confirm (often btn-error) button."
-            }
-          ],
-          measurements: [
-            %{
-              property: "Box surface",
-              value: "var(--popover) on var(--border-color), var(--radius-lg), shadow-sm"
-            },
-            %{property: "Title", value: "text-lg font-semibold"},
-            %{property: "Description", value: "text-sm var(--muted-foreground)"},
-            %{property: "Backdrop", value: "modal-backdrop dims the page behind the dialog"}
-          ],
-          tokens: [
-            "popover",
-            "popover-foreground",
-            "border-color",
-            "muted-foreground",
-            "destructive",
-            "destructive-foreground"
-          ]
-        },
-        accessibility: %{
-          roles:
-            "A native modal <dialog>; treat it as an alertdialog by keeping focus on the confirm/cancel choice.",
-          keyboard: [
-            %{
-              keys: "Tab / Shift+Tab",
-              action: "Cycle focus between cancel and confirm within the trap"
-            },
-            %{keys: "Enter / Space", action: "Activate the focused action"},
-            %{keys: "Esc", action: "Dismiss via the native dialog (treated as cancel)"}
-          ],
-          focus: "Opening traps focus inside the dialog; closing returns focus to the trigger.",
-          screen_reader:
-            "Announced as a dialog; the title and description give the consequence of the action.",
-          touch_target: "Action buttons are 2.25rem; size up to 2.75rem effective area on touch.",
-          reduced_motion: "Honor prefers-reduced-motion for the modal's enter/exit fade."
-        },
-        swiftui: %{
-          code: ~S"""
-          .alert("Are you absolutely sure?", isPresented: $showAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete account", role: .destructive) { delete() }
-          } message: {
-            Text("This action cannot be undone.")
-          }
-          """,
-          notes: "Maps directly to an .alert with a .destructive confirm and a .cancel button."
-        },
-        ios_status: :parity
-      },
       "collapsible" => %{
         specs: %{
           anatomy: [

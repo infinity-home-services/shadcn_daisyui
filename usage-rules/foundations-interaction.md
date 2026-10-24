@@ -30,10 +30,15 @@ Interactive states, touch targets, and input-method differences.
     the whole row (≥ 44px with `py-2`+) is tappable.
 - Destructive actions: `destructive`/`error` variant + a confirmation that names
   the object (see `foundations-accessibility.md` for wording). One destructive
-  action per surface, placed last.
+  action per surface, placed last. [web] The confirmation is `<.alert_dialog>`
+  (Cancel focused on open, a `variant="destructive"` action), or `data-confirm`
+  with `initConfirmDialog()` on, which asks in the same dialog - never the
+  browser's `confirm()`. [ios] `.alert` with a `.cancel` and a `.destructive`
+  button.
 - Dismissal: dialogs/sheets close via explicit control, Esc ([web]), backdrop
-  click/swipe-down where the task is safely abandonable. Confirm before
-  discarding unsaved input.
+  click/swipe-down where the task is safely abandonable. An alert dialog closes
+  only on its buttons or Esc (which cancels), never on a backdrop click. Confirm
+  before discarding unsaved input.
 
 ## Reference
 

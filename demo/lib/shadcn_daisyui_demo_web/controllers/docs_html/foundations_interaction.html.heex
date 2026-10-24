@@ -98,16 +98,28 @@
   <section class="mt-12 space-y-4">
     <h2 class="text-lg font-medium tracking-tight">Destructive actions</h2>
     <p class="text-sm text-muted-foreground">
-      Destructive variant + a confirmation that names the object. One destructive
-      action per surface, placed last. See
+      Destructive variant + a confirmation that names the object, in an
+      <a href={~p"/docs/components/alert-dialog"} class="link link-primary">alert dialog</a>
+      (or <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">data-confirm</code>
+      with
+      <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">initConfirmDialog()</code>
+      on), never the browser's <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">confirm()</code>.
+      One destructive action per surface, placed last. See
       <a href={~p"/docs/foundations/accessibility"} class="link link-primary">
         Accessibility &amp; content
       </a>
       for the wording rules.
     </p>
     <div class="flex flex-wrap items-center gap-2 rounded-lg border border-base-300 p-6">
-      <button class="btn btn-outline">Cancel</button>
-      <button class="btn btn-error">Delete "Q3 report"</button>
+      <button type="button" class="btn btn-outline">Cancel</button>
+      <.alert_dialog id="guide-delete">
+        <:trigger>
+          <button type="button" class="btn btn-error">Delete "Q3 report"</button>
+        </:trigger>
+        <:title>Delete "Q3 report"?</:title>
+        <:description>The report and its comments are deleted for everyone.</:description>
+        <:action variant="destructive">Delete report</:action>
+      </.alert_dialog>
     </div>
   </section>
 </.docs_layout>

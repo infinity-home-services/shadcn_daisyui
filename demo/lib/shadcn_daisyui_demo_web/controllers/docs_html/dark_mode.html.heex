@@ -269,9 +269,10 @@
     <h2 class="text-lg font-medium tracking-tight">Overlays</h2>
     <p class="text-sm text-muted-foreground">
       One backdrop, shadcn/ui's <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">bg-black/50</code>,
-      for all four. Each opens from a
+      for all five. Each opens from a
       <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">phx-click</code>
-      JS command and closes on Esc or a backdrop click, with no inline handler.
+      JS command and closes on Esc or a backdrop click, with no inline handler; the alert
+      dialog ignores the backdrop and closes on Esc, Cancel or its action.
     </p>
     <div class="grid gap-6 lg:grid-cols-2">
       <div
@@ -314,6 +315,15 @@
               <button type="button" class="btn btn-primary w-full">Submit</button>
             </:footer>
           </.drawer>
+
+          <.alert_dialog id={"dm-alert-#{theme}"}>
+            <:trigger>
+              <button type="button" class="btn btn-outline">Alert dialog</button>
+            </:trigger>
+            <:title>Delete Q3 report?</:title>
+            <:description>The report and its comments are deleted for everyone.</:description>
+            <:action variant="destructive">Delete report</:action>
+          </.alert_dialog>
 
           <%!-- one palette only: every [data-command] dialog listens for ⌘K --%>
           <.command :if={theme == "shadcn-dark"} id="dm-command">

@@ -46,6 +46,12 @@ like shadcn/ui. **Every UI decision goes through this package.**
   server first) opens from the server: `push_show_modal(socket, id)` /
   `push_hide_modal/2`, or `show={@confirm?}` with `on_close`. A button opens from
   the browser (`show_modal/2`). Never toggle a dialog's `open` attribute yourself.
+- A confirmation (delete, remove, discard, sign out) is `<.alert_dialog>`: the
+  question as the title, naming the object, and an action that says what it
+  does (`variant="destructive"` when it destroys). `data-confirm` (dropdown and
+  command items' `confirm`) asks in the same dialog because `app.js` calls
+  `initConfirmDialog()`. Never confirm with a plain `<.dialog>` (a backdrop
+  click closes it), a hand-rolled modal or the browser's bare `confirm()`.
 - A file upload is `<.dropzone upload={@uploads.x}>` (`size="compact"` in tight
   forms); the picked files show under it as `<.attachment>` tiles. Never show a
   bare `<.live_file_input>` or hand-roll a drop area (see `usage-rules/forms.md`).
@@ -87,7 +93,9 @@ Decision order:
 | `<.card>` / `<.card_body>` / `<.card_title>` / `<.card_description>` | compose |
 | `<.separator>` | `orientation="horizontal\|vertical"` |
 | `<.dialog>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:actions>`; open via `show_modal(id)` |
-| opening from the server | `push_show_modal(socket, id)` / `push_hide_modal(socket, id)` (opens each time it's pushed, even after the person closed it), or `show={@open?}` + `on_close="event"` (or a JS) on `<.dialog>` / `<.sheet>` / `<.drawer>` / `<.command>`: open on mount and whenever `show` turns true; `on_close` runs when the person closes it (Esc, backdrop, a close or Cancel button) - set the assign false there; closing from the server doesn't run it |
+| `<.alert_dialog>` | a confirmation: `id` req., `<:title>` (req., the question) `<:description>` (the consequence), `<:action variant="default\|destructive">` (req.; a button running `phx-click`, `type="submit" form="…"`, or a link with `navigate`/`href` + `method`; choosing it closes the dialog, `close={false}` leaves that to the server) and Cancel (`cancel="Keep editing"`, focused on open); `<:trigger>`, `<:media>` (icon `class="size-8"`), `size="sm"`, `show` + `on_close`; a backdrop click doesn't close it, Esc cancels |
+| styled `data-confirm` | `initConfirmDialog()` once in `app.js` (`import { Hooks, initConfirmDialog } from "shadcn_daisyui"`; dead views: `initShadcnDaisyui({ confirm: true })`): every `data-confirm` (dropdown / command items' `confirm`, links, buttons) asks in an alert dialog, then the click runs as before; per element `data-confirm-description`, `data-confirm-action="Delete report"`, `data-confirm-cancel`, `data-confirm-variant` (a destructive item or `btn-error` button gets a destructive action); `confirmDialog(message, opts)` returns a promise of the answer |
+| opening from the server | `push_show_modal(socket, id)` / `push_hide_modal(socket, id)` (opens each time it's pushed, even after the person closed it), or `show={@open?}` + `on_close="event"` (or a JS) on `<.dialog>` / `<.alert_dialog>` / `<.sheet>` / `<.drawer>` / `<.command>`: open on mount and whenever `show` turns true; `on_close` runs when the person closes it (Esc, backdrop, a close or Cancel button) - set the assign false there; closing from the server doesn't run it |
 | `<.sheet>` / `<.drawer>` | `id` req., `<:trigger>` `<:title>` `<:description>` `<:header>` (stays put, e.g. search) + body + `<:footer>` (pinned actions: ghost "Clear all" left, primary `ml-auto grow sm:grow-0`); only the body scrolls, lines show only while content is under the header/footer - never add your own sticky header/footer, borders or shadows; right panel / bottom panel; sheet `size="sm\|default\|lg\|xl"` (20/24/32/40rem from `sm`, 75% on phones, ≤90vw), or a width class (`sm:w-[28rem]`) |
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
@@ -353,7 +361,8 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
 - `app.js` keeps the `Hooks` import and spreads them into the LiveSocket. The
   shell's behaviour (`shadcn:toggle-sidebar`, `shadcn:show-dialog`, Cmd/Ctrl+B,
   closing dialogs on navigation) comes with that import - don't re-add an app
-  copy of it or app-specific events for it.
+  copy of it or app-specific events for it. It also calls `initConfirmDialog()`
+  (styled `data-confirm`); add the call if it's missing, never remove it.
 - The root layout keeps its pre-paint `<script nonce={assigns[:csp_nonce]}>` in
   `<head>`: it sets `data-theme` through the `theme-transition` guard and
   `document.documentElement.dataset.sidebar` from localStorage `shadcn:sidebar`

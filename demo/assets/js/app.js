@@ -44,6 +44,12 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
+// Styled confirmations: data-confirm (dropdown / command items' `confirm`,
+// links, buttons) asks in the package's alert dialog instead of the browser's
+// confirm(), on the docs pages and the LiveView lab pages alike.
+import { initConfirmDialog } from "../../../priv/static/shadcn-daisyui.js"
+initConfirmDialog()
+
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
