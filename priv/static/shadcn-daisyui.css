@@ -1872,6 +1872,321 @@
     }
   }
 
+  /* ---- Message scroller (<.message_scroller>) -----------------------------
+     shadcn/ui's Message Scroller. The frame fills its parent (flex: 1 in a
+     column such as <.app_shell fill>'s page, else 100% of its height) and
+     only the viewport scrolls: thin scrollbar, stable gutter, contained
+     overscroll, and no native scroll anchoring (the ShadcnMessageScroller
+     hook keeps the row being read in place itself, on every browser). The
+     viewport is invisible while data-pending-scroll, until the hook has
+     opened it at its default position (after 2s regardless, in case no
+     script runs); the bottom edge fades while there is more below. The log
+     is a column at least as tall as the viewport, 32px (gap-8) between rows.
+     The spacer under it is the room the hook makes for a new anchored turn.
+     The scroll button: a 36px outline icon button centred 16px from the
+     edge; inactive it is inert, slid out by its own height at 95% and
+     transparent (400ms ease-in), active it settles in (200ms ease-out). */
+  :where([data-slot="message-scroller"]) {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  :where([data-slot="message-scroller-viewport"]) {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 0%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    overflow-anchor: none;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    outline: none;
+  }
+  :where([data-slot="message-scroller-viewport"]):focus-visible { box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); }
+  :where([data-slot="message-scroller-viewport"][data-pending-scroll]) {
+    visibility: hidden;
+    animation: shadcn-scroller-reveal 0s linear 2s forwards;
+  }
+  :where([data-slot="message-scroller-viewport"][data-autoscrolling]) { scrollbar-color: transparent transparent; }
+  :where([data-slot="message-scroller-viewport"][data-scrollable~="end"]) {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+  }
+  :where([data-slot="message-scroller-content"]) {
+    display: flex;
+    min-width: 0;
+    min-height: 100%;
+    height: max-content;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  :where([data-slot="message-scroller-items"]) { display: contents; }
+  :where([data-slot="message-scroller-item"], [data-slot="message-scroller-above"], [data-slot="message-scroller-below"]) {
+    min-width: 0;
+    flex-shrink: 0;
+  }
+  :where([data-slot="message-scroller-spacer"]) { pointer-events: none; }
+  /* 0,1,0 (not :where): it has to beat .btn's own transition list */
+  [data-slot="message-scroller-button"] {
+    position: absolute;
+    inset-inline-start: 50%;
+    z-index: 10;
+    translate: -50% 0;
+    scale: 1;
+    opacity: 1;
+    transition-property: translate, scale, opacity, color, background-color, border-color, box-shadow;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  [data-slot="message-scroller-button"][data-direction="end"] { bottom: 1rem; }
+  [data-slot="message-scroller-button"][data-direction="start"] { top: 1rem; }
+  [data-slot="message-scroller-button"][data-direction="start"] > [class*="hero-"] { rotate: 180deg; }
+  [data-slot="message-scroller-button"][data-active="false"] {
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.95;
+    transition-duration: 400ms;
+    transition-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
+  }
+  [data-slot="message-scroller-button"][data-direction="end"][data-active="false"] { translate: -50% 100%; }
+  [data-slot="message-scroller-button"][data-direction="start"][data-active="false"] { translate: -50% -100%; }
+  :where([dir="rtl"]) [data-slot="message-scroller-button"] { translate: 50% 0; }
+  :where([dir="rtl"]) [data-slot="message-scroller-button"][data-direction="end"][data-active="false"] { translate: 50% 100%; }
+  :where([dir="rtl"]) [data-slot="message-scroller-button"][data-direction="start"][data-active="false"] { translate: 50% -100%; }
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="message-scroller-button"],
+    [data-slot="message-scroller-button"][data-active="false"] { transition-duration: 0s; }
+  }
+
+  /* ---- Trace (<.trace>) -----------------------------------------------------
+     shadcn/ui's Trace: rows 8px apart. A row is text-sm muted: a 16px icon,
+     the title on one line (truncated; it shimmers while running, not with
+     reduced motion, and a running row's glyph pulses as a working sparkle),
+     then the description, 70% muted with tabular figures, which never
+     truncates. error = destructive, pending = 60% opacity. A link row or a
+     disclosure trigger is the row's own width, rounded-md, foreground on
+     hover, with the 3px ring for the keyboard. A disclosure's chevron turns
+     90deg as it opens; its detail opens under it (the row reveal: grid rows
+     0fr -> 1fr and opacity, 180ms ease-out; hidden from the tab order and
+     screen readers while closed),
+     indented 7px with a 1px line on its left and 16px of padding, relaxed
+     muted text. aria-expanded on the trigger is the only state. */
+  :where([data-slot="trace"]) {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  :where([data-slot="trace-item"]) { display: flex; min-width: 0; max-width: 100%; flex-direction: column; }
+  :where([data-slot="trace-line"]) {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--muted-foreground);
+    text-align: start;
+    transition: color 150ms;
+  }
+  :where([data-slot="trace-link"]:hover, [data-slot="trace-collapsible-trigger"]:hover) > :where([data-slot="trace-line"]) { color: var(--foreground); }
+  :where([data-slot="trace-line"][data-status="error"]) { color: var(--destructive); }
+  :where([data-slot="trace-line"][data-status="pending"]) { opacity: 0.6; }
+  :where([data-slot="trace-icon"]) {
+    display: flex;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  :where([data-slot="trace-icon"]) > :where(svg, img, [class*="hero-"]):not([class*="size-"]) { width: 1rem; height: 1rem; }
+  :where([data-slot="trace-icon"] .loading) { width: 1rem; }
+  :where([data-slot="trace-title"] ~ [data-slot="trace-icon"]) { margin-inline-start: -0.25rem; }
+  :where([data-slot="trace-line"][data-status="running"] > [data-slot="trace-icon"]:not(:has(.loading))) {
+    animation: shadcn-trace-pulse 1.6s ease-in-out infinite;
+  }
+  :where([data-slot="trace-title"]) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :where([data-slot="trace-description"]) {
+    flex-shrink: 0;
+    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    font-variant-numeric: tabular-nums;
+  }
+  :where([data-slot="trace-link"], [data-slot="trace-collapsible-trigger"]) {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--muted-foreground);
+    font: inherit;
+    text-align: start;
+    text-decoration: none;
+    outline: none;
+    cursor: pointer;
+    transition: color 150ms, box-shadow 150ms;
+  }
+  :where([data-slot="trace-link"], [data-slot="trace-collapsible-trigger"]):hover { color: var(--foreground); }
+  :where([data-slot="trace-collapsible-trigger"]:has([data-status="error"])) { color: var(--destructive); }
+  :where([data-slot="trace-link"], [data-slot="trace-collapsible-trigger"]):focus-visible { box-shadow: var(--ring-shadow); }
+  :where([data-slot="trace-icon"][data-chevron]) { transition: rotate 180ms ease-out; }
+  :where([data-slot="trace-collapsible-trigger"][aria-expanded="true"] > [data-slot="trace-icon"][data-chevron]) { rotate: 90deg; }
+  :where([dir="rtl"] [data-slot="trace-icon"][data-chevron]) { scale: -1 1; }
+  :where([dir="rtl"] [data-slot="trace-collapsible-trigger"][aria-expanded="true"] > [data-slot="trace-icon"][data-chevron]) { rotate: -90deg; }
+  :where([data-slot="trace-collapsible"]) { display: flex; width: 100%; min-width: 0; flex-direction: column; }
+  :where([data-slot="trace-collapsible-content"]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition: grid-template-rows 180ms ease-out, opacity 180ms ease-out, visibility 0s linear 180ms;
+  }
+  :where([data-slot="trace-collapsible-trigger"][aria-expanded="true"] + [data-slot="trace-collapsible-content"]) {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  :where([data-slot="trace-collapsible-clip"]) { min-width: 0; min-height: 0; overflow: hidden; }
+  :where([data-slot="trace-collapsible-content-inner"]) {
+    min-width: 0;
+    margin: 0.5rem 0 0.25rem calc(0.5rem - 1px);
+    padding-inline: 1rem 0.25rem;
+    border-inline-start: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    line-height: 1.625;
+    color: var(--muted-foreground);
+    overflow-wrap: break-word;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-slot="trace-line"][data-status="running"] > [data-slot="trace-icon"]) { animation: none; }
+    :where([data-slot="trace-icon"][data-chevron], [data-slot="trace-collapsible-content"]) { transition: none; }
+  }
+
+  /* ---- Prompt input (<.prompt_input>) ---------------------------------------
+     The chat composer (AI Elements' PromptInput on shadcn's field metrics).
+     Suggestion chips (outline bubbles) wrap above it, 8px apart, 12px above
+     the box. The box is the field: 1px var(--input) border, rounded-md,
+     input fill, shadow-xs; the 3px ring while its text has focus; a primary
+     border on an accent fill while files are dragged over it (it is the
+     upload's drop target). Inside: attachment tiles in a row that scrolls
+     sideways, the text (text-sm, 8px 12px, at least 4rem tall, growing with
+     its content to 12rem, then it scrolls: field-sizing: content, or the hook
+     where unsupported), and a toolbar of 36px icon buttons 8px from the
+     edges, Send (Stop while busy) at the end. Send is 50% while there is
+     nothing to send (aria-disabled). On touch screens the toolbar buttons
+     get a 44px hit area. Upload errors are text-sm destructive lines below. */
+  :where([data-slot="prompt-input"]) { display: flex; min-width: 0; flex-direction: column; gap: 0.75rem; }
+  :where([data-slot="prompt-input-suggestions"]) { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  :where([data-slot="prompt-input-suggestions"] > [data-slot="bubble"]) { max-width: 100%; }
+  :where([data-slot="prompt-input-box"]) {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    border: 1px solid var(--input);
+    border-radius: var(--radius-md);
+    background-color: var(--input-background);
+    box-shadow: var(--shadow-xs);
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+  }
+  :where([data-slot="prompt-input-box"]):has(> [data-slot="prompt-input-textarea"]:focus-visible) {
+    border-color: var(--ring);
+    box-shadow: var(--ring-shadow);
+  }
+  :where([data-slot="prompt-input-box"]):is([data-dragging], .phx-drop-target-active) {
+    border-color: var(--primary);
+    background-color: var(--accent);
+  }
+  :where([data-slot="prompt-input"][data-disabled]) :where([data-slot="prompt-input-box"]) { opacity: 0.5; cursor: not-allowed; }
+  :where([data-slot="prompt-input-textarea"]) {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-height: 4rem;
+    max-height: 12rem;
+    resize: none;
+    overflow-y: auto;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    box-shadow: none;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    outline: none;
+  }
+  @supports (field-sizing: content) {
+    :where([data-slot="prompt-input-textarea"]) { field-sizing: content; }
+  }
+  :where([data-slot="prompt-input-textarea"])::placeholder { color: var(--muted-foreground); }
+  :where([data-slot="prompt-input-textarea"]):disabled { cursor: not-allowed; }
+  :where([data-slot="prompt-input-attachments"]) {
+    display: flex;
+    min-width: 0;
+    gap: 0.5rem;
+    padding: 0.5rem 0.5rem 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  :where([data-slot="prompt-input-attachments"])::-webkit-scrollbar { display: none; }
+  :where([data-slot="prompt-input-attachments"] > [role="listitem"]) { flex: none; max-width: 16rem; }
+  :where([data-slot="prompt-input-attachments"] [data-slot="attachment"]) { max-width: 16rem; }
+  :where([data-slot="prompt-input-toolbar"]) {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.5rem 0.5rem;
+  }
+  :where([data-slot="prompt-input-toolbar"] .btn) { position: relative; }
+  :where([data-slot="prompt-input-submit"]) { margin-inline-start: auto; }
+  :where([data-slot="prompt-input-submit"][aria-disabled="true"]) { opacity: 0.5; cursor: default; }
+  :where([data-slot="prompt-input-attach"]) { cursor: pointer; }
+  :where([data-slot="prompt-input-attach"][data-disabled]) { opacity: 0.5; cursor: not-allowed; }
+  :where([data-slot="prompt-input-attach"]):has(input:focus-visible) { border-color: var(--ring); box-shadow: var(--ring-shadow); }
+  :where([data-slot="prompt-input-attach"] input[type="file"]) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  :where([data-slot="prompt-input-errors"]):has(> *) { display: grid; gap: 0.25rem; margin-top: -0.25rem; }
+  :where([data-slot="prompt-input-errors"] > p) { display: flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; line-height: 1.25rem; color: var(--destructive); }
+  :where([data-slot="prompt-input-errors"] > p > [class*="hero-"]) { flex-shrink: 0; }
+  @media (pointer: coarse) {
+    :where([data-slot="prompt-input-toolbar"] .btn)::after { content: ""; position: absolute; inset: -0.25rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-slot="prompt-input-box"]) { transition: none; }
+  }
+
   /* ---- Sonner (toaster) --------------------------------------------------
      Markup is built by toast() in shadcn-daisyui.js. Metrics mirror sonner:
      356px wide, 14px stack gap, 24px viewport offset (16px + full width on
@@ -3147,6 +3462,16 @@
 @keyframes shadcn-toast-out {
   from { opacity: 1; transform: none; }
   to   { opacity: 0; transform: translateX(0.75rem) scale(0.98); }
+}
+
+/* Message scroller: show a viewport the hook never positioned (no script).
+   Trace: a running row's glyph pulses, as a working sparkle. */
+@keyframes shadcn-scroller-reveal {
+  to { visibility: visible; }
+}
+@keyframes shadcn-trace-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
 }
 
 /* ---------------------------------------------------------------------------

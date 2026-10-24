@@ -9,7 +9,8 @@ It bundles:
   daisyUI class (`btn`, `card`, `input`, `tabs`, …) renders shadcn-styled.
 - **Interactive JS** - `initShadcnDaisyui()` (dead views) + LiveView `Hooks` for the
   stateful components (command, combobox, calendar, date-picker, OTP, carousel, resizable,
-  tab nav, chip row, page header, data table, section nav, dropzone, …), plus the app shell's behaviour.
+  tab nav, chip row, page header, data table, section nav, dropzone, message scroller,
+  prompt input, …), plus the app shell's behaviour.
 - **Function components** - `ShadcnDaisyui.Components` (`<.app_shell>` - a signed-in
   app's whole shell - `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
@@ -160,6 +161,27 @@ Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
 </.message_group>
 ```
 
+An AI chat page adds three: `<.message_scroller>` (the transcript: opens at
+the latest message or the last question, follows a streaming reply while
+you're at the bottom, keeps your place when older messages load),
+`<.trace>` (the assistant's steps, tool calls, sources and plans, rows that
+open to show detail) and `<.prompt_input>` (the composer: a field that
+grows, Enter to send, Send that becomes Stop, attachments, suggestions):
+
+```heex
+<.message_scroller id="chat" items={@streams.messages} busy={@reply != nil}
+  anchor={fn {_id, m} -> m.role == :user end} :let={{_id, m}}>
+  <.message :if={m.role == :user} align="end"><.bubble>{m.text}</.bubble></.message>
+  <.message :if={m.role == :assistant}>
+    <.trace><:line :for={s <- m.steps} status={s.status} icon="hero-check">{s.text}</:line></.trace>
+    <.bubble variant="ghost">{m.text}</.bubble>
+  </.message>
+</.message_scroller>
+<.form for={@form} id="chat-form" phx-change="validate" phx-submit="send">
+  <.prompt_input id="composer" field={@form[:text]} busy={@reply != nil} on_stop="stop" />
+</.form>
+```
+
 List pages and record pages have their parts too: `<.table_toolbar>` (views,
 search, a filters sheet, filter chips) over a `<.data_table>` (a body that
 scrolls under a sticky header, sortable columns, rows that open the record,
@@ -209,9 +231,9 @@ See `usage-rules/theming.md` and the interactive theme creator on the docs site.
 
 ## What's included
 
-shadcn-svelte's catalog lists 66 components (late October 2026). All but three -
-Trace, Message Scroller and Questionnaire - are reproducible with this theme,
-including Code Block, Item, the Message / Bubble / Marker / Attachment chat set,
+shadcn-svelte's catalog lists 66 components (late October 2026). All but one -
+Questionnaire - are reproducible with this theme, including Code Block, Trace,
+Message Scroller, Item, the Message / Bubble / Marker / Attachment chat set,
 Sonner, and Range Calendar. Function-component wrappers exist for the common
 primitives, forms, overlays, navigation, conversation, and the interactive
 components; everything else is raw daisyUI classes that the theme

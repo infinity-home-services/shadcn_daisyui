@@ -3479,6 +3479,435 @@ function initCodeBlock(root) {
   return root.__sdCodeBlock
 }
 
+// ---- Message scroller (<.message_scroller>) ----------------------------------
+// The transcript's one scroll region, as shadcn/ui's Message Scroller.
+//   • Opens once there are rows and the viewport has a size (a scroller in a
+//     closed sheet waits): at the end, the start, or the last anchored turn
+//     at the top (the end when that turn fits). Until then data-pending-scroll
+//     keeps it invisible.
+//   • following: the reader is at the live edge. Growing content (a streaming
+//     reply, a new row) keeps the end in view while it holds. Scrolling away
+//     (wheel, touch, keys, the scrollbar) drops it; scrolling back to the end
+//     or the button brings it back. Our own scrollTop writes are told apart
+//     from the reader's by the value they leave.
+//   • A new anchored turn (appended after opening) goes to the top, `peek` px
+//     of the row above still showing; the spacer under the log makes room for
+//     it and shrinks as the reply below fills that room.
+//   • Otherwise any change (rows prepended "at: 0", an image loading above)
+//     keeps the first visible row where it was (native scroll anchoring is
+//     off in the CSS, so every browser behaves the same).
+//   • data-scrollable ("start", "end", "start end") on the viewport and the
+//     frame; each button is active (data-active, not inert, a tab stop) while
+//     there is something its way (the end button not while following).
+// Observers (content resize, child changes, viewport resize) drive it, so it
+// works the same in dead views, on LiveView patches and in streams.
+const SCROLL_EDGE = 8
+function initMessageScroller(root) {
+  if (root.__sdScroller) return root.__sdScroller
+  const viewport = root.querySelector("[data-slot=message-scroller-viewport]")
+  const content = viewport && viewport.querySelector("[data-slot=message-scroller-content]")
+  if (!content) return null
+  const spacer = viewport.querySelector("[data-slot=message-scroller-spacer]")
+  const follows = root.dataset.follow !== "false"
+  const peek = () => { const n = parseFloat(root.dataset.peek); return Number.isFinite(n) ? n : 64 }
+  const items = () => content.querySelectorAll("[data-slot=message-scroller-item]")
+  const lastAnchor = () => {
+    const all = content.querySelectorAll("[data-slot=message-scroller-item][data-scroll-anchor=true]")
+    return all[all.length - 1] || null
+  }
+  const maxTop = () => Math.max(0, viewport.scrollHeight - viewport.clientHeight)
+  const atEnd = () => maxTop() - viewport.scrollTop <= SCROLL_EDGE
+  const atStart = () => viewport.scrollTop <= SCROLL_EDGE
+  const viewTop = () => viewport.getBoundingClientRect().top + viewport.clientTop
+  // an element's offset in the scrolled content (independent of scrollTop)
+  const offsetOf = (el) => el.getBoundingClientRect().top - viewTop() + viewport.scrollTop
+
+  let opened = false
+  let following = false
+  let ref = null       // { el, offset }: the first visible row and where it sat
+  let lastRow = null   // the last row at the previous check
+  let room = null      // the live anchor the spacer makes room for
+  let lastSet = null   // the scrollTop our last write left (null: the reader moved it since)
+  let smoothing = null // { y, end }: a smooth scroll of ours in flight
+  let smoothTimer = null
+  let touching = false
+  let dragging = false
+  let seen = new WeakSet()
+  let seenAny = false
+
+  const setScroll = (y) => {
+    viewport.scrollTop = Math.max(0, y)
+    lastSet = viewport.scrollTop
+  }
+  const setAttr = (el, name, value) => {
+    if (value == null) { if (el.hasAttribute(name)) el.removeAttribute(name) }
+    else if (el.getAttribute(name) !== value) el.setAttribute(name, value)
+  }
+  const reveal = () => {
+    setAttr(viewport, "data-pending-scroll", null)
+    setAttr(root, "data-pending-scroll", null)
+  }
+
+  // the first row whose bottom is below the viewport's top (binary search)
+  const remember = () => {
+    const list = items()
+    const top = viewTop()
+    let lo = 0
+    let hi = list.length - 1
+    let hit = null
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      if (list[mid].getBoundingClientRect().bottom > top + 1) { hit = list[mid]; hi = mid - 1 }
+      else lo = mid + 1
+    }
+    ref = hit ? { el: hit, offset: hit.getBoundingClientRect().top - top } : null
+  }
+
+  const roomFor = (anchor) => {
+    if (!spacer) return
+    const current = spacer.offsetHeight
+    let need = 0
+    if (anchor && anchor.isConnected) {
+      const target = offsetOf(anchor) - peek()
+      need = Math.max(0, Math.ceil(target + viewport.clientHeight - (viewport.scrollHeight - current)))
+    }
+    if (need !== current) spacer.style.height = need ? need + "px" : ""
+  }
+
+  const sync = () => {
+    const s = !atStart()
+    const e = !atEnd()
+    const scrollable = [s && "start", e && "end"].filter(Boolean).join(" ") || null
+    setAttr(viewport, "data-scrollable", scrollable)
+    setAttr(root, "data-scrollable", scrollable)
+    const auto = smoothing && smoothing.end ? "" : null
+    setAttr(viewport, "data-autoscrolling", auto)
+    setAttr(root, "data-autoscrolling", auto)
+    root.querySelectorAll("[data-slot=message-scroller-button]").forEach((b) => {
+      const on = b.dataset.direction === "start" ? s : e && !following && !(smoothing && smoothing.end)
+      if (b.dataset.active === String(on)) return
+      if (!on && b.contains(document.activeElement)) viewport.focus({ preventScroll: true })
+      b.dataset.active = String(on)
+      b.inert = !on
+      b.tabIndex = on ? 0 : -1
+    })
+  }
+
+  const land = () => {
+    clearTimeout(smoothTimer)
+    if (!smoothing) return
+    const end = smoothing.end
+    smoothing = null
+    if (end) { setScroll(maxTop()); following = follows }
+    else following = follows && atEnd()
+    remember()
+    sync()
+  }
+  const smoothTo = (target) => {
+    const y = target === "end" ? maxTop() : Math.max(0, Math.min(target, maxTop()))
+    if (reducedMotion() || Math.abs(y - viewport.scrollTop) < 2) {
+      smoothing = { y, end: target === "end" }
+      return land()
+    }
+    smoothing = { y, end: target === "end" }
+    viewport.scrollTo({ top: y, behavior: "smooth" })
+    clearTimeout(smoothTimer)
+    smoothTimer = setTimeout(land, 1200)
+    sync()
+  }
+  const cancelSmooth = () => {
+    if (!smoothing) return
+    clearTimeout(smoothTimer)
+    smoothing = null
+  }
+
+  const open = () => {
+    opened = true
+    const anchor = lastAnchor()
+    const pos = root.dataset.defaultPosition || "end"
+    const fits = (a) => viewport.scrollHeight - offsetOf(a) <= viewport.clientHeight + 1
+    if (pos === "start") setScroll(0)
+    else if (pos === "last-anchor" && anchor && !fits(anchor)) setScroll(offsetOf(anchor))
+    else setScroll(maxTop())
+    following = follows && atEnd()
+    reveal()
+  }
+
+  const reconcile = () => {
+    const list = items()
+    // a reset stream (another conversation): none of the rows is one we knew
+    if (opened && seenAny && list.length && ![...list].some((el) => seen.has(el))) {
+      opened = false
+      room = null
+      roomFor(null)
+    }
+    if (!opened) {
+      if (!list.length) reveal()
+      else if (viewport.clientHeight > 0) open()
+    } else {
+      // a new anchored turn: a row we hadn't seen, after the rows we had (not
+      // an older anchor left last because the newest was deleted)
+      const anchor = lastAnchor()
+      const appended = anchor && !seen.has(anchor) &&
+        (!lastRow || !lastRow.isConnected || (lastRow.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING))
+      if (appended) {
+        room = anchor
+        roomFor(room)
+        following = false
+        smoothTo(offsetOf(anchor) - peek())
+      } else {
+        roomFor(room)
+        if (smoothing) {
+          if (smoothing.end) { smoothing.y = maxTop(); viewport.scrollTo({ top: smoothing.y, behavior: "smooth" }) }
+        } else if (following && !touching && !dragging) {
+          if (Math.abs(viewport.scrollTop - maxTop()) >= 1) setScroll(maxTop())
+        } else if (ref && ref.el.isConnected) {
+          const delta = ref.el.getBoundingClientRect().top - viewTop() - ref.offset
+          if (Math.abs(delta) >= 1) setScroll(viewport.scrollTop + delta)
+        }
+      }
+    }
+    seen = new WeakSet(list)
+    seenAny = list.length > 0
+    lastRow = list[list.length - 1] || null
+    if (!smoothing) remember()
+    sync()
+  }
+
+  const onScroll = () => {
+    if (smoothing) {
+      if (Math.abs(viewport.scrollTop - smoothing.y) <= 1) land()
+      else sync()
+      return
+    }
+    if (lastSet === null || Math.abs(viewport.scrollTop - lastSet) > 1) {
+      // the reader scrolled (wheel, touch, keys, scrollbar, a find-in-page)
+      lastSet = null
+      if (touching || dragging) { if (!atEnd()) following = false }
+      else following = follows && atEnd()
+    }
+    remember()
+    sync()
+  }
+  const onWheel = (e) => {
+    cancelSmooth()
+    if (e.deltaY < 0) following = false
+  }
+  const onTouchStart = () => { cancelSmooth(); touching = true }
+  const onTouchEnd = () => { touching = false; following = follows && atEnd(); sync() }
+  const onPointerDown = (e) => {
+    // the scrollbar: a press on the viewport itself, past its content box
+    if (e.target !== viewport) return
+    const r = viewport.getBoundingClientRect()
+    if (e.clientX - r.left <= viewport.clientWidth && e.clientY - r.top <= viewport.clientHeight) return
+    cancelSmooth()
+    dragging = true
+    following = false
+  }
+  const onPointerUp = () => {
+    if (!dragging) return
+    dragging = false
+    following = follows && atEnd()
+    sync()
+  }
+  const UP_KEYS = ["ArrowUp", "PageUp", "Home"]
+  const onKeyDown = (e) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return
+    const field = e.target instanceof Element && e.target.closest(FIELD)
+    if (field || !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) return
+    cancelSmooth()
+    if (UP_KEYS.includes(e.key) || (e.key === " " && e.shiftKey)) following = false
+  }
+  const onClick = (e) => {
+    const b = e.target.closest("[data-slot=message-scroller-button]")
+    if (!b || !root.contains(b) || b.dataset.active === "false") return
+    scrollTo(b.dataset.direction)
+  }
+  const scrollTo = (to) => {
+    if (!opened) return
+    if (to === "start") { following = false; smoothTo(0) }
+    else if (to === "end" || to == null) { following = follows; smoothTo("end") }
+    else {
+      const el = document.getElementById(to)
+      if (!el || !content.contains(el)) return
+      following = false
+      smoothTo(offsetOf(el))
+    }
+  }
+  const onScrollTo = (e) => scrollTo(e.detail && e.detail.to)
+
+  viewport.addEventListener("scroll", onScroll, { passive: true })
+  viewport.addEventListener("scrollend", land)
+  viewport.addEventListener("wheel", onWheel, { passive: true })
+  viewport.addEventListener("touchstart", onTouchStart, { passive: true })
+  viewport.addEventListener("touchend", onTouchEnd, { passive: true })
+  viewport.addEventListener("touchcancel", onTouchEnd, { passive: true })
+  viewport.addEventListener("pointerdown", onPointerDown)
+  window.addEventListener("pointerup", onPointerUp)
+  root.addEventListener("keydown", onKeyDown)
+  root.addEventListener("click", onClick)
+  root.addEventListener("shadcn:scroll-to", onScrollTo)
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(reconcile) : null
+  if (ro) { ro.observe(content); ro.observe(viewport) }
+  const mo = new MutationObserver(reconcile)
+  mo.observe(content, { childList: true, subtree: true, characterData: true })
+
+  const api = {
+    refresh: reconcile,
+    scrollTo,
+    get following() { return following },
+    destroy() {
+      viewport.removeEventListener("scroll", onScroll)
+      viewport.removeEventListener("scrollend", land)
+      viewport.removeEventListener("wheel", onWheel)
+      viewport.removeEventListener("touchstart", onTouchStart)
+      viewport.removeEventListener("touchend", onTouchEnd)
+      viewport.removeEventListener("touchcancel", onTouchEnd)
+      viewport.removeEventListener("pointerdown", onPointerDown)
+      window.removeEventListener("pointerup", onPointerUp)
+      root.removeEventListener("keydown", onKeyDown)
+      root.removeEventListener("click", onClick)
+      root.removeEventListener("shadcn:scroll-to", onScrollTo)
+      if (ro) ro.disconnect()
+      mo.disconnect()
+      clearTimeout(smoothTimer)
+      delete root.__sdScroller
+    },
+  }
+  root.__sdScroller = api
+  reconcile()
+  return api
+}
+
+// ---- Trace (<.trace>) ---------------------------------------------------------
+// A row with detail is a disclosure: its trigger's aria-expanded is the only
+// state (the CSS opens the detail from it). One delegated listener toggles
+// it, so a dead view needs nothing, and in LiveView the component ignores the
+// attribute after mount, so the reader's choice survives patches.
+if (typeof window !== "undefined" && !window.__shadcnTrace) {
+  window.__shadcnTrace = true
+  document.addEventListener("click", (e) => {
+    const t = e.target instanceof Element && e.target.closest("[data-slot=trace-collapsible-trigger]")
+    if (!t || t.disabled) return
+    t.setAttribute("aria-expanded", String(t.getAttribute("aria-expanded") !== "true"))
+  })
+}
+
+// ---- Prompt input (<.prompt_input>) --------------------------------------------
+// The chat composer. Enter sends (requestSubmit: LiveView's phx-submit, or
+// the browser's) unless Shift is held or an input method is composing; Send
+// is aria-disabled and does nothing while there's nothing to send (no text,
+// no attached file), and nothing sends while busy (the button is Stop). Once
+// the form is submitted, the field clears (after LiveView has read it) and
+// keeps focus. A suggestion chip (data-prompt-suggestion) puts its text in
+// the field and sends it (data-send="false": only fills it). Files pasted
+// into the field go to the upload (LiveView's track-uploads); dragged ones
+// are the box's drop target (initDropzone for the highlight). Where CSS
+// field-sizing is missing, the field's height follows its content here.
+function initPromptInput(root) {
+  if (root.__sdPrompt) return root.__sdPrompt
+  const field = () => root.querySelector("[data-slot=prompt-input-textarea]")
+  const submit = () => root.querySelector("[data-slot=prompt-input-submit]")
+  const fileInput = () => root.querySelector("[data-slot=prompt-input-attach] input[type=file]")
+  const busy = () => root.hasAttribute("data-busy")
+  const hasFiles = () => !!root.querySelector("[data-slot=prompt-input-attachments] [data-slot=attachment]")
+  const empty = () => { const f = field(); return !(f && f.value.trim()) && !hasFiles() }
+  const nativeSizing = typeof CSS !== "undefined" && !!CSS.supports && CSS.supports("field-sizing", "content")
+  const grow = () => {
+    const f = field()
+    if (!f || nativeSizing) return
+    f.style.height = "auto"
+    f.style.height = f.scrollHeight + (f.offsetHeight - f.clientHeight) + "px"
+  }
+  const sync = () => {
+    const b = submit()
+    if (!b) return
+    const off = !busy() && empty()
+    if (off !== (b.getAttribute("aria-disabled") === "true")) {
+      if (off) b.setAttribute("aria-disabled", "true")
+      else b.removeAttribute("aria-disabled")
+    }
+  }
+  const send = () => {
+    const f = field()
+    if (!f || !f.form || f.disabled || busy() || empty()) return false
+    const b = submit()
+    f.form.requestSubmit(b && b.type === "submit" && b.form === f.form ? b : undefined)
+    return true
+  }
+  const onKeyDown = (e) => {
+    if (e.target !== field() || e.key !== "Enter" || e.shiftKey || e.altKey) return
+    if (e.isComposing || e.keyCode === 229) return // an input method is composing
+    e.preventDefault()
+    send()
+  }
+  const onInput = (e) => { if (e.target === field()) { grow(); sync() } }
+  const onClick = (e) => {
+    const b = submit()
+    if (b && b.contains(e.target) && b.getAttribute("aria-disabled") === "true") {
+      e.preventDefault()
+      const f = field()
+      if (f) f.focus()
+      return
+    }
+    const chip = e.target.closest("[data-prompt-suggestion]")
+    if (!chip || !root.contains(chip) || chip.disabled) return
+    const f = field()
+    if (!f || f.disabled) return
+    f.value = chip.dataset.promptSuggestion
+    grow()
+    sync()
+    if (chip.dataset.send === "false" || busy() || !send()) {
+      f.dispatchEvent(new Event("input", { bubbles: true }))
+      f.focus()
+      f.setSelectionRange(f.value.length, f.value.length)
+    }
+  }
+  const onSubmit = (e) => {
+    const f = field()
+    if (!f || e.target !== f.form) return
+    const refocus = document.activeElement === f || submit() === document.activeElement
+    // LiveView (and the browser) read the form during this event: clear after
+    setTimeout(() => {
+      if (!f.isConnected) return
+      f.value = ""
+      grow()
+      sync()
+      if (refocus) f.focus()
+    })
+  }
+  const onPaste = (e) => {
+    const input = fileInput()
+    if (e.target !== field() || !input || input.disabled || !e.clipboardData) return
+    const files = [...e.clipboardData.files]
+    if (!files.length) return
+    e.preventDefault()
+    input.dispatchEvent(new CustomEvent("track-uploads", { bubbles: true, detail: { files } }))
+  }
+  root.addEventListener("keydown", onKeyDown)
+  root.addEventListener("input", onInput)
+  root.addEventListener("click", onClick)
+  root.addEventListener("paste", onPaste)
+  document.addEventListener("submit", onSubmit)
+  const drop = root.dataset.dropzone ? initDropzone(root) : null
+  const api = {
+    refresh() { grow(); sync() },
+    destroy() {
+      root.removeEventListener("keydown", onKeyDown)
+      root.removeEventListener("input", onInput)
+      root.removeEventListener("click", onClick)
+      root.removeEventListener("paste", onPaste)
+      document.removeEventListener("submit", onSubmit)
+      if (drop) drop.destroy()
+      delete root.__sdPrompt
+    },
+  }
+  root.__sdPrompt = api
+  grow()
+  sync()
+  return api
+}
+
 // ---- Public API -----------------------------------------------------------
 
 // Switch the active theme without the light↔dark colour fade flickering.
@@ -3534,6 +3963,8 @@ export function initShadcnDaisyui(root, options) {
   root.querySelectorAll("[data-section-nav]").forEach(initSectionNav)
   root.querySelectorAll("[data-dropzone]").forEach((el) => initDropzone(el))
   root.querySelectorAll('[data-slot="code-block"]').forEach((el) => initCodeBlock(el))
+  root.querySelectorAll("[data-slot=message-scroller]").forEach((el) => initMessageScroller(el))
+  root.querySelectorAll("[data-slot=prompt-input]").forEach((el) => initPromptInput(el))
   initContextMenu()
   initDock(root)
   if (options && options.confirm) initConfirmDialog(options.confirm === true ? null : options.confirm)
@@ -3612,6 +4043,19 @@ export const Hooks = {
   // <.code_block>: the copy button
   ShadcnCodeBlock: {
     mounted() { this.api = initCodeBlock(this.el) },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.message_scroller>: opening position, following, anchors, prepends;
+  // updated() re-checks after a patch (the observers catch the rest)
+  ShadcnMessageScroller: {
+    mounted() { this.api = initMessageScroller(this.el) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  // <.prompt_input>: Enter sends, Send/Stop state, auto-grow, paste and drop
+  ShadcnPromptInput: {
+    mounted() { this.api = initPromptInput(this.el) },
+    updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },
 }

@@ -228,7 +228,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
 
   @void ~w(area base br col embed hr img input link meta source track wbr)
 
-  # public for the other rendered pages (Catalog.Overlays, CodeBlockPage)
+  # public for the other rendered pages (Catalog.Overlays, CodeBlockPage, ChatPages)
   @doc false
   def code(rendered) do
     html =

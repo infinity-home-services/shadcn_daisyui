@@ -319,6 +319,97 @@ document.addEventListener("shadcn:data-table", (e) => {
   if (row && row.dataset.href) window.location.assign(row.dataset.href)
 })
 
+// AI chat previews (message scroller "Streaming", prompt input): the
+// dead-view stand-in for a LiveView. A composer preview's form says what it
+// would send. The chat preview's form appends the question (a turn anchor:
+// the scroller moves it near the top) and a reply that grows a few words at
+// a time while the composer is busy (its Stop ends the reply); "Load earlier
+// messages" prepends older rows (the scroller keeps your place). New rows
+// are copies of the rows the component rendered.
+const DEMO_REPLY = "Sure. Riverside Dental's invoice #1034 for $1,512.80 has been overdue since Oct 9. " +
+  "Pat Lee sent a reminder last week, and they usually pay within a few days of one. " +
+  "Summit Outfitters (#1040) is waiting on a purchase order number, so I'd hold off there. " +
+  "Hillcrest Motors asked for a copy of their invoice, which went out yesterday. " +
+  "Want me to draft a second reminder for Riverside Dental?"
+const DEMO_EARLIER = [
+  ["How many orders came in this week?", "14, three more than last week. Most are still open."],
+  ["Which one is the largest?", "#1238 for Willow Creek Farm, $2,410.00."],
+]
+const demoChats = new Map()
+const demoChatBusy = (form, on) => {
+  const root = form.querySelector("[data-slot=prompt-input]")
+  const btn = root.querySelector("[data-slot=prompt-input-submit]")
+  root.toggleAttribute("data-busy", on)
+  btn.type = on ? "button" : "submit"
+  btn.dataset.state = on ? "busy" : "idle"
+  btn.setAttribute("aria-label", on ? "Stop" : "Send")
+  btn.title = on ? "Stop" : "Send"
+  btn.classList.toggle("btn-primary", !on)
+  btn.classList.toggle("btn-secondary", on)
+  btn.querySelector("[class*=hero-]").className = `${on ? "hero-stop-solid" : "hero-arrow-up"} size-4`
+  const log = document.getElementById(form.dataset.demoChat).querySelector("[role=log]")
+  log.setAttribute("aria-busy", String(on))
+  if (root.__sdPrompt) root.__sdPrompt.refresh()
+}
+const demoChatStop = (form) => {
+  const chat = demoChats.get(form.dataset.demoChat)
+  if (chat) clearInterval(chat.timer)
+  demoChatBusy(form, false)
+}
+const demoRow = (template, id, text) => {
+  const row = template.cloneNode(true)
+  row.id = id
+  row.querySelector("[data-slot=bubble-content]").textContent = text
+  return row
+}
+document.addEventListener("submit", (e) => {
+  const prompt = e.target.closest("[data-demo-prompt]")
+  if (prompt) {
+    e.preventDefault()
+    const text = String(new FormData(prompt).get("text") || "").trim()
+    toast("Sent", {description: text || "(attachments only)"})
+    return
+  }
+  const form = e.target.closest("[data-demo-chat]")
+  if (!form) return
+  e.preventDefault()
+  const text = String(new FormData(form).get("text") || "").trim()
+  if (!text) return
+  const scroller = document.getElementById(form.dataset.demoChat)
+  const items = scroller.querySelector("[data-slot=message-scroller-items]")
+  const chat = demoChats.get(scroller.id) || {seq: 0, earlier: 0}
+  demoChats.set(scroller.id, chat)
+  const asked = [...items.querySelectorAll("[data-scroll-anchor=true]")].pop()
+  const answered = [...items.querySelectorAll("[data-scroll-anchor=false]")].pop()
+  const reply = demoRow(answered, `${scroller.id}-new-${++chat.seq}`, "")
+  items.append(demoRow(asked, `${scroller.id}-new-${++chat.seq}`, text), reply)
+  demoChatBusy(form, true)
+  const out = reply.querySelector("[data-slot=bubble-content]")
+  const words = DEMO_REPLY.split(/(?<=\s)/)
+  let at = 0
+  clearInterval(chat.timer)
+  chat.timer = setInterval(() => {
+    out.textContent += words.slice(at, at + 2).join("")
+    at += 2
+    if (at >= words.length) demoChatStop(form)
+  }, 80)
+})
+document.addEventListener("click", (e) => {
+  const stop = e.target.closest("[data-demo-chat] [data-slot=prompt-input-submit][data-state=busy]")
+  if (stop) return demoChatStop(stop.closest("[data-demo-chat]"))
+  const earlier = e.target.closest("[data-demo-chat-earlier]")
+  if (!earlier) return
+  const scroller = document.getElementById(earlier.dataset.demoChatEarlier)
+  const items = scroller.querySelector("[data-slot=message-scroller-items]")
+  const chat = demoChats.get(scroller.id) || {seq: 0, earlier: 0}
+  demoChats.set(scroller.id, chat)
+  const [question, answer] = DEMO_EARLIER[DEMO_EARLIER.length - 1 - chat.earlier]
+  const asked = items.querySelector("[data-scroll-anchor=true]")
+  const answered = items.querySelector("[data-scroll-anchor=false]")
+  items.prepend(demoRow(asked, `${scroller.id}-old-${++chat.seq}`, question), demoRow(answered, `${scroller.id}-old-${++chat.seq}`, answer))
+  if (++chat.earlier >= DEMO_EARLIER.length) earlier.closest("[data-slot=message-scroller-above]").hidden = true
+})
+
 // Copy buttons on code blocks.
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-copy-code]")

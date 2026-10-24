@@ -125,6 +125,7 @@ defmodule ShadcnDaisyuiDemoWeb.LabOrders do
 
   attr(:active, :string, required: true)
   attr(:fill, :boolean, default: false)
+  attr(:wide, :boolean, default: nil, doc: "full width; `fill` by default")
   slot(:inner_block, required: true)
 
   @doc "The lab's app shell."
@@ -133,7 +134,7 @@ defmodule ShadcnDaisyuiDemoWeb.LabOrders do
     <.app_shell
       nav={nav()}
       active={@active}
-      wide={@fill}
+      wide={if is_nil(@wide), do: @fill, else: @wide}
       fill={@fill}
       environment="Lab"
       person={%{name: "Pat Lee", email: "pat@example.test"}}
@@ -177,6 +178,13 @@ defmodule ShadcnDaisyuiDemoWeb.LabOrders do
             short: "Search",
             path: "/lab/command-search",
             icon: "hero-magnifying-glass"
+          },
+          %{
+            id: "chat",
+            label: "Assistant",
+            short: "Assistant",
+            path: "/lab/chat",
+            icon: "hero-sparkles"
           },
           %{
             id: "csp",

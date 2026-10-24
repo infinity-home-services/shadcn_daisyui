@@ -58,7 +58,7 @@ decorates.
 | small surface | 180ms | ease | opacity, transform | popover, tooltip, ⌘K palette |
 | large surface | 300ms | ease | translate, backdrop | sheet, drawer |
 | chip in/out | 150ms | ease-out | scale, opacity, translate (neighbours) | `<.chip_row>` chips |
-| row reveal | 180ms | ease-out | grid-template-rows, opacity | filter chip row, inline alert, accordion |
+| row reveal | 180ms | ease-out | grid-template-rows, opacity | filter chip row, inline alert, accordion, trace detail |
 | theme switch | 0ms | - | - | instant by design |
 
 ## iOS / SwiftUI notes

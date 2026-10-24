@@ -59,10 +59,16 @@ like shadcn/ui. **Every UI decision goes through this package.**
   before/after diffs are `<.code_block>` (`lines` with `:added` / `:removed`
   for a diff, `size="sm"` in a card or chat reply). Never hand-roll a `<pre>`, a
   copy button, line numbers or diff colours.
+- An AI chat page is a `<.message_scroller>` of `<.message>` / `<.bubble>` /
+  `<.marker>` rows, `<.trace>` for the assistant's steps, tool calls and sources,
+  and the `<.prompt_input>` composer (see AI chat page). Never hand-roll a chat
+  scroller (scrollTop code, a "scroll to bottom" button), a step list (a spinner
+  with "Thinking…" lines) or a composer (a textarea with an Enter handler, a
+  Send/Stop swap).
 - Interactive components (combobox, select, date picker, time picker, time field,
   calendar, range calendar, OTP, carousel, resizable, command, context-menu,
   toaster, tab nav, chip row, page header, data table, section nav, dropzone,
-  code block) REQUIRE a
+  code block, message scroller, prompt input) REQUIRE a
   unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
   `hooks: { ...Hooks }`).
@@ -139,6 +145,9 @@ Decision order:
 | `<.table_card>` | a card of rows: `id`, `title`, `description`, `rows`, `row_id`, `row_class`, `grid` (e.g. `grid-cols-[minmax(0,1fr)_auto]`: side by side on phones too); `<:col :let label class align>`, `<:empty>`, `<:actions>`; labels as a header row from `sm`, rows stack on phones, the rightmost column right-aligned |
 | `<.section_nav>` | `id` (hook), `sections=[{id, label} \| {id, label, group}]` (each an element with that id); `variant="side"` (default; give it the cards as its inner block: a list beside them from `lg`, pinned under the page header, "Filter sections" over 10) and `variant="select"` in `<.page_header>`'s `<:below>` (below `lg`, 44px options); marks the section in view, choosing one scrolls there |
 | `<.time_field>` | `id` (hook), `field`, `label`, `minute_step` (15): a labelled full-width `<.time_picker>` ("Not set"), errors under it once used |
+| `<.message_scroller>` | `id` (hook), `items` (a list keyed by `item.id`, or a stream), `item_id`, `anchor={fn item -> bool end}` (turn anchors: the reader's own messages), `busy` (`aria-busy` on the log while a reply streams), `default_position="end\|start\|last-anchor"`, `follow` (true), `peek` (64), `label` ("Messages"), `button="end\|start\|both\|none"`; the inner block renders one row (`:let={item}`, `{dom_id, item}` for a stream), `<:above>` / `<:below>` rows inside the log (load earlier, a typing marker); fills its parent; follows a streaming reply only at the live edge, a new anchor moves near the top, prepended rows keep the reader's place; `shadcn:scroll-to` (`detail: %{to: "end" \| "start" \| dom_id}`) jumps (see AI chat page) |
+| `<.trace>` / `<.trace_line>` | the assistant's work, one row each: `<:line status="running\|pending\|error" icon="hero-…" description href\|navigate\|patch target>` (done without a status; the title is the inner block, one truncated line; description never truncates); a row with detail is `<.trace_line id status open>` in the inner block with `<:icon>`, `<:description>`, `<:detail>` (a disclosure button, `id` required; rows nest); status is colour and motion only - word the title ("Running mix test", "Failed to send") |
+| `<.prompt_input>` | `id` (hook), `field` (or `name`/`value`), `placeholder`, `label` ("Message"), `busy` (the button is Stop, Enter waits), `on_stop` ("stop", or a JS), `target`, `upload` + `on_cancel` + `error_text` (attach button, `<.attachment>` tiles above the text, files pasted or dropped in), `disabled`, `<:suggestion value send={false} variant>` (`<.bubble as="button">` chips that fill and send, or your own `phx-click`), `<:tools>`; Enter sends, Shift+Enter adds a line (never while an IME composes); grows to 12rem; clears once sent - reset your form too |
 | `<.combobox>` / `<.select>` | `id` required (hook), `<:option value="..." count={n}>` slots; form-bind with `field={@form[:x]}` (or `name`/`value`); `multiple` = checkbox rows + Clear, value is a list, posts `x[]` (cleared posts `x=""`); `full_width` in sheets/compact forms; a single picker's `value=""` option is the choice for a blank value ("Default order", "Any") |
 | `<.combobox create>` | lets people add a value the list lacks (an insurer, a tag): text no option label matches exactly (case/spaces ignored) shows a last `Add "…"` row (`create_label="Add \"%{value}\""`, `create_max={80}`); choosing it selects + posts the trimmed text (`multiple`: ticks it, stays open); `on_create="event"` also pushes `%{"id" => id, "value" => text}` - save the option there and re-render the slots. Never hand-roll an "Other…" text input next to a picker |
 | `<.input_otp>` | `id` (hook), `length`, `group` |
@@ -238,6 +247,113 @@ def handle_event("dt:select", %{"id" => id} = p, socket),  # ticks: on the page,
   edit form with `<.section_nav>` around its cards. Cancel with unsaved changes:
   `push_show_modal(socket, "discard")`.
 
+### AI chat page
+
+An assistant's page: `<.page_header>`, a `<.message_scroller>` over the
+conversation, then the `<.prompt_input>` composer, in `<.app_shell fill>` (the
+scroller takes the height between the header and the composer; from a record
+page, put the same scroller and composer in a `<.sheet>`).
+
+```heex
+<.app_shell nav={@nav} active="assistant" fill>
+  <.page_header>Assistant</.page_header>
+  <.message_scroller
+    id="chat"
+    items={@streams.messages}
+    anchor={fn {_id, m} -> m.role == :user end}
+    busy={@reply != nil}
+    default_position="last-anchor"
+    :let={{_id, m}}
+  >
+    <:above :if={@older != []}>
+      <.button variant="ghost" size="sm" phx-click="load-earlier">Load earlier messages</.button>
+    </:above>
+    <.message :if={m.role == :user} align="end">
+      <.attachment :for={f <- m.files} size="sm">…</.attachment>
+      <.bubble>{m.text}</.bubble>
+    </.message>
+    <.message :if={m.role == :assistant}>
+      <:header>Assistant</:header>
+      <.trace :if={m.steps != []}>
+        <:line :for={s <- m.steps} status={s.status} icon={if s.status == "running", do: "hero-sparkles", else: "hero-check"}>
+          {s.text}
+        </:line>
+      </.trace>
+      <.bubble :if={m.text != ""} variant="ghost">{m.text}</.bubble>
+      <:footer :if={m.sources != []}>From the customer file and the conversation.</:footer>
+    </.message>
+  </.message_scroller>
+  <.form for={@form} id="chat-form" phx-change="validate" phx-submit="send">
+    <.prompt_input id="composer" field={@form[:text]} busy={@reply != nil} on_stop="stop"
+      upload={@uploads.files} on_cancel="cancel-upload">
+      <:suggestion :if={@new_chat?} value="What's overdue?">Overdue orders</:suggestion>
+    </.prompt_input>
+  </.form>
+</.app_shell>
+```
+
+Streaming a reply from LiveView:
+
+```elixir
+def handle_event("send", %{"prompt" => %{"text" => text}}, socket) do
+  if socket.assigns.reply, do: {:noreply, socket}, else: {:noreply, ask(socket, String.trim(text))}
+end
+
+defp ask(socket, text) do
+  question = %{id: Ecto.UUID.generate(), role: :user, text: text, files: consume_files(socket)}
+  reply = %{id: Ecto.UUID.generate(), role: :assistant, text: "", steps: [], sources: []}
+  lv = self()
+
+  socket
+  |> stream_insert(:messages, question)   # an anchor: the scroller moves it to the top
+  |> stream_insert(:messages, reply)
+  |> assign(reply: reply, form: to_form(%{"text" => ""}, as: :prompt))
+  |> start_async(:reply, fn ->
+    Assistant.ask(text, fn event -> send(lv, {:reply, reply.id, event}) end)
+  end)
+end
+
+# a step started or done, a chunk of text: update the reply in place
+def handle_info({:reply, id, event}, %{assigns: %{reply: %{id: id} = reply}} = socket) do
+  reply = apply_event(reply, event)
+  {:noreply, socket |> assign(reply: reply) |> stream_insert(:messages, reply)}
+end
+
+def handle_info({:reply, _id, _event}, socket), do: {:noreply, socket}  # arrived after Stop
+
+def handle_async(:reply, {:ok, sources}, socket),
+  do: {:noreply, finish(socket, %{socket.assigns.reply | sources: sources})}
+
+def handle_event("stop", _params, socket),
+  do: {:noreply, socket |> cancel_async(:reply) |> finish(socket.assigns.reply)}
+
+defp finish(socket, reply), do: socket |> assign(reply: nil) |> stream_insert(:messages, reply)
+```
+
+- Rows: the reader's messages are `align="end"` default bubbles and the turn
+  anchors; the assistant's are `variant="ghost"` (unframed text) under a
+  `<:header>` naming it. Status inside the conversation ("Thinking…" before the
+  first step, "Stopped") is a `<.marker status>` or the message's footer.
+- Steps: while it works, a `<.trace>` of the real work (a sparkle on the
+  running step, a check on the done ones) - never a bare spinner or filler
+  steps. When it's done, fold them into one `<.trace_line>` ("Worked through 3
+  steps", the seconds as its description) with the steps as its `<:detail>`,
+  and the sources into another (link rows). Tool calls are `<.trace_line>`s
+  with their input and output as detail. Say where an answer came from under
+  it, in the message footer ("From the customer file and the conversation.").
+- Streaming: `stream_insert` the question and an empty reply, then the reply
+  again as each step or chunk arrives (batch tokens: one update every 50-100ms,
+  not one per token). `busy` - `aria-busy` on the log, Stop in the composer -
+  holds from the question until the reply is done or stopped. Stop is
+  `cancel_async/2`; drop the chunks already in the mailbox after it.
+- History: a saved conversation opens at its last question
+  (`default_position="last-anchor"`); older messages load above with
+  `stream(socket, :messages, Enum.reverse(page), at: 0)` (the reader keeps
+  their place); a new conversation is `stream(socket, :messages, [], reset: true)`.
+- Composer: reset the form in the submit handler and ignore a send while busy;
+  files consumed on send show on the question as `<.attachment>`s. Offer
+  suggestions while they help (a new conversation), not under every reply.
+
 ### Form components (`ShadcnDaisyui.CoreComponents`)
 
 Always bind form controls to changesets via `Phoenix.HTML.FormField`:
@@ -287,7 +403,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (96 components) in the docs site (`demo/`) or
+Browse the full gallery (99 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens

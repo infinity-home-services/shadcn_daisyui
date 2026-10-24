@@ -16,6 +16,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   fails loudly (named by slug) rather than rendering a broken page.
   """
 
+  alias ShadcnDaisyuiDemoWeb.Catalog.ChatPages
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
   alias ShadcnDaisyuiDemoWeb.Catalog.CodeBlockPage
@@ -61,7 +62,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     },
     %{
       title: "Conversation",
-      slugs: ~w(message bubble marker chat)
+      slugs: ~w(message bubble marker chat message-scroller trace prompt-input)
     },
     %{
       title: "Layout",
@@ -111,7 +112,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
       all() ++
         Composition.all() ++
         Pickers.all() ++
-        Overflow.all() ++ DataPages.all() ++ Overlays.all() ++ CodeBlockPage.all()
+        Overflow.all() ++
+        DataPages.all() ++ Overlays.all() ++ CodeBlockPage.all() ++ ChatPages.all()
 
     for c <- pages, into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
