@@ -290,6 +290,13 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
     hook.destroyed()
     r.destroyed = !hookEl.__sdScroller
 
+    // ---- initShadcnDaisyui() opened "follow" on the dead render; LiveView's
+    // join patch puts data-pending-scroll back before the hook mounts ----
+    $("follow").setAttribute("data-pending-scroll", "")
+    vp("follow").setAttribute("data-pending-scroll", "")
+    Object.assign(Object.create(Hooks.ShadcnMessageScroller), { el: $("follow") }).mounted()
+    r.joined = [$("follow").hasAttribute("data-pending-scroll"), vp("follow").hasAttribute("data-pending-scroll")]
+
     window.__result = JSON.stringify({ errors, r })
     </script>
     </body>
@@ -423,6 +430,11 @@ defmodule ShadcnDaisyui.JS.MessageScrollerBrowserTest do
   test "a scroller in a closed sheet opens once it is shown", %{r: r} do
     assert r["hiddenBefore"] == %{"pending" => true, "top" => 0}
     assert r["hiddenAfter"] == %{"pending" => false, "gap" => 0, "scrolled" => true}
+  end
+
+  test "set up on the dead render, it's shown again when the hook mounts after LiveView joins",
+       %{r: r} do
+    assert r["joined"] == [false, false]
   end
 
   test "through the LiveView hook: rows from a patch, then destroyed", %{r: r} do

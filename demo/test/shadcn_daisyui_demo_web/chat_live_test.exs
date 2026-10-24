@@ -233,9 +233,18 @@ defmodule ShadcnDaisyuiDemoWeb.ChatLiveTest do
       assert html =~ ~s(data-slot="trace-collapsible-trigger")
       assert html =~ "symbolEffect"
 
-      for title <- ["Steps", "Tool calls", "Sources", "Plan", "Whole turn"] do
+      for title <- ["Steps", "Tool calls", "Tool output", "Sources", "Plan", "Whole turn"] do
         assert html =~ ~r{>\s*#{title}\s*</h[23]>}
       end
+
+      # a step's tool output is a small code block in its detail
+      assert html =~
+               ~r{id="call-api-output"[^>]*data-size="sm"|data-size="sm"[^>]*id="call-api-output"}
+
+      assert html =~ "GET /v2/invoices?status=overdue"
+
+      assert html =~
+               ~r{id="call-mail-output"[^>]*data-variant="destructive"|data-variant="destructive"[^>]*id="call-mail-output"}
 
       # the code tab is plain HTML: no LiveView wiring
       refute html =~ "ignore_attrs"

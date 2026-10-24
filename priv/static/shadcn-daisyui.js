@@ -3667,6 +3667,9 @@ function initMessageScroller(root) {
         }
       }
     }
+    // a LiveView join patch can put data-pending-scroll back on a scroller
+    // initShadcnDaisyui() already opened on the dead render
+    if (opened) reveal()
     seen = new WeakSet(list)
     seenAny = list.length > 0
     lastRow = list[list.length - 1] || null
@@ -4046,15 +4049,16 @@ export const Hooks = {
     destroyed() { this.api && this.api.destroy() },
   },
   // <.message_scroller>: opening position, following, anchors, prepends;
-  // updated() re-checks after a patch (the observers catch the rest)
+  // updated() re-checks after a patch (the observers catch the rest), and so
+  // does mounted() (initShadcnDaisyui() may have set it up on the dead render)
   ShadcnMessageScroller: {
-    mounted() { this.api = initMessageScroller(this.el) },
+    mounted() { this.api = initMessageScroller(this.el); this.api && this.api.refresh() },
     updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },
   // <.prompt_input>: Enter sends, Send/Stop state, auto-grow, paste and drop
   ShadcnPromptInput: {
-    mounted() { this.api = initPromptInput(this.el) },
+    mounted() { this.api = initPromptInput(this.el); this.api && this.api.refresh() },
     updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },

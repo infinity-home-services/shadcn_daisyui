@@ -17,6 +17,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChatPages do
   use Phoenix.Component
 
   import ShadcnDaisyui.Components.Conversation
+  import ShadcnDaisyui.Components.CodeBlock, only: [code_block: 1]
   import ShadcnDaisyui.CoreComponents, only: [button: 1]
 
   alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
@@ -25,6 +26,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChatPages do
     __MODULE__,
     DataPages,
     ShadcnDaisyui.Components.Conversation,
+    ShadcnDaisyui.Components.CodeBlock,
     ShadcnDaisyui.Components.Display,
     ShadcnDaisyui.FormComponents,
     ShadcnDaisyui.CoreComponents
@@ -539,6 +541,31 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChatPages do
           code: trace_tools_code()
         },
         %{
+          title: "Tool output",
+          heex: ~S"""
+          <.trace>
+            <.trace_line id="call-api" open>
+              <:icon><.icon name="hero-command-line" /></:icon>
+              Called the accounting API
+              <:description>0.8s</:description>
+              <:detail>
+                <.code_block id="call-api-output" size="sm" title="GET /v2/invoices?status=overdue"
+                  code={@response} content_class="max-h-48" />
+              </:detail>
+            </.trace_line>
+            <.trace_line id="call-mail" status="error">
+              <:icon><.icon name="hero-envelope" /></:icon>
+              Failed to send the reminder
+              <:detail>
+                <.code_block id="call-mail-output" size="sm" variant="destructive" title="SMTP 550"
+                  code={@error} wrap />
+              </:detail>
+            </.trace_line>
+          </.trace>
+          """,
+          code: trace_output_code()
+        },
+        %{
           title: "Sources",
           heex: ~S"""
           <.message>
@@ -638,6 +665,59 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChatPages do
           <:icon><span class="hero-envelope"></span></:icon>
           Failed to send the reminder
           <:detail>The mail server refused the message: the address bounced last week.</:detail>
+        </.trace_line>
+      </.trace>
+    </div>
+    """)
+  end
+
+  @api_response """
+  {
+    "invoices": [
+      { "number": 1034, "customer": "Riverside Dental", "due": "2026-10-09", "total": "1512.80" },
+      { "number": 1040, "customer": "Summit Outfitters", "due": "2026-10-14", "total": "2075.00" }
+    ],
+    "count": 2
+  }
+  """
+
+  defp trace_output_code do
+    assigns = %{
+      response: @api_response,
+      error:
+        "550 5.1.1 <billing@riverside-dental.example>: Recipient address rejected: mailbox unavailable (bounced Oct 17)"
+    }
+
+    DataPages.code(~H"""
+    <div class="w-full max-w-md">
+      <.trace>
+        <.trace_line id="call-api" open>
+          <:icon><span class="hero-command-line"></span></:icon>
+          Called the accounting API
+          <:description>0.8s</:description>
+          <:detail>
+            <.code_block
+              id="call-api-output"
+              size="sm"
+              title="GET /v2/invoices?status=overdue"
+              code={@response}
+              content_class="max-h-48"
+            />
+          </:detail>
+        </.trace_line>
+        <.trace_line id="call-mail" status="error">
+          <:icon><span class="hero-envelope"></span></:icon>
+          Failed to send the reminder
+          <:detail>
+            <.code_block
+              id="call-mail-output"
+              size="sm"
+              variant="destructive"
+              title="SMTP 550"
+              code={@error}
+              wrap
+            />
+          </:detail>
         </.trace_line>
       </.trace>
     </div>

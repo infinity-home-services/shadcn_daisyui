@@ -159,7 +159,8 @@ opt-in; existing markup renders as before apart from the fix below.
   hand-roll a chat scroller, step list or composer" rule, table rows for the
   three, and the two hooks in the list of components that need an `id`.
 - **Docs**: Message Scroller (with a streaming preview), Trace (steps, tool
-  calls, sources, plan, a whole turn) and Prompt Input (suggestions, busy,
+  calls, tool output in a `size="sm"` `<.code_block>`, sources, plan, a whole
+  turn) and Prompt Input (suggestions, busy,
   attachments, disabled) pages in the Conversation group, each with specs,
   accessibility and SwiftUI guidance, and `/lab/chat` (dev server): a made-up
   assistant that answers from the lab's orders, streaming its steps and text,
