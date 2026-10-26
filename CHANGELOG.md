@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.2] - 2026-10-26
+
+One layout fix, no markup changes: a `<.table_card>`'s rows are one height
+whether or not they hold a ⋯ menu, a small button or a badge, and the
+`<:empty>` row matches them, so a card with no rows lines up with a card
+beside it that has some.
+
 ### Fixed
 
 - **`<.table_card>` rows weren't one height.** A row with a ⋯
