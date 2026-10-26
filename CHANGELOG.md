@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`<.table_card>` rows weren't one height.** A row with a ⋯
+  `<.dropdown_menu>` was 60px against a row of text's 45px (the trigger's
+  36px box set the line), a row with a badge 48px, and the `<:empty>` row 69px
+  (its own 24px padding), so a card with no rows didn't line up with a card
+  beside it that had one. The empty row now has a row's padding and line, and
+  where a row's cells sit side by side (`grid`, or stacked from 40rem) a small
+  control in a cell - a button up to the default size, the ⋯ menu's trigger,
+  a badge - sits in the row's padding: centred, at its full size, its focus
+  ring clear of the row lines. On touch screens each button's hit area is
+  44px and still fits in the row, so rows keep one height there too. Taller
+  content (two lines, an avatar) still makes its row taller. No markup
+  change.
+
 ## [0.24.1] - 2026-10-26
 
 Two layout fixes, no markup changes: a dialog that sits straight inside an

@@ -1245,6 +1245,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
     %{id: 3, name: "Robin Park", email: "robin@riverside.test", role: "Owner"}
   ]
 
+  @crews [
+    %{
+      id: "north",
+      name: "North crew",
+      members: [
+        %{id: 1, name: "Pat Lee", role: "Lead"},
+        %{id: 2, name: "Sam Ortiz", role: "Installer"},
+        %{id: 3, name: "Robin Park", role: "Installer"}
+      ]
+    },
+    %{id: "south", name: "South crew", members: []}
+  ]
+
   defp table_card do
     %{
       slug: "table-card",
@@ -1279,7 +1292,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
         %{name: ":empty", type: "slot (the only row when there are none)", default: "-"}
       ],
       notes:
-        "The rightmost column is right-aligned unless align=\"left\" (on phones only with grid, since stacked cells read top to bottom). :empty renders as the only row when rows is empty (\"Nothing has happened yet.\"). row_class styles a row (a muted cancelled line). Row actions are a ⋯ <.dropdown_menu align=\"end\"> in the last column: the card doesn't clip, so the menu opens in full over its edge, on the last row too (the rows at the corners round with the card instead). The record page on the dev server (`/lab/data-table/:id`) uses it for Items and Activity.",
+        "The rightmost column is right-aligned unless align=\"left\" (on phones only with grid, since stacked cells read top to bottom). :empty renders as the only row when rows is empty (\"Nothing has happened yet.\"). row_class styles a row (a muted cancelled line). Row actions are a ⋯ <.dropdown_menu align=\"end\"> in the last column: the card doesn't clip, so the menu opens in full over its edge, on the last row too (the rows at the corners round with the card instead). Rows are one height - a row of text's - whether or not they hold a ⋯ menu, a small button or a badge (those sit in the row's padding), and the :empty row matches them, so cards side by side line up; taller content (two lines) still makes its row taller. The record page on the dev server (`/lab/data-table/:id`) uses it for Items and Activity.",
       specs: %{
         anatomy: [
           %{part: "Header", description: "card-title, muted description, :actions on the right."},
@@ -1412,6 +1425,45 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
           </.table_card>
           """,
           code: table_card_contacts_code()
+        },
+        %{
+          title: "Side by side",
+          heex: ~S"""
+          <div class="grid items-start gap-4 sm:grid-cols-2">
+            <.table_card
+              :for={crew <- @crews}
+              id={"crew-#{crew.id}"}
+              title={crew.name}
+              rows={crew.members}
+              row_id={&"crew-#{crew.id}-#{&1.id}"}
+              grid="grid-cols-[minmax(0,1fr)_5rem_2rem]"
+            >
+              <:col :let={m} label="Name">{m.name}</:col>
+              <:col :let={m} label="Role">
+                <span :if={m.role == "Lead"} class="badge badge-secondary">Lead</span>
+                <span :if={m.role != "Lead"}>{m.role}</span>
+              </:col>
+              <:col :let={m}>
+                <.dropdown_menu
+                  :if={m.role != "Lead"}
+                  id={"crew-#{crew.id}-#{m.id}-menu"}
+                  trigger_class="btn btn-ghost btn-square btn-sm"
+                  chevron={false}
+                  aria-label={"Actions for #{m.name}"}
+                  align="end"
+                  close_on_select
+                >
+                  <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+                  <:item phx-click="make_lead" phx-value-id={m.id}>Make lead</:item>
+                  <:item phx-click="move_member" phx-value-id={m.id}>Move to another crew</:item>
+                  <:item phx-click="remove_member" phx-value-id={m.id} variant="destructive">Remove</:item>
+                </.dropdown_menu>
+              </:col>
+              <:empty>No members yet.</:empty>
+            </.table_card>
+          </div>
+          """,
+          code: table_card_crews_code()
         }
       ]
     }
@@ -1494,6 +1546,46 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
         </.dropdown_menu>
       </:col>
     </.table_card>
+    """)
+  end
+
+  defp table_card_crews_code do
+    assigns = %{crews: @crews}
+
+    code(~H"""
+    <div class="grid w-full max-w-2xl items-start gap-4 sm:grid-cols-2">
+      <.table_card
+        :for={crew <- @crews}
+        id={"crew-#{crew.id}"}
+        title={crew.name}
+        rows={crew.members}
+        row_id={&"crew-#{crew.id}-#{&1.id}"}
+        grid="grid-cols-[minmax(0,1fr)_5rem_2rem]"
+      >
+        <:col :let={m} label="Name">{m.name}</:col>
+        <:col :let={m} label="Role">
+          <span :if={m.role == "Lead"} class="badge badge-secondary">Lead</span>
+          <span :if={m.role != "Lead"}>{m.role}</span>
+        </:col>
+        <:col :let={m}>
+          <.dropdown_menu
+            :if={m.role != "Lead"}
+            id={"crew-#{crew.id}-#{m.id}-menu"}
+            trigger_class="btn btn-ghost btn-square btn-sm"
+            chevron={false}
+            aria-label={"Actions for #{m.name}"}
+            align="end"
+            close_on_select
+          >
+            <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+            <:item>Make lead</:item>
+            <:item>Move to another crew</:item>
+            <:item variant="destructive">Remove</:item>
+          </.dropdown_menu>
+        </:col>
+        <:empty>No members yet.</:empty>
+      </.table_card>
+    </div>
     """)
   end
 

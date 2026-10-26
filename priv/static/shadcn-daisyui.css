@@ -3298,6 +3298,7 @@
   }
   .table-card-heading { display: flex; min-width: 0; flex-direction: column; gap: 0.375rem; }
   .table-card-actions { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
+  .table-card { --table-card-line: 1.3125rem; }   /* a row's line: 14px text at line-height 1.5 */
   .table-card-row {
     display: grid;
     align-items: center;
@@ -3305,16 +3306,48 @@
     padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.875rem;
+    line-height: 1.5;
   }
   :where(.table-card-row) { grid-template-columns: minmax(0, 1fr); }
   .table-card [role="rowgroup"]:last-child > .table-card-row:last-child { border-bottom: 0; }
   .table-card-head { display: none; padding-block: 0.5rem; font-weight: 500; color: var(--muted-foreground); }
   .table-card-cell { min-width: 0; overflow-wrap: anywhere; }
   .table-card[data-layout="grid"] .table-card-cell[data-align="right"] { text-align: end; }
-  .table-card-empty { padding: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
+  /* the empty row is a row: same padding and line, so a card with none is as
+     tall as a card with one */
+  .table-card-empty { padding: 0.75rem 1.5rem; text-align: center; font-size: 0.875rem; line-height: 1.5; color: var(--muted-foreground); }
+  /* One height for every row: a row of text's. Where a row's cells sit side
+     by side (grid, or stack from 40rem), a small control in a cell - a
+     button up to the default size, the ⋯ menu's trigger, a badge - sits in
+     the row's padding: it lines up with the top of the line and a negative
+     block margin gives back what it adds over the line, so it stays centred
+     and keeps its full size. A 36px button ends 4.5px from the row lines, so
+     its 3px focus ring never touches them. Taller content (two lines, an
+     avatar) still makes its row taller. --table-card-control is the
+     control's height: 2.25rem for a button up to the default size (.btn's
+     min-height holds btn-sm and btn-xs there too); a badge's line plus its
+     padding and border. */
+  .table-card-cell .btn { --table-card-control: 2.25rem; }
+  .table-card-cell .badge { --table-card-control: calc(1lh + 0.25rem + 2px); }
+  .table-card[data-layout="grid"] :is(.table-card-cell, .table-card-cell > .flex) > .dropdown { vertical-align: top; }
+  .table-card[data-layout="grid"] :is(.table-card-cell, .table-card-cell > .flex, .table-card-cell .dropdown) > :is(.btn:not(.btn-lg, .btn-xl), .badge) {
+    vertical-align: top;
+    margin-block: calc((var(--table-card-line) - var(--table-card-control)) / 2);
+  }
+  /* touch: a control's hit area is 44px (an invisible ::after round it), and
+     still fits in the row's padding, so rows keep one height */
+  @media (pointer: coarse) {
+    .table-card-cell .btn { position: relative; }
+    .table-card-cell .btn::after { content: ""; position: absolute; inset: min(0px, calc((100% - 2.75rem) / 2)); }
+  }
   @media (width >= 40rem) {
     .table-card-head { display: grid; }
     .table-card[data-layout="stack"] .table-card-cell[data-align="right"] { text-align: end; }
+    .table-card[data-layout="stack"] :is(.table-card-cell, .table-card-cell > .flex) > .dropdown { vertical-align: top; }
+    .table-card[data-layout="stack"] :is(.table-card-cell, .table-card-cell > .flex, .table-card-cell .dropdown) > :is(.btn:not(.btn-lg, .btn-xl), .badge) {
+      vertical-align: top;
+      margin-block: calc((var(--table-card-line) - var(--table-card-control)) / 2);
+    }
     :where(.table-card-row[data-cols="2"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     :where(.table-card-row[data-cols="3"]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     :where(.table-card-row[data-cols="4"]) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
