@@ -171,7 +171,9 @@ menu already has one.
 - A signed-in app renders `<.app_shell>` in its `Layouts.app/1` (the signed-out
   pages keep a plain centered column). Wide screens (from 48rem): a 16rem sidebar
   that collapses to a 3rem icon rail (`data-sidebar` on `<html>`, Cmd/Ctrl+B, the
-  grab strip and the "Collapse sidebar" row; remembered). Phones: a pinned top
+  grab strip and the "Collapse sidebar" row; remembered). Its navigation keeps
+  its scroll position from page to page and shows the active item - never save
+  or restore the sidebar's scroll yourself. Phones: a pinned top
   row (`<:phone_header>` + search), a bottom dock of four destinations plus More,
   and the More sheet (everything, the footer items, the account). Never a
   hamburger.
@@ -487,7 +489,8 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
   `@custom-variant dark (…)` line.
 - `app.js` keeps the `Hooks` import and spreads them into the LiveSocket. The
   shell's behaviour (`shadcn:toggle-sidebar`, `shadcn:show-dialog`, Cmd/Ctrl+B,
-  closing dialogs on navigation) comes with that import - don't re-add an app
+  closing dialogs on navigation, keeping the sidebar's scroll position) comes
+  with that import - don't re-add an app
   copy of it or app-specific events for it. It also calls `initConfirmDialog()`
   (styled `data-confirm`); add the call if it's missing, never remove it.
 - The root layout keeps its pre-paint `<script nonce={assigns[:csp_nonce]}>` in

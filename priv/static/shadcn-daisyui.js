@@ -109,13 +109,52 @@ if (typeof window !== "undefined" && typeof MutationObserver !== "undefined" && 
 // LiveView starts navigating to another page (a link in the More sheet or the
 // search) - not on its other page-loading events (a reconnect, a patch).
 // Window listeners only: CSP-safe, dead views and LiveView alike.
+//
+// The sidebar's navigation (#main-nav) keeps its scroll position from page to
+// page. A LiveView navigation (navigate, push_navigate, back/forward) replaces
+// the whole shell, and the new nav would start at the top: each nav remembers
+// its scrollTop as it scrolls (and in sessionStorage "shadcn:sidebar-scroll",
+// for a full page load in the same tab), and a new one gets it back, found by
+// a MutationObserver - LiveView swaps and patches the page in one task, so
+// that runs before the new nav's first paint. Then, if the active item
+// ([aria-current="page"]) is out of view, it scrolls just enough to show it.
+// Instantly, whatever the CSS's scroll-behavior. The rail doesn't scroll (its
+// tooltips would be clipped), so expanding it restores the position the same
+// way; on phones the sidebar isn't shown and setting it does nothing.
 const SIDEBAR_KEY = "shadcn:sidebar"
+const NAV_SCROLL_KEY = "shadcn:sidebar-scroll"
 const FIELD = "input, textarea, select, [contenteditable]"
+let navScroll = null
 function toggleSidebar() {
   const root = document.documentElement
   const next = root.dataset.sidebar === "collapsed" ? "open" : "collapsed"
   root.dataset.sidebar = next
   try { localStorage.setItem(SIDEBAR_KEY, next) } catch (_e) { /* private mode: not remembered */ }
+  const nav = document.getElementById("main-nav")
+  if (next === "open" && nav && nav.__sdNavScroll) restoreNavScroll(nav)
+}
+function keepNavScroll(nav) {
+  nav.__sdNavScroll = true
+  nav.addEventListener("scroll", () => {
+    navScroll = nav.scrollTop
+    try { sessionStorage.setItem(NAV_SCROLL_KEY, String(navScroll)) } catch (_e) { /* private mode */ }
+  }, { passive: true })
+  if (navScroll === null) {
+    try { navScroll = Number(sessionStorage.getItem(NAV_SCROLL_KEY)) || 0 } catch (_e) { navScroll = 0 }
+  }
+  restoreNavScroll(nav)
+}
+function restoreNavScroll(nav) {
+  nav.scrollTo({ top: navScroll, behavior: "instant" })
+  const item = nav.querySelector('[aria-current="page"]')
+  if (!item) return
+  // shown whole, as far from the edge as the nav's padding (where the first
+  // and last items rest)
+  const pad = parseFloat(getComputedStyle(nav).paddingTop) || 0
+  const n = nav.getBoundingClientRect()
+  const r = item.getBoundingClientRect()
+  if (r.top < n.top) nav.scrollBy({ top: r.top - n.top - pad, behavior: "instant" })
+  else if (r.bottom > n.bottom) nav.scrollBy({ top: r.bottom - n.bottom + pad, behavior: "instant" })
 }
 if (typeof window !== "undefined" && !window.__shadcnShell) {
   window.__shadcnShell = true
@@ -138,6 +177,17 @@ if (typeof window !== "undefined" && !window.__shadcnShell) {
     if (kind && kind !== "redirect") return
     if (hasShell()) document.querySelectorAll("dialog[open]").forEach(serverClose)
   })
+  // the nav on the page as it loads, then each new one
+  const newNav = () => {
+    const nav = document.getElementById("main-nav")
+    if (nav && !nav.__sdNavScroll && nav.matches(".app-shell-nav")) keepNavScroll(nav)
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", newNav)
+  else newNav()
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(() => { if (document.readyState !== "loading") newNav() })
+      .observe(document.documentElement, { childList: true, subtree: true })
+  }
 }
 
 // <.sticky_top> (and <.page_header>): data-stuck once its scroller has scrolled

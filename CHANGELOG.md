@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `<.app_shell>` sidebar lost its scroll position on every page
+  change.** A LiveView navigation (`<.link navigate>`, `push_navigate`,
+  back/forward) replaces the whole shell, so the sidebar's navigation started
+  at the top again: someone who scrolled down to a group near the bottom lost
+  their place with each click. The navigation now keeps its position from
+  page to page, in the expanded sidebar and after the rail expands again
+  (Cmd/Ctrl+B, `shadcn:toggle-sidebar`). It's back before the new page
+  paints, instantly (no smooth scroll), and if the new page's active item is
+  out of view it scrolls just enough to show it. A full page load in the same
+  tab (a dead view, a reload, a link to another `live_session`) keeps it too,
+  through sessionStorage (`shadcn:sidebar-scroll`). It ships in
+  `shadcn-daisyui.js`: no markup or app changes. Phones are unchanged.
+
 ## [0.24.2] - 2026-10-26
 
 One layout fix, no markup changes: a `<.table_card>`'s rows are one height

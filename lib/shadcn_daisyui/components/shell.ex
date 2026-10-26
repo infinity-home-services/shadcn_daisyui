@@ -13,7 +13,12 @@ defmodule ShadcnDaisyui.Components.Shell do
   `shadcn:toggle-sidebar` event and Cmd/Ctrl+B collapse the sidebar and
   remember it in localStorage (`shadcn:sidebar`), and the root layout's
   pre-paint script sets `data-sidebar` on `<html>` before first paint (see
-  `mix shadcn_daisyui.install`).
+  `mix shadcn_daisyui.install`). The sidebar's navigation (`#main-nav`) keeps
+  its scroll position from page to page - across a LiveView navigation, which
+  replaces the whole shell, and a full page load in the same tab
+  (sessionStorage `shadcn:sidebar-scroll`) - restored before the new page
+  paints, then scrolled just enough to show the active item if it's out of
+  view.
 
   Imported by `use ShadcnDaisyui.Components`.
   """
@@ -78,8 +83,8 @@ defmodule ShadcnDaisyui.Components.Shell do
   "Collapse sidebar" row and Cmd/Ctrl+B toggle it). From the top: the
   `:header` slot (use `app_shell_heading/1`, or the `app-shell-label` class on
   what the rail should hide), the search row when `search` names a command
-  dialog, the groups (small muted labels, the active item `aria-current`),
-  then the footer: `:footer_item`s, "Collapse sidebar", the `environment`
+  dialog, the groups (small muted labels, the active item `aria-current`;
+  they scroll, and keep their position from page to page), then the footer: `:footer_item`s, "Collapse sidebar", the `environment`
   badge and the account menu (opens right of the sidebar, bottom-aligned).
 
   **Phones**: a top row pinned while the page scrolls (`:phone_header`, then
