@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-10-26
+
+Two layout fixes, no markup changes: a dialog that sits straight inside an
+`<.app_shell>` page opens over the whole window at its own size, and
+`<.table_card>` no longer cuts off the menus and pickers inside it. Apps
+that wrapped their dialogs in a `contents` div can drop the wrapper.
+
 ### Fixed
 
 - **A dialog straight inside an `<.app_shell>` page took the page's reading
