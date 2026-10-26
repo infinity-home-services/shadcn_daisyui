@@ -21,6 +21,25 @@ defmodule ShadcnDaisyuiDemoWeb.ComponentPagesTest do
     end
   end
 
+  test "the table card's row actions example has a ⋯ menu on every row, the last too",
+       %{conn: conn} do
+    html = conn |> get(~p"/docs/components/table-card") |> html_response(200)
+    doc = LazyHTML.from_document(html)
+
+    rows = LazyHTML.query(doc, ~s(#contacts [role="rowgroup"]:last-child > [role="row"]))
+    menus = LazyHTML.query(rows, ".dropdown.dropdown-end")
+
+    assert LazyHTML.attribute(rows, "id") == ["contact-1", "contact-2", "contact-3"]
+
+    assert LazyHTML.attribute(menus, "id") == [
+             "contact-1-menu",
+             "contact-2-menu",
+             "contact-3-menu"
+           ]
+
+    assert html =~ ~s(aria-label="Actions for Robin Park")
+  end
+
   test "the tokens reference page renders with swatches", %{conn: conn} do
     html = conn |> get(~p"/docs/tokens") |> html_response(200)
     assert html =~ "Tokens"

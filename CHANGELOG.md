@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A dialog straight inside an `<.app_shell>` page took the page's reading
+  width.** The rule that keeps a non-`wide` page's children to 48rem reached a
+  `<dialog>` that was a direct child of the page, so an open sheet was 48rem
+  wide instead of its own width, and a modal whose own width didn't win was
+  48rem wide from the window's left edge, its box off-centre and its backdrop
+  over that strip only. The rule now leaves out every `<dialog>` (dialog,
+  alert dialog, sheet, drawer, command) and any `[popover]`: they open over
+  the whole window wherever they sit in the page, as outside the shell, with
+  no `contents` wrapper. Closed, they still add no gap.
+- **`<.table_card>` clipped the menus inside it.** The card was
+  `overflow: hidden`, so a row's ⋯ `<.dropdown_menu>` (and a popover or a
+  select, combobox or date panel, in a row or in `<:actions>`) was cut off at
+  its edge - the menu on the last or only row almost entirely. The card no
+  longer clips; the rows at its corners round with it instead, so row lines
+  and a `row_class` background still stay inside the rounded corners. The
+  usage rules now say row actions are a ⋯ `<.dropdown_menu align="end">` in
+  the last column, and that `<.table>`, the static table recipe and
+  `<.data_table>` do clip (they scroll, or round their corners that way), so
+  a ⋯ menu per row belongs in a table card.
+
 ## [0.24.0] - 2026-10-24
 
 Confirmations, code and AI chat: `<.alert_dialog>` and styled `data-confirm`,

@@ -88,6 +88,15 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
   def orders,
     do: Enum.map(@orders, fn {n, c, s, t} -> %{number: n, customer: c, status: s, total: t} end)
 
+  @doc "The order's activity, `{what, by, at}`: the Activity card and its sheet."
+  def activity do
+    [
+      {"Order placed", "Pat Lee", "Oct 19, 2026"},
+      {"Invoice sent", "System", "Oct 20, 2026"},
+      {"Paid", "Riverside Dental", "Oct 22, 2026"}
+    ]
+  end
+
   @doc "The order record's sections, as `<.section_nav sections>` takes them."
   def sections do
     [

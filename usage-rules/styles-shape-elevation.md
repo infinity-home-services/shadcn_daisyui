@@ -33,6 +33,10 @@ the separation work, shadows are garnish.
   competes inside one stacking context: don't give an ancestor of a menu
   (a card, a table wrapper) `relative z-*`, `isolate`, a transform or a filter,
   or the menu is trapped below a later sticky bar whatever its own z-index.
+  And an ancestor that clips (`overflow-hidden`, a scroll region) cuts the
+  menu off at its edge: `<.table_card>` doesn't clip, so a row's ⋯ menu opens
+  in full; `<.table>`, the static table recipe and `<.data_table>` do, so
+  their rows' actions are inline (`<:action>` links) or on the record page.
 - Every modal surface (dialog, sheet, drawer, command) uses the same backdrop:
   `bg-black/50`. Don't add blur or a second dim.
 - Borders are 1px `border-border` (web) / `sdBorder` (iOS). Don't fake depth

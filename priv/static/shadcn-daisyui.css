@@ -2583,11 +2583,15 @@
   @media (width >= 48rem) { .app-shell-main { padding: 1.5rem; } }
   /* narrow pages keep their content to a reading width; the page header
      (data-sticky-top) still spans the page so its actions line up. Zero
-     specificity, so a child's own width (a max-w-md form) wins. */
+     specificity, so a child's own width (a max-w-md form) wins. Modals
+     (every <dialog>: dialog, alert dialog, sheet, drawer, command) and
+     popovers are left out: open, they sit in the top layer and size and
+     place themselves against the window, wherever they are in the page's
+     markup; closed, they are display: none (or fixed), so they add no gap. */
   .app-shell-page { display: flex; flex-direction: column; gap: 1rem; }
   .app-shell-page > * { flex-shrink: 0; }
   .app-shell-page[data-fill] { min-height: 0; flex: 1 1 0%; }
-  :where(.app-shell-page:not([data-wide]) > :not([data-sticky-top])) { width: 100%; max-width: 48rem; }
+  :where(.app-shell-page:not([data-wide]) > :not([data-sticky-top], dialog, [popover])) { width: 100%; max-width: 48rem; }
 
   /* phones: the top row (72px), pinned to the very top while #main scrolls,
      on the page colour; a page's <.sticky_top> pins just below it. Sticky
@@ -3272,8 +3276,19 @@
      labels (from 40rem) and the rows, each a grid. Row lines run edge to
      edge and the last row's own padding is the space under it. Phones stack
      a row's cells unless the component's `grid` class keeps them side by
-     side; the default columns are zero-specificity, so that class wins. */
-  .table-card { overflow: hidden; }
+     side; the default columns are zero-specificity, so that class wins.
+     Nothing clips: a row's ⋯ menu, popover or picker panel (and one in the
+     header's actions) opens in full over the card's edge. Instead the rows
+     at the card's corners round with it, so a row_class background stays
+     inside them. */
+  .table-card-table:first-child > [role="rowgroup"]:first-child > :first-child {
+    border-start-start-radius: calc(var(--radius-xl) - 1px);
+    border-start-end-radius: calc(var(--radius-xl) - 1px);
+  }
+  .table-card-table > [role="rowgroup"]:last-child > :last-child {
+    border-end-start-radius: calc(var(--radius-xl) - 1px);
+    border-end-end-radius: calc(var(--radius-xl) - 1px);
+  }
   .table-card-header {
     display: flex;
     align-items: flex-start;

@@ -44,6 +44,20 @@ defmodule ShadcnDaisyuiDemoWeb.AppShellPageTest do
       assert html =~ ~s(<span aria-current="page">#1042</span>)
     end
 
+    test "the record page's dialogs sit straight in its reading-width page, no wrapper",
+         %{conn: conn} do
+      html = conn |> get(~p"/docs/app-shell/preview/order") |> html_response(200)
+      doc = LazyHTML.from_document(html)
+
+      dialogs = LazyHTML.query(doc, ".app-shell-page:not([data-wide]) > dialog")
+      assert LazyHTML.attribute(dialogs, "id") == ["discard", "activity-log"]
+      assert LazyHTML.query(doc, "#discard.alert-dialog") |> Enum.count() == 1
+      assert LazyHTML.query(doc, "#activity-log.sheet") |> Enum.count() == 1
+      # Cancel asks first; the Activity card's "View all" opens the sheet
+      assert html =~ ~r{id="order-cancel"[^>]*phx-click="[^"]*discard}
+      assert html =~ ~r{id="activity-all"[^>]*phx-click="[^"]*activity-log}
+    end
+
     test "the table page is wide and fills the window", %{conn: conn} do
       html = conn |> get(~p"/docs/app-shell/preview/orders") |> html_response(200)
       assert html =~ ~s(class="app-shell-page" data-wide data-fill)

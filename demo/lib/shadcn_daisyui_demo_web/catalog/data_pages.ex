@@ -33,8 +33,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
   import ShadcnDaisyui.Components.DataTable
   import ShadcnDaisyui.Components.Record
   import ShadcnDaisyui.Components.Display, only: [empty: 1]
-  import ShadcnDaisyui.Components.Overlay, only: [dialog: 1, show_modal: 1, hide_modal: 1]
-  import ShadcnDaisyui.CoreComponents, only: [button: 1, table: 1]
+
+  import ShadcnDaisyui.Components.Overlay,
+    only: [dialog: 1, dropdown_menu: 1, show_modal: 1, hide_modal: 1]
+
+  import ShadcnDaisyui.CoreComponents, only: [button: 1, icon: 1, table: 1]
   import ShadcnDaisyui.FormComponents, only: [dropzone: 1]
 
   alias ShadcnDaisyui.DataTable.State
@@ -1236,6 +1239,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
     %{name: "Delivery", qty: 1, price: "$124.00"}
   ]
 
+  @contacts [
+    %{id: 1, name: "Pat Lee", email: "pat@riverside.test", role: "Billing"},
+    %{id: 2, name: "Sam Ortiz", email: "sam@riverside.test", role: "Office"},
+    %{id: 3, name: "Robin Park", email: "robin@riverside.test", role: "Owner"}
+  ]
+
   defp table_card do
     %{
       slug: "table-card",
@@ -1270,7 +1279,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
         %{name: ":empty", type: "slot (the only row when there are none)", default: "-"}
       ],
       notes:
-        "The rightmost column is right-aligned unless align=\"left\" (on phones only with grid, since stacked cells read top to bottom). :empty renders as the only row when rows is empty (\"Nothing has happened yet.\"). row_class styles a row (a muted cancelled line). The record page on the dev server (`/lab/data-table/:id`) uses it for Items and Activity.",
+        "The rightmost column is right-aligned unless align=\"left\" (on phones only with grid, since stacked cells read top to bottom). :empty renders as the only row when rows is empty (\"Nothing has happened yet.\"). row_class styles a row (a muted cancelled line). Row actions are a ⋯ <.dropdown_menu align=\"end\"> in the last column: the card doesn't clip, so the menu opens in full over its edge, on the last row too (the rows at the corners round with the card instead). The record page on the dev server (`/lab/data-table/:id`) uses it for Items and Activity.",
       specs: %{
         anatomy: [
           %{part: "Header", description: "card-title, muted description, :actions on the right."},
@@ -1360,6 +1369,49 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
           </.table_card>
           """,
           code: table_card_items_code()
+        },
+        %{
+          title: "Row actions",
+          heex: ~S"""
+          <.table_card
+            id="contacts"
+            title="Contacts"
+            description="People at Riverside Dental."
+            rows={@contacts}
+            row_id={&"contact-#{&1.id}"}
+            grid="grid-cols-[minmax(0,1fr)_4rem_2rem] sm:grid-cols-[minmax(0,1fr)_8rem_2rem]"
+          >
+            <:actions><.button size="sm" variant="outline" phx-click="add_contact">Add contact</.button></:actions>
+            <:col :let={c} label="Name">
+              <div class="font-medium">{c.name}</div>
+              <div class="truncate text-muted-foreground">{c.email}</div>
+            </:col>
+            <:col :let={c} label="Role">{c.role}</:col>
+            <:col :let={c}>
+              <.dropdown_menu
+                id={"contact-#{c.id}-menu"}
+                trigger_class="btn btn-ghost btn-square btn-sm"
+                chevron={false}
+                aria-label={"Actions for #{c.name}"}
+                align="end"
+                close_on_select
+              >
+                <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+                <:item phx-click="edit_contact" phx-value-id={c.id}>Edit</:item>
+                <:item phx-click="make_primary" phx-value-id={c.id}>Make primary</:item>
+                <:item
+                  phx-click="remove_contact"
+                  phx-value-id={c.id}
+                  variant="destructive"
+                  confirm={"Remove #{c.name} from Riverside Dental?"}
+                >
+                  Remove
+                </:item>
+              </.dropdown_menu>
+            </:col>
+          </.table_card>
+          """,
+          code: table_card_contacts_code()
         }
       ]
     }
@@ -1401,6 +1453,46 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
       <:col :let={i} label="Item">{i.name}</:col>
       <:col :let={i} label="Qty" class="tabular-nums">{i.qty}</:col>
       <:col :let={i} label="Price" class="tabular-nums">{i.price}</:col>
+    </.table_card>
+    """)
+  end
+
+  defp table_card_contacts_code do
+    assigns = %{contacts: @contacts}
+
+    code(~H"""
+    <.table_card
+      id="contacts"
+      title="Contacts"
+      description="People at Riverside Dental."
+      rows={@contacts}
+      row_id={&"contact-#{&1.id}"}
+      grid="grid-cols-[minmax(0,1fr)_4rem_2rem] sm:grid-cols-[minmax(0,1fr)_8rem_2rem]"
+      class="w-full max-w-2xl"
+    >
+      <:actions><.button size="sm" variant="outline">Add contact</.button></:actions>
+      <:col :let={c} label="Name">
+        <div class="font-medium">{c.name}</div>
+        <div class="truncate text-muted-foreground">{c.email}</div>
+      </:col>
+      <:col :let={c} label="Role">{c.role}</:col>
+      <:col :let={c}>
+        <.dropdown_menu
+          id={"contact-#{c.id}-menu"}
+          trigger_class="btn btn-ghost btn-square btn-sm"
+          chevron={false}
+          aria-label={"Actions for #{c.name}"}
+          align="end"
+          close_on_select
+        >
+          <:trigger><.icon name="hero-ellipsis-horizontal" class="size-4" /></:trigger>
+          <:item>Edit</:item>
+          <:item>Make primary</:item>
+          <:item variant="destructive" confirm={"Remove #{c.name} from Riverside Dental?"}>
+            Remove
+          </:item>
+        </.dropdown_menu>
+      </:col>
     </.table_card>
     """)
   end

@@ -97,7 +97,9 @@ defmodule ShadcnDaisyui.Components.Shell do
   **Main**: `#main` is the one scroll region. Narrow pages keep their
   content to a reading width (48rem) and the page header still spans the
   page; `wide` uses the full width (tables), `fill` makes the content fill the
-  window so a table body inside it scrolls instead.
+  window so a table body inside it scrolls instead. Dialogs (dialog, alert
+  dialog, sheet, drawer, command) can sit anywhere in the page: the reading
+  width never reaches them, so they open over the whole window.
 
   Ids (one shell per page): `shell`, `sidebar`, `sidebar-rail`,
   `search-open`, `main-nav`, `nav-<id>`, `sidebar-toggle`,

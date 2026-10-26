@@ -131,12 +131,14 @@
         {@preview.title}
         <:badge><span class="badge badge-outline">Paid</span></:badge>
         <:actions>
-          <a
-            href={ShadcnDaisyuiDemoWeb.ShellPreview.path("orders")}
+          <button
+            type="button"
+            id="order-cancel"
             class="btn btn-outline btn-sm hidden sm:inline-flex"
+            phx-click={show_modal("discard")}
           >
             Cancel
-          </a>
+          </button>
           <button type="button" class="btn btn-primary btn-sm">Save</button>
         </:actions>
         <:below>
@@ -152,6 +154,26 @@
           />
         </:below>
       </.page_header>
+      <%!-- dialogs straight inside the page, like any page child: they still
+           open centred over the whole window (the sheet at its own width),
+           not at the page's reading width --%>
+      <.alert_dialog id="discard" size="sm" cancel="Keep editing">
+        <:title>Discard changes to order #1042?</:title>
+        <:description>Your edits to this order haven't been saved.</:description>
+        <:action variant="destructive" href={ShadcnDaisyuiDemoWeb.ShellPreview.path("orders")}>
+          Discard changes
+        </:action>
+      </.alert_dialog>
+      <.sheet id="activity-log">
+        <:title>Activity</:title>
+        <:description>Everything that happened to order #1042.</:description>
+        <ul class="space-y-4 text-sm">
+          <li :for={{what, by, at} <- ShadcnDaisyuiDemoWeb.ShellPreview.activity()}>
+            <div class="font-medium">{what}</div>
+            <div class="text-muted-foreground">{by} · {at}</div>
+          </li>
+        </ul>
+      </.sheet>
       <.section_nav id="order-sections" sections={ShadcnDaisyuiDemoWeb.ShellPreview.sections()}>
         <div id="details" class="card">
           <div class="card-body">
@@ -199,15 +221,21 @@
           id="activity"
           title="Activity"
           description="Everything that happened to this order."
-          rows={[
-            %{what: "Order placed", by: "Pat Lee", at: "Oct 19, 2026"},
-            %{what: "Invoice sent", by: "System", at: "Oct 20, 2026"},
-            %{what: "Paid", by: "Riverside Dental", at: "Oct 22, 2026"}
-          ]}
+          rows={ShadcnDaisyuiDemoWeb.ShellPreview.activity()}
         >
-          <:col :let={a} label="Event" class="font-medium">{a.what}</:col>
-          <:col :let={a} label="By" class="text-muted-foreground">{a.by}</:col>
-          <:col :let={a} label="When">{a.at}</:col>
+          <:actions>
+            <button
+              type="button"
+              id="activity-all"
+              class="btn btn-ghost btn-sm"
+              phx-click={show_modal("activity-log")}
+            >
+              View all
+            </button>
+          </:actions>
+          <:col :let={{what, _by, _at}} label="Event" class="font-medium">{what}</:col>
+          <:col :let={{_what, by, _at}} label="By" class="text-muted-foreground">{by}</:col>
+          <:col :let={{_what, _by, at}} label="When">{at}</:col>
         </.table_card>
       </.section_nav>
     <% :empty -> %>

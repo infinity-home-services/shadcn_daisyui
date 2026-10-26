@@ -142,7 +142,7 @@ Decision order:
 | `<.data_table>` | `id` (hook), `rows`, `row_id`, `row_href` (Cmd/Ctrl/middle click), `state` (a `DataTable.State`: sort arrows, ticks), `selectable`, `more`, `matching`, `all_matching`, `edge`, `noun={{"order", "orders"}}`, `active_id`, `scroll_key`, `target`; `<:col label sort class="w-32" align hide_below="md">`, `<:bulk>`, `<:empty title icon>`, `<:empty_action>`; sends `dt:sort` `dt:open` `dt:select` `dt:select_all` `dt:select_matching` `dt:clear` `dt:more` (see List and record pages) |
 | `<.table_toolbar>` | `id`, `search`, `placeholder`, `shown`, `total`, `noun`, `views=[%{key, label, count, path, active, edited}]`, `menu=[%{key, label, group, icon, active, path \| click}]`, `chips=[{key, label} \| {key, label, :fixed}]` (`State.chips/3`), `sort` (`State.sort_value/1`), `sorts=[{label, "key:dir"}]` (first = default); `<:filter key label>` (one `<.select>`/`<.combobox>` named `key`), `<:more>`, `<:save>`; a form sending `dt:filter` (+ `dt:unfilter`, `dt:reset`) |
 | `<.record_tabs>` | `id`, `tabs={[{key, label} \| {key, label, count}]}`, `active`; each tab sends `"tab"` with `%{"tab" => key}` (`event`, `target` to change); underlined, one tab stop, arrow keys |
-| `<.table_card>` | a card of rows: `id`, `title`, `description`, `rows`, `row_id`, `row_class`, `grid` (e.g. `grid-cols-[minmax(0,1fr)_auto]`: side by side on phones too); `<:col :let label class align>`, `<:empty>`, `<:actions>`; labels as a header row from `sm`, rows stack on phones, the rightmost column right-aligned |
+| `<.table_card>` | a card of rows: `id`, `title`, `description`, `rows`, `row_id`, `row_class`, `grid` (e.g. `grid-cols-[minmax(0,1fr)_auto]`: side by side on phones too); `<:col :let label class align>`, `<:empty>`, `<:actions>`; labels as a header row from `sm`, rows stack on phones, the rightmost column right-aligned; row actions are a ⋯ `<.dropdown_menu align="end">` (icon trigger, `aria-label="Actions for …"`) in the last column - the card doesn't clip, so it opens in full over the card's edge, on the last row too |
 | `<.section_nav>` | `id` (hook), `sections=[{id, label} \| {id, label, group}]` (each an element with that id); `variant="side"` (default; give it the cards as its inner block: a list beside them from `lg`, pinned under the page header, "Filter sections" over 10) and `variant="select"` in `<.page_header>`'s `<:below>` (below `lg`, 44px options); marks the section in view, choosing one scrolls there |
 | `<.time_field>` | `id` (hook), `field`, `label`, `minute_step` (15): a labelled full-width `<.time_picker>` ("Not set"), errors under it once used |
 | `<.message_scroller>` | `id` (hook), `items` (a list keyed by `item.id`, or a stream), `item_id`, `anchor={fn item -> bool end}` (turn anchors: the reader's own messages), `busy` (`aria-busy` on the log while a reply streams), `default_position="end\|start\|last-anchor"`, `follow` (true), `peek` (64), `label` ("Messages"), `button="end\|start\|both\|none"`; the inner block renders one row (`:let={item}`, `{dom_id, item}` for a stream), `<:above>` / `<:below>` rows inside the log (load earlier, a typing marker); fills its parent; follows a streaming reply only at the live edge, a new anchor moves near the top, prepended rows keep the reader's place; `shadcn:scroll-to` (`detail: %{to: "end" \| "start" \| dom_id}`) jumps (see AI chat page) |
@@ -157,7 +157,8 @@ Decision order:
 From your app's `CoreComponents` (delegating to `ShadcnDaisyui.CoreComponents`):
 `<.button>` (variants + `navigate`), `<.input field={...}>`, `<.error>`, `<.header>`,
 `<.table id rows>` with `<:col>` slots (`scroll`: fills a growing card, only the
-body scrolls under a sticky header), `<.list>`, `<.icon name="hero-...">`, `<.flash>`,
+body scrolls under a sticky header; it scrolls sideways, so a menu in a cell is
+cut off - row actions are `<:action>` links, a ⋯ menu per row is a `<.table_card>`), `<.list>`, `<.icon name="hero-...">`, `<.flash>`,
 `<.page_header crumbs back esc_back>` with `<:badge>` `<:actions>` `<:below>` (every page
 in the shell starts with it), `<.sticky_top id>` (a pinned block of your own).
 
@@ -186,6 +187,10 @@ menu already has one.
   makes the content fill the window so a table body inside it scrolls instead:
   `<.data_table>` (a list page), or `<.table scroll>` in
   `<div class="card flex min-h-0 flex-1 flex-col overflow-hidden">`.
+- A dialog, alert dialog, sheet, drawer or command can sit anywhere in a
+  page, a direct child included: the reading width never reaches it, so it
+  opens over the whole window as it does outside the shell. Never wrap one in
+  a `contents` div to get that.
 - Every page starts with `<.page_header>`: breadcrumb (from 48rem; group as text,
   then the page; on a record the list is a link and Esc goes there), the title,
   `<:badge>`, `<:actions>` (`size="sm"` buttons) and `<:below>`, pinned while
@@ -377,7 +382,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Need | Recipe |
 |---|---|
 | Tabs | `<div role="tablist" class="tabs tabs-box w-fit">` + `<input type="radio" name="…" class="tab" aria-label="…">` |
-| Static table | `<div class="card w-full overflow-hidden"><table class="table">…` |
+| Static table | `<div class="card w-full overflow-hidden"><table class="table">…` (the card clips, for its corners: no menus in cells - a row with a ⋯ menu is a `<.table_card>`) |
 | Data table (sortable/faceted/paged) | Not a recipe: `<.table_toolbar>` + `<.data_table>` (see List and record pages). |
 | Sheet sections (raw HTML) | `<dialog class="sheet">` with direct children `.sheet-header` (close button, `h3.sheet-title`, description, `.sheet-header-content`), `.sheet-body` (one wrapper `div` inside), `.sheet-footer`; drawer: `.drawer-handle` `.drawer-header` `.drawer-body` `.drawer-footer` |
 | Modal/dialog | native `<dialog id="d" class="modal"><div class="modal-box">…`, opened by `<button commandfor="d" command="show-modal">` (no inline JS); backdrop: `<form method="dialog" class="modal-backdrop"><button>close</button></form>` |
