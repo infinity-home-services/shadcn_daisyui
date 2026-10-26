@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.3] - 2026-10-26
+
+One behaviour fix, no markup changes: the `<.app_shell>` sidebar keeps its
+scroll position from page to page, and shows the new page's item if it's out
+of view. It comes with `shadcn-daisyui.js`; apps need no changes.
+
 ### Fixed
 
 - **The `<.app_shell>` sidebar lost its scroll position on every page
