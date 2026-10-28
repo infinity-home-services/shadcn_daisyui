@@ -264,12 +264,94 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~ ~s(data-duration="6000")
     end
 
+    test "sonner's toaster props: theme, offsets, hotkey, toast options as JSON" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.toaster
+          toaster_id="inbox"
+          theme="dark"
+          invert
+          gap={8}
+          duration={:infinity}
+          offset={%{bottom: 80, right: "2rem"}}
+          mobile_offset={12}
+          hotkey={[]}
+          dir="rtl"
+          swipe_directions={~w(left right)}
+          toast_options={%{description_class: "x", classes: %{action_button: "y \"q\""}}}
+          class={["toaster", "group"]}
+        />
+        """)
+
+      assert html =~ ~s(data-toaster-id="inbox")
+      # not data-theme: the page's [data-theme] selectors would match it
+      assert html =~ ~s(data-toast-theme="dark")
+      refute html =~ ~s( data-theme=)
+      assert html =~ ~s(data-invert="true")
+      assert html =~ ~s(data-gap="8")
+      assert html =~ ~s(data-duration="infinity")
+      assert html =~ ~s(data-mobile-offset="12px")
+      assert html =~ ~s(data-hotkey="")
+      assert html =~ ~s(data-dir="rtl")
+      assert html =~ ~s(data-swipe-directions="left,right")
+      assert html =~ ~s(data-toaster-class="toaster group")
+
+      [_, offset] = Regex.run(~r/data-offset="([^"]*)"/, html)
+      assert offset |> unescape() |> JSON.decode!() == %{"bottom" => "80px", "right" => "2rem"}
+
+      [_, options] = Regex.run(~r/data-toast-options="([^"]*)"/, html)
+      # snake_case keys arrive camelCased, as sonner names them
+      assert options |> unescape() |> JSON.decode!() ==
+               %{"descriptionClass" => "x", "classes" => %{"actionButton" => "y \"q\""}}
+    end
+
+    test "defaults leave the optional props off" do
+      assigns = %{}
+      html = render(~H|<.toaster />|)
+
+      assert html =~ ~s(data-toast-theme="auto")
+      assert html =~ ~s(data-hotkey="altKey,KeyT")
+      refute html =~ "data-offset"
+      refute html =~ "data-toast-options"
+      refute html =~ "data-toaster-id"
+      refute html =~ "<template"
+    end
+
+    test "icon slots become templates the JS clones (an empty one hides the icon)" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.toaster>
+          <:success_icon><span class="hero-check-badge"></span></:success_icon>
+          <:close_icon></:close_icon>
+        </.toaster>
+        """)
+
+      assert html =~
+               ~r/<template data-sonner-icon="success">\s*<span class="hero-check-badge"><\/span>\s*<\/template>/
+
+      assert html =~ ~r/<template data-sonner-icon="close">\s*<\/template>/
+      refute html =~ ~s(data-sonner-icon="error")
+    end
+
     test "toast_host/1 (deprecated) still renders a toaster with the old id" do
       assigns = %{}
       html = render(~H|<.toast_host />|)
       assert html =~ ~s(id="toast-host")
       assert html =~ "data-sonner-section"
     end
+  end
+
+  defp unescape(attr) do
+    attr
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&#39;", "'")
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&amp;", "&")
   end
 
   describe "push_toast/3" do
@@ -303,6 +385,39 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
     test "type defaults to default" do
       {_, payload} = socket() |> push_toast("Hello") |> pushed()
       assert payload.type == "default"
+    end
+
+    test "sonner options pass through; classes camelCase, :infinity as a string" do
+      {_, payload} =
+        socket()
+        |> push_toast("Uploading",
+          id: "upload",
+          type: :loading,
+          duration: :infinity,
+          rich_colors: true,
+          invert: true,
+          dismissible: false,
+          icon: "hero-sparkles",
+          toaster_id: "inbox",
+          classes: %{close_button: "a"},
+          unknown: :dropped
+        )
+        |> pushed()
+
+      assert payload.id == "upload"
+      assert payload.type == "loading"
+      assert payload.duration == "infinity"
+      assert payload.rich_colors
+      assert payload.invert
+      assert payload.dismissible == false
+      assert payload.icon == "hero-sparkles"
+      assert payload.toaster_id == "inbox"
+      assert payload.classes == %{"closeButton" => "a"}
+      refute Map.has_key?(payload, :unknown)
+
+      {_, payload} = socket() |> push_toast("Saved", duration: 1000, icon: false) |> pushed()
+      assert payload.duration == 1000
+      assert payload.icon == false
     end
 
     test "dismiss one or all" do

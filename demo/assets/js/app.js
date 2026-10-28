@@ -134,9 +134,12 @@ const initPlatformToggle = () => {
 
 // Toast previews: <button data-toast="Saved" data-toast-type="success"
 // data-toast-description="…" data-toast-position="top-left"
-// data-toast-action="Undo">. data-toast-promise="Event" runs the promise demo.
+// data-toast-action="Undo" data-toast-cancel="Dismiss" data-toast-rich
+// data-toast-close data-toast-invert data-toast-icon="hero-…">.
+// data-toast-promise="Event" runs the promise demo; data-toast-custom="tpl-id"
+// shows that <template>'s first element as a headless toast.
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-toast], [data-toast-promise]")
+  const b = e.target.closest("[data-toast], [data-toast-promise], [data-toast-custom]")
   if (!b) return
   const d = b.dataset
   if (d.toastPromise !== undefined) {
@@ -147,10 +150,23 @@ document.addEventListener("click", (e) => {
     })
     return
   }
+  if (d.toastCustom !== undefined) {
+    toast.custom((id) => {
+      const card = document.getElementById(d.toastCustom).content.firstElementChild.cloneNode(true)
+      card.querySelector("[data-close]")?.addEventListener("click", () => toast.dismiss(id))
+      return card
+    })
+    return
+  }
   const opts = {}
   if (d.toastDescription) opts.description = d.toastDescription
   if (d.toastPosition) opts.position = d.toastPosition
   if (d.toastAction) opts.action = {label: d.toastAction, onClick: () => {}}
+  if (d.toastCancel) opts.cancel = {label: d.toastCancel, onClick: () => {}}
+  if (d.toastRich !== undefined) opts.richColors = true
+  if (d.toastClose !== undefined) opts.closeButton = true
+  if (d.toastInvert !== undefined) opts.invert = true
+  if (d.toastIcon) opts.icon = `<span class="${d.toastIcon}" data-sonner-heroicon aria-hidden="true"></span>`
   ;(d.toastType ? toast[d.toastType] : toast)(d.toast, opts)
 })
 

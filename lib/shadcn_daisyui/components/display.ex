@@ -177,7 +177,8 @@ defmodule ShadcnDaisyui.Components.Display do
 
   @doc """
   The toaster: where `toast()` (from the bundled JS) and `push_toast/3` render
-  sonner-style notifications. Put one in your root layout. It needs the
+  Sonner toasts - a port of svelte-sonner, set up as shadcn-svelte ships it
+  (popover colours, lucide icons). Put one in your root layout. It needs the
   `ShadcnToaster` hook for server-pushed toasts (`push_toast/3`); client-only
   `toast()` calls work without it.
 
@@ -187,42 +188,193 @@ defmodule ShadcnDaisyui.Components.Display do
 
       <.toaster />
       <.toaster position="top-center" rich_colors close_button />
+      <.toaster offset={%{bottom: 80}} toast_options={%{classes: %{title: "tracking-tight"}}} />
+
+  Custom icons go in slots (`<:success_icon>`, `<:info_icon>`,
+  `<:warning_icon>`, `<:error_icon>`, `<:loading_icon>`, `<:close_icon>`); an
+  empty slot hides that icon. Give a loading icon `data-sonner-spin` to spin it.
+
+      <.toaster>
+        <:success_icon><.icon name="hero-check-circle" class="size-4" /></:success_icon>
+      </.toaster>
+
+  A second toaster takes a `toaster_id`; toasts reach it with
+  `toast("…", { toasterId: "inbox" })` or `push_toast(socket, "…", toaster_id: "inbox")`.
 
   For form/validation feedback tied to a page, prefer `<.flash>` or inline
   errors; toasts are for brief confirmations that disappear.
   """
   attr(:id, :string, default: "toaster")
 
+  attr(:toaster_id, :string,
+    default: nil,
+    doc: "names this toaster; toasts with a matching `toasterId` render here"
+  )
+
   attr(:position, :string,
     default: "bottom-right",
     values: ~w(top-left top-center top-right bottom-left bottom-center bottom-right)
   )
 
+  attr(:theme, :string,
+    default: "auto",
+    values: ~w(auto light dark system),
+    doc: "sonner's light/dark palette: `auto` follows the page's theme, `system` the OS"
+  )
+
   attr(:expand, :boolean, default: false, doc: "show every toast expanded instead of stacked")
-  attr(:rich_colors, :boolean, default: false, doc: "tint success/info/warning/error toasts")
+
+  attr(:rich_colors, :boolean,
+    default: false,
+    doc: "sonner's tinted success/info/warning/error toasts"
+  )
+
   attr(:close_button, :boolean, default: false, doc: "show a close button on every toast")
-  attr(:duration, :integer, default: 4000, doc: "default auto-dismiss time in ms")
+  attr(:invert, :boolean, default: false, doc: "dark toasts on a light page, light on a dark one")
+  attr(:duration, :any, default: 4000, doc: "default auto-dismiss time in ms, or `:infinity`")
   attr(:visible_toasts, :integer, default: 3)
-  attr(:class, :any, default: nil)
+  attr(:gap, :integer, default: 14, doc: "px between expanded toasts")
+
+  attr(:offset, :any,
+    default: nil,
+    doc:
+      "distance from the viewport edge: px integer, a CSS length, or `%{top:, right:, bottom:, left:}` (24px)"
+  )
+
+  attr(:mobile_offset, :any, default: nil, doc: "the same, up to 600px wide (16px)")
+
+  attr(:hotkey, :list,
+    default: ~w(altKey KeyT),
+    doc: "keys that focus the toasts (KeyboardEvent props / codes); `[]` turns it off"
+  )
+
+  attr(:dir, :string, default: "auto", values: ~w(auto ltr rtl))
+
+  attr(:swipe_directions, :list,
+    default: nil,
+    doc: "edges a swipe dismisses toward (`top right bottom left`); default: the position's"
+  )
+
+  attr(:pause_when_page_is_hidden, :boolean, default: true)
+
+  attr(:toast_options, :map,
+    default: %{},
+    doc:
+      "defaults for every toast: `class`, `description_class`, `style`, `unstyled`, `duration`, `close_button`, `action_button_style`, `cancel_button_style`, `close_button_aria_label`, `classes` (`toast title description content icon loader action_button cancel_button close_button` and per type)"
+  )
+
+  attr(:container_aria_label, :string, default: "Notifications")
+  attr(:close_button_aria_label, :string, default: "Close toast")
+  attr(:class, :any, default: nil, doc: "classes for each toast list (sonner's Toaster `class`)")
+
+  slot(:success_icon)
+  slot(:info_icon)
+  slot(:warning_icon)
+  slot(:error_icon)
+  slot(:loading_icon)
+  slot(:close_icon)
 
   def toaster(assigns) do
+    assigns =
+      assigns
+      |> assign(:icons, toaster_icons(assigns))
+      |> assign(:toaster_class, class_string(assigns[:class]))
+
     ~H"""
     <section
       id={@id}
       phx-hook="ShadcnToaster"
       phx-update="ignore"
       data-sonner-section
+      data-toaster-id={@toaster_id}
       data-position={@position}
+      data-toast-theme={@theme}
       data-expand={to_string(@expand)}
       data-rich-colors={to_string(@rich_colors)}
       data-close-button={to_string(@close_button)}
+      data-invert={to_string(@invert)}
       data-duration={@duration}
       data-visible-toasts={@visible_toasts}
+      data-gap={@gap}
+      data-offset={toaster_offset(@offset)}
+      data-mobile-offset={toaster_offset(@mobile_offset)}
+      data-hotkey={Enum.join(@hotkey, ",")}
+      data-dir={@dir}
+      data-swipe-directions={@swipe_directions && Enum.join(@swipe_directions, ",")}
+      data-pause-when-page-is-hidden={to_string(@pause_when_page_is_hidden)}
+      data-toast-options={@toast_options != %{} && json(camelize_keys(@toast_options))}
+      data-container-aria-label={@container_aria_label}
+      data-close-button-aria-label={@close_button_aria_label}
+      data-toaster-class={@toaster_class}
       hidden
-      class={@class}
     >
+      <template :for={{type, slot} <- @icons} data-sonner-icon={type}>{render_slot(slot)}</template>
     </section>
     """
+  end
+
+  defp toaster_icons(assigns) do
+    for type <- ~w(success info warning error loading close)a,
+        slot = assigns[:"#{type}_icon"] || [],
+        slot != [],
+        do: {type, slot}
+  end
+
+  defp toaster_offset(nil), do: nil
+  defp toaster_offset(px) when is_integer(px), do: "#{px}px"
+  defp toaster_offset(length) when is_binary(length), do: length
+
+  defp toaster_offset(%{} = sides) do
+    sides
+    |> Map.new(fn {side, v} -> {side, toaster_offset(v)} end)
+    |> json()
+  end
+
+  defp class_string(nil), do: nil
+
+  defp class_string(list) when is_list(list),
+    do: list |> List.flatten() |> Enum.filter(& &1) |> Enum.join(" ")
+
+  defp class_string(class), do: class
+
+  # sonner's option names: description_class -> descriptionClass
+  defp camelize_keys(%{} = map) do
+    Map.new(map, fn {k, v} -> {camelize(k), camelize_keys(v)} end)
+  end
+
+  defp camelize_keys(v), do: v
+
+  defp camelize(key) do
+    [first | rest] = key |> to_string() |> String.split("_")
+    Enum.join([first | Enum.map(rest, &String.capitalize/1)])
+  end
+
+  # A small JSON encoder for the options above (the package has no JSON dependency).
+  defp json(%{} = map) do
+    "{" <> Enum.map_join(map, ",", fn {k, v} -> json(to_string(k)) <> ":" <> json(v) end) <> "}"
+  end
+
+  defp json(list) when is_list(list), do: "[" <> Enum.map_join(list, ",", &json/1) <> "]"
+  defp json(v) when is_boolean(v) or is_number(v), do: to_string(v)
+  defp json(nil), do: "null"
+  defp json(:infinity), do: json("infinity")
+  defp json(v) when is_atom(v), do: json(Atom.to_string(v))
+
+  defp json(s) when is_binary(s) do
+    escaped =
+      for <<c::utf8 <- s>>, into: "" do
+        case c do
+          ?" -> "\\\""
+          ?\\ -> "\\\\"
+          ?\n -> "\\n"
+          ?\r -> "\\r"
+          ?\t -> "\\t"
+          c when c < 0x20 -> "\\u" <> String.pad_leading(Integer.to_string(c, 16), 4, "0")
+          c -> <<c::utf8>>
+        end
+      end
+
+    "\"" <> escaped <> "\""
   end
 
   @doc """
@@ -244,21 +396,44 @@ defmodule ShadcnDaisyui.Components.Display do
       push_toast(socket, "Saved", type: :success)
 
   Options: `:type` (`:default | :success | :info | :warning | :error | :loading`),
-  `:description`, `:duration` (ms), `:position`, `:id` (reuse to update a toast),
-  `:important` (assertive announcement), `:close_button`, `:action` / `:cancel`
-  (`%{label: ..., event: ..., value: %{...}}` - clicking pushes `event` back to the
-  LiveView). `push_toast(socket, nil, dismiss: id)` dismisses one (or all, with
-  `dismiss: true`).
+  `:description`, `:duration` (ms or `:infinity`), `:position`, `:id` (reuse to
+  update a toast: a loading toast, then its result), `:important` (assertive
+  announcement), `:close_button`, `:rich_colors`, `:invert`, `:dismissible`
+  (`false`: no swipe or close), `:icon` (a heroicon class, `"hero-sparkles"`, or
+  `false` for none), `:class`, `:description_class`, `:classes` (as the
+  toaster's `toast_options`), `:unstyled`, `:toaster_id`, `:test_id`, `:action` /
+  `:cancel` (`%{label: ..., event: ..., value: %{...}}` - clicking pushes `event`
+  back to the LiveView). `push_toast(socket, nil, dismiss: id)` dismisses one
+  (or all, with `dismiss: true`).
   """
+  @push_toast_keys [
+    :id,
+    :description,
+    :position,
+    :important,
+    :close_button,
+    :rich_colors,
+    :invert,
+    :dismissible,
+    :icon,
+    :class,
+    :description_class,
+    :unstyled,
+    :toaster_id,
+    :test_id
+  ]
+
   def push_toast(socket, message, opts \\ []) do
     payload =
       case Keyword.get(opts, :dismiss) do
         nil ->
           opts
-          |> Keyword.take([:id, :description, :duration, :position, :important, :close_button])
+          |> Keyword.take(@push_toast_keys)
           |> Map.new()
           |> Map.put(:message, message)
           |> Map.put(:type, opts |> Keyword.get(:type, :default) |> to_string())
+          |> put_duration(opts[:duration])
+          |> put_classes(opts[:classes])
           |> put_button(:action, opts[:action])
           |> put_button(:cancel, opts[:cancel])
 
@@ -271,6 +446,13 @@ defmodule ShadcnDaisyui.Components.Display do
 
     Phoenix.LiveView.push_event(socket, "shadcn:toast", payload)
   end
+
+  defp put_duration(payload, nil), do: payload
+  defp put_duration(payload, :infinity), do: Map.put(payload, :duration, "infinity")
+  defp put_duration(payload, ms), do: Map.put(payload, :duration, ms)
+
+  defp put_classes(payload, nil), do: payload
+  defp put_classes(payload, classes), do: Map.put(payload, :classes, camelize_keys(classes))
 
   defp put_button(payload, _key, nil), do: payload
 

@@ -1764,11 +1764,29 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           %{name: "rich_colors", type: "boolean", default: "false"},
           %{name: "close_button", type: "boolean", default: "false"},
           %{name: "expand", type: "boolean", default: "false"},
-          %{name: "duration", type: "integer (ms)", default: "4000"},
-          %{name: "visible_toasts", type: "integer", default: "3"}
+          %{name: "invert", type: "boolean", default: "false"},
+          %{name: "theme", type: "auto | light | dark | system", default: "auto"},
+          %{name: "duration", type: "integer (ms) | :infinity", default: "4000"},
+          %{name: "visible_toasts", type: "integer", default: "3"},
+          %{name: "gap", type: "integer (px)", default: "14"},
+          %{
+            name: "offset / mobile_offset",
+            type: "integer | string | %{top:, right:, bottom:, left:}",
+            default: "24px / 16px"
+          },
+          %{name: "hotkey", type: "list", default: "[\"altKey\", \"KeyT\"]"},
+          %{name: "dir", type: "auto | ltr | rtl", default: "auto"},
+          %{name: "swipe_directions", type: "list", default: "the position's edges"},
+          %{name: "toast_options", type: "map", default: "%{}"},
+          %{name: "toaster_id", type: "string", default: "nil"},
+          %{
+            name: "<:success_icon> … <:close_icon>",
+            type: "slots",
+            default: "lucide icons"
+          }
         ],
         notes:
-          "Render one <.toaster /> in the root layout. From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success(), toast.promise(), toast.dismiss(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}). Toasts live in the browser's top layer and follow into an open sheet, dialog, drawer or command palette, so they show above it and stay clickable without taking focus; Esc still closes the modal. Phoenix flashes (<.flash> / put_flash) render through the same toaster: info shows a success check and clears after 5 seconds, errors stay until closed.",
+          "A port of svelte-sonner, set up as shadcn-svelte ships it: same markup, timings and stylesheet, with the popover colours and lucide icons. Render one <.toaster /> in the root layout. From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success() / info / warning / error / loading, toast.promise(), toast.custom(), toast.dismiss(), toast.getActiveToasts(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}). Toasts live in the browser's top layer and follow into an open sheet, dialog, drawer or command palette, so they show above it and stay clickable without taking focus; Esc still closes the modal. Phoenix flashes (<.flash> / put_flash) render through the same toaster: info shows a success check and clears after 5 seconds, errors stay until closed.",
         examples: [
           %{
             title: "Default",
@@ -1841,6 +1859,128 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
               <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-center">Bottom Center</button>
               <button class="btn btn-outline" data-toast="Event has been created" data-toast-position="bottom-right">Bottom Right</button>
             </div>
+            """
+          },
+          %{
+            title: "Rich colors",
+            heex: ~S"""
+            <%!-- every toast --%>
+            <.toaster rich_colors />
+
+            <%!-- or one --%>
+            push_toast(socket, "Event has been created", type: :success, rich_colors: true)
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <div class="flex flex-wrap justify-center gap-2">
+              <button class="btn btn-outline" data-toast="Event has been created" data-toast-type="success" data-toast-rich>Success</button>
+              <button class="btn btn-outline" data-toast="Be at the area 10 minutes before the event time" data-toast-type="info" data-toast-rich>Info</button>
+              <button class="btn btn-outline" data-toast="Event start time cannot be earlier than 8am" data-toast-type="warning" data-toast-rich>Warning</button>
+              <button class="btn btn-outline" data-toast="Event has not been created" data-toast-type="error" data-toast-rich>Error</button>
+            </div>
+            """
+          },
+          %{
+            title: "Action and cancel",
+            heex: ~S"""
+            push_toast(socket, "Event has been created",
+              description: "Sunday, December 03, 2023 at 9:00 AM",
+              action: %{label: "Undo", event: "undo", value: %{id: event.id}},
+              cancel: %{label: "Dismiss"}
+            )
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Sunday, December 03, 2023 at 9:00 AM" data-toast-action="Undo" data-toast-cancel="Dismiss">Show Toast</button>
+            """
+          },
+          %{
+            title: "Close button",
+            heex: ~S"""
+            <%!-- every toast --%>
+            <.toaster close_button />
+
+            <%!-- or one --%>
+            push_toast(socket, "Event has been created", close_button: true)
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Monday, January 3rd at 6:00pm" data-toast-close>Show Toast</button>
+            """
+          },
+          %{
+            title: "Loading, then the result",
+            heex: ~S"""
+            <%!-- the same id turns the loading toast into its result --%>
+            push_toast(socket, "Uploading report.pdf…", id: "upload", type: :loading)
+            push_toast(socket, "report.pdf uploaded", id: "upload", type: :success)
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast-promise="Report">Upload report</button>
+            """
+          },
+          %{
+            title: "Invert",
+            heex: ~S"""
+            <%!-- dark toasts on a light page, light on a dark one --%>
+            <.toaster invert />
+
+            push_toast(socket, "Event has been created", invert: true)
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Event has been created" data-toast-description="Sunday, December 03, 2023 at 9:00 AM" data-toast-action="Undo" data-toast-invert>Show Toast</button>
+            """
+          },
+          %{
+            title: "Custom icon",
+            heex: ~S"""
+            <%!-- one toast: a heroicon class, or false for none --%>
+            push_toast(socket, "Draft saved", icon: "hero-cloud-arrow-up")
+
+            <%!-- every toast of a type --%>
+            <.toaster>
+              <:success_icon><.icon name="hero-check-badge" class="size-4" /></:success_icon>
+            </.toaster>
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app call toast() from JS, or push_toast/2 from LiveView (HEEx tab). -->
+            <button class="btn btn-outline" data-toast="Draft saved" data-toast-description="Synced to your workspace" data-toast-icon="hero-cloud-arrow-up">Show Toast</button>
+            """
+          },
+          %{
+            title: "Headless",
+            heex: ~S"""
+            <%!-- JS only: your markup, with the stack, timers and swipe but no toast chrome --%>
+            import { toast } from "shadcn_daisyui"
+
+            toast.custom((id) => {
+              const card = document.querySelector("#release-toast").content.firstElementChild.cloneNode(true)
+              card.querySelector("[data-close]").addEventListener("click", () => toast.dismiss(id))
+              return card
+            })
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast-custom into toast.custom().
+                 In your app call toast.custom() from JS (HEEx tab). -->
+            <button class="btn btn-outline" data-toast-custom="release-toast">Show Toast</button>
+            <template id="release-toast">
+              <div class="card w-89 max-w-full flex-row items-center gap-3 p-4 shadow-lg">
+                <span class="hero-sparkles size-5 shrink-0 text-muted-foreground" aria-hidden="true"></span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium">Version 2.4 is out</p>
+                  <p class="text-sm text-muted-foreground">Faster search and offline drafts.</p>
+                </div>
+                <button class="btn btn-sm btn-outline" data-close>Close</button>
+              </div>
+            </template>
             """
           },
           %{

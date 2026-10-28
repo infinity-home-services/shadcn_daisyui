@@ -467,70 +467,105 @@ export function initConfirmDialog(defaults) {
 }
 
 // ---- Sonner (toast) --------------------------------------------------------
-// A dependency-free port of sonner's behaviour (the toast shadcn/ui ships):
-// typed toasts with icons, description, action / cancel buttons, promise
-// toasts, per-toast position, a collapsed stack that expands on hover/focus,
-// pause-on-hover timers, swipe to dismiss, and the Alt+T hotkey.
+// A dependency-free port of svelte-sonner 1.x - the toast shadcn-svelte ships -
+// with shadcn's toaster setup (popover colours, lucide icons). Same markup,
+// data attributes, timings and stylesheet as sonner, so it looks and moves the
+// same: typed toasts, description, action / cancel buttons, promise toasts
+// whose spinner morphs into the result, per-toast position, a collapsed stack
+// that expands on hover/focus, pause-on-hover timers, swipe to dismiss toward
+// the stack's edges, rich colours, invert, sonner's light/dark themes, custom
+// icons, headless toasts, several toasters, and the Alt+T hotkey.
 //
 //   import { toast } from "shadcn-daisyui"
 //   toast("Event has been created", { description: "Sunday at 9:00 AM", action: { label: "Undo", onClick: undo } })
 //   toast.success("Saved")  ·  toast.error("Failed")  ·  toast.info(…)  ·  toast.warning(…)
 //   const id = toast.loading("Uploading…"); toast.success("Uploaded", { id })
 //   toast.promise(fetch("/api"), { loading: "Saving…", success: "Saved", error: "Could not save" })
-//   toast.dismiss(id)   // or toast.dismiss() for all
+//   toast.custom((id) => element)   // headless: your markup, no toast chrome
+//   toast.dismiss(id)   // or toast.dismiss() for all  ·  toast.getActiveToasts()
 //
 // Render one <.toaster /> (ShadcnDaisyui.Components) in the root layout to set
 // position and options; toast() creates a default bottom-right toaster if none
 // exists. From LiveView: ShadcnDaisyui.Components.push_toast(socket, "Saved").
 
-const TOAST_SVG = (paths) =>
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>"
+const TOAST_SVG = (paths, size = 16, stroke = 2) =>
+  '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + stroke + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>"
+// shadcn's sonner icons (lucide circle-check, info, triangle-alert, octagon-x,
+// loader-2); the loader spins through data-sonner-spin
 const TOAST_ICONS = {
   success: TOAST_SVG('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
   info: TOAST_SVG('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
   warning: TOAST_SVG('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
   error: TOAST_SVG('<path d="m15 9-6 6"/><path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/><path d="m9 9 6 6"/>'),
-  loading: TOAST_SVG('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'),
+  loading: TOAST_SVG('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>').replace("<svg ", "<svg data-sonner-spin "),
+  close: TOAST_SVG('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 12, 1.5),
 }
-const TOAST_CLOSE = TOAST_SVG('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')
+const TOAST_LIFETIME = 4000
 const TOAST_GAP = 14
-const TOAST_UNMOUNT_MS = 400
+// sonner's TIME_BEFORE_UNMOUNT: the 400ms exit transition is cut off here
+const TOAST_UNMOUNT_MS = 200
 const SWIPE_THRESHOLD = 45
+const SCALE_MULTIPLIER = 0.05
 
-const sonner = { toasts: [], seq: 0, hotkey: false, layer: null, modals: [] }
+const sonner = { toasts: [], seq: 0, wired: false, layer: null, modals: [] }
+const sonnerLists = new WeakMap() // <ol> -> { hover, interacting, focusWithin, lastFocused, mouse }
 
 // <.toaster> renders a <section data-sonner-section> that only carries the
-// options (and the LiveView hook). The toasts live in a JS-owned
+// options (and the LiveView hook); one with `data-toaster-id` is a named
+// toaster that toasts reach with `toasterId`. The toasts live in a JS-owned
 // <div popover="manual" data-sonner-layer> in the browser's top layer, so no
 // z-index can cover them. An open modal <dialog> makes everything outside it
 // inert (unclickable, unfocusable) - even a popover painted above it - so
 // while a modal is open the layer moves INSIDE the topmost one (into its
 // [data-toast-host], which is phx-update="ignore" so LiveView patches leave it
 // alone) and is shown again, which also re-raises it above that modal.
-function toasterSection() {
-  let section = document.querySelector("[data-sonner-section]")
+function toasterSection(toasterId) {
+  wireToasts()
+  const sections = [...document.querySelectorAll("[data-sonner-section]")]
+  let section = toasterId != null && sections.find((s) => s.dataset.toasterId === String(toasterId))
+  section = section || sections.find((s) => !s.dataset.toasterId)
   if (!section) {
     section = document.createElement("section")
     section.setAttribute("data-sonner-section", "")
     section.hidden = true
     document.body.appendChild(section)
   }
-  if (!sonner.hotkey) {
-    sonner.hotkey = true
-    document.addEventListener("keydown", (e) => {
-      if (e.altKey && e.code === "KeyT") {
-        const ol = document.querySelector("[data-sonner-toaster]")
-        if (ol) { setExpanded(ol, true); ol.focus() }
-      } else if (e.key === "Escape") {
-        const ol = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-sonner-toaster]")
-        if (ol) { ol.blur(); setExpanded(ol, false) }
-      }
+  return section
+}
+
+function wireToasts() {
+  if (sonner.wired || typeof document === "undefined") return
+  sonner.wired = true
+  document.addEventListener("keydown", (e) => {
+    const lists = [...document.querySelectorAll("[data-sonner-toaster]")]
+    const hit = lists.find((ol) => {
+      const keys = toasterOptions(ol.dataset.toasterId).hotkey
+      return keys.length > 0 && keys.every((k) => e[k] || e.code === k)
     })
-    document.addEventListener("visibilitychange", () => {
-      sonner.toasts.forEach((t) => (document.hidden ? pauseToast(t) : resumeToast(t)))
+    if (hit) {
+      setHover(hit, true)
+      hit.focus()
+    } else if (e.key === "Escape") {
+      const ol = lists.find((l) => l.contains(document.activeElement))
+      if (ol) leaveToaster(ol)
+    }
+  })
+  document.addEventListener("visibilitychange", () => {
+    document.querySelectorAll("[data-sonner-toaster]").forEach(syncTimers)
+  })
+  // the sonner theme follows the page: data-theme / class / color-scheme
+  // changes on <html>, or the system scheme for theme="system"
+  const syncThemes = () => document.querySelectorAll("[data-sonner-toaster]").forEach(themeList)
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(syncThemes).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "class", "style", "dir"],
     })
   }
-  return section
+  if (typeof matchMedia === "function") {
+    const mq = matchMedia("(prefers-color-scheme: dark)")
+    if (mq.addEventListener) mq.addEventListener("change", syncThemes)
+  }
 }
 
 function toasterLayer() {
@@ -539,7 +574,6 @@ function toasterLayer() {
     layer.setAttribute("data-sonner-layer", "")
     layer.setAttribute("popover", "manual")
     layer.setAttribute("role", "region")
-    layer.setAttribute("aria-label", "Notifications alt+T")
     layer.setAttribute("aria-live", "polite")
     layer.setAttribute("aria-relevant", "additions text")
     layer.setAttribute("aria-atomic", "false")
@@ -548,8 +582,14 @@ function toasterLayer() {
     layer.addEventListener("mousedown", (e) => e.preventDefault())
     sonner.layer = layer
   }
+  const opts = toasterOptions()
+  sonner.layer.setAttribute("aria-label", opts.containerAriaLabel + " " + hotkeyLabel(opts.hotkey))
   hostToasts()
   return sonner.layer
+}
+
+function hotkeyLabel(keys) {
+  return keys.join("+").replace(/Key/g, "").replace(/Digit/g, "")
 }
 
 // Track open modal dialogs in the order they opened (the last is on top).
@@ -573,240 +613,463 @@ function hostToasts() {
   if (!layer.matches(":popover-open")) layer.showPopover()
 }
 
-function toasterOptions() {
-  const d = toasterSection().dataset
+// A data attribute that may hold JSON (offsets, toast options) or plain text.
+function sonnerValue(v, fallback) {
+  if (v == null || v === "") return fallback
+  try { return JSON.parse(v) } catch (_) { return v }
+}
+
+function toasterOptions(toasterId) {
+  const section = toasterSection(toasterId)
+  const d = section.dataset
+  const list = (v, fallback) => (v == null ? fallback : v.split(",").map((s) => s.trim()).filter(Boolean))
   return {
+    section,
     position: d.position || "bottom-right",
     expand: d.expand === "true",
     richColors: d.richColors === "true",
     closeButton: d.closeButton === "true",
-    duration: d.duration ? Number(d.duration) : 4000,
+    invert: d.invert === "true",
+    theme: d.toastTheme || "auto", // not data-theme: the page's theme selectors match that
+    dir: d.dir || "auto",
+    duration: !d.duration ? TOAST_LIFETIME : /^infinity$/i.test(d.duration) ? Infinity : Number(d.duration),
     visibleToasts: d.visibleToasts ? Number(d.visibleToasts) : 3,
+    gap: d.gap ? Number(d.gap) : TOAST_GAP,
+    offset: sonnerValue(d.offset, null),
+    mobileOffset: sonnerValue(d.mobileOffset, null),
+    hotkey: list(d.hotkey, ["altKey", "KeyT"]),
+    swipeDirections: list(d.swipeDirections, null),
+    pauseWhenPageIsHidden: d.pauseWhenPageIsHidden !== "false",
+    toastOptions: sonnerValue(d.toastOptions, {}) || {},
+    containerAriaLabel: d.containerAriaLabel || "Notifications",
+    closeButtonAriaLabel: d.closeButtonAriaLabel || "Close toast",
+    className: d.toasterClass || "",
   }
 }
 
-function toasterList(position) {
-  let ol = toasterLayer().querySelector('[data-sonner-toaster][data-position="' + position + '"]')
+// "auto" (the default) follows the page's colour scheme, which the shadcn /
+// shadcn-dark themes (and brand themes) set; "system" follows the OS.
+function sonnerTheme(theme) {
+  if (theme === "light" || theme === "dark") return theme
+  const prefersDark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches
+  if (theme !== "system") {
+    const scheme = getComputedStyle(document.documentElement).colorScheme || ""
+    const dark = /\bdark\b/.test(scheme)
+    const light = /\blight\b/.test(scheme)
+    if (dark !== light) return dark ? "dark" : "light"
+  }
+  return prefersDark ? "dark" : "light"
+}
+
+function sonnerDir(dir) {
+  if (dir === "ltr" || dir === "rtl") return dir
+  const attr = document.documentElement.getAttribute("dir")
+  if (attr === "ltr" || attr === "rtl") return attr
+  return getComputedStyle(document.documentElement).direction || "ltr"
+}
+
+function themeList(ol) {
+  const opts = toasterOptions(ol.dataset.toasterId)
+  ol.dataset.sonnerTheme = sonnerTheme(opts.theme)
+  ol.dir = sonnerDir(opts.dir)
+}
+
+// offset / mobileOffset: a length ("24px", 24) or { top, right, bottom, left }
+function sonnerOffsets(ol, opts) {
+  const px = (v) => (typeof v === "number" ? v + "px" : String(v))
+  ;[[opts.offset, "--offset", "24px"], [opts.mobileOffset, "--mobile-offset", "16px"]].forEach(([v, prefix, fallback]) => {
+    ;["top", "right", "bottom", "left"].forEach((side) => {
+      const value = v == null ? fallback : typeof v === "object" ? (v[side] == null ? fallback : px(v[side])) : px(v)
+      ol.style.setProperty(prefix + "-" + side, value)
+    })
+  })
+}
+
+function listState(ol) {
+  let s = sonnerLists.get(ol)
+  if (!s) {
+    s = { hover: false, interacting: false, focusWithin: false, lastFocused: null, mouse: null }
+    sonnerLists.set(ol, s)
+  }
+  return s
+}
+
+function toasterList(toasterId, position) {
+  const key = toasterId == null ? "" : String(toasterId)
+  const layer = toasterLayer()
+  let ol = [...layer.querySelectorAll("[data-sonner-toaster]")].find(
+    (o) => (o.dataset.toasterId || "") === key && o.dataset.position === position
+  )
   if (ol) return ol
+  const opts = toasterOptions(toasterId)
   const [y, x] = position.split("-")
-  const opts = toasterOptions()
   ol = document.createElement("ol")
   ol.setAttribute("data-sonner-toaster", "")
+  if (key) ol.dataset.toasterId = key
   ol.dataset.position = position
   ol.dataset.yPosition = y
   ol.dataset.xPosition = x
-  ol.dataset.richColors = String(opts.richColors)
-  ol.dataset.expanded = String(opts.expand)
   ol.setAttribute("tabindex", "-1")
-  ol.dir = document.documentElement.dir || "ltr"
-  ol.addEventListener("mouseenter", () => setExpanded(ol, true))
-  ol.addEventListener("mousemove", () => setExpanded(ol, true))
-  ol.addEventListener("mouseleave", () => { if (!ol.contains(document.activeElement)) setExpanded(ol, false) })
-  ol.addEventListener("focusin", () => setExpanded(ol, true))
-  ol.addEventListener("focusout", (e) => { if (!ol.contains(e.relatedTarget)) setExpanded(ol, false) })
-  toasterLayer().appendChild(ol)
+  if (opts.className) ol.className = opts.className
+  ol.style.setProperty("--gap", opts.gap + "px")
+  sonnerOffsets(ol, opts)
+  themeList(ol)
+  const s = listState(ol)
+  const nonDismissible = (e) => e.target instanceof Element && !!e.target.closest('[data-dismissible="false"]')
+  ol.addEventListener("mouseenter", (e) => { s.mouse = { x: e.clientX, y: e.clientY }; setHover(ol, true) })
+  ol.addEventListener("mousemove", (e) => { s.mouse = { x: e.clientX, y: e.clientY }; setHover(ol, true) })
+  ol.addEventListener("mouseleave", (e) => {
+    // Firefox fires mouseleave when a toast closes under a still pointer
+    const moved = !s.mouse || Math.abs(e.clientX - s.mouse.x) > 1 || Math.abs(e.clientY - s.mouse.y) > 1
+    if (!s.interacting && !s.focusWithin && moved) setHover(ol, false)
+  })
+  ol.addEventListener("focusin", (e) => {
+    if (nonDismissible(e)) return
+    if (!s.focusWithin) {
+      s.focusWithin = true
+      s.lastFocused = e.relatedTarget && !ol.contains(e.relatedTarget) ? e.relatedTarget : null
+    }
+    setHover(ol, true)
+  })
+  ol.addEventListener("focusout", (e) => {
+    if (ol.contains(e.relatedTarget)) return
+    s.focusWithin = false
+    s.lastFocused = null
+    setHover(ol, false)
+  })
+  ol.addEventListener("pointerdown", (e) => {
+    if (nonDismissible(e)) return
+    s.interacting = true
+    syncTimers(ol)
+  })
+  ol.addEventListener("pointerup", () => { s.interacting = false; syncTimers(ol) })
+  ol.addEventListener("dragend", () => setHover(ol, false))
+  layer.appendChild(ol)
   return ol
 }
 
-function setExpanded(ol, on) {
-  const pinned = toasterOptions().expand
-  const next = String(on || pinned)
-  const hovering = on && !pinned
-  if (ol.dataset.expanded === next && ol.dataset.hovering === String(hovering)) return
-  ol.dataset.expanded = next
-  ol.dataset.hovering = String(hovering)
-  sonner.toasts.filter((t) => t.ol === ol).forEach((t) => (on ? pauseToast(t) : resumeToast(t)))
-  layoutToasts(ol)
+// Esc in the toaster: collapse it and give focus back to where it came from.
+function leaveToaster(ol) {
+  const s = listState(ol)
+  const back = s.lastFocused
+  setHover(ol, false)
+  if (back && back.isConnected) back.focus({ preventScroll: true })
+  else if (document.activeElement && ol.contains(document.activeElement)) document.activeElement.blur()
 }
 
+function setHover(ol, on) {
+  const s = listState(ol)
+  if (s.hover === on) return
+  s.hover = on
+  layoutToasts(ol)
+  syncTimers(ol)
+}
+
+function listToasts(ol) {
+  return sonner.toasts.filter((t) => t.ol === ol) // newest first
+}
+
+// The stack: every toast still in the list (removed ones too, until they
+// unmount) keeps its index, so the next one steps forward once the exit
+// is done; the offsets only count the toasts that stay.
 function layoutToasts(ol) {
-  const list = sonner.toasts.filter((t) => t.ol === ol) // newest first
-  const max = toasterOptions().visibleToasts
-  const expanded = ol.dataset.expanded === "true"
+  const opts = toasterOptions(ol.dataset.toasterId)
+  const hover = listState(ol).hover
+  const list = listToasts(ol)
   let offset = 0
   list.forEach((t, i) => {
     const el = t.el
-    el.dataset.front = String(i === 0)
-    el.dataset.visible = String(i < max)
-    el.dataset.expanded = String(expanded)
     el.dataset.index = String(i)
+    el.dataset.front = String(i === 0)
+    el.dataset.visible = String(i + 1 <= opts.visibleToasts)
+    el.dataset.expanded = String(hover || (opts.expand && el.dataset.mounted === "true"))
+    el.style.setProperty("--index", String(i))
     el.style.setProperty("--toasts-before", String(i))
     el.style.setProperty("--z-index", String(list.length - i))
-    el.style.setProperty("--offset", offset + "px")
-    el.style.setProperty("--initial-height", t.height + "px")
-    offset += t.height + TOAST_GAP
+    el.style.setProperty("--initial-height", opts.expand ? "auto" : t.height + "px")
+    if (t.removed) return // keeps the offset it had (the exit starts there)
+    el.style.setProperty("--offset", Math.round(offset) + "px")
+    offset += t.height + opts.gap
   })
-  if (list[0]) ol.style.setProperty("--front-toast-height", list[0].height + "px")
+  const front = list.find((t) => !t.removed)
+  ol.style.setProperty("--front-toast-height", (front ? front.height : 0) + "px")
 }
 
+// Height without the collapsed stack's scale (offsetHeight ignores
+// transforms; the rect is more precise when it isn't mid-transition).
 function measureToast(t) {
   const el = t.el
-  const prev = el.style.height
-  el.style.height = "auto"
-  t.height = el.getBoundingClientRect().height
-  el.style.height = prev
+  const scale = el.dataset.expanded === "true" ? 1 : 1 - Number(el.dataset.index || 0) * SCALE_MULTIPLIER
+  el.style.setProperty("height", "auto")
+  const offsetHeight = el.offsetHeight
+  const rect = Math.round((el.getBoundingClientRect().height / scale + Number.EPSILON) * 100) / 100
+  el.style.removeProperty("height")
+  t.height = Math.abs(rect - offsetHeight) < 1 ? rect : offsetHeight
 }
 
+// Timers run unless the stack is expanded (hovered / focused), pressed, or
+// the page is hidden. Loading toasts and duration: Infinity never time out.
+function syncTimers(ol) {
+  const s = listState(ol)
+  const opts = toasterOptions(ol.dataset.toasterId)
+  const paused = s.hover || s.interacting || (opts.pauseWhenPageIsHidden && document.hidden)
+  listToasts(ol).forEach((t) => {
+    if (paused) pauseToast(t)
+    else if (!t.timer) startToastTimer(t)
+  })
+}
 function startToastTimer(t) {
   clearTimeout(t.timer)
-  if (t.type === "loading" || t.duration === Infinity || t.removed) return
-  t.remaining = t.remaining == null ? t.duration : t.remaining
+  t.timer = null
+  if (t.removed || t.type === "loading" || t.duration === Infinity) return
   t.startedAt = Date.now()
-  t.timer = setTimeout(() => dismissToast(t.id, "auto"), t.remaining)
+  t.timer = setTimeout(() => {
+    t.timer = null
+    if (t.data.onAutoClose) t.data.onAutoClose(t)
+    deleteToast(t)
+  }, t.remaining)
 }
 function pauseToast(t) {
-  if (!t.timer || t.paused) return
+  if (!t.timer) return
   clearTimeout(t.timer)
-  t.paused = true
+  t.timer = null
   t.remaining = Math.max(0, t.remaining - (Date.now() - t.startedAt))
 }
-function resumeToast(t) {
-  if (!t.paused || document.hidden) return
-  if (t.ol && t.ol.dataset.hovering === "true") return
-  t.paused = false
-  startToastTimer(t)
+
+// Strings render as text; a Node (or a function returning one) as itself.
+function toastContent(node, value, t) {
+  if (typeof value === "function") value = value(t)
+  if (value == null || value === false) return
+  if (typeof Node !== "undefined" && value instanceof Node) node.appendChild(value)
+  else node.textContent = String(value)
+}
+
+// An icon: markup string, a Node, or a <template data-sonner-icon="…"> in the
+// toaster (an empty one hides that icon). null = no icon.
+function toastIcon(section, type) {
+  const tpl = section.querySelector('template[data-sonner-icon="' + type + '"]')
+  if (tpl) return tpl.content.childElementCount ? tpl.content.cloneNode(true) : null
+  return TOAST_ICONS[type] ? htmlNodes(TOAST_ICONS[type]) : null
+}
+function htmlNodes(html) {
+  const tpl = document.createElement("template")
+  tpl.innerHTML = html
+  return tpl.content
+}
+function iconNodes(value) {
+  if (typeof value === "function") value = value()
+  if (value == null || value === false) return null
+  return typeof Node !== "undefined" && value instanceof Node ? value : htmlNodes(String(value))
 }
 
 function renderToast(t) {
   const el = t.el
+  const d = t.data
+  const opts = toasterOptions(t.toasterId)
+  const o = opts.toastOptions
+  const classes = o.classes || {}
+  const own = d.classes || {}
+  const cls = (...names) => names.filter(Boolean).join(" ")
+  const type = t.type
+  const make = (tag, attrs, className) => {
+    const n = document.createElement(tag)
+    Object.entries(attrs || {}).forEach(([k, v]) => n.setAttribute(k, v))
+    if (className) n.className = className
+    return n
+  }
   el.replaceChildren()
-  el.dataset.type = t.type
-  el.setAttribute("role", t.type === "error" ? "alert" : "status")
-  el.setAttribute("aria-live", t.type === "error" || t.important ? "assertive" : "polite")
-  if (t.closeButton && t.dismissible) {
-    const close = document.createElement("button")
-    close.type = "button"
-    close.setAttribute("data-close-button", "")
-    close.setAttribute("aria-label", "Close toast")
-    close.innerHTML = TOAST_CLOSE
-    close.addEventListener("click", () => dismissToast(t.id))
+  el.className = cls(o.class, d.class, classes.toast, own.toast, classes[type], own[type])
+  el.style.cssText = [o.style, d.style].filter(Boolean).join(";")
+  el.setAttribute("role", type === "error" ? "alert" : "status")
+  el.setAttribute("aria-live", type === "error" || d.important ? "assertive" : "polite")
+  el.dataset.type = type
+  el.dataset.styled = String(!(d.component || d.unstyled || o.unstyled))
+  el.dataset.richColors = String(d.richColors != null ? !!d.richColors : opts.richColors)
+  el.dataset.invert = String(!!(d.invert || opts.invert))
+  el.dataset.promise = String(!!d.promise)
+  el.dataset.dismissible = String(t.dismissible)
+  if (d.testId) el.dataset.testid = d.testId
+
+  const closeButton = d.closeButton != null ? d.closeButton : o.closeButton != null ? o.closeButton : opts.closeButton
+  const closeIcon = toastIcon(opts.section, "close")
+  if (closeButton && !d.component && type !== "loading" && closeIcon) {
+    const close = make("button", { type: "button", "data-close-button": "", "data-disabled": "false", "aria-label": o.closeButtonAriaLabel || opts.closeButtonAriaLabel }, cls(classes.closeButton, own.closeButton))
+    close.appendChild(closeIcon)
+    close.addEventListener("click", () => {
+      if (!t.dismissible) return
+      deleteToast(t)
+      if (d.onDismiss) d.onDismiss(t)
+    })
     el.appendChild(close)
   }
-  const iconHTML = t.icon || TOAST_ICONS[t.type]
-  if (iconHTML) {
-    const icon = document.createElement("div")
-    icon.setAttribute("data-icon", "")
-    icon.innerHTML = iconHTML
+
+  if (d.component) {
+    toastContent(el, typeof d.component === "function" ? d.component(t.id) : d.component, t)
+    t.settling = false
+    return
+  }
+
+  const typeIcon = d.icon !== undefined ? iconNodes(d.icon) : toastIcon(opts.section, type)
+  if (d.icon !== null && typeIcon) {
+    const icon = make("div", { "data-icon": "" }, cls(classes.icon, own.icon))
+    const loader = (visible) => {
+      const wrap = make("div", { "data-visible": String(visible) }, cls("sonner-loader", classes.loader, own.loader))
+      const spinner = toastIcon(opts.section, "loading")
+      if (spinner) wrap.appendChild(spinner)
+      return wrap
+    }
+    if (type === "loading") icon.appendChild(d.icon ? typeIcon : loader(true))
+    else {
+      // a settled promise keeps its spinner one more render, fading out
+      if (d.promise && t.settling) icon.appendChild(loader(false))
+      icon.appendChild(typeIcon)
+    }
     el.appendChild(icon)
   }
-  const content = document.createElement("div")
-  content.setAttribute("data-content", "")
-  const title = document.createElement("div")
-  title.setAttribute("data-title", "")
-  title.textContent = t.title
+  t.settling = false
+
+  const content = make("div", { "data-content": "" }, cls(classes.content, own.content))
+  const title = make("div", { "data-title": "" }, cls(classes.title, own.title))
+  toastContent(title, t.title, t)
   content.appendChild(title)
-  if (t.description) {
-    const desc = document.createElement("div")
-    desc.setAttribute("data-description", "")
-    desc.textContent = t.description
+  if (d.description != null && d.description !== "") {
+    const desc = make("div", { "data-description": "" }, cls(o.descriptionClass, d.descriptionClass, classes.description, own.description))
+    toastContent(desc, d.description, t)
     content.appendChild(desc)
   }
   el.appendChild(content)
+
   const button = (spec, cancel) => {
-    const b = document.createElement("button")
-    b.type = "button"
-    b.setAttribute("data-button", "")
+    if (typeof Node !== "undefined" && spec instanceof Node) return spec
+    const b = make("button", { type: "button", "data-button": "" }, cancel ? cls(classes.cancelButton, own.cancelButton) : cls(classes.actionButton, own.actionButton))
     if (cancel) b.setAttribute("data-cancel", "")
-    b.textContent = spec.label
+    const style = cancel ? (d.cancelButtonStyle != null ? d.cancelButtonStyle : o.cancelButtonStyle) : (d.actionButtonStyle != null ? d.actionButtonStyle : o.actionButtonStyle)
+    if (style) b.style.cssText = style
+    toastContent(b, spec.label, t)
     b.addEventListener("click", (e) => {
-      if (spec.onClick) spec.onClick(e)
-      if (!e.defaultPrevented) dismissToast(t.id)
+      if (cancel) {
+        if (!t.dismissible) return
+        if (spec.onClick) spec.onClick(e)
+        deleteToast(t)
+      } else {
+        if (spec.onClick) spec.onClick(e)
+        if (!e.defaultPrevented) deleteToast(t)
+      }
     })
     return b
   }
-  if (t.cancel) el.appendChild(button(t.cancel, true))
-  if (t.action) el.appendChild(button(t.action, false))
+  if (d.cancel) el.appendChild(button(d.cancel, true))
+  if (d.action) el.appendChild(button(d.action, false))
 }
 
+// Swipe toward the edges the stack sits on (bottom-right: down or right);
+// the other way is dampened, not blocked. 45px or a quick flick dismisses.
 function bindSwipe(t) {
   const el = t.el
-  const [y, x] = t.position.split("-")
   let start = null
+  let startedAt = 0
+  let axis = null
+  const amount = (k) => parseFloat(el.style.getPropertyValue("--swipe-amount-" + k)) || 0
+  const directions = () => toasterOptions(t.toasterId).swipeDirections || t.position.split("-")
+  const damp = (delta) => {
+    const v = delta * (1 / (1.5 + Math.abs(delta) / 20))
+    return Math.abs(v) < Math.abs(delta) ? v : delta
+  }
+  const reset = () => {
+    start = null
+    axis = null
+    el.style.setProperty("--swipe-amount-x", "0px")
+    el.style.setProperty("--swipe-amount-y", "0px")
+    el.dataset.swiped = "false"
+    el.dataset.swiping = "false"
+  }
   el.addEventListener("pointerdown", (e) => {
-    if (!t.dismissible || e.button !== 0 || e.target.closest("button")) return
-    start = { x: e.clientX, y: e.clientY, at: Date.now() }
-    el.setPointerCapture(e.pointerId)
+    if (t.type === "loading" || t.removed || e.button !== 0) return
+    startedAt = Date.now()
+    if (e.target instanceof Element && e.target.closest("button, a")) return
+    try { el.setPointerCapture(e.pointerId) } catch (_) { /* pointer already gone */ }
+    el.dataset.swiping = "true"
+    start = { x: e.clientX, y: e.clientY }
   })
   el.addEventListener("pointermove", (e) => {
-    if (!start) return
-    let dx = e.clientX - start.x
-    let dy = e.clientY - start.y
-    // only toward the screen edge the stack is anchored to; resist the other way
-    dy = y === "bottom" ? Math.max(0, dy) : Math.min(0, dy)
-    dx = x === "left" ? Math.min(0, dx) : x === "right" ? Math.max(0, dx) : 0
-    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return
-    el.dataset.swiping = "true"
-    el.style.setProperty("--swipe-x", dx + "px")
-    el.style.setProperty("--swipe-y", dy + "px")
+    if (!start || !t.dismissible) return
+    if (window.getSelection && window.getSelection().toString().length > 0) return
+    const dx = e.clientX - start.x
+    const dy = e.clientY - start.y
+    if (!axis && (Math.abs(dx) > 1 || Math.abs(dy) > 1)) axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y"
+    const dirs = directions()
+    let x = 0
+    let y = 0
+    if (axis === "y" && (dirs.includes("top") || dirs.includes("bottom"))) {
+      y = (dirs.includes("top") && dy < 0) || (dirs.includes("bottom") && dy > 0) ? dy : damp(dy)
+    } else if (axis === "x" && (dirs.includes("left") || dirs.includes("right"))) {
+      x = (dirs.includes("left") && dx < 0) || (dirs.includes("right") && dx > 0) ? dx : damp(dx)
+    }
+    if (x || y) el.dataset.swiped = "true"
+    el.style.setProperty("--swipe-amount-x", x + "px")
+    el.style.setProperty("--swipe-amount-y", y + "px")
   })
   const end = () => {
-    if (!start) return
-    const dx = parseFloat(el.style.getPropertyValue("--swipe-x")) || 0
-    const dy = parseFloat(el.style.getPropertyValue("--swipe-y")) || 0
-    const dist = Math.max(Math.abs(dx), Math.abs(dy))
-    const velocity = dist / Math.max(1, Date.now() - start.at)
-    start = null
-    el.dataset.swiping = "false"
-    if (dist >= SWIPE_THRESHOLD || velocity > 0.11) {
+    if (!start || el.dataset.swipeOut === "true") return
+    const x = amount("x")
+    const y = amount("y")
+    const swipe = axis === "x" ? x : y
+    const velocity = Math.abs(swipe) / Math.max(1, Date.now() - startedAt)
+    const dirs = directions()
+    const allowed = axis === "x" ? dirs.includes(x > 0 ? "right" : "left") : axis === "y" ? dirs.includes(y > 0 ? "bottom" : "top") : false
+    if (t.dismissible && allowed && (Math.abs(swipe) >= SWIPE_THRESHOLD || velocity > 0.11)) {
+      start = null
+      if (t.data.onDismiss) t.data.onDismiss(t)
+      el.dataset.swipeDirection = axis === "x" ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up"
+      deleteToast(t)
       el.dataset.swipeOut = "true"
-      el.style.setProperty("--swipe-x", dx * 2.5 + "px")
-      el.style.setProperty("--swipe-y", dy * 2.5 + "px")
-      dismissToast(t.id)
-    } else {
-      el.style.setProperty("--swipe-x", "0px")
-      el.style.setProperty("--swipe-y", "0px")
+      return
     }
+    reset()
   }
   el.addEventListener("pointerup", end)
   el.addEventListener("pointercancel", end)
+  el.addEventListener("dragend", reset)
 }
 
+const TOAST_TYPES = ["default", "success", "info", "warning", "error", "loading"]
+
 function createToast(message, data) {
-  data = data || {}
-  const opts = toasterOptions()
-  const existing = data.id != null && sonner.toasts.find((t) => t.id === data.id && !t.removed)
-  if (existing) {
+  data = Object.assign({}, data)
+  const id = data.id != null && data.id !== "" ? data.id : ++sonner.seq
+  delete data.id
+  const type = TOAST_TYPES.includes(data.type) ? data.type : "default"
+  delete data.type
+  const dismissible = data.dismissible != null ? data.dismissible !== false : data.dismissable !== false
+  const existing = sonner.toasts.find((t) => t.id === id)
+  if (existing && !existing.removed) {
+    // An update: merged into the toast, its timer starts over.
     const wasLoading = existing.type === "loading"
-    Object.assign(existing, {
-      title: message,
-      type: data.type || "default",
-      description: data.description,
-      action: data.action,
-      cancel: data.cancel,
-      icon: data.icon,
-      important: !!data.important,
-      duration: data.duration != null ? data.duration : opts.duration,
-      closeButton: data.closeButton != null ? data.closeButton : existing.closeButton,
-      onDismiss: data.onDismiss,
-      onAutoClose: data.onAutoClose,
-      remaining: null,
-    })
+    delete data.position
+    delete data.toasterId
+    existing.data = Object.assign(existing.data, data)
+    existing.title = message
+    existing.type = type
+    existing.dismissible = dismissible
+    existing.duration = toastDuration(existing)
+    existing.remaining = existing.duration
+    existing.settling = wasLoading && type !== "loading"
     renderToast(existing)
+    layoutToasts(existing.ol)
     measureToast(existing)
     layoutToasts(existing.ol)
-    if (wasLoading || existing.type !== "loading") startToastTimer(existing)
-    return existing.id
+    startToastTimer(existing)
+    syncTimers(existing.ol)
+    return id
   }
-  const position = data.position || opts.position
-  const ol = toasterList(position)
-  const t = {
-    id: data.id != null ? data.id : ++sonner.seq,
-    title: message,
-    type: data.type || "default",
-    description: data.description,
-    action: data.action,
-    cancel: data.cancel,
-    icon: data.icon,
-    important: !!data.important,
-    duration: data.duration != null ? data.duration : opts.duration,
-    dismissible: data.dismissible !== false,
-    closeButton: data.closeButton != null ? data.closeButton : opts.closeButton,
-    onDismiss: data.onDismiss,
-    onAutoClose: data.onAutoClose,
-    position,
-    ol,
-    remaining: null,
-  }
+  if (existing) unmountToast(existing) // dismissed but still leaving: a new toast
+
+  const toasterId = data.toasterId != null && data.toasterId !== "" ? String(data.toasterId) : undefined
+  const position = data.position || toasterOptions(toasterId).position
+  const ol = toasterList(toasterId, position)
+  const t = { id, toasterId, position, ol, title: message, type, dismissible, data, removed: false, timer: null }
+  t.duration = toastDuration(t)
+  t.remaining = t.duration
   const el = document.createElement("li")
   el.setAttribute("data-sonner-toast", "")
   el.setAttribute("aria-atomic", "true")
@@ -814,62 +1077,137 @@ function createToast(message, data) {
   el.dataset.mounted = "false"
   el.dataset.removed = "false"
   el.dataset.swiping = "false"
+  el.dataset.swiped = "false"
   el.dataset.swipeOut = "false"
   el.dataset.yPosition = position.split("-")[0]
   el.dataset.xPosition = position.split("-")[1]
   t.el = el
   renderToast(t)
-  ol.appendChild(el)
   sonner.toasts.unshift(t)
+  ol.prepend(el) // newest first, in reading and tab order too
   measureToast(t)
   layoutToasts(ol)
   bindSwipe(t)
   // next frame: flip data-mounted so the enter transition runs
-  requestAnimationFrame(() => requestAnimationFrame(() => { el.dataset.mounted = "true" }))
-  if (ol.dataset.hovering === "true") { t.paused = true; t.remaining = t.duration } else startToastTimer(t)
-  return t.id
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.dataset.mounted = "true"
+    if (toasterOptions(toasterId).expand) layoutToasts(ol)
+  }))
+  syncTimers(ol)
+  return id
+}
+
+function toastDuration(t) {
+  const opts = toasterOptions(t.toasterId)
+  const d = t.data.duration != null ? t.data.duration : opts.toastOptions.duration != null ? opts.toastOptions.duration : opts.duration
+  return /^infinity$/i.test(String(d)) ? Infinity : Number(d)
+}
+
+// Starts the exit: sonner's data-removed transition, unmounted 200ms later.
+function deleteToast(t) {
+  if (t.removed) return
+  t.removed = true
+  clearTimeout(t.timer)
+  t.timer = null
+  t.el.dataset.removed = "true"
+  layoutToasts(t.ol)
+  t.unmount = setTimeout(() => unmountToast(t), TOAST_UNMOUNT_MS)
+}
+
+function unmountToast(t) {
+  clearTimeout(t.unmount)
+  if (!sonner.toasts.includes(t)) return
+  const ol = t.ol
+  const s = listState(ol)
+  const hadFocus = t.el.contains(document.activeElement)
+  t.el.remove()
+  sonner.toasts = sonner.toasts.filter((x) => x !== t)
+  const left = listToasts(ol)
+  if (left.length <= 1) s.hover = false
+  if (!left.length) {
+    const back = s.lastFocused
+    s.focusWithin = false
+    s.lastFocused = null
+    ol.remove()
+    if (hadFocus && back && back.isConnected) back.focus({ preventScroll: true })
+    return
+  }
+  layoutToasts(ol)
+  syncTimers(ol)
+  if (hadFocus) ol.focus({ preventScroll: true })
 }
 
 // `how`: "auto" (timer ran out -> onAutoClose), "silent" (no callback), or
-// omitted (closed by the user or toast.dismiss() -> onDismiss), as in sonner.
+// omitted (toast.dismiss() -> onDismiss), as in sonner.
 function dismissToast(id, how) {
-  const targets = id == null ? sonner.toasts.slice() : sonner.toasts.filter((t) => t.id === id)
+  const targets = sonner.toasts.filter((t) => !t.removed && (id == null || t.id === id))
   targets.forEach((t) => {
-    if (t.removed) return
-    t.removed = true
-    clearTimeout(t.timer)
-    const cb = how === "auto" ? t.onAutoClose : how === "silent" ? null : t.onDismiss
+    const cb = how === "auto" ? t.data.onAutoClose : how === "silent" ? null : t.data.onDismiss
+    deleteToast(t)
     if (cb) cb(t)
-    t.el.dataset.removed = "true"
-    sonner.toasts = sonner.toasts.filter((x) => x !== t)
-    layoutToasts(t.ol)
-    setTimeout(() => {
-      t.el.remove()
-      if (!t.ol.children.length) t.ol.remove()
-    }, TOAST_UNMOUNT_MS)
   })
+  return id
 }
 
 function toast(message, data) { return createToast(message, data) }
 ;["success", "info", "warning", "error", "loading"].forEach((type) => {
   toast[type] = (message, data) => createToast(message, Object.assign({}, data, { type }))
 })
-toast.message = (message, data) => createToast(message, data)
+toast.message = (message, data) => createToast(message, Object.assign({}, data, { type: "default" }))
 toast.dismiss = (id) => dismissToast(id)
-toast.promise = (promise, msgs) => {
-  msgs = msgs || {}
-  const pick = (v, arg) => (typeof v === "function" ? v(arg) : v)
-  const id = createToast(msgs.loading || "Loading…", { type: "loading", id: msgs.id, position: msgs.position })
+// Headless: `render(id)` returns your markup (a Node or an HTML-free string);
+// it gets the stack, timers and swipe but none of the toast chrome.
+toast.custom = (render, data) => createToast("", Object.assign({}, data, { component: render, type: "default" }))
+toast.getActiveToasts = () =>
+  sonner.toasts
+    .filter((t) => !t.removed)
+    .map((t) => Object.assign({}, t.data, { id: t.id, type: t.type, title: t.title, position: t.position, toasterId: t.toasterId }))
+
+// loading / success / error: a string, or a function of the result (or the
+// error) returning a string, or { message, ...toast options }. A fetch
+// Response that isn't ok counts as an error.
+toast.promise = (promise, data) => {
+  if (!data) return
+  const { loading, success, error, finally: onFinally, description, ...rest } = data
+  const resolve = (v, arg) => {
+    const out = typeof v === "function" ? v(arg) : v
+    return out && typeof out === "object" && !(typeof Node !== "undefined" && out instanceof Node) && "message" in out
+      ? out
+      : { message: out }
+  }
+  const settle = (type, spec, arg) => {
+    const { message, ...more } = resolve(spec, arg)
+    const extra = { id, type }
+    if (type === "success" && typeof description === "function") extra.description = description(arg)
+    return createToast(message, Object.assign({}, rest, { promise: true }, more, extra))
+  }
+  let id
+  if (loading !== undefined) {
+    const { message, ...more } = resolve(loading)
+    id = createToast(message, Object.assign({}, rest, { promise: true, type: "loading", description: typeof description === "function" ? undefined : description }, more))
+  }
+  let shouldDismiss = id !== undefined
   Promise.resolve(typeof promise === "function" ? promise() : promise)
-    .then((data) => {
-      if (msgs.success == null) return dismissToast(id)
-      createToast(pick(msgs.success, data), { id, type: "success", description: pick(msgs.description, data) })
+    .then((response) => {
+      if (response && typeof response === "object" && typeof response.ok === "boolean" && !response.ok) {
+        shouldDismiss = false
+        const fallback = "status" in response ? "HTTP error! Status: " + response.status : "Error! " + response
+        id = settle("error", error !== undefined ? error : fallback, response)
+      } else if (success !== undefined) {
+        shouldDismiss = false
+        id = settle("success", success, response)
+      }
     })
     .catch((err) => {
-      if (msgs.error == null) return dismissToast(id)
-      createToast(pick(msgs.error, err), { id, type: "error" })
+      if (error !== undefined) {
+        shouldDismiss = false
+        id = settle("error", error, err)
+      }
     })
-    .finally(() => { if (msgs.finally) msgs.finally() })
+    .finally(() => {
+      if (shouldDismiss) dismissToast(id)
+      if (onFinally) onFinally()
+    })
   return id
 }
 
@@ -889,25 +1227,34 @@ if (typeof window !== "undefined" && !window.__shadcnServerToasts) {
   window.addEventListener("phx:shadcn:toast", (e) => toastFromServer(e.detail))
 }
 
+const SERVER_TOAST_KEYS = {
+  id: "id", description: "description", position: "position", important: "important",
+  close_button: "closeButton", rich_colors: "richColors", invert: "invert",
+  dismissible: "dismissible", class: "class", description_class: "descriptionClass",
+  unstyled: "unstyled", toaster_id: "toasterId", test_id: "testId", duration: "duration",
+}
+
 function toastFromServer(payload) {
   const p = payload || {}
+  if (p.dismiss) return dismissToast(p.id != null ? p.id : undefined)
   const wrap = (spec) =>
     spec && {
       label: spec.label,
       onClick: () => { if (spec.event) pushToastEvent(spec.event, spec.value || {}) },
     }
-  if (p.dismiss) return dismissToast(p.id != null ? p.id : undefined)
-  return createToast(p.message, {
-    id: p.id,
-    type: p.type,
-    description: p.description,
-    duration: p.duration,
-    position: p.position,
-    important: p.important,
-    closeButton: p.close_button,
-    action: wrap(p.action),
-    cancel: wrap(p.cancel),
-  })
+  const opts = { type: p.type, action: wrap(p.action), cancel: wrap(p.cancel) }
+  Object.entries(SERVER_TOAST_KEYS).forEach(([from, to]) => { if (p[from] != null) opts[to] = p[from] })
+  if (p.classes) opts.classes = p.classes
+  // icon: a heroicon class ("hero-sparkles"), or false for none
+  if (p.icon === false) opts.icon = null
+  else if (typeof p.icon === "string") {
+    const span = document.createElement("span")
+    span.className = p.icon
+    span.setAttribute("data-sonner-heroicon", "")
+    span.setAttribute("aria-hidden", "true")
+    opts.icon = span
+  }
+  return createToast(p.message, opts)
 }
 
 // ---- Flash as Sonner ---------------------------------------------------------

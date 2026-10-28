@@ -1199,46 +1199,59 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
             %{
               part: "Toaster",
               description:
-                "<.toaster> section (aria-label \"Notifications alt+T\", aria-live=polite) holding one <ol> stack per screen position."
+                "A top-layer region (aria-label \"Notifications alt+T\", aria-live=polite) holding one <ol data-sonner-toaster> stack per screen position; <.toaster> only carries the options."
             },
             %{
               part: "Toast",
               description:
-                "<li role=status>: optional type icon, title + description, optional cancel/action buttons and close button."
+                "<li data-sonner-toast>: optional type icon, title + description, optional cancel/action buttons and a close button at the top start corner."
             },
             %{
               part: "Stack",
               description:
-                "Newest toast in front; up to 3 visible, the ones behind peek out scaled down. Hover or focus expands the stack."
+                "Newest toast in front; up to 3 visible, the ones behind peek out 14px apart, 5% smaller each. Hover or focus expands the stack."
             }
           ],
           measurements: [
-            %{property: "Width", value: "356px (full width minus 16px gutters under 600px)"},
-            %{property: "Padding / radius", value: "16px / var(--radius-lg)"},
-            %{property: "Viewport offset", value: "24px (16px on phones)"},
+            %{property: "Width", value: "356px (full width minus 16px gutters up to 600px)"},
+            %{property: "Padding / radius", value: "16px / 8px (var(--radius-md))"},
+            %{
+              property: "Viewport offset",
+              value: "24px (16px up to 600px); offset / mobile_offset"
+            },
             %{property: "Stack gap", value: "14px; collapsed toasts scale 5% per step"},
             %{
               property: "Title / description",
-              value: "13px, 500 / 400 weight; description muted-foreground"
+              value:
+                "13px, 500 / 400 weight; description #3f3f3f (91% grey in dark), mixed from the toast colours"
             },
-            %{property: "Action button", value: "24px tall, primary fill, 12px / 500"},
+            %{
+              property: "Action / cancel button",
+              value:
+                "24px tall, 4px radius, 12px / 500; action inverts the toast colours, cancel 8% (30% dark) of the text colour"
+            },
+            %{property: "Close button", value: "20px circle at the top start corner, 12px icon"},
+            %{
+              property: "Rich colours",
+              value:
+                "sonner's own light and dark palettes (--success-bg / -border / -text … --error-*, on [data-sonner-toaster]), not the status tokens"
+            },
             %{
               property: "Duration",
-              value: "4000ms default; paused while hovered, focused, or tab hidden"
+              value:
+                "4000ms default; paused while hovered, focused, pressed, or the tab is hidden"
             },
-            %{property: "Motion", value: "400ms transform/opacity/height; swipe 45px to dismiss"}
+            %{
+              property: "Motion",
+              value:
+                "400ms transform/opacity/height, unmounted after 200ms; swipe 45px (or a flick) toward the stack's edges; promise icons scale in over 300ms"
+            }
           ],
           tokens: [
             "popover",
             "popover-foreground",
             "border-color",
-            "muted-foreground",
-            "primary",
-            "primary-foreground",
-            "color-success",
-            "color-info",
-            "color-warning",
-            "destructive"
+            "ring"
           ]
         },
         accessibility: %{
@@ -1251,14 +1264,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Core do
               action: "Move between toasts and their action, cancel, and close buttons"
             },
             %{keys: "Enter / Space", action: "Activate the focused action or close button"},
-            %{keys: "Escape", action: "Leave the toaster and collapse the stack"}
+            %{
+              keys: "Escape",
+              action: "Collapse the stack and return focus to where it was before Alt+T"
+            }
           ],
           focus:
             "Toasts never take focus on their own; a focused or hovered stack pauses its timers so keyboard and screen-reader users have time to act.",
           screen_reader:
             "Title and description are read as one atomic message. Keep them short and self-contained; never put the only copy of important information in a toast.",
           touch_target:
-            "Swipe a toast toward its screen edge to dismiss. The action button is 24px tall; on touch-first screens prefer an in-page control for anything critical.",
+            "Swipe a toast toward the edges its stack sits on (down or right for bottom-right; swipe_directions to change); the other way only stretches. The action button is 24px tall; on touch-first screens prefer an in-page control for anything critical.",
           reduced_motion:
             "Under prefers-reduced-motion, toasts appear and leave without sliding or scaling, and the loading spinner slows down."
         },

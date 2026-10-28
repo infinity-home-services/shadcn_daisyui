@@ -8,6 +8,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The toast is now a port of svelte-sonner, set up the way shadcn-svelte ships
+it: same markup, timings and stylesheet, so `toast()`, `push_toast/3` and
+flashes look and move like shadcn's Sonner, and every sonner option is there.
+
+### Changed
+
+- **Toasts look like shadcn's Sonner.** 8px corners (`--radius-md`) instead
+  of 10px; the description in sonner's near-foreground grey (`#3f3f3f`, 91% in
+  dark) instead of the muted foreground; the action button inverts the toast's
+  colours (popover foreground on popover) with a 4px radius instead of using
+  `--primary`; the cancel button is sonner's translucent text colour; the
+  close button sits at the top start corner on every position (it moved to
+  the right on right-hand stacks); `rich_colors` uses sonner's own light and
+  dark palettes instead of tints of the status colours (override
+  `--success-bg` … `--error-text` on `[data-sonner-toaster]` for a brand).
+- **Toasts move like sonner's.** Unmounted 200ms into the exit; a dismissed
+  toast keeps its place in the stack until it's gone; swipes lock to one
+  axis, dismiss only toward the stack's edges (down or right for
+  bottom-right) and stretch, dampened, the other way, then fly out the way
+  they were thrown; promise toasts fade the spinner out as the result icon
+  scales in; pressing a toast pauses the timers; the newest toast comes first
+  in the tab order; Esc returns focus to where Alt+T took it from.
+- **Updating a toast keeps what you don't pass** (sonner merges): reusing an
+  `id` changes the title, type and the options you give, and keeps the rest.
+  Action and cancel buttons close the toast without calling `onDismiss` (as
+  in sonner); the close button, a swipe and `toast.dismiss()` still call it.
+
+### Added
+
+- `<.toaster>`: `invert`, `theme` (`auto` follows the page, or
+  `light | dark | system`), `gap`, `offset` / `mobile_offset` (px, a length, or
+  per side), `hotkey`, `dir`, `swipe_directions`, `toast_options` (classes per
+  part and type, `unstyled`, styles, default `duration` / `close_button`),
+  `container_aria_label`, `close_button_aria_label`, `toaster_id` for a second
+  toaster, `pause_when_page_is_hidden`, `duration={:infinity}`, `class` on
+  each toast list, and `<:success_icon>` … `<:close_icon>` slots for your own
+  icons (an empty slot hides one).
+- JS: `toast.custom((id) => element)` (headless), `toast.getActiveToasts()`,
+  per-toast `invert`, `richColors`, `unstyled`, `class`, `classes`,
+  `descriptionClass`, `style`, `actionButtonStyle`, `cancelButtonStyle`,
+  `dismissible`, `testId`, `toasterId`, `icon: null`; `toast.promise` takes a
+  fetch `Response` that isn't ok as an error, an optional `loading`, and
+  `success` / `error` functions returning `{ message, ...options }`.
+- `push_toast/3`: `:rich_colors`, `:invert`, `:dismissible`, `:icon` (a
+  heroicon class, or `false`), `:class`, `:description_class`, `:classes`,
+  `:unstyled`, `:toaster_id`, `:test_id`, and `duration: :infinity`.
+
 ## [0.24.3] - 2026-10-26
 
 One behaviour fix, no markup changes: the `<.app_shell>` sidebar keeps its
