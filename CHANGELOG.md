@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-28
+
+Leaderboard labels can sit above the bars at every width, a number card's
+trend now runs to the card's edges, and the change badges have borders in
+their own tone, with every badge's text at 4.5:1 or more in light and dark.
+
 ### Added
 
 - **`options.plugins.endLabels.position: "above"`** puts a horizontal bar
