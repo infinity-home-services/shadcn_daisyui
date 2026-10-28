@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-28
+
 A chart kit, as an optional part: `<.chart>` draws any Chart.js chart from an
 ordinary config the server sends, `<.number_card>` is a dashboard's headline
 figure, and both take their look from the theme. Apps that don't use charts
