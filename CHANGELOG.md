@@ -8,9 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-10-28
+
 The toast is now a port of svelte-sonner, set up the way shadcn-svelte ships
 it: same markup, timings and stylesheet, so `toast()`, `push_toast/3` and
 flashes look and move like shadcn's Sonner, and every sonner option is there.
+Nothing to change in your layout, `push_toast/3` calls or flashes; two small
+JS behaviours now follow sonner (see Breaking).
+
+### Breaking
+
+- **Updating a toast keeps what you don't pass** (sonner merges): reusing an
+  `id` changes the title, type and the options you give, and keeps the rest.
+  Clear one with `description: undefined` in JS, or `description: ""` from
+  `push_toast/3`.
+- **Action and cancel buttons close the toast without calling `onDismiss`**
+  (as in sonner); the close button, a swipe and `toast.dismiss()` still call
+  it. Flashes are unaffected.
 
 ### Changed
 
@@ -30,10 +44,6 @@ flashes look and move like shadcn's Sonner, and every sonner option is there.
   they were thrown; promise toasts fade the spinner out as the result icon
   scales in; pressing a toast pauses the timers; the newest toast comes first
   in the tab order; Esc returns focus to where Alt+T took it from.
-- **Updating a toast keeps what you don't pass** (sonner merges): reusing an
-  `id` changes the title, type and the options you give, and keeps the rest.
-  Action and cancel buttons close the toast without calling `onDismiss` (as
-  in sonner); the close button, a swipe and `toast.dismiss()` still call it.
 
 ### Added
 
