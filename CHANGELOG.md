@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-28
+
+The number card explains itself and compares: a ? beside the label says what
+the number counts, badges set it against another period (good news green, bad
+news red), and the whole card can open what's behind the number. Its trend now
+shows its peaks and has no gaps.
+
 ### Added
 
 - **`<.number_card>` help, changes and links.**
