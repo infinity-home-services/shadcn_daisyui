@@ -1263,21 +1263,33 @@
     white-space: normal;
     cursor: auto;
   }
-  /* Badges against another period, floating over the trend on their own fill */
+  /* Badges against another period, floating over the trend on their own fill,
+     each edged in its own tone (the card's border colour vanishes on a card) */
   .number-card-changes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
   .number-card-change-group { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
-  .number-card-vs.badge { background-color: var(--card); border-color: var(--border-color); color: var(--muted-foreground); }
+  .number-card-vs.badge {
+    background-color: var(--card);
+    border-color: color-mix(in oklab, var(--foreground) 18%, var(--card));
+    color: var(--muted-foreground);
+  }
   .number-card-change.badge { font-variant-numeric: tabular-nums; gap: 0.125rem; }
   .number-card-change [class^="hero-"] { width: 0.75rem; height: 0.75rem; }
   .number-card-change[data-tone="good"] {
     background-color: color-mix(in oklab, var(--color-success) 16%, var(--card));
+    border-color: color-mix(in oklab, var(--color-success) 30%, var(--card));
     color: color-mix(in oklab, var(--color-success) 65%, var(--foreground));
   }
   .number-card-change[data-tone="bad"] {
     background-color: color-mix(in oklab, var(--destructive) 14%, var(--card));
+    border-color: color-mix(in oklab, var(--destructive) 30%, var(--card));
     color: color-mix(in oklab, var(--destructive) 80%, var(--foreground));
   }
-  .number-card-change[data-tone="neutral"] { background-color: var(--muted); color: var(--muted-foreground); }
+  /* muted-foreground alone is 4.35:1 on muted; a tenth of foreground lifts it past 4.5 */
+  .number-card-change[data-tone="neutral"] {
+    background-color: var(--muted);
+    border-color: color-mix(in oklab, var(--muted-foreground) 30%, var(--card));
+    color: color-mix(in oklab, var(--muted-foreground) 90%, var(--foreground));
+  }
   .number-card-trend [data-slot="chart-canvas"] { height: 100%; }
 
   /* deprecated: the hand-drawn bar recipe the docs showed before <.chart> */

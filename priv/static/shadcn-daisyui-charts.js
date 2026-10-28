@@ -209,9 +209,11 @@ function build(api) {
     labelRoom = Math.ceil(Math.max(...endLabels.map((t) => textWidth(t || "", labelFont)))) + 8
     if (horizontalBars) {
       const name = Math.max(0, ...labels.map((t) => textWidth(t, fontString(fontSize, theme.font, 500))))
-      // beside their labels, the bars keep at least half the width (and 120px)
+      // beside their labels, the bars keep at least half the width (and 120px);
+      // position: "above" keeps them above at every width
       const text = name + 8 + labelRoom
-      widths = { end: Math.max(text + 120, text * 2), above: name + 16 + labelRoom }
+      const above = dig(server, "plugins", "endLabels", "position") === "above"
+      widths = { end: above ? Infinity : Math.max(text + 120, text * 2), above: name + 16 + labelRoom }
       labelMode = labelLayout(widths, api.wrapper.clientWidth || el.clientWidth || 600)
     } else {
       labelMode = "end"
@@ -308,6 +310,10 @@ function build(api) {
   if (labelMode === "end" && horizontalBars) padding.right = labelRoom
   if (labelMode === "end" && !horizontalBars) padding.top = fontSize + 8
   if (!trend && cartesian && !valueAxisShown && !stacked) padding.top = Math.max(padding.top, 4)
+  // a trend runs edge to edge: Chart.js's auto padding (room for a hover
+  // point and half the line) would leave a strip inside the card's border,
+  // so it's off and only the top keeps half the line, so a peak isn't shaved
+  if (trend) padding.top = Math.max(0, ...datasets.map((d) => (typeof d.borderWidth === "number" ? d.borderWidth : 0))) / 2
 
   const base = {
     responsive: true,
@@ -316,7 +322,7 @@ function build(api) {
     color: theme.muted,
     borderColor: theme.grid,
     font: { family: theme.font, size: fontSize },
-    layout: { padding },
+    layout: { padding, autoPadding: !trend },
     interaction: cartesian ? { mode: "index", intersect: false, axis: indexAxis } : { mode: "nearest", intersect: true },
     plugins: {
       legend: {

@@ -52,8 +52,10 @@ defmodule ShadcnDaisyui.Components.Chart do
     * a dataset's `key` - sent with clicks (default: its label)
     * `data.keys` - one key per label, sent with clicks (default: the label)
     * `options.plugins.endLabels.labels` - one text per bar, drawn at the bar's
-      end (`"$24,500 · 38% margin · 2 for 3"`); on a narrow screen it moves
-      above the bar
+      end (`"$24,500 · 38% margin · 2 for 3"`); on a narrow screen a
+      horizontal bar's name and label move above the bar (on two lines when
+      they don't fit side by side). `position: "above"` puts them above at
+      every width (default `"auto"`)
 
   Values in tooltips follow the value axis's `ticks.format` (Chart.js's own
   `Intl.NumberFormat` options, e.g.
@@ -337,10 +339,10 @@ defmodule ShadcnDaisyui.Components.Chart do
           %{label: label, data: values, color: color, fill: "start", spanGaps: true}
         ]
       },
+      # no layout: the hook draws a trend edge to edge (variant="trend")
       options: %{
         plugins: %{legend: %{display: false}, tooltip: %{enabled: false}},
-        scales: %{x: %{display: false}, y: %{display: false}},
-        layout: %{padding: 0}
+        scales: %{x: %{display: false}, y: %{display: false}}
       }
     }
   end

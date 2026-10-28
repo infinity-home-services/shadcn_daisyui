@@ -232,6 +232,10 @@ defmodule ShadcnDaisyui.Components.ChartTest do
                "y" => %{"display" => false}
              }
 
+      # no layout: the hook draws variant="trend" edge to edge, and a padding here
+      # would replace its own
+      assert Map.keys(cfg["options"]) == ["plugins", "scales"]
+
       assert {"Sales trend", ["Sales"], [{"Mon", ["12,400"]}, {"Tue", ["9,800"]}]} = table(html)
     end
 

@@ -136,7 +136,16 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
   }
 
   defp body do
-    assigns = %{lb: leaderboard(), progress: progress(), bars: @bars, lines: @lines, pie: @pie}
+    above = put_in(leaderboard(), [:options, :plugins, :endLabels, :position], "above")
+
+    assigns = %{
+      lb: leaderboard(),
+      above: above,
+      progress: progress(),
+      bars: @bars,
+      lines: @lines,
+      pie: @pie
+    }
 
     render(~H"""
     <div class="card" style="width: 600px; padding: 24px">
@@ -150,6 +159,12 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     </div>
     <div class="card" style="width: 200px; padding: 24px">
       <.chart id="lb-phone" label="Leaderboard" config={@lb} />
+    </div>
+    <div class="card" style="width: 900px; padding: 24px">
+      <.chart id="lb-above" label="Leaderboard" config={@above} />
+    </div>
+    <div class="card" style="width: 200px; padding: 24px">
+      <.chart id="lb-above-phone" label="Leaderboard" config={@above} />
     </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="progress" label="Today's appointments" config={@progress} on_click="open_state" target="#panel" />
@@ -165,6 +180,13 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     </div>
     <div style="width: 300px">
       <.number_card id="sales" label="Sales" value="$42,000" trend={[12, 15, 9, 18]}>Margin</.number_card>
+    </div>
+    <div style="width: 300px">
+      <.number_card id="edges" label="Edges" value="18" trend={[18, 6, 9, 7, 18]}>
+        <:change vs="vs PP" by="+$8,000" percent="+24%" direction="up" />
+        <:change vs="vs PY" percent="-3%" direction="down" />
+        <:change vs="vs plan" by="$0" direction="flat" />
+      </.number_card>
     </div>
     """)
   end
@@ -238,10 +260,31 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     const px = document.createElement("canvas").getContext("2d", { willReadFrequently: true })
     const bytes = (css) => { px.clearRect(0, 0, 1, 1); px.fillStyle = css; px.fillRect(0, 0, 1, 1); return [...px.getImageData(0, 0, 1, 1).data] }
     const rgbOf = (s) => (s.match(/\\d+(\\.\\d+)?/g) || []).map(Number)
+    // WCAG contrast of two colours, each painted over the one under it
+    const over = (...layers) => { px.clearRect(0, 0, 1, 1); for (const c of layers) { px.fillStyle = c; px.fillRect(0, 0, 1, 1) } return [...px.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    const lum = (rgb) => rgb.map((c) => (c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0)
+    const contrast = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100 }
+    // the number card's change badges: text on its fill, the border against the card
+    const badges = () => {
+      const card = getComputedStyle($("edges")).backgroundColor
+      const line = getComputedStyle(document.documentElement).getPropertyValue("--border-color")
+      const out = { line: contrast(over(card, line), over(card)) }
+      const pick = { vs: ".number-card-vs", good: '[data-tone="good"]', bad: '[data-tone="bad"]', neutral: '[data-tone="neutral"]' }
+      for (const [name, sel] of Object.entries(pick)) {
+        const cs = getComputedStyle(document.querySelector(`#edges ${sel}`))
+        out[name] = {
+          text: contrast(over(card, cs.backgroundColor, cs.color), over(card, cs.backgroundColor)),
+          border: contrast(over(card, cs.borderTopColor), over(card)),
+          fill: contrast(over(card, cs.backgroundColor), over(card)),
+        }
+      }
+      return out
+    }
 
     // ---- colours come from the tokens, as rgb ----------------------------------
     const lightBar = opts("bars", 0, 0).backgroundColor
     r.light = {
+      badges: badges(),
       bar: lightBar,
       token: bytes("oklch(0.575 0.163 255.53)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -264,6 +307,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     setTheme("shadcn-dark")
     await frames()
     r.dark = {
+      badges: badges(),
       bar: opts("bars", 0, 0).backgroundColor,
       token: bytes("oklch(0.622 0.161 255.05)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -286,7 +330,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
 
     // ---- end labels and rows --------------------------------------------------
     const rows = (id) => { const c = chart(id); return { mode: c.$kit.labelMode, area: Math.round(c.chartArea.bottom - c.chartArea.top), ticks: c.options.scales.y.ticks.display !== false, thickness: Math.round(el(id, 0, 0).height) } }
-    r.labels = { wide: rows("lb"), narrow: rows("lb-narrow"), phone: rows("lb-phone") }
+    r.labels = { wide: rows("lb"), narrow: rows("lb-narrow"), phone: rows("lb-phone"), above: rows("lb-above"), abovePhone: rows("lb-above-phone") }
     r.endRoom = chart("lb").options.layout.padding.right
 
     // ---- legend keys mirror the marks ---------------------------------------------
@@ -306,6 +350,22 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       points: trend.data.datasets[0].pointRadius,
       legend: trend.options.plugins.legend.display,
       axes: [trend.options.scales.x.display, trend.options.scales.y.display],
+    }
+
+    // ---- a trend runs edge to edge: peaks at both ends, the fill to each side --------
+    const edges = chart("edges-trend")
+    edges.update("none")
+    const ec = edges.canvas
+    const pixels = ec.getContext("2d").getImageData(0, 0, ec.width, ec.height).data
+    const alpha = (x, y) => pixels[(y * ec.width + x) * 4 + 3]
+    const painted = (x) => { let n = 0; for (let y = 0; y < ec.height; y++) if (alpha(x, y)) n++; return n }
+    const top = (x) => { let y = 0; while (y < ec.height && !alpha(x, y)) y++; return y }
+    r.edges = {
+      autoPadding: edges.options.layout.autoPadding,
+      area: [edges.chartArea.left, edges.chartArea.top, edges.width - edges.chartArea.right, edges.height - edges.chartArea.bottom],
+      height: ec.height,
+      columns: [[top(0), painted(0)], [top(ec.width - 1), painted(ec.width - 1)]],
+      foot: [alpha(0, ec.height - 1), alpha(ec.width - 1, ec.height - 1)],
     }
 
     // ---- keyboard: arrows show the tooltip and read it; Enter clicks --------------
@@ -516,6 +576,13 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
            }
   end
 
+  test "position: \"above\" keeps the end labels above the bars at every width", %{r: r} do
+    # as wide as the leaderboard that labels its bar ends, but above, side by side
+    assert r["labels"]["above"] == r["labels"]["narrow"]
+    # still on two lines when the name and label don't fit side by side
+    assert r["labels"]["abovePhone"] == r["labels"]["phone"]
+  end
+
   test "legend keys mirror the marks; one series has no legend", %{r: r} do
     [this, last] = r["legend"]["lines"]
 
@@ -544,6 +611,35 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
              "legend" => false,
              "axes" => [false, false]
            }
+  end
+
+  test "a trend runs edge to edge: no strip at the sides or the foot, a peak keeps its line",
+       %{r: r} do
+    e = r["edges"]
+    assert e["autoPadding"] == false
+    # left, top, right, bottom: only the top keeps half the 2px line
+    assert e["area"] == [0, 1, 0, 0]
+    # the first and last columns hold the peaks' line and the fill under it, unbroken down
+    # to the foot (with auto padding they held only the line's round cap: 4px)
+    for [top, painted] <- e["columns"] do
+      assert painted == e["height"] - top, inspect(e)
+      assert painted > e["height"] / 2, inspect(e)
+    end
+
+    assert Enum.all?(e["foot"], &(&1 > 0)), inspect(e)
+  end
+
+  test "change badges: text 4.5:1 on its fill, a border stronger than the card's own line",
+       %{r: r} do
+    for mode <- ["light", "dark"], b = r[mode]["badges"], tone <- ~w(vs good bad neutral) do
+      badge = b[tone]
+      msg = "#{mode} #{tone}: #{inspect(b)}"
+      assert badge["text"] >= 4.5, msg
+      # edged in its own tone: the border stands out from the card more than the
+      # card's border colour does, and more than the badge's own fill
+      assert badge["border"] > b["line"], msg
+      assert badge["border"] > badge["fill"], msg
+    end
   end
 
   test "arrow keys show the tooltip, a popover, and the live region reads it", %{r: r} do

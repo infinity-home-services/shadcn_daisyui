@@ -47,7 +47,8 @@ theme, and give every chart its numbers in text.
   labelled at its end ("$24,500 · 38% margin · 2 for 3"); hide the value axis
   when every bar is labelled. [web] `indexAxis: "y"` plus
   `options.plugins.endLabels.labels`; on a narrow screen the labels move above
-  the bars on their own.
+  the bars on their own, and `position: "above"` keeps them above at every
+  width (when the bars should run the card's full width).
 - **Progress through states** is one stacked bar with its axes hidden, the
   states in order and a legend under it.
 - **Tooltips enhance, never gate:** every value is also in the chart's text
@@ -66,11 +67,11 @@ theme, and give every chart its numbers in text.
   inside a chart's card.
 - **Number card:** the label, the number formatted on the server (proportional
   figures), one line under it - a breakdown in words - and, optionally, its
-  trend faint behind it, peaks and all, gaps bridged. Say what it counts in
-  plain words behind a ? (`help`). Its change on another period is badges
-  under the line (`<:change>`: the period, the difference, the change with
-  its sign and arrow), toned good or bad by which way is good news, never
-  colour alone. A card that opens its detail is a link as a whole
+  trend faint behind it, edge to edge, peaks and all, gaps bridged. Say what
+  it counts in plain words behind a ? (`help`). Its change on another period
+  is badges under the line (`<:change>`: the period, the difference, the
+  change with its sign and arrow), toned good or bad by which way is good
+  news, never colour alone. A card that opens its detail is a link as a whole
   (`patch`/`navigate`); never a separate "Zoom" button for it.
 
 ## Reference
@@ -105,7 +106,8 @@ theme overriding them re-checks all five, in order.
 | Bar | ≤ 24px thick (16px / 12px with labels above), 4px rounded data end |
 | Horizontal bar row | 36px (48px / 72px with labels above) |
 | Line | 2px, round joins; points hidden, 8px with a 2px ring on hover |
-| Area fill | series at 10% (a number card's trend: 25%, faded) |
+| Area fill | series at 10% (a number card's trend: 25%, faded, edge to edge) |
+| Change badge | 12px text, 1px border in its tone at 30% over the card (the period's: foreground at 18%); text ≥ 4.5:1 |
 | Stacked parts | 2px gap in the surface colour |
 | Grid | 1px `border-color`, value axis only |
 | Text | 12px; ticks muted-foreground, legend and end labels foreground |

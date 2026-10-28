@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`options.plugins.endLabels.position: "above"`** puts a horizontal bar
+  chart's names and end labels above the bars at every width, so the bars run
+  the card's full width (side by side while they fit, on two lines when they
+  don't). The default, `"auto"`, is unchanged: at the bar ends, moving above
+  only on a narrow screen.
+
+### Fixed
+
+- **A number card's trend runs edge to edge.** Chart.js's auto padding (room
+  for a hover point and half the line) left a 1px strip inside the card's
+  border at both sides and the foot; a `variant="trend"` chart now draws to
+  the edges, keeping half the line above a peak. The number card's trend
+  config no longer sets `layout` (a padding there would replace the hook's).
+- **Stronger borders on the change badges.** The period's badge ("vs PP") is
+  edged in foreground at 18% over the card instead of `--border-color`, which
+  nearly vanished on a card; the good, bad and neutral badges are edged in
+  their own tone at 30% over the card.
+- **The neutral change badge's text reaches 4.5:1** in light (it was 4.35:1,
+  muted-foreground on muted): a tenth of foreground is mixed in. Text contrast
+  is now 4.74 / 5.47 / 5.69 / 5.19 (vs, good, bad, neutral) in light and
+  6.94 / 7.92 / 6.43 / 6.44 in dark.
+
 ## [0.27.0] - 2026-10-28
 
 The number card explains itself and compares: a ? beside the label says what

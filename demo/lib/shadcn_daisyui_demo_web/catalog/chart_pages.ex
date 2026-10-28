@@ -88,8 +88,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
     }
   end
 
-  @doc "A leaderboard: longest first, the margin as the darker part of each sale."
-  def leaderboard_config(people \\ @people) do
+  @doc """
+  A leaderboard: longest first, the margin as the darker part of each sale.
+  `position: "above"` puts each name and label above its bar at every width.
+  """
+  def leaderboard_config(people \\ @people, opts \\ []) do
     people = Enum.sort_by(people, fn {_, _, sale, _, _, _} -> -sale end)
 
     %{
@@ -119,12 +122,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           y: %{stacked: true}
         },
         plugins: %{
-          endLabels: %{
-            labels:
-              Enum.map(people, fn {_, _, sale, margin, closed, ran} ->
-                "#{money(sale)} · #{round(margin * 100 / sale)}% margin · #{closed} for #{ran}"
-              end)
-          }
+          endLabels:
+            Map.merge(
+              %{
+                labels:
+                  Enum.map(people, fn {_, _, sale, margin, closed, ran} ->
+                    "#{money(sale)} · #{round(margin * 100 / sale)}% margin · #{closed} for #{ran}"
+                  end)
+              },
+              Map.new(Keyword.take(opts, [:position]))
+            )
         }
       }
     }
@@ -235,7 +242,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         sizing:
           "The canvas is 16rem high (canvas_class=\"h-80\" changes it); horizontal bar charts size themselves to their rows (36px each, 48px with the labels above the bars). Bars are at most 24px thick with a 4px rounded end, lines 2px, text 12px.",
         responsive:
-          "Charts fill their container's width and redraw on resize. On a narrow screen a leaderboard's end labels move above each bar with the name, so the bars keep their width. Put charts in a grid that stacks on phones (one column below sm).",
+          "Charts fill their container's width and redraw on resize. On a narrow screen a leaderboard's end labels move above each bar with the name, so the bars keep their width (endLabels position: \"above\" keeps them there at every width). Put charts in a grid that stacks on phones (one column below sm).",
         ios:
           "Swift Charts: BarMark / LineMark / SectorMark with the same five chart colours, .chartXAxis(.hidden) for a leaderboard, and .accessibilityChartDescriptor for the numbers."
       },
@@ -284,6 +291,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           name: "options.plugins.endLabels.labels",
           type: "one text per bar, drawn at its end",
           default: "nil"
+        },
+        %{
+          name: "options.plugins.endLabels.position",
+          type:
+            "\"auto\" (at the bar's end; a horizontal bar's name and label move above it on a narrow screen) | \"above\" (above the bar at every width)",
+          default: "\"auto\""
         }
       ],
       notes:
@@ -447,6 +460,35 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           code: leaderboard_code()
         },
         %{
+          title: "Leaderboard, labels above",
+          heex: ~S"""
+          <%!-- position: "above" puts each name and label above its bar at every
+            width, so the bars run the card's full width; side by side while they
+            fit, on two lines when they don't. --%>
+          <.chart
+            id="leaderboard-above"
+            label="Sales by person, this week"
+            config={%{
+              type: "bar",
+              data: %{
+                labels: Enum.map(@people, & &1.name),
+                datasets: [
+                  %{label: "Margin", data: Enum.map(@people, & &1.margin), color: "chart-1"},
+                  %{label: "Rest of the sale", data: Enum.map(@people, &(&1.sale - &1.margin)), color: "chart-1/35"}
+                ]
+              },
+              options: %{
+                indexAxis: "y",
+                scales: %{x: %{stacked: true, display: false, ticks: %{format: @usd}}, y: %{stacked: true}},
+                plugins: %{endLabels: %{labels: Enum.map(@people, & &1.summary), position: "above"}}
+              }
+            }}
+          />
+          """,
+          center: false,
+          code: leaderboard_above_code()
+        },
+        %{
           title: "Progress row",
           heex: ~S"""
           <%!-- One stacked bar: the states in order, the last one a grey track.
@@ -568,6 +610,25 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           id="leaderboard"
           label="Sales by person, this week"
           on_click="open_person"
+          class="mt-4"
+          config={@config}
+        />
+      </.card_body>
+    </.card>
+    """)
+  end
+
+  defp leaderboard_above_code do
+    assigns = %{config: leaderboard_config(@people, position: "above")}
+
+    code(~H"""
+    <.card class="w-full">
+      <.card_body>
+        <.card_title>Leaderboard</.card_title>
+        <.card_description>Sales this week · labels above the bars</.card_description>
+        <.chart
+          id="leaderboard-above"
+          label="Sales by person, this week"
           class="mt-4"
           config={@config}
         />
@@ -767,12 +828,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           %{
             part: "Changes",
             description:
-              "Per period, an outline badge naming it (vs PP), then the difference and the change, tinted good, bad or neutral."
+              "Per period, an outline badge naming it (vs PP), then the difference and the change, tinted good, bad or neutral, each edged in its own tone."
           },
           %{
             part: "Trend",
             description:
-              "A filled line chart behind the text and badges, aria-hidden, with its own hidden table."
+              "A filled line chart behind the text and badges, edge to edge inside the card's border, aria-hidden, with its own hidden table."
           }
         ],
         measurements: [
@@ -784,16 +845,19 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           %{
             property: "Changes",
             value:
-              "12px badges, 8px apart (4px within a period), 8px below the line; tints of success and destructive on the card"
+              "12px badges, 8px apart (4px within a period), 8px below the line; tints of success and destructive on the card, a 1px border in the badge's tone at 30% over the card (the period's: foreground at 18%); text at least 4.5:1"
           },
           %{
             property: "Trend",
-            value: "lower 60% of the card, 50% opacity, 2px line, 25% area fill, gaps bridged"
+            value:
+              "lower 60% of the card, edge to edge (no auto padding; 1px above a peak), 50% opacity, 2px line, 25% area fill, gaps bridged"
           }
         ],
         tokens: [
           "card",
           "border-color",
+          "foreground",
+          "muted",
           "muted-foreground",
           "chart-1",
           "color-success",
