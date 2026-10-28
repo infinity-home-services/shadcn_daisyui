@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`<.number_card>` help, changes and links.**
+  - `help`: a ? after the label that shows what the number counts, in a
+    popover on hover, focus or tap (a 44px target on touch). The button is
+    described by the text.
+  - `<:change vs by percent direction good>`: badges comparing the number with
+    another period, under the line and floating over the trend: an outline
+    badge naming the period ("vs PP"), then the difference and the change with
+    an arrow. Good news (`direction` matching `good`, default `"up"`) is tinted
+    green, bad news red, flat or `good="none"` neutral. Several `<:change>`s
+    sit side by side (vs PP, vs PY).
+  - `navigate` / `patch` / `href`: the whole card is a link, for opening what's
+    behind the number. The label is the link, stretched over the card; the help
+    stays its own button. Hover tints the card, keyboard focus rings it.
+
+### Changed
+
+- **A number card's trend shows its peaks:** it no longer fades out toward the
+  top, so a spike is as clear as the rest of the line.
+- **A trend bridges missing points:** a `nil` (a day with nothing to count) no
+  longer leaves a gap in the line (`spanGaps`).
+- The number card no longer clips (`overflow: hidden`) or isolates its
+  content: the trend clips itself, so the help can float over the card's edge
+  and the cards beside it.
+
 ## [0.26.0] - 2026-10-28
 
 A chart kit, as an optional part: `<.chart>` draws any Chart.js chart from an

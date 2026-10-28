@@ -688,7 +688,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         use_when: [
           "A dashboard's headline figures: today's sales, appointments, close rate",
           "One number that matters, with how it got there as a faint trend",
-          "A number with its breakdown or comparison under it (\"Margin $14,700 (35%)\", \"vs. last Tuesday\")"
+          "A number with its breakdown under it (\"Margin $14,700 (35%)\") and its change on another period as badges (vs PP)",
+          "A number people open to see what's behind it: the whole card is a link"
         ],
         avoid_when: [
           "Several series or values people compare - use a chart",
@@ -696,7 +697,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           "A status (on track, late) - say it in words with a badge, not a number"
         ],
         sizing:
-          "Card padding 24px; the label 14px / 500 muted, the number 30px / 600, the line under it 14px muted. The trend fills the lower 60% of the card at 50% opacity behind the text, fading out as it rises toward it.",
+          "Card padding 24px; the label 14px / 500 muted, with a 16px ? after it; the number 30px / 600, the line under it 14px muted, the change badges 12px, 8px below it. The trend fills the lower 60% of the card at 50% opacity behind the text and the badges, its peaks as clear as the rest of it.",
         responsive:
           "Lay a row of cards out in a grid: one column on phones, two from sm, four from lg. The number never wraps mid-figure; keep it short (format it on the server: $42K, 38%).",
         ios:
@@ -713,23 +714,48 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         },
         %{name: "color", type: "the trend's colour token", default: "chart-1"},
         %{
+          name: "help",
+          type: "string: what the number counts, in plain words (a ? beside the label)",
+          default: "nil"
+        },
+        %{
+          name: "navigate / patch / href",
+          type: "the whole card is a link (the label is its text)",
+          default: "nil"
+        },
+        %{
           name: "format",
           type: "fn number -> text end, for the trend's hidden table",
           default: "digits grouped"
         },
         %{name: "class", type: "any", default: "nil"},
-        %{name: "inner_block", type: "slot: the line under the number", default: "-"}
+        %{name: "inner_block", type: "slot: the line under the number", default: "-"},
+        %{
+          name: ":change",
+          type:
+            "slot, one per period: vs (\"vs PP\"), by (\"+$8,000\"), percent (\"+24%\"), direction (up/down/flat), good (up/down/none, default up)",
+          default: "-"
+        }
       ],
       notes:
-        "The trend is a <.chart> line with its axes, grid, legend, tooltip and points hidden and its area filled, so it needs the chart entry (shadcn_daisyui/charts); without it the card still shows the number and the line under it. Labels name the rows of the trend's hidden table ({\"Mon 13\", 18_400}); bare numbers are numbered 1, 2, 3. The value and the line under it arrive formatted from the server.",
+        "The trend is a <.chart> line with its axes, grid, legend, tooltip and points hidden and its area filled, so it needs the chart entry (shadcn_daisyui/charts); without it the card still shows the number and the line under it. Labels name the rows of the trend's hidden table ({\"Mon 13\", 18_400}); bare numbers are numbered 1, 2, 3, and a nil (a day with nothing to count) is bridged, never a gap. The value, the line under it and the changes arrive formatted from the server. A change is good news (green) when it moved the way `good` says, bad news (red) the other way, neutral when flat; its sign and arrow say the same, never colour alone. A linked card's label is the link, stretched over the card, so the help stays its own button.",
       specs: %{
         anatomy: [
           %{
             part: "Card",
             description:
-              "The card surface (rounded-xl, 1px border, shadow-sm), clipping the trend."
+              "The card surface (rounded-xl, 1px border, shadow-sm). It doesn't clip, so the help can float over its edge; the trend clips itself."
           },
-          %{part: "Label", description: "What the number is, sentence case, no colon."},
+          %{
+            part: "Label",
+            description:
+              "What the number is, sentence case, no colon; the link's text when the card is a link."
+          },
+          %{
+            part: "Help",
+            description:
+              "A ? after the label; what the number counts, in a popover on hover, focus or tap."
+          },
           %{
             part: "Value",
             description: "The number, formatted on the server, proportional figures."
@@ -739,9 +765,14 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
             description: "A comparison or breakdown: \"Margin $14,700 (35%)\"."
           },
           %{
+            part: "Changes",
+            description:
+              "Per period, an outline badge naming it (vs PP), then the difference and the change, tinted good, bad or neutral."
+          },
+          %{
             part: "Trend",
             description:
-              "A filled line chart behind the text, aria-hidden, with its own hidden table."
+              "A filled line chart behind the text and badges, aria-hidden, with its own hidden table."
           }
         ],
         measurements: [
@@ -749,22 +780,40 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           %{property: "Label", value: "0.875rem / 500, muted-foreground"},
           %{property: "Value", value: "1.875rem / 600, letter-spacing -0.025em"},
           %{property: "Line under", value: "0.875rem, muted-foreground"},
+          %{property: "Help", value: "16px icon, 44px target on touch, 16rem popover"},
+          %{
+            property: "Changes",
+            value:
+              "12px badges, 8px apart (4px within a period), 8px below the line; tints of success and destructive on the card"
+          },
           %{
             property: "Trend",
-            value:
-              "lower 60% of the card, 50% opacity fading to none at the top, 2px line, 25% area fill"
+            value: "lower 60% of the card, 50% opacity, 2px line, 25% area fill, gaps bridged"
           }
         ],
-        tokens: ["card", "border-color", "muted-foreground", "chart-1"]
+        tokens: [
+          "card",
+          "border-color",
+          "muted-foreground",
+          "chart-1",
+          "color-success",
+          "destructive",
+          "popover"
+        ]
       },
       accessibility: %{
         roles:
-          "Plain text (a <p> each for the label, the number and the line under it). The trend's canvas is aria-hidden; its numbers are in a visually hidden table named \"<label> trend\".",
-        keyboard: [%{keys: "Tab", action: "Nothing to focus: the card is text"}],
-        focus: "None.",
+          "Text (a <p> each for the label, the number and the line under it), the label a link when the card is one, the help a button described by its text (role=tooltip). The trend's canvas is aria-hidden; its numbers are in a visually hidden table named \"<label> trend\".",
+        keyboard: [
+          %{keys: "Tab", action: "The card's link (when it is one), then the help"},
+          %{keys: "Enter", action: "Opens the card's link"}
+        ],
+        focus:
+          "A linked card shows the 3px ring around the whole card; the help shows it around the ? and opens its text.",
         screen_reader:
-          "Reads the label, the number and the line under it, then the trend's table. Say the comparison in words (\"up 12% on last Tuesday\"), not only with colour.",
-        touch_target: "Not interactive.",
+          "Reads the label (\"Sales, link\"), the number, the line under it and the changes (\"vs PP, +$8,000, +24%\"), then the trend's table. The help button reads \"About Sales\" and its text.",
+        touch_target:
+          "A linked card is one big target; the help's ? has a 44px target and opens on tap.",
         reduced_motion: "The trend doesn't animate under prefers-reduced-motion."
       },
       swiftui: %{
@@ -794,14 +843,30 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           title: "A row of number cards",
           heex: ~S"""
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <.number_card id="sales" label="Sales" value="$42,000" trend={@sales_trend}>
+            <.number_card
+              id="sales"
+              label="Sales"
+              value="$42,000"
+              help="Every sale booked this week, at its sold price."
+              trend={@sales_trend}
+              patch={~p"/dashboard?open=sales"}
+            >
               Margin $14,700 (35%)
+              <:change vs="vs PP" by="+$8,000" percent="+24%" direction="up" />
             </.number_card>
             <.number_card id="appointments" label="Appointments" value="30" trend={@appointments_trend}>
               vs. 27 last Tuesday
             </.number_card>
-            <.number_card id="close-rate" label="Close rate" value="38%" trend={@close_rate_trend} color="chart-3">
+            <.number_card
+              id="close-rate"
+              label="Close rate"
+              value="38%"
+              help="Visits that sold, out of visits that happened."
+              trend={@close_rate_trend}
+              color="chart-3"
+            >
               11 of 29 run
+              <:change vs="vs PP" by="-2.4 pts" percent="-6%" direction="down" />
             </.number_card>
             <.number_card id="average-sale" label="Average sale" value="$3,818">
               2 cancellations
@@ -824,8 +889,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
 
     code(~H"""
     <div class="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <.number_card id="sales" label="Sales" value="$42,000" trend={@sales}>
-        Margin $14,700 (35%)
+      <.number_card
+        id="sales"
+        label="Sales"
+        value="$42,000"
+        help="Every sale booked this week, at its sold price."
+        trend={@sales}
+        href="#number-cards"
+      >
+        Margin $14,700 (35%) <:change vs="vs PP" by="+$8,000" percent="+24%" direction="up" />
       </.number_card>
       <.number_card id="appointments" label="Appointments" value="30" trend={@appointments}>
         vs. 27 last Tuesday
@@ -836,8 +908,9 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         value="38%"
         trend={@close_rate}
         color="chart-3"
+        help="Visits that sold, out of visits that happened."
       >
-        11 of 29 run
+        11 of 29 run <:change vs="vs PP" by="-2.4 pts" percent="-6%" direction="down" />
       </.number_card>
       <.number_card id="average-sale" label="Average sale" value="$3,818">
         2 cancellations

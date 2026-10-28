@@ -163,18 +163,44 @@ defmodule ShadcnDaisyui.Components.Chart do
   legend and points hidden and its area filled (it needs the charts entry;
   without it the card still shows the number).
 
-      <.number_card id="sales-today" label="Sales" value="$42,000" trend={@sales_trend}>
-        Margin $14,700 (35%)
+      <.number_card
+        id="sales-today"
+        label="Booked Sales"
+        value="$42,000"
+        help="Every sale booked today, at its sold price."
+        trend={@sales_trend}
+        patch={~p"/dashboard?open=sales"}
+      >
+        3 sales
+        <:change vs="vs PP" by="+$8,000" percent="+24%" direction="up" />
       </.number_card>
 
   `value` and the line under it arrive formatted. `trend` is a list of
   numbers, or `{label, number}` tuples (the labels name the rows of the
-  trend's screen-reader table: `[{"Mon", 12_400}, {"Tue", 9_800}]`).
-  `color` picks the trend's series token (default `chart-1`).
+  trend's screen-reader table: `[{"Mon", 12_400}, {"Tue", 9_800}]`); a
+  missing point (`nil`) is bridged, so the line has no gaps. `color` picks
+  the trend's series token (default `chart-1`).
+
+    * `help` - a "?" beside the label that shows this text on hover, focus or
+      tap: what the number counts, in plain words.
+    * `<:change>` - badges comparing the number with another period, floating
+      over the trend: `vs` names the period ("vs PP"), `by` the difference and
+      `percent` the change, both formatted on the server ("-2.4 pts",
+      "-2.7%"). `direction` (`"up"`, `"down"`, `"flat"`) sets the arrow, and
+      `good` (`"up"`, the default, `"down"` or `"none"`) says which way is
+      good news: good news is green, bad news red, the rest neutral. The sign
+      and the arrow say it too, never colour alone.
+    * `navigate` / `patch` / `href` - the whole card opens what's behind the
+      number (the label is the link's text); the help stays its own button.
   """
   attr(:id, :string, required: true)
   attr(:label, :string, required: true)
   attr(:value, :string, required: true, doc: "the number, formatted")
+
+  attr(:help, :string,
+    default: nil,
+    doc: "what the number counts, shown from a ? beside the label"
+  )
 
   attr(:trend, :list,
     default: [],
@@ -183,12 +209,26 @@ defmodule ShadcnDaisyui.Components.Chart do
 
   attr(:color, :string, default: "chart-1", doc: "the trend's colour token")
   attr(:format, :any, default: nil, doc: "fn number -> text end for the trend's table")
+  attr(:navigate, :any, default: nil, doc: "the card is a link: navigate there")
+  attr(:patch, :any, default: nil, doc: "the card is a link: patch there")
+  attr(:href, :any, default: nil, doc: "the card is a link: go there")
   attr(:class, :any, default: nil)
   attr(:rest, :global)
   slot(:inner_block, doc: "the line under the number: a comparison or a breakdown")
 
+  slot :change, doc: "badges comparing the number with another period" do
+    attr(:vs, :string, required: true, doc: ~s(the period compared with: "vs PP"))
+    attr(:by, :string, doc: ~s(the difference, formatted: "+$8,000", "-2.4 pts"))
+    attr(:percent, :string, doc: ~s(the change, formatted: "+24%"))
+    attr(:direction, :string, required: true, values: ~w(up down flat))
+    attr(:good, :string, values: ~w(up down none), doc: ~s(which way is good news; default "up"))
+  end
+
   def number_card(assigns) do
-    assigns = assign(assigns, :trend_config, trend_config(assigns))
+    assigns =
+      assigns
+      |> assign(:trend_config, trend_config(assigns))
+      |> assign(:link?, !!(assigns.navigate || assigns.patch || assigns.href))
 
     ~H"""
     <div id={@id} class={["card number-card", @class]} data-slot="number-card" {@rest}>
@@ -202,15 +242,79 @@ defmodule ShadcnDaisyui.Components.Chart do
         class="number-card-trend"
       />
       <div class="number-card-body">
-        <p class="number-card-label">{@label}</p>
+        <p class="number-card-label">
+          <.link
+            :if={@link?}
+            navigate={@navigate}
+            patch={@patch}
+            href={@href}
+            class="number-card-link"
+          >
+            {@label}
+          </.link>
+          <%= if !@link? do %>
+            {@label}
+          <% end %>
+          <.number_card_help :if={@help} id={"#{@id}-help"} label={@label} help={@help} />
+        </p>
         <p class="number-card-value">{@value}</p>
         <p :if={@inner_block != []} class="number-card-description">
           {render_slot(@inner_block)}
         </p>
+        <div :if={@change != []} class="number-card-changes">
+          <span :for={change <- @change} class="number-card-change-group">
+            <span class="badge number-card-vs">{change.vs}</span>
+            <span :if={change[:by]} class="badge number-card-change" data-tone={tone(change)}>
+              {change.by}
+            </span>
+            <span :if={change[:percent]} class="badge number-card-change" data-tone={tone(change)}>
+              <span class={arrow(change.direction)} aria-hidden="true"></span>{change.percent}
+            </span>
+          </span>
+        </div>
       </div>
     </div>
     """
   end
+
+  attr(:id, :string, required: true)
+  attr(:label, :string, required: true)
+  attr(:help, :string, required: true)
+
+  # A ? whose text shows on hover, on focus, or when tapped (a CSS-only popover, as `popover/1`)
+  defp number_card_help(assigns) do
+    ~H"""
+    <span class="dropdown dropdown-hover number-card-help">
+      <span
+        tabindex="0"
+        role="button"
+        class="number-card-help-trigger"
+        aria-label={"About #{@label}"}
+        aria-describedby={@id}
+      >
+        <span class="hero-question-mark-circle" aria-hidden="true"></span>
+      </span>
+      <span id={@id} role="tooltip" class="dropdown-content number-card-help-content">{@help}</span>
+    </span>
+    """
+  end
+
+  # Good news when it moved the way that's good; a flat change, or one where neither way is good,
+  # is neutral
+  defp tone(%{direction: "flat"}), do: "neutral"
+
+  defp tone(%{direction: direction} = change) do
+    case Map.get(change, :good, "up") do
+      "none" -> "neutral"
+      ^direction -> "good"
+      _other -> "bad"
+    end
+  end
+
+  # literal class names so the Tailwind scanner can see them
+  defp arrow("up"), do: "hero-arrow-up-mini"
+  defp arrow("down"), do: "hero-arrow-down-mini"
+  defp arrow("flat"), do: "hero-minus-mini"
 
   defp trend_config(%{trend: []}), do: nil
 
@@ -228,7 +332,10 @@ defmodule ShadcnDaisyui.Components.Chart do
       type: "line",
       data: %{
         labels: labels,
-        datasets: [%{label: label, data: values, color: color, fill: "start"}]
+        # a step with no number (no sales that day) is bridged rather than left as a gap
+        datasets: [
+          %{label: label, data: values, color: color, fill: "start", spanGaps: true}
+        ]
       },
       options: %{
         plugins: %{legend: %{display: false}, tooltip: %{enabled: false}},

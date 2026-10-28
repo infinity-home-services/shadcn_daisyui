@@ -65,8 +65,13 @@ theme, and give every chart its numbers in text.
   column on phones. Filters go in one row above every chart they scope, never
   inside a chart's card.
 - **Number card:** the label, the number formatted on the server (proportional
-  figures), one line under it - a comparison or a breakdown in words - and,
-  optionally, its trend faint behind it.
+  figures), one line under it - a breakdown in words - and, optionally, its
+  trend faint behind it, peaks and all, gaps bridged. Say what it counts in
+  plain words behind a ? (`help`). Its change on another period is badges
+  under the line (`<:change>`: the period, the difference, the change with
+  its sign and arrow), toned good or bad by which way is good news, never
+  colour alone. A card that opens its detail is a link as a whole
+  (`patch`/`navigate`); never a separate "Zoom" button for it.
 
 ## Reference
 

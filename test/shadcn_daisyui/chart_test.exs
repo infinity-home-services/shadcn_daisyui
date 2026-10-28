@@ -200,7 +200,7 @@ defmodule ShadcnDaisyui.Components.ChartTest do
         """)
 
       assert html =~ ~r{<div id="sales" class="card number-card\s*" data-slot="number-card">}
-      assert html =~ ~s(<p class="number-card-label">Sales</p>)
+      assert html =~ ~r{<p class="number-card-label">\s*Sales\s*</p>}
       assert html =~ ~s(<p class="number-card-value">$42,000</p>)
       assert html =~ ~r{<p class="number-card-description">\s*Margin \$14,700 \(35%\)\s*</p>}
 
@@ -217,7 +217,8 @@ defmodule ShadcnDaisyui.Components.ChartTest do
                  "label" => "Sales",
                  "data" => [12_400, 9_800],
                  "color" => "chart-1",
-                 "fill" => "start"
+                 "fill" => "start",
+                 "spanGaps" => true
                }
              ]
 
@@ -248,6 +249,82 @@ defmodule ShadcnDaisyui.Components.ChartTest do
       refute html =~ "number-card-description"
     end
 
+    test "help: a ? beside the label, its text tied to it" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.number_card id="rate" label="Same Day rate" value="38%" help="Initial appointments sold." />
+        """)
+
+      assert html =~ ~s(class="dropdown dropdown-hover number-card-help")
+      assert html =~ ~s(aria-label="About Same Day rate")
+      assert html =~ ~s(aria-describedby="rate-help")
+
+      assert html =~
+               ~s(<span id="rate-help" role="tooltip" class="dropdown-content number-card-help-content">Initial appointments sold.</span>)
+    end
+
+    test "changes: a badge naming the period, then the difference and the change, toned" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.number_card id="sales" label="Sales" value="$42,000">
+          3 sales
+          <:change vs="vs PP" by="+$8,000" percent="+24%" direction="up" />
+          <:change vs="vs PY" percent="-3%" direction="down" />
+          <:change vs="vs plan" by="$0" direction="flat" />
+        </.number_card>
+        """)
+
+      groups =
+        html
+        |> String.split(~s(<span class="number-card-change-group">), trim: true)
+        |> tl()
+
+      assert [first, second, third] = groups
+      assert text(first) =~ ~r/vs PP\s*\+\$8,000\s*\+24%/
+      assert length(Regex.scan(~r/data-tone="good"/, first)) == 2
+      assert first =~ ~s(<span class="hero-arrow-up-mini" aria-hidden="true"></span>)
+      assert second =~ ~s(data-tone="bad")
+      assert second =~ "hero-arrow-down-mini"
+      refute second =~ "+$"
+      assert third =~ ~s(data-tone="neutral")
+      refute third =~ "hero-minus-mini"
+    end
+
+    test "changes: when down is good news, down is good" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.number_card id="cost" label="Costs" value="$9,000">
+          <:change vs="vs PP" percent="-5%" direction="down" good="down" />
+          <:change vs="vs PY" percent="+5%" direction="up" good="none" />
+        </.number_card>
+        """)
+
+      assert html =~ ~s(data-tone="good")
+      assert html =~ ~s(data-tone="neutral")
+      refute html =~ ~s(data-tone="bad")
+    end
+
+    test "a link: the label opens it, the whole card its target" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.number_card id="sales" label="Sales" value="$42,000" patch="/board?open=sales" help="What sold." />
+        """)
+
+      assert html =~
+               ~r{<a href="/board\?open=sales" data-phx-link="patch" data-phx-link-state="push" class="number-card-link">\s*Sales\s*</a>}
+
+      # the help is beside the link, never inside it
+      refute html =~ ~r{<a [^>]*number-card-link[^>]*>(?:(?!</a>).)*number-card-help}s
+    end
+
     test "no trend, no chart" do
       assigns = %{}
       html = render(~H|<.number_card id="avg" label="Average sale" value="$3,818" />|)
@@ -255,6 +332,9 @@ defmodule ShadcnDaisyui.Components.ChartTest do
       refute html =~ "ShadcnChart"
     end
   end
+
+  # The text of some markup, tags dropped and spaces squeezed
+  defp text(html), do: html |> String.replace(~r/<[^>]+>/, " ") |> String.replace(~r/\s+/, " ")
 
   describe "format_number/1" do
     test "groups digits, keeps up to two decimals, passes text through" do
