@@ -26,6 +26,8 @@ import {hooks as colocatedHooks} from "phoenix-colocated/shadcn_daisyui_demo"
 import topbar from "../vendor/topbar"
 // interactive components from the shadcn_daisyui package (copied by its install task)
 import { initShadcnDaisyui, Hooks as ShadcnHooks, toast, showToast } from "../../../priv/static/shadcn-daisyui.js"
+// the optional chart kit (an app imports it as "shadcn_daisyui/charts")
+import { initCharts, ChartHooks } from "../../../priv/static/shadcn-daisyui-charts.js"
 // docs-site only: the interactive theme creator on /docs/themes
 import { initThemeCreator } from "./theme_creator"
 
@@ -33,7 +35,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, ...ShadcnHooks},
+  hooks: {...colocatedHooks, ...ShadcnHooks, ...ChartHooks},
 })
 
 // Show progress bar on live navigation and form submits
@@ -449,6 +451,14 @@ document.addEventListener("securitypolicyviolation", (e) => {
   out.querySelector("[data-csp-log]").appendChild(li)
 })
 
-const bootShadcn = () => { initShadcnDaisyui(); initThemeCreator(); persistSidebarScroll(); initPlatformToggle() }
+// Chart click previews on the docs pages (dead views, no server to push to):
+// a toast shows what on_click would send. LiveView pages get the real event.
+document.addEventListener("chart:click", (e) => {
+  if (e.target.closest("[data-phx-session]")) return
+  const { key, series, index } = e.detail
+  toast(`on_click: key "${key}"`, { description: `series ${series == null ? "nil" : `"${series}"`}, index ${index}` })
+})
+
+const bootShadcn = () => { initShadcnDaisyui(); initCharts(); initThemeCreator(); persistSidebarScroll(); initPlatformToggle() }
 if (document.readyState !== "loading") bootShadcn()
 else document.addEventListener("DOMContentLoaded", bootShadcn)

@@ -3,13 +3,16 @@
 // JSON), so it needs nothing beyond Node itself.
 //
 //   node chrome_eval.mjs <chrome-binary> <page.html> <profile-dir>
+//
+// --allow-file-access-from-files lets a page import ES modules from file://
+// (the chart kit's entry imports its vendored Chart.js by relative path).
 import { spawn } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
 const [chrome, page, profile] = process.argv.slice(2)
 const proc = spawn(chrome, [
   "--headless", "--disable-gpu", "--no-sandbox", "--no-first-run",
-  "--remote-debugging-pipe", `--user-data-dir=${profile}`, "--window-size=1280,900",
+  "--remote-debugging-pipe", "--allow-file-access-from-files", `--user-data-dir=${profile}`, "--window-size=1280,900",
 ], { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] })
 const toChrome = proc.stdio[3]
 const fromChrome = proc.stdio[4]

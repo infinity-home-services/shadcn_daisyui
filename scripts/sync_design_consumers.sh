@@ -33,6 +33,7 @@ order=(
   styles-typography
   styles-shape-elevation
   styles-motion
+  styles-charts
 )
 
 build_aggregate() {
@@ -55,11 +56,11 @@ EOF
   done
 }
 
-# 1. Plugin skill references (the 10 files verbatim).
+# 1. Plugin skill references (the files verbatim).
 plugin_refs="$plugin_repo/skills/design-system/references"
 if [ -d "$plugin_refs" ]; then
   cp "$src"/foundations-*.md "$src"/styles-*.md "$plugin_refs/"
-  echo "✓ synced 10 reference files → $plugin_refs"
+  echo "✓ synced ${#order[@]} reference files → $plugin_refs"
 else
   echo "- skipped plugin (no dir at $plugin_refs)"
 fi

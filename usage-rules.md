@@ -59,6 +59,13 @@ like shadcn/ui. **Every UI decision goes through this package.**
   before/after diffs are `<.code_block>` (`lines` with `:added` / `:removed`
   for a diff, `size="sm"` in a card or chat reply). Never hand-roll a `<pre>`, a
   copy button, line numbers or diff colours.
+- A chart is `<.chart>` (any Chart.js type: the server sends an ordinary
+  config) and a headline figure is `<.number_card>`, from the optional chart
+  kit (`import { ChartHooks } from "shadcn_daisyui/charts"`). Pick the form by
+  the job (see Charts). Never write a chart hook of your own, load Chart.js
+  from a CDN, hand-draw a chart (SVG, divs, `.chart-bar`), or put colours in a
+  chart's config - series take `chart-1…5` in order, or a dataset's `color`
+  token.
 - An AI chat page is a `<.message_scroller>` of `<.message>` / `<.bubble>` /
   `<.marker>` rows, `<.trace>` for the assistant's steps, tool calls and sources,
   and the `<.prompt_input>` composer (see AI chat page). Never hand-roll a chat
@@ -71,7 +78,8 @@ like shadcn/ui. **Every UI decision goes through this package.**
   code block, message scroller, prompt input) REQUIRE a
   unique `id` attribute and the JS hooks
   registered on the LiveSocket (`import { Hooks } from "shadcn_daisyui"` …
-  `hooks: { ...Hooks }`).
+  `hooks: { ...Hooks }`). Charts (`<.chart>`, a `<.number_card>`'s trend) need
+  `id` and the chart kit's hooks too: `hooks: { ...Hooks, ...ChartHooks }`.
 - Never write inline event handlers (`onclick=`, `onsubmit=`, …) or `javascript:`
   URLs - they break under a strict `script-src` CSP. Open/close overlays with
   `phx-click={show_modal("id")}` / `hide_modal("id")` (the components do this
@@ -138,6 +146,8 @@ Decision order:
 | `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
 | `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
 | `<.empty>` | an empty state: `icon` (in a 40px muted circle) or `<:media>`, `title`, one muted line (inner block), `<:actions>`; `variant="card"` (on its own, bordered) or `"plain"` (inside a card or table) |
+| `<.chart>` | the chart kit (needs `ChartHooks` from `shadcn_daisyui/charts`): `id`, `label` (accessible name + caption of the hidden table of numbers), `config` (a Chart.js config as maps: `type`, `data`, `options`; labels formatted on the server); `on_click="event"` pushes `%{"id", "key", "series", "index"}` (`key` from `data.keys` or the label, `series` the clicked dataset's `key` or label), `target`; `format={fn n -> text end}` for the table; `canvas_class="h-80"` (16rem default; horizontal bars size to their rows). Kit keys: a dataset's `color` (`"chart-3"`, `"muted-foreground"`, `"chart-1/35"` = 35% opacity, or a list per bar), `key`; `data.keys`; `options.plugins.endLabels.labels` (text at each bar's end, moved above the bars on narrow screens). Values in tooltips follow the value axis's `ticks.format` |
+| `<.number_card>` | `id`, `label`, `value` (formatted), inner block = the line under it ("Margin $14,700 (35%)"), `trend` (numbers or `{label, n}`, oldest first; drawn faint behind the number - needs `ChartHooks`), `color` (trend token, default `chart-1`) |
 | `<.code_block>` | `id` (hook), `code` (a string: split into lines, escaped; no syntax highlighting) or `lines` (strings, `{:added \| :removed \| :highlighted, text}`, or `Phoenix.HTML.raw/1` pre-highlighted lines - build the list in Elixir, a literal `{` in a HEEx attribute opens an expression); `title` + `icon` (header; without one Copy floats top-end), `line_numbers` `start_line`, `highlight={[42, 50..52]}`, `wrap`, `content_class="max-h-72"` (scrolls inside, edges fade), `variant="default\|destructive"`, `size="default\|sm"`, `label` (names the focusable scroll region), `copy={false}`, `copy_text`; `<:actions>` (`class="code-block-action"` 24px icon buttons, `aria-pressed` for a toggle), `<:footer>`; Copy copies the plain text (no numbers or markers) |
 | `<.data_table>` | `id` (hook), `rows`, `row_id`, `row_href` (Cmd/Ctrl/middle click), `state` (a `DataTable.State`: sort arrows, ticks), `selectable`, `more`, `matching`, `all_matching`, `edge`, `noun={{"order", "orders"}}`, `active_id`, `scroll_key`, `target`; `<:col label sort class="w-32" align hide_below="md">`, `<:bulk>`, `<:empty title icon>`, `<:empty_action>`; sends `dt:sort` `dt:open` `dt:select` `dt:select_all` `dt:select_matching` `dt:clear` `dt:more` (see List and record pages) |
 | `<.table_toolbar>` | `id`, `search`, `placeholder`, `shown`, `total`, `noun`, `views=[%{key, label, count, path, active, edited}]`, `menu=[%{key, label, group, icon, active, path \| click}]`, `chips=[{key, label} \| {key, label, :fixed}]` (`State.chips/3`), `sort` (`State.sort_value/1`), `sorts=[{label, "key:dir"}]` (first = default); `<:filter key label>` (one `<.select>`/`<.combobox>` named `key`), `<:more>`, `<:save>`; a form sending `dt:filter` (+ `dt:unfilter`, `dt:reset`) |
@@ -361,6 +371,71 @@ defp finish(socket, reply), do: socket |> assign(reply: nil) |> stream_insert(:m
   files consumed on send show on the question as `<.attachment>`s. Offer
   suggestions while they help (a new conversation), not under every reply.
 
+### Charts
+
+The chart kit is optional: `import { ChartHooks } from "shadcn_daisyui/charts"`
+and `hooks: { ...Hooks, ...ChartHooks }` (Chart.js ships inside the package, no
+CDN). Pick the form by the data's job, then build an ordinary Chart.js config in
+Elixir (labels formatted, numbers raw):
+
+| Job | Form |
+|---|---|
+| One number, maybe its trend | `<.number_card trend={…}>` - never a one-bar chart |
+| Change over time | `type: "line"`; vertical bars (`"bar"`) for days or weeks |
+| A ranking / leaderboard | horizontal bars, longest first, labelled at the end |
+| Progress through states | one stacked bar, axes hidden, the rest a grey track |
+| Part to whole (≤ 5 parts) | `type: "doughnut"` |
+| A few series compared | grouped bars or lines, one dataset each (≤ 5) |
+
+```elixir
+# a leaderboard: sorted on the server; the margin is the darker part of each sale
+%{
+  type: "bar",
+  data: %{
+    labels: Enum.map(people, & &1.name),
+    keys: Enum.map(people, & &1.id),              # sent as "key" with a click
+    datasets: [
+      %{label: "Margin", key: "margin", data: Enum.map(people, & &1.margin), color: "chart-1"},
+      %{label: "Rest of the sale", key: "rest", data: Enum.map(people, &(&1.sale - &1.margin)), color: "chart-1/35"}
+    ]
+  },
+  options: %{
+    indexAxis: "y",
+    scales: %{x: %{stacked: true, display: false, ticks: %{format: %{style: "currency", currency: "USD", maximumFractionDigits: 0}}},
+              y: %{stacked: true}},
+    plugins: %{endLabels: %{labels: Enum.map(people, & &1.summary)}}   # "$24,500 · 38% margin · 2 for 3"
+  }
+}
+
+# a progress row: one label, a dataset per state, the axes hidden, x max = the total
+%{
+  type: "bar",
+  data: %{labels: ["Today"], datasets: [
+    %{label: "Resulted", key: "resulted", data: [14], color: "chart-1"},
+    %{label: "Needs a result", key: "needs_result", data: [3], color: "chart-1/65"},
+    %{label: "In progress", key: "in_progress", data: [4], color: "chart-1/35"},
+    %{label: "Still to come", key: "to_come", data: [9], color: "muted-foreground/25"}
+  ]},
+  options: %{indexAxis: "y", scales: %{x: %{stacked: true, display: false, max: 30}, y: %{stacked: true, display: false}}}
+}
+```
+
+```heex
+<.chart id="leaderboard" label="Sales by person, this week" config={@leaderboard} on_click="open_person" />
+```
+
+- Clicks: `handle_event("open_person", %{"key" => id}, socket)` (a progress
+  part's state is `"series"`); open the detail in a `<.sheet>`. In a
+  LiveComponent pass `target={@myself}`.
+- Updates: assign a new config; the hook moves the same chart to the new data.
+- Never colours, fonts or grid styling in `options`: the theme sets them and
+  redraws on a theme change. Five series at most (fold the rest into "Other");
+  `color: "muted-foreground"` on the others when one series is the point.
+- Put each chart in a card (`card_title` says what, `card_description` the
+  period). `label` is required: it names the chart and captions the hidden
+  table of its numbers; `format` writes them (`&money/1`).
+- See `usage-rules/styles-charts.md` for the full rules.
+
 ### Form components (`ShadcnDaisyui.CoreComponents`)
 
 Always bind form controls to changesets via `Phoenix.HTML.FormField`:
@@ -410,7 +485,7 @@ Always bind form controls to changesets via `Phoenix.HTML.FormField`:
 | Collapsing row | `<div class="reveal" data-open><div class="reveal-track"><div>…</div></div></div>` (toggle `data-open`; `<button data-reveal-toggle="id">` for dead views) |
 | Bottom dock (compact nav) | `<div class="dock"><button class="dock-active"><span class="hero-…"></span><span class="dock-label">…` (3-5 items; mark the current route's button `dock-active`) |
 
-Browse the full gallery (99 components) in the docs site (`demo/`) or
+Browse the full gallery (100 components) in the docs site (`demo/`) or
 `/docs/components/:slug` - every entry has copy-pasteable markup.
 
 ## Theme tokens
@@ -481,6 +556,7 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
 - See `usage-rules/styles-typography.md` - type ramp, iconography
 - See `usage-rules/styles-shape-elevation.md` - radius roles, elevation ladder
 - See `usage-rules/styles-motion.md` - durations, easings, patch guard
+- See `usage-rules/styles-charts.md` - the form for each job, series colours, marks, labels
 
 ## Setup invariants (do not undo)
 
@@ -492,7 +568,9 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
   closing dialogs on navigation, keeping the sidebar's scroll position) comes
   with that import - don't re-add an app
   copy of it or app-specific events for it. It also calls `initConfirmDialog()`
-  (styled `data-confirm`); add the call if it's missing, never remove it.
+  (styled `data-confirm`); add the call if it's missing, never remove it. An
+  app with charts also imports `ChartHooks` from `"shadcn_daisyui/charts"` and
+  spreads them beside `Hooks` (dead views: `initCharts()`).
 - The root layout keeps its pre-paint `<script nonce={assigns[:csp_nonce]}>` in
   `<head>`: it sets `data-theme` through the `theme-transition` guard and
   `document.documentElement.dataset.sidebar` from localStorage `shadcn:sidebar`

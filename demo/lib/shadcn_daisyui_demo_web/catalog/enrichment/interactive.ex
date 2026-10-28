@@ -666,60 +666,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Enrichment.Interactive do
             "On macOS use the .commands / CommandMenu API for a real menu bar; on iOS/iPadOS this becomes toolbar Menus, since there is no global menubar."
         },
         ios_status: :partial
-      },
-      "chart" => %{
-        specs: %{
-          anatomy: [
-            %{
-              part: "Container",
-              description: "A card framing the chart with a title and caption."
-            },
-            %{
-              part: "Bars",
-              description: "Themed .chart-bar columns whose height encodes the value."
-            },
-            %{part: "Line / area", description: "An SVG polyline with a translucent area fill."},
-            %{part: "Axis labels", description: "Muted text labels along the category axis."}
-          ],
-          measurements: [
-            %{property: "Bar radius", value: "var(--radius-sm) on the top corners"},
-            %{property: "Plot height", value: "h-40 (10rem)"},
-            %{property: "Bar hover", value: "opacity 0.8, 0.15s transition"},
-            %{property: "Label font", value: "0.75rem muted"}
-          ],
-          tokens: ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "muted-foreground"]
-        },
-        accessibility: %{
-          roles:
-            "A presentational drawing (bars / SVG). Give the chart container role=img with an aria-label summarizing the data, or pair it with an accessible data table.",
-          keyboard: [
-            %{
-              keys: "Tab",
-              action:
-                "No interactive targets by default; add focusable points only if the chart is interactive"
-            }
-          ],
-          focus:
-            "Static charts take no focus; if you add tooltips or selectable points, make those controls keyboard-focusable.",
-          screen_reader:
-            "Provide a text alternative (aria-label or an adjacent table) - the bars and SVG convey no values to assistive tech on their own.",
-          touch_target:
-            "Static by default; any interactive points or legend toggles must meet the 44pt touch minimum.",
-          reduced_motion:
-            "Only a 0.15s hover opacity transition on bars; nothing moves, so reduced-motion is effectively unaffected."
-        },
-        swiftui: %{
-          code: ~S"""
-          Chart(data) { point in
-              BarMark(x: .value("Month", point.month), y: .value("Revenue", point.revenue))
-                  .foregroundStyle(by: .value("Series", point.series))
-          }
-          .chartForegroundStyleScale(range: [.chart1, .chart2, .chart3, .chart4, .chart5])
-          """,
-          notes:
-            "Swift Charts is the native equivalent (BarMark / LineMark / AreaMark) and gets VoiceOver audio-graph support for free via .accessibilityChartDescriptor."
-        },
-        ios_status: :parity
       }
     }
   end

@@ -8,6 +8,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+A chart kit, as an optional part: `<.chart>` draws any Chart.js chart from an
+ordinary config the server sends, `<.number_card>` is a dashboard's headline
+figure, and both take their look from the theme. Apps that don't use charts
+load nothing new.
+
+### Added
+
+- **`<.chart>`** (`ShadcnDaisyui.Components.Chart`, imported by
+  `use ShadcnDaisyui.Components`): `id`, `label`, `config` - a Chart.js config
+  (`type`, `data`, `options`) as Elixir maps, any stock chart type. One hook
+  draws every chart (`ShadcnChart`), and when LiveView changes `config` it
+  moves the same chart to the new data. The look is set once, from the
+  tokens: series take `--chart-1…5` in order, text `--foreground` /
+  `--muted-foreground`, grid lines `--border-color`, the gaps between stacked
+  parts the surface behind the chart, the font the page's; the tooltip is a
+  popover-styled element in the top layer. Charts redraw when the theme
+  changes (`setTheme`, any `data-theme` change, the OS scheme), brand themes
+  and theme islands included.
+  - Bars are at most 24px with a 4px rounded data end, square at the baseline;
+    stacked parts are parted by a 2px surface gap; a single stacked bar with
+    no value axis (a progress row) rounds at both ends; lines are 2px with
+    their points shown on hover; one series has no legend, two or more get
+    one under the chart (keys mirror the marks).
+  - Kit keys Chart.js ignores: a dataset's `color` (a token: `"chart-3"`,
+    `"muted-foreground"`, `"chart-1/35"` for 35% opacity, or a list per bar),
+    its `key`, `data.keys`, and `options.plugins.endLabels.labels` - a text at
+    each bar's end, drawn by a small Chart.js plugin; on a narrow screen it
+    moves above the bars (beside the name, or under it on two lines).
+  - Horizontal bar charts size themselves to their rows; tick labels on the
+    value axis compact from 1,000 (`$25K`) while tooltips keep the full value
+    (both follow the axis's `ticks.format`).
+  - `on_click="event"` pushes `%{"id", "key", "series", "index"}` (`target`
+    for a LiveComponent); dead views get a bubbling `chart:click` event.
+  - Accessibility: `label` names the chart and captions a visually hidden
+    table of its numbers (`format` writes them); the canvas takes focus, the
+    arrow keys move the tooltip between labels (or a bar's parts) and a polite
+    live region reads it, Enter / Space send `on_click`, Esc hides it. Reduced
+    motion turns animation off.
+- **`<.number_card>`**: a label, a big number, the line under it (the inner
+  block) and a faint trend behind the number (`trend`, a filled line with its
+  axes, grid, legend and points hidden; `color` picks its token).
+- **The `shadcn_daisyui/charts` entry** (`priv/static/shadcn-daisyui-charts.js`):
+  `import { ChartHooks } from "shadcn_daisyui/charts"` and
+  `hooks: { ...Hooks, ...ChartHooks }`, or `initCharts()` in a dead view.
+  `package.json` gains an `exports` map for it (`"."` stays
+  `shadcn-daisyui.js`, which loads no outside code; `./priv/static/*` keeps
+  working).
+- **Chart.js 4.6.1 ships inside the package** (`priv/static/vendor/`, with its
+  one dependency, @kurkle/color 0.3.4): apps load it from their own server,
+  under a strict `script-src`, with no CDN and no npm.
+  `priv/static/vendor/README.md` records the versions, the npm integrity
+  hashes and the one change (the bare `@kurkle/color` import points at the
+  vendored copy); `scripts/vendor_chartjs.sh VERSION` re-vendors.
+- `usage-rules/styles-charts.md`: the form for each job, the series colours,
+  marks, labels and the numbers in text (synced to the Swift package's
+  guidelines). `usage-rules.md` gains the chart rules, a Charts section and
+  the two components.
+- Docs: the Chart and Number Card pages (live, light and dark), Styles →
+  Charts, an optional Charts step in Installation, and `/lab/charts` (clicks
+  reaching the server and a LiveComponent, data moving in place).
+
+### Changed
+
+- **The `--chart-1…5` tokens have new values.** The old ones failed the
+  categorical palette checks: in light, chart-3 was too dark and grey
+  (L 0.40, C 0.07) and chart-4 / chart-5 (yellow, amber) were too alike to
+  tell apart, with or without colour blindness (ΔE 5.6 / 7.4); in dark,
+  chart-2 and chart-3 were too light for the band; and slot 1 was orange in
+  light but blue in dark, so a series changed colour with the theme. Now
+  the same five hues in both modes, in a fixed order (blue, orange, aqua,
+  yellow, magenta), stepped for each card surface, passing the lightness
+  band, chroma floor, colour-blind separation of neighbours (worst ΔE 9.1
+  light, 8.4 dark) and normal-vision separation (19.6 / 19.3). Anything
+  painted with `var(--chart-N)` changes colour; brand themes that set their
+  own `--chart-*` keep them.
+- The Chart docs page's hand-drawn bars and SVG line are gone; the
+  `.chart-bar` class stays (deprecated) for markup that used it.
+
 ## [0.25.0] - 2026-10-28
 
 The toast is now a port of svelte-sonner, set up the way shadcn-svelte ships

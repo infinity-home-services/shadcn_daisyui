@@ -68,6 +68,30 @@ const liveSocket = new LiveSocket("/live", Socket, {
 if (document.readyState !== "loading") initShadcnDaisyui()
 else document.addEventListener("DOMContentLoaded", initShadcnDaisyui)|}
       />
+      <h3 id="charts" class="pt-2 text-base font-semibold tracking-tight">Charts (optional)</h3>
+      <p class="text-sm text-muted-foreground">
+        <.link navigate={~p"/docs/components/chart"} class="link link-primary">
+          &lt;.chart&gt;
+        </.link>
+        and
+        <.link navigate={~p"/docs/components/number-card"} class="link link-primary">
+          &lt;.number_card&gt;
+        </.link>
+        draw with Chart.js, which ships inside the package (a pinned copy, loaded from your own
+        server - no CDN). It's a separate entry, so apps without charts load nothing new:
+      </p>
+      <.code_block
+        language="assets/js/app.js"
+        code={~S|import { Hooks } from "shadcn_daisyui"
+import { ChartHooks } from "shadcn_daisyui/charts"
+
+const liveSocket = new LiveSocket("/live", Socket, {
+  params: { _csrf_token: csrfToken },
+  hooks: { ...Hooks, ...ChartHooks },
+})
+
+// dead views: import { initCharts } from "shadcn_daisyui/charts"; initCharts()|}
+      />
     </section>
 
     <%!-- 3. Set the theme --%>

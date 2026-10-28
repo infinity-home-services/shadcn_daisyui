@@ -1,7 +1,10 @@
 <.docs_layout active={@spec.slug}>
   <.doc_heading title={@spec.title} description={@spec.description} />
 
-  <.js_hook_callout :if={Map.get(@spec, :hook, false)} />
+  <.js_hook_callout
+    :if={Map.get(@spec, :hook, false)}
+    charts={@spec.slug in ~w(chart number-card)}
+  />
 
   <%!--
     Usage / Design split. The toggle is our built-in tab styling (daisyUI

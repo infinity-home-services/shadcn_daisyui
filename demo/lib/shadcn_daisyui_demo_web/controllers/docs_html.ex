@@ -26,6 +26,9 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
   import ShadcnDaisyui.CoreComponents, only: [page_header: 1]
   import ShadcnDaisyui.Components.DataTable, only: [data_table: 1, table_toolbar: 1]
   import ShadcnDaisyui.Components.Record, only: [record_tabs: 1, table_card: 1, section_nav: 1]
+  # the charts guide's live examples
+  import ShadcnDaisyui.Components.Chart, only: [chart: 1, number_card: 1]
+  alias ShadcnDaisyuiDemoWeb.Catalog.ChartPages
 
   embed_templates "docs_html/*"
 

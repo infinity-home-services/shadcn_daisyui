@@ -137,6 +137,11 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
     |> Enum.join("\n")
   end
 
+  defp hook_note(%{slug: slug, hook: true}) when slug in ~w(chart number-card) do
+    "> Requires the optional chart kit: `import { ChartHooks } from \"shadcn_daisyui/charts\"` " <>
+      "and spread `ChartHooks` into the LiveSocket's hooks (dead views: `initCharts()`)."
+  end
+
   defp hook_note(spec) do
     if Map.get(spec, :hook) do
       "> Requires a JS hook: initialize with `initShadcnDaisyui()` (dead views) " <>

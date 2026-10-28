@@ -16,6 +16,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   fails loudly (named by slug) rather than rendering a broken page.
   """
 
+  alias ShadcnDaisyuiDemoWeb.Catalog.ChartPages
   alias ShadcnDaisyuiDemoWeb.Catalog.ChatPages
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
@@ -58,7 +59,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     %{
       title: "Data display",
       slugs: ~w(table data-table table-toolbar table-card empty card avatar item attachment stat
-                code-block chart timeline list kbd accordion collapsible carousel)
+                code-block chart number-card timeline list kbd accordion collapsible carousel)
     },
     %{
       title: "Conversation",
@@ -113,7 +114,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         Composition.all() ++
         Pickers.all() ++
         Overflow.all() ++
-        DataPages.all() ++ Overlays.all() ++ CodeBlockPage.all() ++ ChatPages.all()
+        DataPages.all() ++
+        Overlays.all() ++
+        CodeBlockPage.all() ++
+        ChatPages.all() ++
+        ChartPages.all()
 
     for c <- pages, into: %{} do
       spec = Map.merge(c, Map.get(enrichment, c.slug, %{}))
@@ -3211,50 +3216,6 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           }
         ]
       },
-      %{
-        slug: "chart",
-        title: "Chart",
-        description: "Simple bar and line charts drawn with the theme colors.",
-        examples: [
-          %{
-            title: "Bar & line",
-            center: false,
-            code: ~S"""
-            <div class="grid w-full gap-6 lg:grid-cols-2">
-              <div class="card">
-                <div class="card-body">
-                  <p class="text-sm font-medium">Revenue</p>
-                  <p class="mb-3 text-sm text-muted-foreground">Last 6 months</p>
-                  <div class="flex h-40 items-end gap-3">
-                    <div class="chart-bar w-full" style="height: 40%"></div>
-                    <div class="chart-bar w-full" style="height: 65%"></div>
-                    <div class="chart-bar w-full" style="height: 52%"></div>
-                    <div class="chart-bar w-full" style="height: 80%"></div>
-                    <div class="chart-bar w-full" style="height: 60%"></div>
-                    <div class="chart-bar w-full" style="height: 95%"></div>
-                  </div>
-                  <div class="mt-2 flex gap-3 text-center text-xs text-muted-foreground">
-                    <span class="w-full">Jan</span><span class="w-full">Feb</span><span class="w-full">Mar</span>
-                    <span class="w-full">Apr</span><span class="w-full">May</span><span class="w-full">Jun</span>
-                  </div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-body">
-                  <p class="text-sm font-medium">Visitors</p>
-                  <p class="mb-3 text-sm text-muted-foreground">Trend</p>
-                  <svg viewBox="0 0 300 130" class="h-40 w-full" preserveAspectRatio="none">
-                    <polygon fill="var(--primary)" opacity="0.08" points="0,120 0,80 50,90 100,55 150,70 200,35 250,50 300,20 300,120" />
-                    <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0,80 50,90 100,55 150,70 200,35 250,50 300,20" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            """
-          }
-        ]
-      },
-
       # ===================== DAISYUI EXTRAS =====================
       %{
         slug: "stat",

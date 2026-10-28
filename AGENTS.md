@@ -13,6 +13,10 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   `@layer utilities` override layer with shadcn metrics. Single self-contained file.
 - `priv/static/shadcn-daisyui.js` - vanilla-JS interactivity: `initShadcnDaisyui()`
   for dead views and LiveView `Hooks` (one `Shadcn*` hook per interactive component).
+- `priv/static/shadcn-daisyui-charts.js` - the optional chart kit's entry
+  (`shadcn_daisyui/charts` through `package.json`'s `exports`): `ChartHooks`
+  (`ShadcnChart`, one hook for every chart) and `initCharts()`. It imports
+  Chart.js from `priv/static/vendor/` (pinned; see its README).
 - `lib/shadcn_daisyui/` - Phoenix function components (`Components`,
   `FormComponents`, `CoreComponents`) and install/generator Mix tasks.
 - `demo/` - separate Phoenix app: the docs site (catalog of all components with
@@ -43,12 +47,24 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
   guard (the demo's root layout and the installer-patched Phoenix theme script
   both do); don't reintroduce a color fade for theme changes or make the rule
   global again (that kills consumer transitions).
+- **`shadcn-daisyui.js` stays free of outside code.** Chart.js is loaded only
+  by the charts entry, from the vendored copy - never a CDN, never an npm
+  dependency. Re-vendor with `scripts/vendor_chartjs.sh VERSION` (a pnpm fetch,
+  so the machine's release-age and other gates apply; the script records the
+  version, integrity and its one rewrite in `priv/static/vendor/README.md`).
+- **Charts take their look from the tokens, set once in the hook.** Series are
+  `--chart-1…5` in order (validated as a categorical palette, light and dark -
+  re-run the check when changing them), text, grid, surface and font come from
+  the theme, and the chart redraws on a theme change. Configs from the server
+  carry data and structure, never colours.
 - **The demo never copies package assets.** `demo/assets` imports
-  `../../../priv/static/shadcn-daisyui.{css,js}` directly - copies drift.
+  `../../../priv/static/shadcn-daisyui.{css,js}` (and `shadcn-daisyui-charts.js`)
+  directly - copies drift. `/lab/charts` is the chart kit in a LiveView.
 - **Every interactive component needs `id`** and renders the exact markup its JS
   hook expects (`data-*` attributes). Keep component HEEx and JS in sync.
 - **Public API**: `ShadcnDaisyui.Components`, `ShadcnDaisyui.FormComponents`,
-  `ShadcnDaisyui.CoreComponents`, the Mix tasks, and the two static assets.
+  `ShadcnDaisyui.CoreComponents`, the Mix tasks, the two static assets, and the
+  charts entry (`shadcn_daisyui/charts`).
   Anything else is internal.
 
 ## Conventions

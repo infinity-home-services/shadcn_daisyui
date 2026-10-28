@@ -43,7 +43,8 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
   # palette's server search, answered by the LiveView. /lab/data-table is a
   # list page (toolbar + data table) and its record page. /lab/dropzone is
   # <.dropzone> on real uploads. /lab/chat is an AI chat page: a made-up
-  # assistant streams its replies with trace steps.
+  # assistant streams its replies with trace steps. /lab/charts is the chart
+  # kit: clicks reach the server (and a LiveComponent), data moves in place.
   scope "/lab", ShadcnDaisyuiDemoWeb do
     pipe_through [:browser, :strict_csp]
 
@@ -51,6 +52,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     live "/command-search", CommandSearchLive
     live "/dropzone", DropzoneLive
     live "/chat", ChatLive
+    live "/charts", ChartsLive
 
     live_session :lab_orders do
       live "/data-table", OrdersLive

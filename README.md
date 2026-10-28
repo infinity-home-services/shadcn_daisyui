@@ -215,6 +215,34 @@ optional title, line numbers, a copy button that copies the plain text, and
 <.code_block id="webhook-payload" title="payload.json" code={@payload} line_numbers />
 ```
 
+Charts are an optional part. `<.chart>` draws any Chart.js chart from an
+ordinary config the server sends (labels formatted, no colours: the theme's
+`--chart-1…5`, text, grid lines, font and a popover-styled tooltip apply, and
+the chart redraws when the theme changes); `<.number_card>` is a label, a big
+number, a line under it and a faint trend. Every chart carries its numbers as
+a hidden table for screen readers, works from the keyboard, and can send a
+click to the server:
+
+```heex
+<.number_card id="sales" label="Sales" value="$42,000" trend={@sales_trend}>
+  Margin $14,700 (35%)
+</.number_card>
+<.chart id="leaderboard" label="Sales by person, this week" config={@leaderboard} on_click="open_person" />
+```
+
+Chart.js ships inside the package (pinned, in `priv/static/vendor/`; no CDN, no
+npm) behind its own JS entry, so apps without charts load nothing new:
+
+```js
+import { Hooks } from "shadcn_daisyui"
+import { ChartHooks } from "shadcn_daisyui/charts"
+const liveSocket = new LiveSocket("/live", Socket, { params: {...}, hooks: { ...Hooks, ...ChartHooks } })
+// dead views: import { initCharts } from "shadcn_daisyui/charts"; initCharts()
+```
+
+(An app installed with `--copy` copies `priv/static/shadcn-daisyui-charts.js`
+and `priv/static/vendor/` into `assets/js/` beside `shadcn-daisyui.js`.)
+
 Interactive components need an `id` (LiveView hook requirement) and the `Hooks`
 registered (the installer does this).
 

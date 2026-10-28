@@ -76,11 +76,16 @@
   --input: oklch(0.922 0 0);
   --input-background: transparent;   /* form-control fill (shadcn bg-transparent: takes the card / muted surface); override to tint fields */
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* chart series, in this fixed order (blue, orange, aqua, yellow, magenta):
+     the same five hues in both modes, stepped for each surface, and checked
+     as a categorical palette (lightness band, chroma floor, colour-blind and
+     normal-vision separation of neighbours, contrast). The <.chart> kit reads
+     them; a brand theme overrides all five together and re-checks them. */
+  --chart-1: oklch(0.575 0.163 255.53);
+  --chart-2: oklch(0.671 0.175 40.64);
+  --chart-3: oklch(0.669 0.141 162.11);
+  --chart-4: oklch(0.764 0.161 75.12);
+  --chart-5: oklch(0.716 0.141 357.39);
 
   /* --- radius scale (shadcn derives sm/md/lg/xl from one base) --- */
   --radius: 0.625rem;
@@ -163,11 +168,11 @@
      reads on the page, on cards and inside overlays alike. Override to tint fields. */
   --input-background: color-mix(in oklab, var(--input) 30%, transparent);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: oklch(0.622 0.161 255.05);
+  --chart-2: oklch(0.622 0.173 40.11);
+  --chart-3: oklch(0.621 0.128 163.11);
+  --chart-4: oklch(0.670 0.143 73.23);
+  --chart-5: oklch(0.622 0.171 0.84);
 
   /* base-200 = shadcn muted/accent (hover + selected fills that show on cards
      and popovers); base-300 = shadcn's translucent border colour. var() refs so
@@ -1170,7 +1175,69 @@
     [data-timepicker][data-full-width] .btn[data-timepicker-trigger] { min-height: 2.75rem; }
   }
 
-  /* ---- Chart (bars + line) ----------------------------------------------- */
+  /* ---- Chart (<.chart>, <.number_card>; JS: shadcn_daisyui/charts) --------
+     The canvas box is Chart.js's container: relatively positioned, holding
+     only the canvas (the live region is absolutely positioned), with a
+     height for Chart.js to fill (16rem; canvas_class="h-80" changes it; a
+     horizontal bar chart sizes itself to its rows). min-width: 0 lets a chart
+     in a flex or grid cell shrink with it. Colours, fonts and lines inside
+     the canvas come from the tokens through the hook, not from here. The
+     defaults are :where() (no specificity), so a utility on the chart
+     (mt-4, absolute) or on the canvas box (canvas_class="h-80") wins. */
+  :where(.chart) { position: relative; min-width: 0; }
+  :where([data-slot="chart-canvas"]) { position: relative; width: 100%; min-width: 0; height: 16rem; }
+  [data-slot="chart-canvas"] > canvas { display: block; }
+  [data-slot="chart-canvas"]:focus-visible { outline: none; border-radius: var(--radius-md); box-shadow: var(--ring-shadow); }
+  /* the tooltip: a manual popover in the top layer (never clipped by a card
+     or a sheet), styled like the package's popovers; one per chart */
+  .chart-tooltip {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    overflow: visible;
+    display: none;
+    min-width: 8rem;
+    max-width: min(20rem, calc(100vw - 1rem));
+    padding: 0.375rem 0.625rem;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-lg);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    pointer-events: none;
+  }
+  .chart-tooltip:popover-open { display: grid; gap: 0.375rem; }
+  .chart-tooltip-title { font-weight: 500; }
+  .chart-tooltip-row { display: flex; align-items: center; gap: 0.5rem; }
+  /* a short line key in the series colour (set by the hook), not a box */
+  .chart-tooltip-key { flex: none; width: 0.1875rem; height: 0.75rem; border-radius: 2px; background-color: var(--chart-key); }
+  .chart-tooltip-name { color: var(--muted-foreground); }
+  .chart-tooltip-value { margin-inline-start: auto; padding-inline-start: 1rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--popover-foreground); white-space: nowrap; }
+
+  /* number card: label, big number, the line under it, and a faint trend
+     filling the card's lower part behind them, fading out as it rises
+     toward the text */
+  .number-card { position: relative; overflow: hidden; isolation: isolate; }
+  .number-card-body { position: relative; display: flex; flex-direction: column; gap: 0.25rem; padding: 1.5rem; }
+  .number-card-label { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: var(--muted-foreground); }
+  .number-card-value { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.025em; }
+  .number-card-description { font-size: 0.875rem; line-height: 1.25rem; color: var(--muted-foreground); }
+  .number-card-trend {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 60%;
+    z-index: -1;
+    opacity: 0.5;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 75%);
+    mask-image: linear-gradient(to bottom, transparent, #000 75%);
+  }
+  .number-card-trend [data-slot="chart-canvas"] { height: 100%; }
+
+  /* deprecated: the hand-drawn bar recipe the docs showed before <.chart> */
   .chart-bar { background-color: var(--primary); border-radius: var(--radius-sm) var(--radius-sm) 0 0; transition: opacity 0.15s; }
   .chart-bar:hover { opacity: 0.8; }
 

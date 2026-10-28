@@ -63,7 +63,8 @@ defmodule ShadcnDaisyui.MixProject do
         "usage-rules/styles-color.md",
         "usage-rules/styles-typography.md",
         "usage-rules/styles-shape-elevation.md",
-        "usage-rules/styles-motion.md"
+        "usage-rules/styles-motion.md",
+        "usage-rules/styles-charts.md"
       ],
       groups_for_extras: [
         Guides: ["usage-rules.md", "usage-rules/forms.md", "usage-rules/theming.md"],

@@ -95,6 +95,15 @@ defmodule ShadcnDaisyuiDemoWeb.Guides do
         "Three durations, standard easing, opacity and transform, plus the row reveal.",
       source: "styles-motion.md",
       template: :styles_motion
+    },
+    %{
+      section: :styles,
+      slug: "charts",
+      title: "Charts",
+      description:
+        "The form for each job, the five series colours, marks, labels and the numbers in text.",
+      source: "styles-charts.md",
+      template: :styles_charts
     }
   ]
 

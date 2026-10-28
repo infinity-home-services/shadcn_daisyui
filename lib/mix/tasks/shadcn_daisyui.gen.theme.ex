@@ -112,7 +112,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Gen.Theme do
       /* Override any other base token here, e.g.:
          --secondary: oklch(0.97 0 0);
          --destructive: oklch(0.577 0.245 27.325);
-         --chart-1: oklch(0.646 0.222 41.116); */
+         --chart-1: oklch(0.575 0.163 255.53); */
     }
 
     [data-theme="#{name}-dark"] {

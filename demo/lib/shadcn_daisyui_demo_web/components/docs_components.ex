@@ -373,8 +373,36 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   end
 
   @doc """
-  Callout shown on interactive component pages - points to the JS-hook setup.
+  Callout shown on interactive component pages - points to the JS-hook setup
+  (`charts`: the chart kit's own entry instead).
   """
+  attr :charts, :boolean, default: false
+
+  def js_hook_callout(%{charts: true} = assigns) do
+    ~H"""
+    <div class="mt-6 flex gap-3 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
+      <span class="hero-chart-bar size-4 shrink-0 translate-y-0.5 text-foreground" aria-hidden="true">
+      </span>
+      <div class="space-y-1">
+        <p class="font-medium text-foreground">Requires the chart kit</p>
+        <p class="text-muted-foreground">
+          Charts are an optional part: import
+          <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+            {~s|import { ChartHooks } from "shadcn_daisyui/charts"|}
+          </code>
+          and spread <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">ChartHooks</code>
+          into your <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">LiveSocket</code>'s
+          hooks (or call
+          <code class="rounded bg-muted px-1 py-0.5 font-mono text-xs">initCharts()</code>
+          for dead views) - see <a href={~p"/docs/installation"} class="link link-primary font-medium">
+            Installation → Charts
+          </a>. Chart.js ships inside the package: no CDN.
+        </p>
+      </div>
+    </div>
+    """
+  end
+
   def js_hook_callout(assigns) do
     ~H"""
     <div class="mt-6 flex gap-3 rounded-lg border border-base-300 bg-muted/40 px-4 py-3 text-sm">
