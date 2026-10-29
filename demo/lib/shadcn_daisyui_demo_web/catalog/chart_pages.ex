@@ -240,7 +240,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           "Comparing close values as slices - a pie or doughnut only shows part to whole at a glance"
         ],
         sizing:
-          "The canvas is 16rem high (canvas_class=\"h-80\" changes it); horizontal bar charts size themselves to their rows (36px each, 48px with the labels above the bars). Bars are at most 24px thick with a 4px rounded end, lines 2px, text 12px.",
+          "The canvas is 16rem high (canvas_class=\"h-80\" changes it); horizontal bar charts size themselves to their rows (36px each, 48px with the labels above the bars, plus 16px over the first row for its text). Bars are at most 24px thick with a 4px rounded end, lines 2px, text 12px.",
         responsive:
           "Charts fill their container's width and redraw on resize. On a narrow screen a leaderboard's end labels move above each bar with the name, so the bars keep their width (endLabels position: \"above\" keeps them there at every width). Put charts in a grid that stacks on phones (one column below sm).",
         ios:
@@ -850,7 +850,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           %{
             property: "Trend",
             value:
-              "lower 60% of the card, edge to edge (no auto padding; 1px above a peak), 50% opacity, 2px line, 25% area fill, gaps bridged"
+              "lower 60% of the card, edge to edge (no auto padding), the peak a sixth of its height below the top and the range at least a fifth of the top value (a flat series is a level line), 50% opacity, 2px line, 25% area fill, gaps bridged"
           }
         ],
         tokens: [

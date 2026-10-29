@@ -44,23 +44,23 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     {"casey", "Casey Park", 6_400, 1_920}
   ]
 
-  defp leaderboard do
+  defp leaderboard(people \\ @people) do
     %{
       type: "bar",
       data: %{
-        labels: Enum.map(@people, &elem(&1, 1)),
-        keys: Enum.map(@people, &elem(&1, 0)),
+        labels: Enum.map(people, &elem(&1, 1)),
+        keys: Enum.map(people, &elem(&1, 0)),
         datasets: [
           %{
             label: "Margin",
             key: "margin",
-            data: Enum.map(@people, &elem(&1, 3)),
+            data: Enum.map(people, &elem(&1, 3)),
             color: "chart-1"
           },
           %{
             label: "Rest of the sale",
             key: "rest",
-            data: Enum.map(@people, fn {_, _, s, m} -> s - m end),
+            data: Enum.map(people, fn {_, _, s, m} -> s - m end),
             color: "chart-1/35"
           }
         ]
@@ -78,7 +78,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
         plugins: %{
           endLabels: %{
             labels:
-              Enum.map(@people, fn {_, _, s, m} ->
+              Enum.map(people, fn {_, _, s, m} ->
                 "$#{s} · #{round(m * 100 / s)}% margin · 2 for 3"
               end)
           }
@@ -137,10 +137,16 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
 
   defp body do
     above = put_in(leaderboard(), [:options, :plugins, :endLabels, :position], "above")
+    one = leaderboard(Enum.take(@people, 1))
+    one = put_in(one, [:options, :plugins, :endLabels, :position], "above")
+    # an app that padded the top itself, before the kit made room
+    padded = put_in(above, [:options, :layout], %{padding: %{top: 12}})
 
     assigns = %{
       lb: leaderboard(),
       above: above,
+      one: one,
+      padded: padded,
       progress: progress(),
       bars: @bars,
       lines: @lines,
@@ -166,6 +172,12 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     <div class="card" style="width: 200px; padding: 24px">
       <.chart id="lb-above-phone" label="Leaderboard" config={@above} />
     </div>
+    <div class="card" style="width: 900px; padding: 24px">
+      <.chart id="lb-above-one" label="Leaderboard" config={@one} />
+    </div>
+    <div class="card" style="width: 900px; padding: 24px">
+      <.chart id="lb-above-padded" label="Leaderboard" config={@padded} />
+    </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="progress" label="Today's appointments" config={@progress} on_click="open_state" target="#panel" />
     </div>
@@ -187,6 +199,12 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
         <:change vs="vs PY" percent="-3%" direction="down" />
         <:change vs="vs plan" by="$0" direction="flat" />
       </.number_card>
+    </div>
+    <div style="width: 300px">
+      <.number_card id="flat" label="Flat" value="37%" trend={[37, 37, 37, 37, 37, 37, 37, 37]} />
+    </div>
+    <div style="width: 300px">
+      <.number_card id="wiggle" label="Wiggle" value="37%" trend={[37, 37, 37, 36, 37, 37, 37, 37]} />
     </div>
     """)
   end
@@ -280,11 +298,50 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       }
       return out
     }
+    // the topmost inked row of a canvas, per column or over the whole canvas
+    const inkTops = (c) => {
+      const cv = c.canvas
+      const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data
+      return Array.from({ length: cv.width }, (_, x) => {
+        let y = 0
+        while (y < cv.height && !d[(y * cv.width + x) * 4 + 3]) y++
+        return y
+      })
+    }
+    // a trend's shape: where its peak sits (a share of the canvas height) and
+    // how far the line's top edge travels up and down
+    const trendShape = (id) => {
+      const c = chart(id)
+      c.update("none")
+      const values = c.data.datasets[0].data.filter(Number.isFinite)
+      const tops = inkTops(c)
+      return {
+        height: c.canvas.height,
+        peak: c.scales.y.getPixelForValue(Math.max(...values)) / c.canvas.height,
+        ink: [Math.min(...tops), Math.max(...tops)],
+      }
+    }
+    const trends = () => Object.fromEntries(["edges", "flat", "wiggle"].map((id) => [id, trendShape(`${id}-trend`)]))
+    // labels above the bars: the room over the first row, and where the ink starts
+    const aboveRoom = (id) => {
+      const c = chart(id)
+      c.update("none")
+      return {
+        mode: c.$kit.labelMode,
+        top: c.chartArea.top,
+        area: Math.round(c.chartArea.bottom - c.chartArea.top),
+        height: c.height,
+        ink: Math.min(...inkTops(c)),
+      }
+    }
+    const above = () => Object.fromEntries(["lb-above", "lb-above-phone", "lb-above-one", "lb-above-padded"].map((id) => [id, aboveRoom(id)]))
 
     // ---- colours come from the tokens, as rgb ----------------------------------
     const lightBar = opts("bars", 0, 0).backgroundColor
     r.light = {
       badges: badges(),
+      trends: trends(),
+      above: above(),
       bar: lightBar,
       token: bytes("oklch(0.575 0.163 255.53)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -308,6 +365,8 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     await frames()
     r.dark = {
       badges: badges(),
+      trends: trends(),
+      above: above(),
       bar: opts("bars", 0, 0).backgroundColor,
       token: bytes("oklch(0.622 0.161 255.05)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -639,6 +698,49 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       # card's border colour does, and more than the badge's own fill
       assert badge["border"] > b["line"], msg
       assert badge["border"] > badge["fill"], msg
+    end
+  end
+
+  test "a trend's peak sits a sixth below the top, whatever its values; flat is level",
+       %{r: r} do
+    for mode <- ["light", "dark"], t = r[mode]["trends"] do
+      msg = "#{mode}: #{inspect(t, pretty: true)}"
+
+      # the same headroom over every peak, not wherever nice ticks land
+      for {_id, shape} <- t, do: assert(shape["peak"] > 0.15 and shape["peak"] < 0.2, msg)
+
+      # nothing drawn at the top edge: the line's highest point has room above it
+      for {_id, shape} <- t, do: assert(hd(shape["ink"]) >= shape["height"] * 0.1, msg)
+
+      # a flat series is a level line, and a 1-point wiggle on 37 a gentle one
+      [top, bottom] = t["flat"]["ink"]
+      assert bottom - top <= 1, msg
+      [top, bottom] = t["wiggle"]["ink"]
+      assert bottom - top < t["wiggle"]["height"] * 0.15, msg
+    end
+  end
+
+  test "labels above the bars have room over the first row: one row or many, light and dark",
+       %{r: r} do
+    rows = %{
+      "lb-above" => {"above", 6, 48},
+      "lb-above-phone" => {"stacked", 6, 72},
+      "lb-above-one" => {"above", 1, 48},
+      # the server's own 12px counts toward the 16px: the larger wins, never both
+      "lb-above-padded" => {"above", 6, 48}
+    }
+
+    for mode <- ["light", "dark"], {id, {layout, n, row}} <- rows do
+      l = r[mode]["above"][id]
+      msg = "#{mode} #{id}: #{inspect(l)}"
+      assert l["mode"] == layout, msg
+      # the font size (12px) plus the 4px gap over the first bar
+      assert l["top"] == 16, msg
+      assert l["area"] == n * row, msg
+      # the canvas holds the rows and that room
+      assert l["height"] >= l["top"] + l["area"], msg
+      # the first row's text starts well under the canvas's top edge
+      assert l["ink"] >= 8, msg
     end
   end
 

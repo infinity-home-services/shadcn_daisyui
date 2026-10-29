@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A number card's trend always has room above its peak.** Its range came
+  from Chart.js's nice ticks, so a peak on a round number (or a flat series)
+  sat on the canvas's top edge and the line looked like it ran off the card,
+  while other peaks had room. The range now comes from the data: the peak
+  sits a sixth of the trend's height below its top, every time, and the
+  range is at least a fifth of the top value, extended below the data, so a
+  flat series is a level line at that height and a 1-point wiggle (36% to
+  37%) a gentle line rather than a full-height V. A `scales.y` `min` / `max`
+  from the server still wins.
+- **Labels above the bars no longer clip at the top.** With
+  `endLabels.position: "above"` (and on narrow screens) the first row's name
+  and label had no room over the canvas's top edge. The kit now pads the top
+  by the font size plus the 4px gap (16px), and the canvas grows by it (rows
+  × row height, plus that room). A top padding the server already passes
+  counts toward it - the larger wins - so an app that padded the top itself
+  (`options.layout.padding.top: 12`) gets 16px, not 28; it can drop its own.
+
 ## [0.28.0] - 2026-10-28
 
 Leaderboard labels can sit above the bars at every width, a number card's

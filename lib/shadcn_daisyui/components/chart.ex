@@ -65,7 +65,9 @@ defmodule ShadcnDaisyui.Components.Chart do
   ## Size
 
   The canvas is 16rem high; `canvas_class="h-80"` changes it. Horizontal bar
-  charts (`indexAxis: "y"`) size themselves to their rows instead.
+  charts (`indexAxis: "y"`) size themselves to their rows instead (36px
+  each; 48px, or 72px on two lines, with the labels above the bars, plus
+  16px over the first row for its text).
 
   ## Clicks
 
@@ -180,7 +182,10 @@ defmodule ShadcnDaisyui.Components.Chart do
   `value` and the line under it arrive formatted. `trend` is a list of
   numbers, or `{label, number}` tuples (the labels name the rows of the
   trend's screen-reader table: `[{"Mon", 12_400}, {"Tue", 9_800}]`); a
-  missing point (`nil`) is bridged, so the line has no gaps. `color` picks
+  missing point (`nil`) is bridged, so the line has no gaps. Its range comes
+  from the data: the peak always sits a sixth of the trend's height below
+  its top, and the range is at least a fifth of the top value, so a flat
+  series is a level line and a 1-point wiggle a gentle one. `color` picks
   the trend's series token (default `chart-1`).
 
     * `help` - a "?" beside the label that shows this text on hover, focus or

@@ -297,6 +297,7 @@ function build(api) {
       ticks: { color: theme.muted, padding: 8, maxRotation: 0, autoSkipPadding: 12 },
     }
     if (aboveBars) scales[indexAxis].ticks.display = false
+    if (trend) Object.assign(scales[valueAxis], { bounds: "data", ...trendRange(sets) })
   } else if (radial) {
     scales.r = {
       grid: { color: theme.grid },
@@ -344,6 +345,16 @@ function build(api) {
     scales,
   }
   const options = merge(base, server)
+  // labels above the bars: the first row's text (font size plus the 4px gap
+  // over its bar) needs room under the canvas's top edge. A top padding from
+  // the server counts toward it: the larger wins, never both
+  if (aboveBars) {
+    const p = options.layout.padding
+    if (typeof p !== "function") {
+      const sides = typeof p === "number" ? { top: p, right: p, bottom: p, left: p } : { ...p }
+      options.layout.padding = { ...sides, top: Math.max(Number(sides.top) || 0, fontSize + 4) }
+    }
+  }
   // the canvas tooltip never draws: the popover-styled one does (or nothing)
   options.plugins.tooltip = { ...options.plugins.tooltip, enabled: false, external: tooltipOn ? externalTooltip : null }
   options.onResize = onResize
@@ -403,6 +414,21 @@ function legendLabels(chart) {
     }
   }
   return items
+}
+
+// A trend's value range, from its data: the peak a sixth of the height below
+// the top, every time (not wherever Chart.js's nice ticks land), and the range
+// at least a fifth of the top value, extended below the data - so a flat
+// series is a level line at the peak's height and a 1-point wiggle a gentle
+// one, never a full-height V
+function trendRange(sets) {
+  const values = sets
+    .flatMap((ds) => (ds.data || []).map((v) => (v && typeof v === "object" ? v.y : v)))
+    .filter(Number.isFinite)
+  if (!values.length) return {}
+  const top = Math.max(...values)
+  const span = Math.max(top - Math.min(...values), Math.abs(top) * 0.2) || 1
+  return { min: top - span, max: top + span * 0.2 }
 }
 
 // Row heights for horizontal bars: the bar (24, 16 or 12px) centred in its
@@ -825,11 +851,13 @@ function initChart(el, hook) {
   const create = () => {
     const next = build(api)
     if (next.kit.rowHeight) {
-      // a first guess at the height (rows, plus the legend and axis bands),
-      // so the first frame is close; the rows plugin corrects it
+      // a first guess at the height (rows, plus the padding and the legend
+      // and axis bands), so the first frame is close; the rows plugin corrects it
       const legend = next.options.plugins.legend.display !== false ? 32 : 0
       const axis = dig(next.options, "scales", next.kit.valueAxis, "display") !== false ? 24 : 0
-      wrapper.style.height = `${Math.max(1, next.data.labels.length) * next.kit.rowHeight + legend + axis}px`
+      const p = next.options.layout.padding
+      const pad = typeof p === "number" ? 2 * p : (Number(p && p.top) || 0) + (Number(p && p.bottom) || 0)
+      wrapper.style.height = `${Math.max(1, next.data.labels.length) * next.kit.rowHeight + pad + legend + axis}px`
     }
     // the kit's state rides on the chart from before its first draw
     const kitPlugin = { id: "shadcnKit", beforeInit: (c) => (c.$kit = next.kit) }

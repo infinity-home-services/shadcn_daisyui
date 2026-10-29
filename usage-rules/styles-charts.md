@@ -104,9 +104,10 @@ theme overriding them re-checks all five, in order.
 | Mark | Spec |
 |---|---|
 | Bar | ≤ 24px thick (16px / 12px with labels above), 4px rounded data end |
-| Horizontal bar row | 36px (48px / 72px with labels above) |
+| Horizontal bar row | 36px (48px / 72px with labels above, plus 16px over the first row) |
 | Line | 2px, round joins; points hidden, 8px with a 2px ring on hover |
 | Area fill | series at 10% (a number card's trend: 25%, faded, edge to edge) |
+| Trend range | from the data: the peak a sixth below the top; at least a fifth of the top value tall |
 | Change badge | 12px text, 1px border in its tone at 30% over the card (the period's: foreground at 18%); text ≥ 4.5:1 |
 | Stacked parts | 2px gap in the surface colour |
 | Grid | 1px `border-color`, value axis only |
