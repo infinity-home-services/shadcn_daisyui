@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`options.plugins.segmentLabels: "legend"`** gives a one-row stacked bar
+  (a progress row) each part's count in its legend ("Completed 61") without
+  drawing numbers inside the parts - for a slim row, or a bar that should
+  stay bare. The legend's numbers follow the value axis's `ticks.format` and
+  new data, as with `true`; with several rows the legend keeps the names.
+  `segmentLabels: true` is unchanged: numbers on the parts and in the legend.
+
 ## [0.29.0] - 2026-10-29
 
 A stacked bar can carry each part's number on the part itself, shown only

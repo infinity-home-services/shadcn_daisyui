@@ -57,7 +57,8 @@ theme, and give every chart its numbers in text.
   width (when the bars should run the card's full width).
 - **Progress through states** is one stacked bar with its axes hidden, the
   states in order and a legend under it. [web] `options.plugins.segmentLabels:
-  true` puts each part's count on it and in the legend.
+  true` puts each part's count on it and in the legend; `"legend"` puts the
+  counts in the legend only, the bar bare.
 - **Tooltips enhance, never gate:** every value is also in the chart's text
   (end labels, a progress row's legend, or the hidden table). A clickable chart works from the
   keyboard. [web] `on_click` pushes `%{"id", "key", "series", "index"}`
@@ -89,7 +90,7 @@ theme, and give every chart its numbers in text.
 | Change over time | line; vertical bars for days or weeks | `type: "line"` / `"bar"` | LineMark / BarMark |
 | A ranking, a leaderboard | horizontal bars, longest first, end labels | `indexAxis: "y"`, `endLabels` | BarMark + `.annotation(position: .trailing)` |
 | A part within each item | stacked bars, one hue at opacities | `stacked: true`, `color: "chart-1/35"` | stacked BarMark, `.opacity` |
-| Progress through states | one stacked bar, a grey track, counts on the parts | one label, both axes hidden, `segmentLabels: true` | stacked BarMark + `.annotation(position: .overlay)` |
+| Progress through states | one stacked bar, a grey track, counts on the parts or in the legend | one label, both axes hidden, `segmentLabels: true` (or `"legend"`) | stacked BarMark + `.annotation(position: .overlay)` |
 | Part to whole, five parts or fewer | doughnut | `type: "doughnut"` | SectorMark |
 | A few series compared | grouped bars or lines, a legend | one dataset per series | `.foregroundStyle(by:)` |
 

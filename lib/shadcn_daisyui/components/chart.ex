@@ -63,7 +63,9 @@ defmodule ShadcnDaisyui.Components.Chart do
       (a progress row) the legend gives each part's number too
       (`"Completed 61"`), so every number stays on screen. The text is
       foreground or the surface colour, whichever reads at 4.5:1 or more on
-      the part (black or white where neither does)
+      the part (black or white where neither does).
+      `segmentLabels: "legend"` gives a one-row stack's legend the numbers
+      and draws nothing on the bar
 
   Values in tooltips follow the value axis's `ticks.format` (Chart.js's own
   `Intl.NumberFormat` options, e.g.

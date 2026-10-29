@@ -222,7 +222,11 @@ function build(api) {
   const stacked = cartesian && !!dig(server, "scales", valueAxis, "stacked")
   const valueAxisShown = dig(server, "scales", valueAxis, "display") !== false
   const endLabels = dig(server, "plugins", "endLabels", "labels")
-  const segmentLabels = type === "bar" && stacked && !!dig(server, "plugins", "segmentLabels")
+  // segmentLabels: true draws each part's value on it; "legend" gives a
+  // one-row stack's legend the numbers and draws nothing on the bar
+  const segmentOption = type === "bar" && stacked ? dig(server, "plugins", "segmentLabels") : null
+  const segmentLegend = segmentOption === "legend"
+  const segmentLabels = !!segmentOption && !segmentLegend
   const tooltipOn = !trend && dig(server, "plugins", "tooltip") !== false && dig(server, "plugins", "tooltip", "enabled") !== false
   const series = pieLike ? labels.length : sets.length
   const fontSize = 12
@@ -416,7 +420,8 @@ function build(api) {
     segmentLabels,
     // a one-row stack (a progress row) with segment labels: the legend gives
     // each part's number too, since a part too small for its label shows none
-    legendValues: segmentLabels && labels.length === 1,
+    // ("legend": the legend's numbers alone)
+    legendValues: (segmentLabels || segmentLegend) && labels.length === 1,
     inks: new Map(), // fill -> the text colour on it
     segments: [], // the segment labels the last draw showed (tests, debugging)
     labelMode,

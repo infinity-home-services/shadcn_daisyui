@@ -199,7 +199,9 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       progress: progress(),
       seg: segments(),
       seg_thin: segments(maxBarThickness: 12),
+      seg_legend: put_in(segments(), [:options, :plugins, :segmentLabels], "legend"),
       columns: @columns,
+      columns_legend: put_in(@columns, [:options, :plugins, :segmentLabels], "legend"),
       bars: @bars,
       lines: @lines,
       pie: @pie
@@ -247,6 +249,12 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="seg-columns" label="Tasks by day" config={@columns} />
+    </div>
+    <div class="card" style="width: 600px; padding: 24px">
+      <.chart id="seg-legend" label="This week's appointments" config={@seg_legend} />
+    </div>
+    <div class="card" style="width: 600px; padding: 24px">
+      <.chart id="seg-legend-columns" label="Tasks by day" config={@columns_legend} />
     </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="lines" label="Sales this week and last" config={@lines} />
@@ -532,6 +540,29 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       columns: chart("seg-columns").legend.legendItems.map((i) => i.text),
       progress: chart("progress").legend.legendItems.map((i) => i.text),
       labels: sc.data.datasets.map((d) => d.label),
+    }
+    // "legend": the legend's numbers and nothing on the bar - the same canvas
+    // as "seg" with its labels switched off
+    const canvasPixels = (c) => c.ctx.getImageData(0, 0, c.canvas.width, c.canvas.height).data
+    const differing = (a, b) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n }
+    const lc = chart("seg-legend")
+    lc.update("none")
+    sc.update("none")
+    const legendOnly = canvasPixels(lc)
+    const withLabels = canvasPixels(sc)
+    sc.$kit.segmentLabels = false
+    sc.draw()
+    const withoutLabels = canvasPixels(sc)
+    sc.$kit.segmentLabels = true
+    sc.draw()
+    r.segLegendOnly = {
+      on: lc.$kit.segmentLabels,
+      drawn: lc.$kit.segments,
+      legend: lc.legend.legendItems.map((i) => i.text),
+      columns: chart("seg-legend-columns").legend.legendItems.map((i) => i.text),
+      size: [lc.canvas.width === sc.canvas.width, lc.canvas.height === sc.canvas.height],
+      vsOff: differing(legendOnly, withoutLabels),
+      vsOn: differing(legendOnly, withLabels),
     }
 
     // ---- end labels and rows --------------------------------------------------
@@ -968,6 +999,21 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     assert l["progress"] == ["Resulted", "Needs a result", "In progress", "Still to come"]
     # the datasets keep their names: the tooltip and the table are unchanged
     assert hd(l["labels"]) == "Completed"
+  end
+
+  test "segmentLabels \"legend\": a one-row stack's legend gives each number, the bar none",
+       %{r: r} do
+    l = r["segLegendOnly"]
+
+    assert l["legend"] == r["segLegend"]["seg"]
+    assert l["on"] == false
+    assert l["drawn"] == []
+    # pixel for pixel the bar of `true` with its labels off; with them on, not
+    assert l["size"] == [true, true]
+    assert l["vsOff"] == 0, inspect(l)
+    assert l["vsOn"] > 0, inspect(l)
+    # several rows: the legend keeps the names, as with `true`
+    assert l["columns"] == ["Done", "Open"]
   end
 
   test "a one-row chart grows for a legend that wraps: every part's number stays on screen",

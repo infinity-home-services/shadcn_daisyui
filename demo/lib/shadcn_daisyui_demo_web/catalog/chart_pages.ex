@@ -320,7 +320,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         %{
           name: "options.plugins.segmentLabels",
           type:
-            "true: on stacked bars, each part's value centred in it where the text and 4px either side fit (the bar 16px thick or more); a one-row stack's legend gives every part's number",
+            "true: on stacked bars, each part's value centred in it where the text and 4px either side fit (the bar 16px thick or more); a one-row stack's legend gives every part's number | \"legend\": the legend's numbers only, nothing drawn on the bar",
           default: "false"
         }
       ],
