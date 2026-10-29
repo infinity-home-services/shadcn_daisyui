@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-29
+
+A stacked bar can carry each part's number on the part itself, shown only
+where it fits, while a progress row's legend gives every part's number. That
+legend also no longer loses lines on a phone.
+
 ### Added
 
 - **`options.plugins.segmentLabels: true`** puts each part of a stacked bar
