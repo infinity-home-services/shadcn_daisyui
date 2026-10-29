@@ -1,6 +1,6 @@
 {
   "name": "shadcn_daisyui",
-  "version": "0.28.0",
+  "version": "0.28.1",
   "description": "Interactive JS (LiveView hooks + dead-view init) for the shadcn-daisyui theme, and the optional chart kit (shadcn_daisyui/charts).",
   "license": "MIT",
   "main": "./priv/static/shadcn-daisyui.js",

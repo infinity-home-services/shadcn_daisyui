@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-10-28
+
+A number card's trend always leaves room above its peak - a flat series is a
+level line, a small wiggle a gentle one - and labels above a leaderboard's
+bars no longer clip at the top of the chart.
+
 ### Fixed
 
 - **A number card's trend always has room above its peak.** Its range came
