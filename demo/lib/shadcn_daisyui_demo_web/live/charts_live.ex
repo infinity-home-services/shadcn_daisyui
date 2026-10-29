@@ -41,7 +41,7 @@ defmodule ShadcnDaisyuiDemoWeb.ChartsLive do
               on_click="open_state"
               target={@myself}
               class="mt-4"
-              config={ChartPages.progress_config(@parts)}
+              config={ChartPages.progress_config(@parts, segment_labels: true)}
             />
           </.card_body>
         </.card>

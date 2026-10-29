@@ -37,10 +37,16 @@ theme, and give every chart its numbers in text.
   the surface colour between stacked parts; grid lines 1px on the value axis
   only, no axis lines. The theme draws all of it - don't restyle marks.
 - **Text never wears the series colour.** Labels, values and legend text are
-  foreground or muted-foreground; the colour sits on a key beside them.
+  foreground or muted-foreground; the colour sits on a key beside them. A
+  number on a bar is foreground or the surface colour, whichever reads at
+  4.5:1 on the fill (black or white where neither does); the kit picks it.
 - **A legend for two or more series** (under the chart), none for one - the
-  card title names it. Label selectively: a ranking's bars at their ends,
-  never a number on every point.
+  card title names it. Label selectively: a ranking's bars at their ends, a
+  progress row's parts inside them, never a number on every point. A
+  number goes inside a part only where it fits - its width plus 8px inside
+  the part, the bar at least 16px thick - and a part too narrow shows none
+  (never a number spilling into its neighbour or cut off), so the legend
+  carries every part's number ("Completed 61").
 - **One value axis.** Never two y-scales on one chart: two charts, or both
   series indexed to a common base.
 - **Rankings** are horizontal bars, longest first (sort on the server), each
@@ -50,9 +56,10 @@ theme, and give every chart its numbers in text.
   the bars on their own, and `position: "above"` keeps them above at every
   width (when the bars should run the card's full width).
 - **Progress through states** is one stacked bar with its axes hidden, the
-  states in order and a legend under it.
+  states in order and a legend under it. [web] `options.plugins.segmentLabels:
+  true` puts each part's count on it and in the legend.
 - **Tooltips enhance, never gate:** every value is also in the chart's text
-  (end labels, or the hidden table). A clickable chart works from the
+  (end labels, a progress row's legend, or the hidden table). A clickable chart works from the
   keyboard. [web] `on_click` pushes `%{"id", "key", "series", "index"}`
   (`target` for a LiveComponent); open the detail in a sheet.
 - **Every chart has a name and its numbers as text.** [web] `label` names it
@@ -82,7 +89,7 @@ theme, and give every chart its numbers in text.
 | Change over time | line; vertical bars for days or weeks | `type: "line"` / `"bar"` | LineMark / BarMark |
 | A ranking, a leaderboard | horizontal bars, longest first, end labels | `indexAxis: "y"`, `endLabels` | BarMark + `.annotation(position: .trailing)` |
 | A part within each item | stacked bars, one hue at opacities | `stacked: true`, `color: "chart-1/35"` | stacked BarMark, `.opacity` |
-| Progress through states | one stacked bar, a grey track | one label, both axes hidden | stacked BarMark |
+| Progress through states | one stacked bar, a grey track, counts on the parts | one label, both axes hidden, `segmentLabels: true` | stacked BarMark + `.annotation(position: .overlay)` |
 | Part to whole, five parts or fewer | doughnut | `type: "doughnut"` | SectorMark |
 | A few series compared | grouped bars or lines, a legend | one dataset per series | `.foregroundStyle(by:)` |
 
@@ -110,6 +117,7 @@ theme overriding them re-checks all five, in order.
 | Trend range | from the data: the peak a sixth below the top; at least a fifth of the top value tall |
 | Change badge | 12px text, 1px border in its tone at 30% over the card (the period's: foreground at 18%); text ≥ 4.5:1 |
 | Stacked parts | 2px gap in the surface colour |
+| Segment label | 12px, centred in the part; only where its width + 8px fits inside the part and the bar is ≥ 16px thick; text ≥ 4.5:1 on the fill |
 | Grid | 1px `border-color`, value axis only |
 | Text | 12px; ticks muted-foreground, legend and end labels foreground |
 | Tooltip | popover surface, label then key · name · value per series |

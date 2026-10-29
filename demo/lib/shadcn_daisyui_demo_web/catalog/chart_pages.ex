@@ -147,28 +147,47 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
   @doc false
   def progress, do: @progress
 
-  @doc "A progress row: one stacked bar, its parts the states, the axes hidden."
-  def progress_config(parts \\ @progress) do
+  @doc """
+  A progress row: one stacked bar, its parts the states, the axes hidden.
+  `segment_labels: true` puts each part's count on it (where it fits) and in
+  the legend.
+  """
+  def progress_config(parts \\ @progress, opts \\ []) do
     total = parts |> Enum.map(&elem(&1, 2)) |> Enum.sum()
 
     %{
       type: "bar",
       data: %{
-        labels: ["Today's appointments"],
+        labels: [Keyword.get(opts, :label, "Today's appointments")],
         datasets:
           Enum.map(parts, fn {key, label, n, color} ->
             %{label: label, key: key, data: [n], color: color}
           end)
       },
-      options: %{
-        indexAxis: "y",
-        scales: %{
-          x: %{stacked: true, display: false, max: total},
-          y: %{stacked: true, display: false}
-        }
-      }
+      options:
+        Map.merge(
+          %{
+            indexAxis: "y",
+            scales: %{
+              x: %{stacked: true, display: false, max: total},
+              y: %{stacked: true, display: false}
+            }
+          },
+          if(opts[:segment_labels], do: %{plugins: %{segmentLabels: true}}, else: %{})
+        )
     }
   end
+
+  # where a week's appointments stand: the 4 is too narrow for its number on a phone
+  @week_parts [
+    {"completed", "Completed", 61, "chart-1"},
+    {"needs_result", "Needs a result", 9, "chart-1/65"},
+    {"no_show", "Didn't happen", 4, "chart-1/35"},
+    {"to_come", "Still to come", 26, "muted-foreground/25"}
+  ]
+
+  @doc false
+  def week_parts, do: @week_parts
 
   @week ~w(Mon Tue Wed Thu Fri Sat Sun)
 
@@ -242,7 +261,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         sizing:
           "The canvas is 16rem high (canvas_class=\"h-80\" changes it); horizontal bar charts size themselves to their rows (36px each, 48px with the labels above the bars, plus 16px over the first row for its text). Bars are at most 24px thick with a 4px rounded end, lines 2px, text 12px.",
         responsive:
-          "Charts fill their container's width and redraw on resize. On a narrow screen a leaderboard's end labels move above each bar with the name, so the bars keep their width (endLabels position: \"above\" keeps them there at every width). Put charts in a grid that stacks on phones (one column below sm).",
+          "Charts fill their container's width and redraw on resize. On a narrow screen a leaderboard's end labels move above each bar with the name, so the bars keep their width (endLabels position: \"above\" keeps them there at every width), and a segment label shows only while its part is wide enough for it - the legend keeps every number. Put charts in a grid that stacks on phones (one column below sm).",
         ios:
           "Swift Charts: BarMark / LineMark / SectorMark with the same five chart colours, .chartXAxis(.hidden) for a leaderboard, and .accessibilityChartDescriptor for the numbers."
       },
@@ -297,6 +316,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           type:
             "\"auto\" (at the bar's end; a horizontal bar's name and label move above it on a narrow screen) | \"above\" (above the bar at every width)",
           default: "\"auto\""
+        },
+        %{
+          name: "options.plugins.segmentLabels",
+          type:
+            "true: on stacked bars, each part's value centred in it where the text and 4px either side fit (the bar 16px thick or more); a one-row stack's legend gives every part's number",
+          default: "false"
         }
       ],
       notes:
@@ -335,6 +360,11 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           },
           %{property: "Bars", value: "max 24px thick, 4px rounded data end, square baseline"},
           %{property: "Stacked parts", value: "2px gap in the surface colour between parts"},
+          %{
+            property: "Segment labels",
+            value:
+              "12px, centred in the part; shown where the text's width + 8px fits inside the part and the bar is 16px thick or more; foreground or the surface colour, whichever reads 4.5:1 on the fill (black or white where neither does)"
+          },
           %{
             property: "Lines",
             value:
@@ -521,6 +551,37 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           code: progress_code()
         },
         %{
+          title: "Progress row, counts on the parts",
+          heex: ~S"""
+          <%!-- segmentLabels: each part's count centred on it, where it fits;
+            a part too narrow has none (on a phone, the 4), and the legend
+            gives every part's number: "Didn't happen 4". --%>
+          <.chart
+            id="week-progress"
+            label="This week's appointments"
+            config={%{
+              type: "bar",
+              data: %{
+                labels: ["This week's appointments"],
+                datasets: [
+                  %{label: "Completed", key: "completed", data: [61], color: "chart-1"},
+                  %{label: "Needs a result", key: "needs_result", data: [9], color: "chart-1/65"},
+                  %{label: "Didn't happen", key: "no_show", data: [4], color: "chart-1/35"},
+                  %{label: "Still to come", key: "to_come", data: [26], color: "muted-foreground/25"}
+                ]
+              },
+              options: %{
+                indexAxis: "y",
+                scales: %{x: %{stacked: true, display: false, max: 100}, y: %{stacked: true, display: false}},
+                plugins: %{segmentLabels: true}
+              }
+            }}
+          />
+          """,
+          center: false,
+          code: week_progress_code()
+        },
+        %{
           title: "Lines: one series in colour",
           heex: ~S"""
           <%!-- The comparison is muted, so this week reads first --%>
@@ -632,6 +693,23 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           class="mt-4"
           config={@config}
         />
+      </.card_body>
+    </.card>
+    """)
+  end
+
+  defp week_progress_code do
+    assigns = %{
+      config:
+        progress_config(@week_parts, label: "This week's appointments", segment_labels: true)
+    }
+
+    code(~H"""
+    <.card class="w-full">
+      <.card_body>
+        <.card_title>This week's appointments</.card_title>
+        <.card_description>100 booked · counts on the parts</.card_description>
+        <.chart id="week-progress" label="This week's appointments" class="mt-4" config={@config} />
       </.card_body>
     </.card>
     """)

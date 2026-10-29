@@ -109,6 +109,55 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     }
   end
 
+  # a progress row with its numbers on the parts; at 552px wide the 1 (5px)
+  # is too narrow for its label
+  defp segments(opts \\ []) do
+    thick = Keyword.take(opts, [:maxBarThickness]) |> Map.new()
+
+    parts = [
+      {"Completed", 61, "chart-1"},
+      {"Needs a result", 9, "chart-1/65"},
+      {"In progress", 4, "chart-1/35"},
+      {"Didn't happen", 1, "muted-foreground/50"},
+      {"Still to come", 25, "muted-foreground/25"}
+    ]
+
+    %{
+      type: "bar",
+      data: %{
+        labels: ["This week's appointments"],
+        datasets:
+          Enum.map(parts, fn {label, n, color} ->
+            Map.merge(%{label: label, data: [n], color: color}, thick)
+          end)
+      },
+      options: %{
+        indexAxis: "y",
+        scales: %{
+          x: %{stacked: true, display: false, max: 100},
+          y: %{stacked: true, display: false}
+        },
+        plugins: %{segmentLabels: true}
+      }
+    }
+  end
+
+  # stacked columns: a 3-digit value is too wide for a 24px bar, a short part too low
+  @columns %{
+    type: "bar",
+    data: %{
+      labels: ~w(Mon Tue Wed),
+      datasets: [
+        %{label: "Done", data: [40, 3, 100]},
+        %{label: "Open", data: [20, 30, 2]}
+      ]
+    },
+    options: %{
+      scales: %{x: %{stacked: true}, y: %{stacked: true}},
+      plugins: %{segmentLabels: true}
+    }
+  }
+
   @bars %{
     type: "bar",
     data: %{labels: ~w(Mon Tue Wed), datasets: [%{label: "Sales", data: [1_200, 2_400, 1_800]}]},
@@ -148,6 +197,9 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       one: one,
       padded: padded,
       progress: progress(),
+      seg: segments(),
+      seg_thin: segments(maxBarThickness: 12),
+      columns: @columns,
       bars: @bars,
       lines: @lines,
       pie: @pie
@@ -180,6 +232,21 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="progress" label="Today's appointments" config={@progress} on_click="open_state" target="#panel" />
+    </div>
+    <div class="card" style="width: 600px; padding: 24px">
+      <.chart id="seg" label="This week's appointments" config={@seg} />
+    </div>
+    <div class="card" style="width: 600px; padding: 24px">
+      <.chart id="seg-thin" label="This week's appointments" config={@seg_thin} />
+    </div>
+    <div class="card" style="width: 250px; padding: 24px">
+      <.chart id="seg-phone" label="This week's appointments" config={@seg} />
+    </div>
+    <div class="card" style="width: 250px; padding: 24px">
+      <.chart id="progress-phone" label="Today's appointments" config={@progress} />
+    </div>
+    <div class="card" style="width: 600px; padding: 24px">
+      <.chart id="seg-columns" label="Tasks by day" config={@columns} />
     </div>
     <div class="card" style="width: 600px; padding: 24px">
       <.chart id="lines" label="Sales this week and last" config={@lines} />
@@ -261,7 +328,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       pushEvent: (e, p) => pushed.push(["pushEvent", e, p]),
       pushEventTo: (t, e, p) => pushed.push(["pushEventTo", t, e, p]),
     })
-    const hooks = Object.fromEntries(["lb", "progress", "lines"].map((id) => {
+    const hooks = Object.fromEntries(["lb", "progress", "lines", "seg"].map((id) => {
       const h = hookFor(id)
       ChartHooks.ShadcnChart.mounted.call(h)
       return [id, h]
@@ -335,6 +402,43 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       }
     }
     const above = () => Object.fromEntries(["lb-above", "lb-above-phone", "lb-above-one", "lb-above-padded"].map((id) => [id, aboveRoom(id)]))
+    // segment labels: the canvas with and without them, compared - each inked
+    // pixel should sit inside the part whose label it is, clear of its edges
+    const segmentInk = (id) => {
+      const c = chart(id)
+      c.update("none")
+      const read = () => c.ctx.getImageData(0, 0, c.canvas.width, c.canvas.height).data
+      const on = read()
+      c.$kit.segmentLabels = false
+      c.draw()
+      const off = read()
+      c.$kit.segmentLabels = true
+      c.draw()
+      const dpr = c.currentDevicePixelRatio
+      const horizontal = c.$kit.indexAxis === "y"
+      const boxes = c.$kit.segments.map((s) => {
+        const p = c.getDatasetMeta(s.datasetIndex).data[s.index].getProps(["x", "y", "base", "width", "height"], true)
+        const [l, rt] = horizontal ? [Math.min(p.x, p.base), Math.max(p.x, p.base)] : [p.x - p.width / 2, p.x + p.width / 2]
+        const [t, b] = horizontal ? [p.y - p.height / 2, p.y + p.height / 2] : [Math.min(p.y, p.base), Math.max(p.y, p.base)]
+        return { l: (l + 2) * dpr, r: (rt - 2) * dpr, t: (t + 2) * dpr, b: (b - 2) * dpr, ink: 0 }
+      })
+      let outside = 0
+      const w = c.canvas.width
+      for (let k = 0; k < on.length; k += 4) {
+        if (on[k] === off[k] && on[k + 1] === off[k + 1] && on[k + 2] === off[k + 2] && on[k + 3] === off[k + 3]) continue
+        const x = ((k / 4) % w) + 0.5
+        const y = Math.floor(k / 4 / w) + 0.5
+        const box = boxes.find((bx) => x >= bx.l && x <= bx.r && y >= bx.t && y <= bx.b)
+        box ? box.ink++ : outside++
+      }
+      return { drawn: c.$kit.segments.map((s) => s.text), ink: boxes.map((bx) => bx.ink), outside }
+    }
+    // each segment label's text against its part's fill, over the card
+    const segColours = (id) => {
+      const card = getComputedStyle($(id).closest(".card")).backgroundColor
+      return chart(id).$kit.segments.map((s) => ({ text: s.text, fill: s.fill, color: s.color, ratio: contrast(over(card, s.fill, s.color), over(card, s.fill)) }))
+    }
+    const segs = () => Object.fromEntries(["seg", "seg-columns"].map((id) => [id, segColours(id)]))
 
     // ---- colours come from the tokens, as rgb ----------------------------------
     const lightBar = opts("bars", 0, 0).backgroundColor
@@ -342,6 +446,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       badges: badges(),
       trends: trends(),
       above: above(),
+      segs: segs(),
       bar: lightBar,
       token: bytes("oklch(0.575 0.163 255.53)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -367,6 +472,7 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       badges: badges(),
       trends: trends(),
       above: above(),
+      segs: segs(),
       bar: opts("bars", 0, 0).backgroundColor,
       token: bytes("oklch(0.622 0.161 255.05)").slice(0, 3),
       grid: chart("bars").options.scales.y.grid.color,
@@ -386,6 +492,47 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     }
     r.track = chart("progress").data.datasets.map((_, j) => opts("progress", j, 0).borderRadius)
     r.trackFills = (() => { const a = el("progress", 0, 0).getProps(["base"], true).base, z = el("progress", 3, 0).getProps(["x"], true).x, c = chart("progress").chartArea; return { start: Math.round(a - c.left), end: Math.round(c.right - z) } })()
+
+    // ---- segment labels: what fits, a resize, a hovered (darker) part, the legend --
+    r.segInk = { seg: segmentInk("seg"), columns: segmentInk("seg-columns"), thin: segmentInk("seg-thin") }
+    r.segOff = { on: chart("progress").$kit.segmentLabels, drawn: chart("progress").$kit.segments }
+    const segCard = $("seg").closest(".card")
+    segCard.style.width = "300px"
+    await sleep(150)
+    await frames()
+    r.segResize = { narrow: segmentInk("seg") }
+    segCard.style.width = "600px"
+    await sleep(150)
+    await frames()
+    r.segResize.wide = segmentInk("seg")
+    const sc = chart("seg")
+    sc.setActiveElements(sc.data.datasets.map((_, j) => ({ datasetIndex: j, index: 0 })))
+    sc.update("none")
+    await sleep(500)
+    await frames()
+    r.segHover = segColours("seg")
+    sc.setActiveElements([])
+    sc.update("none")
+    await sleep(500)
+    // a phone: the legend wraps, and the one-row chart grows to hold every line
+    const legendFit = (id) => {
+      const c = chart(id)
+      const lg = c.legend
+      return {
+        lines: lg.lineWidths.length,
+        items: lg.legendItems.length,
+        inside: lg.legendHitBoxes.every((h) => h.top >= 0 && h.top + h.height <= c.height),
+        area: Math.round(c.chartArea.bottom - c.chartArea.top),
+      }
+    }
+    r.phoneLegend = { seg: legendFit("seg-phone"), progress: legendFit("progress-phone") }
+    r.segLegend = {
+      seg: sc.legend.legendItems.map((i) => i.text),
+      thin: chart("seg-thin").legend.legendItems.map((i) => i.text),
+      columns: chart("seg-columns").legend.legendItems.map((i) => i.text),
+      progress: chart("progress").legend.legendItems.map((i) => i.text),
+      labels: sc.data.datasets.map((d) => d.label),
+    }
 
     // ---- end labels and rows --------------------------------------------------
     const rows = (id) => { const c = chart(id); return { mode: c.$kit.labelMode, area: Math.round(c.chartArea.bottom - c.chartArea.top), ticks: c.options.scales.y.ticks.display !== false, thickness: Math.round(el(id, 0, 0).height) } }
@@ -482,6 +629,13 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     $("lines").dataset.config = JSON.stringify(next)
     ChartHooks.ShadcnChart.updated.call(hooks.lines)
     r.retype = { same: chart("lines") === before, type: chart("lines").config.type, animation: motion(chart("lines")) }
+    // new data under reduced motion: the segment labels are where they end up at once
+    const segNext = JSON.parse($("seg").dataset.config)
+    segNext.data.datasets[3].data = [10]
+    segNext.data.datasets[4].data = [16]
+    $("seg").dataset.config = JSON.stringify(segNext)
+    ChartHooks.ShadcnChart.updated.call(hooks.seg)
+    r.segUpdate = { drawn: chart("seg").$kit.segments.map((s) => s.text), legend: chart("seg").legend.legendItems.map((i) => i.text), animation: motion(chart("seg")) }
 
     // ---- destroyed: the chart and its tooltip go -----------------------------------
     ChartHooks.ShadcnChart.destroyed.call(hooks.lb)
@@ -742,6 +896,104 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
       # the first row's text starts well under the canvas's top edge
       assert l["ink"] >= 8, msg
     end
+  end
+
+  test "segment labels: each part's value centred in it when it fits, none when it doesn't",
+       %{r: r} do
+    %{"seg" => seg, "columns" => columns, "thin" => thin} = r["segInk"]
+    # 61, 9, 4 and 25 fit; the 1 (5px wide) has no label rather than spilling over
+    assert seg["drawn"] == ["61", "9", "4", "25"], inspect(seg)
+    # columns: the 3-digit 100 is wider than a 24px bar, the 3 and the 2 too low
+    assert columns["drawn"] == ["40", "20", "30"], inspect(columns)
+
+    # every inked pixel sits inside its own part, clear of the edges: nothing
+    # spills into a neighbour and nothing is cut off
+    for ink <- [seg, columns] do
+      assert ink["outside"] == 0, inspect(ink)
+      assert Enum.all?(ink["ink"], &(&1 > 10)), inspect(ink)
+    end
+
+    # a bar under 16px thick has no labels, however wide its parts
+    assert thin == %{"drawn" => [], "ink" => [], "outside" => 0}
+    # no option, no labels
+    assert r["segOff"] == %{"on" => false, "drawn" => []}
+  end
+
+  test "segment labels re-fit on a resize: a part's label hides when narrow, shows again",
+       %{r: r} do
+    %{"narrow" => narrow, "wide" => wide} = r["segResize"]
+    # at 252px the 4 is 10px wide: no label; the 9 (22px) still has one
+    assert narrow["drawn"] == ["61", "9", "25"], inspect(narrow)
+    assert narrow["outside"] == 0, inspect(narrow)
+    assert wide["drawn"] == ["61", "9", "4", "25"], inspect(wide)
+    assert wide["outside"] == 0, inspect(wide)
+  end
+
+  test "segment label text is 4.5:1 on its part's fill, light, dark and hovered", %{r: r} do
+    sets = [
+      {"light", r["light"]["segs"]["seg"]},
+      {"light columns", r["light"]["segs"]["seg-columns"]},
+      {"dark", r["dark"]["segs"]["seg"]},
+      {"dark columns", r["dark"]["segs"]["seg-columns"]},
+      {"hovered", r["segHover"]}
+    ]
+
+    for {name, labels} <- sets do
+      assert labels != [], name
+
+      for l <- labels,
+          do: assert(l["ratio"] >= 4.5, "#{name}: #{inspect(labels, pretty: true)}")
+    end
+
+    # the hovered parts are darker fills, not the resting ones
+    refute Enum.map(r["segHover"], & &1["fill"]) ==
+             Enum.map(r["light"]["segs"]["seg"], & &1["fill"])
+  end
+
+  test "segment labels on a one-row stack: the legend gives each part's number", %{r: r} do
+    l = r["segLegend"]
+
+    assert l["seg"] == [
+             "Completed 61",
+             "Needs a result 9",
+             "In progress 4",
+             "Didn't happen 1",
+             "Still to come 25"
+           ]
+
+    # with no room for the labels, the legend still has every number
+    assert l["thin"] == l["seg"]
+    # several rows: the legend keeps the names; without the option too
+    assert l["columns"] == ["Done", "Open"]
+    assert l["progress"] == ["Resulted", "Needs a result", "In progress", "Still to come"]
+    # the datasets keep their names: the tooltip and the table are unchanged
+    assert hd(l["labels"]) == "Completed"
+  end
+
+  test "a one-row chart grows for a legend that wraps: every part's number stays on screen",
+       %{r: r} do
+    for {id, l} <- r["phoneLegend"] do
+      # Chart.js caps a legend at half the canvas: on a 36px row that kept one line
+      assert l["lines"] > 1, "#{id}: #{inspect(l)}"
+      assert l["inside"], "#{id}: #{inspect(l)}"
+      assert l["area"] == 36, "#{id}: #{inspect(l)}"
+    end
+
+    assert r["phoneLegend"]["seg"]["items"] == 5
+  end
+
+  test "segment labels follow new data; under reduced motion at once", %{r: r} do
+    assert r["segUpdate"] == %{
+             "drawn" => ["61", "9", "4", "10", "16"],
+             "legend" => [
+               "Completed 61",
+               "Needs a result 9",
+               "In progress 4",
+               "Didn't happen 10",
+               "Still to come 16"
+             ],
+             "animation" => false
+           }
   end
 
   test "arrow keys show the tooltip, a popover, and the live region reads it", %{r: r} do

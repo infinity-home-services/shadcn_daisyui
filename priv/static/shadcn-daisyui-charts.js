@@ -51,14 +51,18 @@ const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(pre
 // the computed colour and the pixel drawn opaque, since a translucent pixel
 // keeps too little of its colour (white at 10% reads back as 245, 255, 255).
 let pixel
-const ALPHA_SLASH = /\/\s*([\d.]+)(%?)\s*\)\s*$/ // oklch(… / 0.1), color(srgb … / 0.3)
-const ALPHA_COMMA = /^rgba?\(([^,]+,[^,]+,[^,]+),\s*([\d.]+)(%?)\s*\)$/ // rgba(r, g, b, 0.1)
-function rgba(css) {
+function pixelContext() {
   if (!pixel) {
     const c = document.createElement("canvas")
     c.width = c.height = 1
     pixel = c.getContext("2d", { willReadFrequently: true })
   }
+  return pixel
+}
+const ALPHA_SLASH = /\/\s*([\d.]+)(%?)\s*\)\s*$/ // oklch(… / 0.1), color(srgb … / 0.3)
+const ALPHA_COMMA = /^rgba?\(([^,]+,[^,]+,[^,]+),\s*([\d.]+)(%?)\s*\)$/ // rgba(r, g, b, 0.1)
+function rgba(css) {
+  pixelContext()
   let alpha = 1
   let opaque = css
   let m
@@ -79,6 +83,28 @@ function rgba(css) {
 const css = ({ r, g, b, a }, alpha = 1) => {
   const o = Math.round(a * alpha * 1000) / 1000
   return o >= 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${o})`
+}
+
+// A fill as it shows over the surface behind the chart (a part at 35% over
+// the card), painted the way the canvas paints it: opaque, so no alpha to lose.
+function blend(fill, surface) {
+  const px = pixelContext()
+  px.clearRect(0, 0, 1, 1)
+  px.fillStyle = surface
+  px.fillRect(0, 0, 1, 1)
+  px.fillStyle = "rgba(0, 0, 0, 0)"
+  px.fillStyle = fill
+  px.fillRect(0, 0, 1, 1)
+  const [r, g, b] = px.getImageData(0, 0, 1, 1).data
+  return { r, g, b, a: 1 }
+}
+
+// WCAG 2 contrast between two opaque colours
+const channel = (c) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+const luminance = ({ r, g, b }) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
 }
 
 // Reads the tokens as they apply to this chart (so a brand theme on an
@@ -115,6 +141,8 @@ function readTheme(el) {
     grid: css(resolved.border),
     crosshair: css(resolved["muted-foreground"], 0.5),
     surface: css(surface),
+    // as {r, g, b, a}, for working out a text colour on a fill
+    ink: { text: resolved.foreground, surface },
     font: style.fontFamily || "system-ui, sans-serif",
     key: JSON.stringify([resolved, surface, style.fontFamily]),
   }
@@ -194,6 +222,7 @@ function build(api) {
   const stacked = cartesian && !!dig(server, "scales", valueAxis, "stacked")
   const valueAxisShown = dig(server, "scales", valueAxis, "display") !== false
   const endLabels = dig(server, "plugins", "endLabels", "labels")
+  const segmentLabels = type === "bar" && stacked && !!dig(server, "plugins", "segmentLabels")
   const tooltipOn = !trend && dig(server, "plugins", "tooltip") !== false && dig(server, "plugins", "tooltip", "enabled") !== false
   const series = pieLike ? labels.length : sets.length
   const fontSize = 12
@@ -344,6 +373,10 @@ function build(api) {
     },
     scales,
   }
+  // a chart sized to its rows grows for its legend too: Chart.js caps a
+  // legend at half the canvas, which on a one-row chart drops every legend
+  // line after the first once it wraps (a phone)
+  if (horizontalBars) base.plugins.legend.maxHeight = Infinity
   const options = merge(base, server)
   // labels above the bars: the first row's text (font size plus the 4px gap
   // over its bar) needs room under the canvas's top edge. A top padding from
@@ -380,6 +413,12 @@ function build(api) {
     // rounds at both ends, like a track
     track: stacked && !valueAxisShown && labels.length === 1,
     endLabels: labelMode ? endLabels : null,
+    segmentLabels,
+    // a one-row stack (a progress row) with segment labels: the legend gives
+    // each part's number too, since a part too small for its label shows none
+    legendValues: segmentLabels && labels.length === 1,
+    inks: new Map(), // fill -> the text colour on it
+    segments: [], // the segment labels the last draw showed (tests, debugging)
     labelMode,
     labelWidths: widths,
     labelFont: fontString(fontSize, theme.font),
@@ -401,6 +440,7 @@ function build(api) {
 // the series colour here, with no border.
 function legendLabels(chart) {
   const items = Chart.defaults.plugins.legend.labels.generateLabels(chart)
+  const kit = chart.$kit
   for (const item of items) {
     if (item.datasetIndex == null) continue
     const ds = chart.data.datasets[item.datasetIndex]
@@ -412,8 +452,21 @@ function legendLabels(chart) {
       item.strokeStyle = "rgba(0, 0, 0, 0)"
       item.lineWidth = 0
     }
+    // "Completed 61"
+    if (kit && kit.legendValues) {
+      const value = partValue(chart, item.datasetIndex, 0)
+      if (value != null) item.text = `${item.text} ${value}`
+    }
   }
   return items
+}
+
+// A bar's value as its tooltip writes it (the value axis's ticks.format)
+function partValue(chart, j, i) {
+  const meta = chart.getDatasetMeta(j)
+  const p = meta._parsed && meta._parsed[i]
+  const v = p && p[chart.$kit.valueAxis]
+  return Number.isFinite(v) ? meta.controller.getLabelAndValue(i).value : null
 }
 
 // A trend's value range, from its data: the peak a sixth of the height below
@@ -559,6 +612,77 @@ const endLabelsPlugin = {
   },
 }
 
+// Segment labels: each part of a stacked bar shows its value, centred in it,
+// when the text and 4px either side fit inside the part (inside its 2px gap)
+// and the bar is at least 16px thick; a part too small shows none. Parts are
+// measured where they're drawn, so a resize, new data or a hidden series
+// re-fits them.
+const SEGMENT_PAD = 8
+const SEGMENT_MIN = 16
+const segmentLabelsPlugin = {
+  id: "segmentLabels",
+  afterDatasetsDraw(chart) {
+    const kit = chart.$kit
+    if (!kit || !kit.segmentLabels) return
+    const { ctx } = chart
+    const horizontal = kit.indexAxis === "y"
+    const drawn = []
+    ctx.save()
+    ctx.font = kit.labelFont
+    ctx.textAlign = "center"
+    ctx.textBaseline = "alphabetic"
+    chart.data.datasets.forEach((ds, j) => {
+      if (!chart.isDatasetVisible(j) || (ds.type && ds.type !== "bar")) return
+      chart.getDatasetMeta(j).data.forEach((bar, i) => {
+        const text = partValue(chart, j, i)
+        if (text == null) return
+        const box = partBox(bar, horizontal)
+        const m = ctx.measureText(text)
+        if (box.width < m.width + SEGMENT_PAD || box.height < SEGMENT_MIN) return
+        // the fill as drawn: a hovered part is darker
+        const fill = bar.options.backgroundColor
+        const color = inkOn(kit, fill)
+        ctx.fillStyle = color
+        // centred on the digits' ink, not the em box
+        ctx.fillText(text, box.x, box.y + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2)
+        drawn.push({ datasetIndex: j, index: i, text, color, fill })
+      })
+    })
+    ctx.restore()
+    kit.segments = drawn
+  },
+}
+
+// A bar's box on screen, inside its borders (a stacked part's 2px gap)
+function partBox(bar, horizontal) {
+  const { x, y, base, width, height } = bar.getProps(["x", "y", "base", "width", "height"])
+  const b = bar.options.borderWidth
+  const side = (k) => (typeof b === "number" ? b : Number(b && b[k]) || 0)
+  const left = (horizontal ? Math.min(x, base) : x - width / 2) + side("left")
+  const right = (horizontal ? Math.max(x, base) : x + width / 2) - side("right")
+  const top = (horizontal ? y - height / 2 : Math.min(y, base)) + side("top")
+  const bottom = (horizontal ? y + height / 2 : Math.max(y, base)) - side("bottom")
+  return { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left, height: bottom - top }
+}
+
+// The text colour on a fill: foreground or the surface colour, whichever
+// reads better on it; black or white when neither reaches 4.5:1 (a mid-tone
+// fill, such as chart-1 in light mode, sits between the two)
+const BLACK = { r: 0, g: 0, b: 0, a: 1 }
+const WHITE = { r: 255, g: 255, b: 255, a: 1 }
+function inkOn(kit, fill) {
+  if (typeof fill !== "string") return kit.theme.text
+  if (kit.inks.has(fill)) return kit.inks.get(fill)
+  const bg = blend(fill, kit.theme.surface)
+  const best = (colors) => colors.reduce((a, c) => (contrast(c, bg) > contrast(a, bg) ? c : a))
+  let ink = best([kit.theme.ink.text, kit.theme.ink.surface])
+  if (contrast(ink, bg) < 4.5) ink = best([BLACK, WHITE])
+  // hover transitions pass through many fills: keep the cache small
+  if (kit.inks.size > 100) kit.inks.clear()
+  kit.inks.set(fill, css(ink))
+  return css(ink)
+}
+
 // Crosshair: a hairline at the hovered (or keyboard-picked) label on line charts.
 const crosshairPlugin = {
   id: "shadcnCrosshair",
@@ -595,7 +719,10 @@ const rowsPlugin = {
     if (!kit || !kit.rowHeight) return
     const api = kit.api
     const rows = Math.max(1, chart.data.labels.length)
-    const diff = rows * kit.rowHeight - (chart.chartArea.bottom - chart.chartArea.top)
+    // a legend taller than the canvas stops the plot at 0 high and spills
+    // past the bottom: the spill is missing room too
+    const spill = Math.max(0, ...chart.boxes.map((b) => b.bottom || 0)) - chart.height
+    const diff = rows * kit.rowHeight - (chart.chartArea.bottom - chart.chartArea.top) + Math.max(0, spill)
     if (Math.abs(diff) < 1) {
       api.sizing = 0
       return
@@ -607,7 +734,7 @@ const rowsPlugin = {
   },
 }
 
-Chart.register(endLabelsPlugin, crosshairPlugin, rowsPlugin)
+Chart.register(endLabelsPlugin, segmentLabelsPlugin, crosshairPlugin, rowsPlugin)
 
 // ---- Tooltip: a popover-styled DOM element in the top layer --------------------------
 function tipFor(api) {

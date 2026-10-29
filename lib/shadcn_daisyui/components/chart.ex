@@ -56,6 +56,14 @@ defmodule ShadcnDaisyui.Components.Chart do
       horizontal bar's name and label move above the bar (on two lines when
       they don't fit side by side). `position: "above"` puts them above at
       every width (default `"auto"`)
+    * `options.plugins.segmentLabels: true` - on stacked bars, each part
+      shows its value (as its tooltip writes it) centred in it, in 12px text,
+      when the text and 4px either side fit inside the part and the bar is
+      at least 16px thick; a part too small has no label. On a one-row stack
+      (a progress row) the legend gives each part's number too
+      (`"Completed 61"`), so every number stays on screen. The text is
+      foreground or the surface colour, whichever reads at 4.5:1 or more on
+      the part (black or white where neither does)
 
   Values in tooltips follow the value axis's `ticks.format` (Chart.js's own
   `Intl.NumberFormat` options, e.g.

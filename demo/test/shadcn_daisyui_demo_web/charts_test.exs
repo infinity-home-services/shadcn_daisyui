@@ -19,6 +19,7 @@ defmodule ShadcnDaisyuiDemoWeb.ChartsTest do
           "Bars by day",
           "Leaderboard",
           "Progress row",
+          "Progress row, counts on the parts",
           "Lines: one series in colour",
           "Any Chart.js type",
           "Light and dark"
@@ -30,6 +31,8 @@ defmodule ShadcnDaisyuiDemoWeb.ChartsTest do
     assert html =~ ~s(id="leaderboard" class="chart mt-4" data-slot="chart")
     assert html =~ ~s(data-on-click="open_person")
     assert html =~ "endLabels"
+    assert html =~ ~s(id="week-progress" class="chart mt-4" data-slot="chart")
+    assert html =~ "segmentLabels"
     assert html =~ ~s(data-theme="shadcn-dark")
     # the numbers, for screen readers
     assert html =~ "<caption>Sales by day, last 2 weeks</caption>"

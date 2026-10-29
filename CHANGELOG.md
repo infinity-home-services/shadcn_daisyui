@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`options.plugins.segmentLabels: true`** puts each part of a stacked bar
+  chart's value on the part itself: centred, in the chart's 12px text, as its
+  tooltip writes it (the value axis's `ticks.format`). A label shows only
+  where it fits - the text's width plus 8px inside the part (inside its 2px
+  gap), on a bar at least 16px thick - so a part too narrow has none rather
+  than spilling into its neighbour or being cut off. Labels re-fit as the
+  chart resizes, takes new data or hides a series, redraw on a theme change,
+  and don't animate under reduced motion. On a one-row stack (a progress
+  row) the legend gives each part's number too ("Completed 61"), so every
+  number stays on screen; with several rows the legend keeps the names. The
+  text is foreground or the surface colour, whichever reads better on the
+  part's fill as drawn (a hovered part is darker), or black or white where
+  neither reaches 4.5:1 - on `chart-1` neither white nor the light
+  foreground does, so its numbers are dark in both modes. The hidden table
+  and the tooltips are unchanged. See "Progress row, counts on the parts" on
+  the Chart page; `/lab/charts` has it on its progress row.
+
+### Fixed
+
+- **A progress row's legend keeps every line on a phone.** Chart.js caps a
+  legend at half the canvas, and a one-row chart is a 36px row, so once the
+  legend wrapped (a narrow card) only its first line showed - two of a
+  four-state progress row's states were missing. Horizontal bar charts,
+  which size themselves to their rows, now grow for the whole legend
+  instead, and settle in one or two passes when it's taller than the
+  canvas.
+
 ## [0.28.1] - 2026-10-28
 
 A number card's trend always leaves room above its peak - a flat series is a
