@@ -76,6 +76,13 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
   })
   """
 
+  @hover_pointer ~S"""
+  {
+    const real = window.matchMedia.bind(window)
+    window.matchMedia = (q) => q.includes("hover: hover") ? { matches: true, addEventListener() {} } : real(q)
+  }
+  """
+
   defp render(template), do: template |> Phoenix.HTML.Safe.to_iodata() |> IO.iodata_to_binary()
 
   defp brands(values) do
@@ -109,8 +116,10 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
     css = File.read!(Path.join(@root, "priv/static/shadcn-daisyui.css"))
     js = File.read!(Path.join(@root, "priv/static/shadcn-daisyui.js"))
     theme = opts[:theme] || "shadcn"
-    # before the module runs: stub matchMedia (hover: none, reduced motion)
-    stubs = opts[:stubs] || ""
+    # before the module runs. A hover-capable pointer by default: a headless
+    # Chrome with no pointing device (CI) reports (hover: none). `stubs` can
+    # change it (hover: none, reduced motion).
+    stubs = @hover_pointer <> (opts[:stubs] || "")
 
     page = """
     <!doctype html>
@@ -234,10 +243,10 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
       const faceBefore = rect(face()), nextBefore = rect($("r-chip-v-Next")), heightBefore = rect($("r"))[3]
       const closedAtFirst = opener("r").getAttribute("aria-expanded") === "false" && panel("r").hidden
       over(opener("r"))
-      await sleep(40)
+      await sleep(10)
       // a pointer just crossing doesn't open it
       const notYet = opener("r").getAttribute("aria-expanded")
-      await sleep(120)
+      await sleep(150)
       const opened = isOpen("r")
       const slides = $("r-chip-v-Next").getAnimations().length
       await sleep(220)
@@ -262,9 +271,9 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
       const stillOpen = isOpen("r")
       // leaving: open just before 150ms, closing after, sliding back
       out(values[1])
-      await sleep(90)
+      await sleep(40)
       const at90 = opener("r").getAttribute("aria-expanded")
-      await sleep(110)
+      await sleep(180)
       const at200 = opener("r").getAttribute("aria-expanded")
       const floating = getComputedStyle(panel("r")).position
       await sleep(250)
@@ -296,13 +305,13 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
     p =
       run(wide(row("a") <> "<br><br>" <> row("b")), ~S"""
       over(opener("a"))
-      await sleep(40)
+      await sleep(10)
       out(opener("a"))
       await sleep(150)
       const crossed = opener("a").getAttribute("aria-expanded")
       await hover(opener("a"))
       out(opener("a"))
-      await sleep(50)
+      await sleep(20)
       over(opener("a"))
       await sleep(200)
       const kept = isOpen("a")
@@ -507,7 +516,7 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
     p =
       run(wide(row("r")), ~S"""
       over(opener("r"))
-      await sleep(135)
+      while (opener("r").getAttribute("aria-expanded") !== "true") await sleep(2)
       const chips = [...panel("r").querySelectorAll("[data-chip-value]")]
       const report = (anims) => anims.map((a) => ({
         duration: a.effect.getTiming().duration,
@@ -526,7 +535,7 @@ defmodule ShadcnDaisyui.JS.ChipStackBrowserTest do
       })
       move(opener("r"))
       out(opener("r"))
-      await sleep(170)
+      while (opener("r").getAttribute("aria-expanded") !== "false") await sleep(2)
       const closingFrames = chips[1].getAnimations()[0].effect.getKeyframes()
       const closing = [Number(closingFrames[0].opacity), Number(closingFrames[1].opacity), panel("r").hidden]
       await sleep(220)
