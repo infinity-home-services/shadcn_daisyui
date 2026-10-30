@@ -253,6 +253,53 @@ defmodule ShadcnDaisyui.Components.ChartTest do
       refute html =~ "number-card-description"
     end
 
+    test "nil points at the ends are dropped; those in the middle stay, to be bridged" do
+      assigns = %{
+        trend: [{"Mon", nil}, {"Tue", nil}, {"Wed", 3}, {"Thu", nil}, {"Fri", 5}, {"Sat", nil}]
+      }
+
+      html = render(~H|<.number_card id="sales" label="Sales" value="$8" trend={@trend} />|)
+
+      cfg = config(html, "sales-trend")
+      assert cfg["data"]["labels"] == ["Wed", "Thu", "Fri"]
+      assert [%{"data" => [3, nil, 5], "spanGaps" => true}] = cfg["data"]["datasets"]
+
+      # the table lists what the line draws
+      assert {"Sales trend", ["Sales"], [{"Wed", ["3"]}, {"Thu", _}, {"Fri", ["5"]}]} =
+               table(html)
+    end
+
+    test "bare numbers are numbered from the first point that's left" do
+      assigns = %{}
+
+      html =
+        render(~H|<.number_card id="rate" label="Rate" value="1" trend={[nil, 3, 4, nil]} />|)
+
+      cfg = config(html, "rate-trend")
+      assert cfg["data"]["labels"] == ["1", "2"]
+      assert [%{"data" => [3, 4]}] = cfg["data"]["datasets"]
+    end
+
+    test "fewer than two points left, no trend" do
+      for trend <- [
+            [],
+            [nil],
+            [nil, nil],
+            [5],
+            [nil, 5],
+            [5, nil],
+            [nil, 5, nil],
+            [{"Mon", nil}, {"Tue", 5}]
+          ] do
+        assigns = %{trend: trend}
+        html = render(~H|<.number_card id="avg" label="Average" value="$5" trend={@trend} />|)
+
+        refute html =~ "<figure", inspect(trend)
+        refute html =~ "ShadcnChart", inspect(trend)
+        assert html =~ ~s(<p class="number-card-value">$5</p>)
+      end
+    end
+
     test "help: a ? beside the label, its text tied to it" do
       assigns = %{}
 

@@ -75,8 +75,10 @@ theme, and give every chart its numbers in text.
   inside a chart's card.
 - **Number card:** the label, the number formatted on the server (proportional
   figures), one line under it - a breakdown in words - and, optionally, its
-  trend faint behind it, edge to edge, peaks and all, gaps bridged. Say what
-  it counts in plain words behind a ? (`help`). Its change on another period
+  trend faint behind it, edge to edge, peaks and all. A gap in the middle is
+  bridged; `nil`s at either end are dropped, so the line never stops short in
+  a cliff, and with fewer than two points left there is no trend. Say what it
+  counts in plain words behind a ? (`help`). Its change on another period
   is badges under the line (`<:change>`: the period, the difference, the
   change with its sign and arrow), toned good or bad by which way is good
   news, never colour alone. A card that opens its detail is a link as a whole

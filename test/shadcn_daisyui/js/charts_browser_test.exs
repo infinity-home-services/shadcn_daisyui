@@ -281,6 +281,9 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     <div style="width: 300px">
       <.number_card id="wiggle" label="Wiggle" value="37%" trend={[37, 37, 37, 36, 37, 37, 37, 37]} />
     </div>
+    <div style="width: 300px">
+      <.number_card id="cliffs" label="Cliffs" value="18" trend={[nil, nil, 12, 15, nil, 9, 18, nil, nil]} />
+    </div>
     """)
   end
 
@@ -590,20 +593,28 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     }
 
     // ---- a trend runs edge to edge: peaks at both ends, the fill to each side --------
-    const edges = chart("edges-trend")
-    edges.update("none")
-    const ec = edges.canvas
-    const pixels = ec.getContext("2d").getImageData(0, 0, ec.width, ec.height).data
-    const alpha = (x, y) => pixels[(y * ec.width + x) * 4 + 3]
-    const painted = (x) => { let n = 0; for (let y = 0; y < ec.height; y++) if (alpha(x, y)) n++; return n }
-    const top = (x) => { let y = 0; while (y < ec.height && !alpha(x, y)) y++; return y }
-    r.edges = {
-      autoPadding: edges.options.layout.autoPadding,
-      area: [edges.chartArea.left, edges.chartArea.top, edges.width - edges.chartArea.right, edges.height - edges.chartArea.bottom],
-      height: ec.height,
-      columns: [[top(0), painted(0)], [top(ec.width - 1), painted(ec.width - 1)]],
-      foot: [alpha(0, ec.height - 1), alpha(ec.width - 1, ec.height - 1)],
+    const trendPixels = (id) => {
+      const c = chart(id)
+      c.update("none")
+      const ec = c.canvas
+      const pixels = ec.getContext("2d").getImageData(0, 0, ec.width, ec.height).data
+      const alpha = (x, y) => pixels[(y * ec.width + x) * 4 + 3]
+      const painted = (x) => { let n = 0; for (let y = 0; y < ec.height; y++) if (alpha(x, y)) n++; return n }
+      const top = (x) => { let y = 0; while (y < ec.height && !alpha(x, y)) y++; return y }
+      return {
+        autoPadding: c.options.layout.autoPadding,
+        area: [c.chartArea.left, c.chartArea.top, c.width - c.chartArea.right, c.height - c.chartArea.bottom],
+        height: ec.height,
+        columns: [[top(0), painted(0)], [top(ec.width - 1), painted(ec.width - 1)]],
+        foot: [alpha(0, ec.height - 1), alpha(ec.width - 1, ec.height - 1)],
+        // every column of the foot, so a gap anywhere along the fill shows
+        bare: Array.from({ length: ec.width }, (_, x) => x).filter((x) => !alpha(x, ec.height - 1)).length,
+        labels: c.data.labels,
+        data: c.data.datasets[0].data,
+      }
     }
+    r.edges = trendPixels("edges-trend")
+    r.cliffs = trendPixels("cliffs-trend")
 
     // ---- keyboard: arrows show the tooltip and read it; Enter clicks --------------
     const key = (w, k) => w.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }))
@@ -871,6 +882,19 @@ defmodule ShadcnDaisyui.JS.ChartsBrowserTest do
     end
 
     assert Enum.all?(e["foot"], &(&1 > 0)), inspect(e)
+  end
+
+  test "a trend with missing ends still runs edge to edge; the gap inside is bridged", %{r: r} do
+    c = r["cliffs"]
+    assert c["data"] == [12, 15, nil, 9, 18]
+    assert length(c["labels"]) == 5
+
+    # the fill reaches both sides and the foot with no break, so no cliff and no gap
+    assert c["bare"] == 0, inspect(c)
+
+    for [top, painted] <- c["columns"] do
+      assert painted == c["height"] - top, inspect(c)
+    end
   end
 
   test "change badges: text 4.5:1 on its fill, a border stronger than the card's own line",

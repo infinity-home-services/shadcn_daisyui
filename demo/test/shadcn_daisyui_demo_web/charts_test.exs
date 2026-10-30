@@ -51,6 +51,7 @@ defmodule ShadcnDaisyuiDemoWeb.ChartsTest do
     assert html =~ ~s(<p class="number-card-value">$42,000</p>)
     assert html =~ ~s(id="sales-trend" class="chart number-card-trend")
     assert html =~ "<caption>Sales trend</caption>"
+    assert html =~ "<caption>New branch sales trend</caption>"
   end
 
   test "both pages are in Data display, with specs and accessibility" do

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `<.number_card>`: a trend's `nil` points at either end are dropped before the
+  chart is built, so the line and its fill run edge to edge instead of stopping in
+  a vertical cliff while the x axis carries on. `nil`s in the middle are still
+  bridged, and with fewer than two points left the card draws no trend.
+
 ## [0.31.0] - 2026-10-30
 
 A filter with several values is now one stacked chip whose values open inline in

@@ -191,8 +191,10 @@ defmodule ShadcnDaisyui.Components.Chart do
 
   `value` and the line under it arrive formatted. `trend` is a list of
   numbers, or `{label, number}` tuples (the labels name the rows of the
-  trend's screen-reader table: `[{"Mon", 12_400}, {"Tue", 9_800}]`); a
-  missing point (`nil`) is bridged, so the line has no gaps. Its range comes
+  trend's screen-reader table: `[{"Mon", 12_400}, {"Tue", 9_800}]`). A
+  missing point (`nil`) in the middle is bridged, so the line has no gaps;
+  missing points at either end are dropped, so the line runs edge to edge,
+  and with fewer than two points left there is no trend. Its range comes
   from the data: the peak always sits a sixth of the trend's height below
   its top, and the range is at least a fifth of the top value, so a flat
   series is a level line and a 1-point wiggle a gentle one. `color` picks
@@ -221,7 +223,7 @@ defmodule ShadcnDaisyui.Components.Chart do
 
   attr(:trend, :list,
     default: [],
-    doc: "numbers, or {label, number} tuples, oldest first"
+    doc: "numbers, or {label, number} tuples, oldest first; nil at either end is dropped"
   )
 
   attr(:color, :string, default: "chart-1", doc: "the trend's colour token")
@@ -333,34 +335,51 @@ defmodule ShadcnDaisyui.Components.Chart do
   defp arrow("down"), do: "hero-arrow-down-mini"
   defp arrow("flat"), do: "hero-minus-mini"
 
-  defp trend_config(%{trend: []}), do: nil
-
   defp trend_config(%{trend: trend, label: label, color: color}) do
-    {labels, values} =
-      trend
-      |> Enum.with_index(1)
-      |> Enum.map(fn
-        {{point_label, value}, _} -> {to_string(point_label), value}
-        {value, n} -> {Integer.to_string(n), value}
-      end)
-      |> Enum.unzip()
+    case trim_trend(trend) do
+      [_, _ | _] = points ->
+        {labels, values} =
+          points
+          |> Enum.with_index(1)
+          |> Enum.map(fn
+            {{point_label, value}, _} -> {to_string(point_label), value}
+            {value, n} -> {Integer.to_string(n), value}
+          end)
+          |> Enum.unzip()
 
-    %{
-      type: "line",
-      data: %{
-        labels: labels,
-        # a step with no number (no sales that day) is bridged rather than left as a gap
-        datasets: [
-          %{label: label, data: values, color: color, fill: "start", spanGaps: true}
-        ]
-      },
-      # no layout: the hook draws a trend edge to edge (variant="trend")
-      options: %{
-        plugins: %{legend: %{display: false}, tooltip: %{enabled: false}},
-        scales: %{x: %{display: false}, y: %{display: false}}
-      }
-    }
+        %{
+          type: "line",
+          data: %{
+            labels: labels,
+            # a step with no number (no sales that day) is bridged rather than left as a gap
+            datasets: [
+              %{label: label, data: values, color: color, fill: "start", spanGaps: true}
+            ]
+          },
+          # no layout: the hook draws a trend edge to edge (variant="trend")
+          options: %{
+            plugins: %{legend: %{display: false}, tooltip: %{enabled: false}},
+            scales: %{x: %{display: false}, y: %{display: false}}
+          }
+        }
+
+      _too_few ->
+        nil
+    end
   end
+
+  # Missing points at the ends go: the x axis would carry on past the last number and leave the
+  # line and its fill stopping in a vertical cliff
+  defp trim_trend(trend) do
+    trend
+    |> Enum.drop_while(&missing_point?/1)
+    |> Enum.reverse()
+    |> Enum.drop_while(&missing_point?/1)
+    |> Enum.reverse()
+  end
+
+  defp missing_point?({_label, value}), do: is_nil(value)
+  defp missing_point?(value), do: is_nil(value)
 
   # ---------------------------------------------------------------------------
   # The screen-reader table: the config's numbers, one row per label (a pie's

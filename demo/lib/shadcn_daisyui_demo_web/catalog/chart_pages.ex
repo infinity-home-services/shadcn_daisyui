@@ -234,6 +234,10 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
   def close_rate_trend,
     do: Enum.zip(@days, [33, 35, 31, 36, 38, 30, 29, 34, 37, 35, 40, 41, 36, 38])
 
+  @doc false
+  def partial_trend,
+    do: Enum.zip(@days, [nil, nil, nil, 11, 13, nil, 12, 15, 14, 18, nil, nil, nil, nil])
+
   # ---------------------------------------------------------------------------
   # <.chart>
   # ---------------------------------------------------------------------------
@@ -848,7 +852,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         %{name: "value", type: "string (required): the number, formatted", default: "-"},
         %{
           name: "trend",
-          type: "[number] or [{label, number}], oldest first",
+          type: "[number] or [{label, number}], oldest first; nil at either end is dropped",
           default: "[] (no trend)"
         },
         %{name: "color", type: "the trend's colour token", default: "chart-1"},
@@ -877,7 +881,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
         }
       ],
       notes:
-        "The trend is a <.chart> line with its axes, grid, legend, tooltip and points hidden and its area filled, so it needs the chart entry (shadcn_daisyui/charts); without it the card still shows the number and the line under it. Labels name the rows of the trend's hidden table ({\"Mon 13\", 18_400}); bare numbers are numbered 1, 2, 3, and a nil (a day with nothing to count) is bridged, never a gap. The value, the line under it and the changes arrive formatted from the server. A change is good news (green) when it moved the way `good` says, bad news (red) the other way, neutral when flat; its sign and arrow say the same, never colour alone. A linked card's label is the link, stretched over the card, so the help stays its own button.",
+        "The trend is a <.chart> line with its axes, grid, legend, tooltip and points hidden and its area filled, so it needs the chart entry (shadcn_daisyui/charts); without it the card still shows the number and the line under it. Labels name the rows of the trend's hidden table ({\"Mon 13\", 18_400}); bare numbers are numbered 1, 2, 3. A nil (a day with nothing to count) in the middle is bridged, never a gap; nils at either end are dropped, so the line runs edge to edge rather than stopping in a cliff; with fewer than two points left there is no trend. The value, the line under it and the changes arrive formatted from the server. A change is good news (green) when it moved the way `good` says, bad news (red) the other way, neutral when flat; its sign and arrow say the same, never colour alone. A linked card's label is the link, stretched over the card, so the help stays its own button.",
       specs: %{
         anatomy: [
           %{
@@ -1017,9 +1021,32 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.ChartPages do
           """,
           center: false,
           code: number_cards_code()
+        },
+        %{
+          title: "A trend with missing days",
+          heex: ~S"""
+          <%!-- [{"Mon 13", nil}, {"Tue 14", nil}, {"Wed 15", nil}, {"Thu 16", 11}, {"Fri 17", 13}, {"Sat 18", nil}, ...] --%>
+          <.number_card id="new-branch" label="New branch sales" value="83" trend={@partial_trend}>
+            Open for a week
+          </.number_card>
+          """,
+          center: false,
+          code: partial_trend_code()
         }
       ]
     }
+  end
+
+  defp partial_trend_code do
+    assigns = %{trend: partial_trend()}
+
+    code(~H"""
+    <div class="w-full max-w-xs">
+      <.number_card id="new-branch" label="New branch sales" value="83" trend={@trend}>
+        Open for a week
+      </.number_card>
+    </div>
+    """)
   end
 
   defp number_cards_code do
