@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.1] - 2026-10-30
+
+A number card's trend now runs edge to edge when its data starts late or stops
+early, instead of ending in a vertical cliff.
+
 ### Fixed
 
 - `<.number_card>`: a trend's `nil` points at either end are dropped before the
