@@ -36,6 +36,12 @@ decorates.
   reveal while its first chip scales in, and closing it while its last chip
   scales out, run together as one motion. Give every chip a `value` so a
   patch removes that chip, not the last one.
+- **A stacked chip's values** slide out of the stack into the row and back
+  (`translate` + `scale` 0.9 ↔ 1 + opacity, 180ms ease-out); the card edges tuck in
+  and the chips after it slide over (FLIP on `translate`, as for any chip). The
+  stack's face and × don't move. Hover waits about 120ms, so a pointer crossing the
+  row doesn't make it ripple, and it closes about 150ms after the pointer leaves.
+  Instant under reduced motion, and nothing is lost when it is.
 - Theme switching is **instant by design** (no fade - fading light↔dark passes
   text through a grey crossover). [web] The theme CSS only zeroes out
   `transition-duration` while `<html>` carries the `theme-transition` class, so
@@ -58,6 +64,7 @@ decorates.
 | small surface | 180ms | ease | opacity, transform | popover, tooltip, ⌘K palette |
 | large surface | 300ms | ease | translate, backdrop | sheet, drawer |
 | chip in/out | 150ms | ease-out | scale, opacity, translate (neighbours) | `<.chip_row>` chips |
+| chips unstack | 180ms | ease-out | translate, scale, opacity | a stacked chip's values leaving and rejoining it |
 | row reveal | 180ms | ease-out | grid-template-rows, opacity | filter chip row, inline alert, accordion, trace detail |
 | theme switch | 0ms | - | - | instant by design |
 

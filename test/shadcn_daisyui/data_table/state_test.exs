@@ -171,10 +171,62 @@ defmodule ShadcnDaisyui.DataTable.StateTest do
                "owner" => %{"pat" => "Pat Lee"},
                "stage" => ["open", "won"]
              }) == [
-               {"status", "Open or Paid"},
+               {"status", [{"open", "Open"}, {"paid", "Paid"}]},
                {"owner", "Pat Lee"},
                {"stage", "open"}
              ]
+    end
+
+    test "chips: a value picked twice counts once" do
+      state = State.from_params(%{"status" => "open,open", "owner" => "pat,sam,pat"}, @opts)
+
+      assert State.chips(state, ["status", "owner"], %{"status" => [{"Open", "open"}]}) == [
+               {"status", "Open"},
+               {"owner", [{"pat", "pat"}, {"sam", "sam"}]}
+             ]
+    end
+
+    test "remove_value takes one value off, in order" do
+      state = %State{filters: %{"status" => "open,paid,overdue"}}
+
+      assert State.remove_value(state, "status", "paid").filters == %{"status" => "open,overdue"}
+      assert State.remove_value(state, :status, "open").filters == %{"status" => "paid,overdue"}
+    end
+
+    test "remove_value: the last value goes back to the filter's default" do
+      state = %State{filters: %{"status" => "open", "owner" => "pat"}}
+
+      assert State.remove_value(state, "status", "open", filters: %{"status" => "any"}).filters ==
+               %{"status" => "any", "owner" => "pat"}
+
+      # a real default
+      assert State.remove_value(state, "status", "open", filters: %{"status" => "open"}).filters ==
+               %{"status" => "open", "owner" => "pat"}
+
+      # no opts: dropped, which the URL reads as the default
+      dropped = State.remove_value(state, "status", "open")
+      assert dropped.filters == %{"owner" => "pat"}
+      assert State.to_params(dropped, @opts) == %{"owner" => "pat"}
+      assert State.from_params(State.to_params(dropped, @opts), @opts).filters["status"] == "any"
+    end
+
+    test "remove_value: a value the filter doesn't hold changes nothing" do
+      state = %State{filters: %{"status" => "open,paid"}}
+      assert State.remove_value(state, "status", "refunded") == state
+      assert State.remove_value(state, "owner", "pat") == state
+
+      assert State.remove_value(%State{filters: %{"owner" => "any"}}, "owner", "any").filters ==
+               %{"owner" => "any"}
+    end
+
+    test "remove_value: non-string values and duplicates" do
+      assert State.remove_value(%State{filters: %{"id" => "1,2"}}, "id", 2).filters == %{
+               "id" => "1"
+             }
+
+      assert State.remove_value(%State{filters: %{"id" => "1,1,2"}}, "id", 1).filters == %{
+               "id" => "2"
+             }
     end
 
     test "chips: a value without a label shows as itself; no value, no chip" do

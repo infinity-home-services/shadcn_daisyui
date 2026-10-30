@@ -55,9 +55,22 @@ defmodule ShadcnDaisyuiDemoWeb.LabDataTableLiveTest do
 
       assert_patch(view, ~p"/lab/data-table?q=harbor&status=open%2Coverdue")
       html = render(view)
-      assert html =~ "Status: Open or Overdue"
+      # two values: a stack named after its filter, each value removable
+      assert has_element?(view, "#orders-toolbar-chips [data-chip-stack][data-value=status]")
+      assert html =~ ~r/Status<\/span>: <span data-chip-stack-values[^>]*>Open, Overdue/
       assert has_element?(view, "#orders-toolbar .reveal[data-open]")
       assert html =~ ~r/table-toolbar-filters-count">\s*1/
+
+      # one value's remove button
+      render_hook(view, "dt:unfilter", %{
+        "key" => "status",
+        "value" => "open",
+        "table" => "orders-toolbar"
+      })
+
+      assert_patch(view, ~p"/lab/data-table?q=harbor&status=overdue")
+      assert render(view) =~ "Status: Overdue"
+      refute has_element?(view, "#orders-toolbar-chips [data-chip-stack]")
 
       # the chip's remove button
       render_hook(view, "dt:unfilter", %{"key" => "status", "table" => "orders-toolbar"})

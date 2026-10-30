@@ -20,6 +20,7 @@ defmodule ShadcnDaisyui.Components.DataTable do
   | `dt:more` | `%{}` | scrolling near the end (with `more`) |
   | `dt:filter` | the form's params (`q`, each filter, `sort`) | the toolbar, on change and submit |
   | `dt:unfilter` | `%{"key" => key}` | a filter chip's remove button |
+  | `dt:unfilter` | `%{"key" => key, "value" => value}` | one value's remove button in a stacked chip |
   | `dt:reset` | `%{}` | "Clear all" |
 
   Every payload also carries `"table" => id` (the component's id), for a
@@ -421,11 +422,14 @@ defmodule ShadcnDaisyui.Components.DataTable do
   without views), a Filters button with the number of filters on, and
   `:more` (hidden on phones).
 
-  **The chips row**: the filters that are on (`chips`, `{key, label}`, or
-  `{key, label, :fixed}` for one that can't be removed) as a `<.chip_row>`
-  that slides open with the first and closed with the last. Removing one
-  sends `dt:unfilter` with its key. The row ends with `:save` (a "Save view"
-  button), then "Clear all" (`dt:reset`) while a filter is on.
+  **The chips row**: the filters that are on as a `<.chip_row>` that slides
+  open with the first and closed with the last: `{key, label}`, or
+  `{key, label, :fixed}` for one that can't be removed; a filter with several
+  values is `{key, [{value, label}, ...]}` or `{key, [{value, label}, ...], :fixed}`,
+  a stacked chip (a one-item list is a normal chip) named after its `:filter`'s
+  `label`. A chip's × sends `dt:unfilter` with `%{"key" => key}`; a value's × in
+  a stack sends `%{"key" => key, "value" => value}`. The row ends with `:save`
+  (a "Save view" button), then "Clear all" (`dt:reset`) while a filter is on.
 
   **The filters sheet**: each `:filter` under its label (one `<.select>` or
   `<.combobox>` named after its `key`; it applies as it changes and the
@@ -451,7 +455,12 @@ defmodule ShadcnDaisyui.Components.DataTable do
     doc: "[%{key, label, group, icon, active, path | click}]: the Views menu's entries"
   )
 
-  attr(:chips, :list, default: [], doc: "[{key, label} | {key, label, :fixed}]: filters on")
+  attr(:chips, :list,
+    default: [],
+    doc:
+      "[{key, label} | {key, label, :fixed} | {key, [{value, label}]} | {key, [{value, label}], :fixed}]: filters on"
+  )
+
   attr(:sort, :string, default: "", doc: "\"key:dir\", or \"\" for the default order")
   attr(:sorts, :list, default: [], doc: "[{label, \"key:dir\"}], the first being the default")
   attr(:target, :any, default: nil, doc: "phx-target for every event (a LiveComponent)")
@@ -468,7 +477,8 @@ defmodule ShadcnDaisyui.Components.DataTable do
 
   def table_toolbar(assigns) do
     {singular, plural} = assigns.noun
-    chips = Enum.map(assigns.chips, &chip/1)
+    names = Map.new(assigns.filter, &{to_string(&1.key), &1.label})
+    chips = Enum.flat_map(assigns.chips, &chip(&1, names))
     removable = Enum.count(chips, &(!&1.fixed))
     search = assigns.search || ""
 
@@ -559,6 +569,7 @@ defmodule ShadcnDaisyui.Components.DataTable do
               removable={!chip.fixed}
               remove_label={"Remove filter: " <> chip.label}
               on_remove={dt_push("dt:unfilter", %{key: chip.key}, @id, @target)}
+              items={chip_items(chip, @id, @target)}
             >
               {chip.label}
             </:chip>
@@ -611,8 +622,47 @@ defmodule ShadcnDaisyui.Components.DataTable do
     """
   end
 
-  defp chip({key, label}), do: %{key: to_string(key), label: label, fixed: false}
-  defp chip({key, label, :fixed}), do: %{key: to_string(key), label: label, fixed: true}
+  defp chip({key, items}, names) when is_list(items), do: chip_values(key, items, false, names)
+
+  defp chip({key, items, :fixed}, names) when is_list(items),
+    do: chip_values(key, items, true, names)
+
+  defp chip({key, label}, _names), do: [plain_chip(key, label, false)]
+  defp chip({key, label, :fixed}, _names), do: [plain_chip(key, label, true)]
+
+  defp plain_chip(key, label, fixed),
+    do: %{key: to_string(key), label: label, fixed: fixed, values: []}
+
+  # Several values: a stack, named after its filter. One: a normal chip.
+  defp chip_values(key, items, fixed, names) do
+    key = to_string(key)
+
+    case items
+         |> Enum.map(fn {v, l} -> {to_string(v), to_string(l)} end)
+         |> Enum.uniq_by(&elem(&1, 0)) do
+      [] ->
+        []
+
+      [{_value, label}] ->
+        [plain_chip(key, label, fixed)]
+
+      values ->
+        name = names[key] || Phoenix.Naming.humanize(key)
+        [%{key: key, label: name, fixed: fixed, values: values}]
+    end
+  end
+
+  # A fixed filter can't lose a value either.
+  defp chip_items(chip, id, target) do
+    for {value, label} <- chip.values do
+      %{
+        value: value,
+        label: label,
+        removable: !chip.fixed,
+        on_remove: dt_push("dt:unfilter", %{key: chip.key, value: value}, id, target)
+      }
+    end
+  end
 
   # The first sort is the default order, posted as "" (State.parse_sort/3
   # resets to it; a single select chooses a "" option while its value is

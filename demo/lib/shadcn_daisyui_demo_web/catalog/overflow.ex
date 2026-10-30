@@ -11,6 +11,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
   `resizable`: the docs preview adds a width slider.
   """
 
+  use Phoenix.Component
+
+  import ShadcnDaisyui.Components.Display, only: [chip_row: 1]
+
+  alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
+
   def all, do: [tab_nav(), chip_row(), reveal()]
 
   defp tab_nav do
@@ -427,10 +433,15 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         %{name: ":chip on_remove", type: "event name | JS", default: "nil"},
         %{name: ":chip remove_label", type: "string", default: ~s("Remove" + chip text)},
         %{name: ":chip removable", type: "boolean", default: "true"},
+        %{
+          name: ":chip items",
+          type: "[%{value, label, on_remove}] (optional removable, remove_label)",
+          default: "nil"
+        },
         %{name: ":action", type: "slot", default: "-"}
       ],
       notes:
-        "Needs the ShadcnChipRow hook (or initShadcnDaisyui()). In LiveView pass on_remove (e.g. JS.push(\"remove_filter\", value: %{id: f.id})); the server drops the chip and the patch re-fits the row. Without it the hook removes the chip itself after a cancelable chip-remove event ({ value, index }) bubbles from the root; a data-chip-row-clear button does the same for every chip (chip-clear). After a removal focus moves to the chip that took its place, then +N, then the last chip. Motion: a chip added after mount scales and fades in (0.9 to 1, 150ms ease-out) and the chips after it slide over; a removed chip leaves the flow and scales and fades out where it stood while its neighbours slide into its place, and +N recounts once it is gone. Give every chip a value: the DOM id follows it, so a patch removes that chip and not the last one. In LiveView each chip (and the actions) carries a phx-remove that keeps it 180ms, the length of a reveal collapse, so a reveal closing in the same patch shrinks around the fading chip: keep the row rendered inside <.reveal open={@filters != []}> (no :if) and let open drive it.",
+        "Needs the ShadcnChipRow hook (or initShadcnDaisyui()). In LiveView pass on_remove (e.g. JS.push(\"remove_filter\", value: %{id: f.id})); the server drops the chip and the patch re-fits the row. Without it the hook removes the chip itself after a cancelable chip-remove event ({ value, index }) bubbles from the root; a data-chip-row-clear button does the same for every chip (chip-clear). After a removal focus moves to the chip that took its place, then +N, then the last chip. Motion: a chip added after mount scales and fades in (0.9 to 1, 150ms ease-out) and the chips after it slide over; a removed chip leaves the flow and scales and fades out where it stood while its neighbours slide into its place, and +N recounts once it is gone. Give every chip a value: the DOM id follows it, so a patch removes that chip and not the last one. In LiveView each chip (and the actions) carries a phx-remove that keeps it 180ms, the length of a reveal collapse, so a reveal closing in the same patch shrinks around the fading chip: keep the row rendered inside <.reveal open={@filters != []}> (no :if) and let open drive it. A chip with two or more items is a stack: the first value's name and +N, with card edges behind it (one for two values, two for more), and the inner block is the filter's name for screen readers. Its values open inline in the row, sliding out of the stack while the chips after it slide over: on hover (under @media (hover: hover), after a short pause, back about 150ms after the pointer leaves), keyboard focus (back when focus leaves, or on Esc) or a tap (a tap outside closes it). One is open at a time and the stack's face and × never move. The row stays on one line: chips after the stack fold into +N when there is no room, then the last values do, and +N opens by itself when no value fits (a phone). The stack's × clears the whole filter; a value's × removes that value, and focus moves to the next ×, or to the chip's × once one value is left.",
       specs: %{
         anatomy: [
           %{
@@ -454,6 +465,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
             part: "Popover",
             description: "Floating panel of the collapsed chips (wrapping), each removable."
           },
+          %{
+            part: "Stack",
+            description:
+              "One chip for several values: opener (first name, +N) + remove button, card edges behind it. Counts as one chip when the row fits (closed); its values show flat in the popover."
+          },
+          %{
+            part: "Unstacked values",
+            description:
+              "Each value as its own chip with a remove button, inline after the stack's face; slides out of the stack on open, and the next chips slide over."
+          },
           %{part: "Actions", description: "Optional trailing content that always stays visible."}
         ],
         measurements: [
@@ -463,10 +484,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           },
           %{property: "Remove button", value: "1rem (1.5rem on touch, 44px hit area)"},
           %{property: "Gap", value: "0.5rem between chips, +N and actions"},
-          %{property: "Popover", value: "p-3, max 18rem wide, max-h 16rem, 4px below +N"}
+          %{property: "Popover", value: "p-3, max 18rem wide, max-h 16rem, 4px below +N"},
+          %{property: "Stack edges", value: "4px each, 1px line, inside the chip's width"},
+          %{property: "Unstacked values", value: "0.5rem gaps, in line with the row"}
         ],
         tokens: [
-          "secondary",
+          "chip-background",
           "secondary-foreground",
           "border-color",
           "foreground",
@@ -493,7 +516,13 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
             action: "Move between the remove buttons in the popover"
           },
           %{keys: "Enter / Space", action: "Remove the focused chip"},
-          %{keys: "Esc", action: "Close the popover, focus +N"}
+          %{keys: "Esc", action: "Close the popover, focus +N"},
+          %{
+            keys: "Tab onto a stack",
+            action: "Unstacks its values; Tab goes on: opener, its ×, then each value's ×"
+          },
+          %{keys: "Enter / Space on a stack", action: "Stack or unstack it"},
+          %{keys: "Esc on a stack", action: "Stack it again, focus its opener"}
         ],
         focus:
           "Removing a chip never drops focus to the page: it lands on the chip that took its place, the previous one, +N, or the first action.",
@@ -575,6 +604,50 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
             </div>
           </div>
           """
+        },
+        %{
+          title: "Stacked filters",
+          center: false,
+          resizable: true,
+          heex: ~S"""
+          <.chip_row id="stacked-filters" aria_label="Active filters">
+            <%!-- one value: a normal chip --%>
+            <:chip value="owner" on_remove="clear_owner">Pat Lee</:chip>
+            <%!-- two or more: a stack; the inner block names the filter for screen readers --%>
+            <:chip
+              value="status"
+              on_remove="clear_status"
+              items={for s <- @statuses, do: %{value: s.id, label: s.label, on_remove: JS.push("remove_status", value: %{id: s.id})}}
+            >
+              Status
+            </:chip>
+            <:chip
+              value="brands"
+              on_remove="clear_brands"
+              items={for b <- @brands, do: %{value: b.id, label: b.name, on_remove: JS.push("remove_brand", value: %{id: b.id})}}
+            >
+              Brands
+            </:chip>
+          </.chip_row>
+          """,
+          code: stacked_code()
+        },
+        %{
+          title: "A stack in a row that overflows",
+          center: false,
+          resizable: true,
+          heex: ~S"""
+          <%!-- a stack counts as one chip; in +N its values show flat, each removable --%>
+          <div class="w-full max-w-xs">
+            <.chip_row id="stacked-overflow" aria_label="Active filters">
+              <:chip value="status" items={@statuses}>Status</:chip>
+              <:chip value="brands" items={@brands}>Brands</:chip>
+              <:chip value="owner">Owner: Pat Lee</:chip>
+              <:chip value="region">Region: North</:chip>
+            </.chip_row>
+          </div>
+          """,
+          code: stacked_overflow_code()
         },
         %{
           title: "Add and remove (animated)",
@@ -664,6 +737,43 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
         }
       ]
     }
+  end
+
+  @stacked_statuses [%{value: "open", label: "Open"}, %{value: "paid", label: "Paid"}]
+  @stacked_brands [
+    %{value: "acme", label: "Acme sandbox"},
+    %{value: "northwind", label: "Northwind"},
+    %{value: "northwind-sandbox", label: "Northwind sandbox"},
+    %{value: "northgate", label: "Northgate"}
+  ]
+
+  defp stacked_code do
+    assigns = %{statuses: @stacked_statuses, brands: @stacked_brands}
+
+    DataPages.code(~H"""
+    <div class="w-full">
+      <.chip_row id="stacked-filters" aria_label="Active filters">
+        <:chip value="owner">Pat Lee</:chip>
+        <:chip value="status" items={@statuses}>Status</:chip>
+        <:chip value="brands" items={@brands}>Brands</:chip>
+      </.chip_row>
+    </div>
+    """)
+  end
+
+  defp stacked_overflow_code do
+    assigns = %{statuses: @stacked_statuses, brands: @stacked_brands}
+
+    DataPages.code(~H"""
+    <div class="w-full max-w-xs">
+      <.chip_row id="stacked-overflow" aria_label="Active filters">
+        <:chip value="status" items={@statuses}>Status</:chip>
+        <:chip value="brands" items={@brands}>Brands</:chip>
+        <:chip value="owner">Owner: Pat Lee</:chip>
+        <:chip value="region">Region: North</:chip>
+      </.chip_row>
+    </div>
+    """)
   end
 
   defp reveal do

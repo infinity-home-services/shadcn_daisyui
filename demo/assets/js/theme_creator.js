@@ -14,6 +14,7 @@ const TOKENS = [
   { id: "primary", label: "Primary", vars: ["--primary"] },
   { id: "primary-foreground", label: "Primary fg", vars: ["--primary-foreground"] },
   { id: "secondary", label: "Secondary", vars: ["--secondary"] },
+  { id: "chip-background", label: "Chip", vars: ["--chip-background"] },
   { id: "muted", label: "Muted", vars: ["--muted", "--color-base-200"] },
   { id: "muted-foreground", label: "Muted fg", vars: ["--muted-foreground"] },
   { id: "accent", label: "Accent", vars: ["--accent"] },

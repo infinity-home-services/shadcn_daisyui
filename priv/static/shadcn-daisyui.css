@@ -66,6 +66,7 @@
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
+  --chip-background: oklch(0.922 0 0);   /* a secondary chip's fill: --secondary would nearly vanish on the page (1.09:1) */
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
@@ -156,6 +157,7 @@
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
+  --chip-background: var(--secondary);   /* a secondary chip's fill */
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
@@ -229,7 +231,10 @@
   --tab-active-border: var(--input);                                          /* dark:data-active:border-input */
   --menu-destructive-hover: color-mix(in oklab, var(--destructive) 20%, transparent); /* dark:focus:bg-destructive/20 */
   --shell-sidebar-background: var(--card);                                    /* dark:bg-card */
+  --chip-background: var(--secondary);                                        /* a brand's *-dark theme doesn't inherit :root's light fill */
 }
+/* A light theme inside a dark page. No specificity: a brand's own value wins. */
+:where([data-theme]:not([data-theme*="dark"])) { --chip-background: oklch(0.922 0 0); }
 /* The page behind the content (`bg-page`, <.app_shell>'s column and pinned
    headers): base-100 with a 40% base-200 tint, as one solid colour so a pinned
    header (<.sticky_top>) can cover what scrolls under it. Restated on every
@@ -1412,6 +1417,9 @@
   [data-chip-exiting] { pointer-events: none; }
   .chip-row:not([data-ready]) .chip-row-chips { overflow: hidden; }
   .chip { flex-shrink: 0; white-space: nowrap; gap: 0.25rem; }
+  /* its own token, not --secondary: a chip must read against the page. Buttons
+     and other badges keep --secondary; the outline variant has no fill. */
+  .chip.badge-secondary { background-color: var(--chip-background); }
   .chip:has(> .chip-remove) { padding-inline-end: 0.25rem; }
   .chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .chip-row[data-squeezed] [data-chip] { flex-shrink: 1; min-width: 0; }
@@ -1459,6 +1467,91 @@
     .chip-remove::after { content: ""; position: absolute; inset: -0.625rem -0.25rem; }
     .chip-more { position: relative; padding-inline: 0.75rem; }
     .chip-more::after { content: ""; position: absolute; inset: -0.375rem -0.25rem; }
+    /* a stack: the same */
+    .chip-stack-front.chip.badge { padding-inline-start: 0; }
+    .chip-stack-open { min-width: 2.75rem; align-self: stretch; padding-inline-start: 0.75rem; }
+    .chip-stack-open::after { content: ""; position: absolute; inset: -0.4375rem 0; }
+  }
+
+  /* ---- Stacked chip (<:chip items>) ----------------------------------------
+     A filter with several values: the first one's name, +N, and card edges
+     behind it (one for two values, two for more). The edges are inside the
+     <li>'s box, so they count when the row fits. They take the chip's own
+     fill with a 1px line, only their tail is drawn (nothing shows through an
+     outline chip), and the front chip's own line sets it apart from them. The
+     line is border-border, except on a secondary chip: there it is derived from
+     the fill, because --chip-background is the border colour in light mode.
+     Opening it, the values slide out of the stack into the row and the edges
+     tuck in; the chips after it slide over (the hook's FLIP) and fold into +N
+     when they run out of room. The stack's face and × don't change or move, so
+     a click aimed at them lands. */
+  .chip-stack { --chip-stack-step: 4px; position: relative; display: flex; min-width: 0; flex-shrink: 0; align-items: center; gap: 0.5rem; isolation: isolate; }
+  .chip-stack[hidden] { display: none; }
+  .chip-stack[data-edges="1"] { padding-inline-end: var(--chip-stack-step); }
+  .chip-stack[data-edges="2"] { padding-inline-end: calc(var(--chip-stack-step) * 2); }
+  .chip-stack[data-edges]:has(> .chip-stack-front > .chip-stack-open[aria-expanded="true"]) { padding-inline-end: 0; }
+  .chip-stack-front { --chip-stack-line: var(--border-color); }
+  .chip-stack-front.badge-secondary { --chip-stack-line: color-mix(in oklab, var(--chip-background) 85%, var(--foreground)); }
+  .chip-stack-front.chip.badge { position: relative; min-width: 0; flex-shrink: 1; gap: 0; border-color: var(--chip-stack-line); padding: 0; transition: background-color 0.15s ease; }
+  .chip-stack-front.chip.badge:has(> .chip-remove) { padding-inline-end: 0.25rem; }
+  .chip-stack-front::before,
+  .chip-stack-front::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    border: 1px solid var(--chip-stack-line);
+    border-inline-start-width: 0;
+    border-start-end-radius: 9999px;
+    border-end-end-radius: 9999px;
+    background-color: inherit;
+    transition: opacity 0.18s ease-out, translate 0.18s ease-out;
+  }
+  .chip-stack:not([data-edges]) .chip-stack-front::before,
+  .chip-stack .chip-stack-front::after { display: none; }
+  .chip-stack[data-edges] .chip-stack-front::before {
+    inset-block: 1px;
+    inset-inline-end: calc(var(--chip-stack-step) * -1 - 1px);
+    width: calc(var(--chip-stack-step) + 0.375rem);
+  }
+  .chip-stack[data-edges="2"] .chip-stack-front::after {
+    display: block;
+    inset-block: 3px;
+    inset-inline-end: calc(var(--chip-stack-step) * -2 - 1px);
+    width: calc(var(--chip-stack-step) + 0.25rem);
+    z-index: -2;
+  }
+  .chip-stack-front:has(> .chip-stack-open[aria-expanded="true"])::before,
+  .chip-stack-front:has(> .chip-stack-open[aria-expanded="true"])::after { opacity: 0; translate: calc(var(--chip-stack-step) * -1) 0; }
+  .chip-stack-front:has(> .chip-stack-open:hover),
+  .chip-stack-front:has(> .chip-stack-open[aria-expanded="true"]) { background-color: var(--accent); color: var(--accent-foreground); }
+  /* --accent is lighter than a secondary chip's fill in light mode: step away
+     from the fill towards the foreground instead */
+  .chip-stack-front.badge-secondary:has(> .chip-stack-open:hover),
+  .chip-stack-front.badge-secondary:has(> .chip-stack-open[aria-expanded="true"]) {
+    background-color: color-mix(in oklab, var(--chip-background) 92%, var(--foreground));
+    color: var(--secondary-foreground);
+  }
+  .chip-stack-open {
+    position: relative;
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .chip-stack-front:has(> .chip-remove) > .chip-stack-open { padding-inline-end: 0.25rem; }
+  .chip-stack-open:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
+  .chip-stack-name { max-width: 10rem; white-space: nowrap; }
+  .chip-stack-count { flex-shrink: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chip-stack-values { position: relative; display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+  .chip-stack-values[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .chip-stack-front::before,
+    .chip-stack-front::after { transition: none; }
   }
 
   /* ---- Reveal: a collapsing row (<.reveal open>) ---------------------------

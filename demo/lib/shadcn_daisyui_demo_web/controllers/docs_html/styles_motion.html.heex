@@ -27,6 +27,8 @@
               {"large surface", "300ms", "translate, backdrop", "sheet, drawer"},
               {"chip in / out", "150ms", "scale, opacity, translate",
                "chip row chips and their neighbours"},
+              {"chips unstack", "180ms", "translate, scale, opacity",
+               "a stacked chip's values leaving and rejoining it"},
               {"row reveal", "180ms", "grid-template-rows, opacity",
                "filter chip row, inline alert, accordion"},
               {"theme switch", "0ms", "-", "instant by design"}
@@ -130,6 +132,11 @@
       <a href={~p"/docs/components/chip-row"} class="link link-primary">chip row</a>
       scale and fade in and out (150ms) while the reveal grows or shrinks, so removing the
       last chip closes the row around it as one motion.
+    </p>
+    <p class="text-sm text-muted-foreground">
+      A stacked chip's values slide out of the stack into the row and back (180ms ease-out,
+      transform and opacity only, instant under reduced motion), and the chips after it
+      slide over. The stack's face and × don't move.
     </p>
     <div class="space-y-3 rounded-lg border border-base-300 p-4">
       <button

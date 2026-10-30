@@ -25,8 +25,10 @@ like shadcn/ui. **Every UI decision goes through this package.**
   `<.select multiple>` (short lists) or `<.combobox multiple>` (long lists, search).
   Never build a checkbox-dropdown by hand.
 - Rows that can outgrow their width are `<.tab_nav>` (link tabs → More menu)
-  and `<.chip_row>` (removable chips → "+N" popover). Never let a tab or chip
-  row wrap or scroll sideways, and never hand-roll an overflow menu.
+  and `<.chip_row>` (removable chips → "+N" popover; a filter with several values
+  is one stacked chip, `<:chip items>`, whose values open inline in the row). Never let
+  a tab or chip row wrap or scroll sideways, never join values into one label
+  ("Open or Paid"), and never hand-roll an overflow menu.
 - Rows that appear and disappear in place (filter chips, inline alerts) slide
   with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`, and
   never `:if` the chip row inside the reveal - `open` drives it, and the chips
@@ -143,7 +145,7 @@ Decision order:
 | `<.message>` / `<.message_group>` | chat turn: `align="start\|end"`, `<:avatar>` `<:header>` `<:footer>`; `role="log"` on the group for live transcripts |
 | `<.bubble>` / `<.bubble_group>` | `variant="default\|secondary\|muted\|tinted\|outline\|ghost\|destructive"`, `align`, `as="button"` for suggested replies, `<:reactions label>` |
 | `<.marker>` | in-transcript status/note: `variant="default\|separator\|border"`, `status`, `shimmer`, `<:icon>` |
-| `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip) |
+| `<.chip_row>` | `id` (hook), one line of `<:chip value on_remove remove_label>` (badge + ×); overflow collapses into "+N" (popover, each removable); `<:action>` stays visible; `variant="secondary\|outline"`; chips scale/fade in and out and neighbours slide - always pass `value` (it keys the chip). `items={[%{value, label, on_remove}]}` (optional `removable`, `remove_label`): two or more make a stack ("Acme sandbox +2", card edges behind it) and the inner block names the filter for screen readers ("Brands"); one is a normal chip showing that item. Its values open inline in the row, each with its own ×, and the chips after it slide over (hover under `hover: hover`, keyboard focus, or a tap; one open at a time; chips after it, then its last values, fold into +N when there's no room, and +N opens itself when no value fits, as on a phone; its face and × never move); the chip's `on_remove` clears the filter, `removable={false}` hides only that ×, an item's `removable: false` hides its own; a closed stack is one chip when the row fits, flat in +N |
 | `<.reveal>` | `open` (server-owned) or `id` + `client` with `<button data-reveal-toggle="id">`; slides a row 0fr↔1fr + opacity, 180ms; put spacing in `class`; keep the content rendered (a chip row: no `:if`) and let `open` drive it, so it collapses around the last chip |
 | `<.empty>` | an empty state: `icon` (in a 40px muted circle) or `<:media>`, `title`, one muted line (inner block), `<:actions>`; `variant="card"` (on its own, bordered) or `"plain"` (inside a card or table) |
 | `<.chart>` | the chart kit (needs `ChartHooks` from `shadcn_daisyui/charts`): `id`, `label` (accessible name + caption of the hidden table of numbers), `config` (a Chart.js config as maps: `type`, `data`, `options`; labels formatted on the server); `on_click="event"` pushes `%{"id", "key", "series", "index"}` (`key` from `data.keys` or the label, `series` the clicked dataset's `key` or label), `target`; `format={fn n -> text end}` for the table; `canvas_class="h-80"` (16rem default; horizontal bars size to their rows). Kit keys: a dataset's `color` (`"chart-3"`, `"muted-foreground"`, `"chart-1/35"` = 35% opacity, or a list per bar), `key`; `data.keys`; `options.plugins.endLabels.labels` (text at each bar's end, moved above the bars on narrow screens; `position: "above"` keeps it above at every width); `options.plugins.segmentLabels: true` (stacked bars: each part's value inside it where it fits, none where it doesn't; a one-row stack's legend gives every part's number, "Completed 61"), `segmentLabels: "legend"` (the legend's numbers only, nothing on the bar). Values in tooltips follow the value axis's `ticks.format` |
@@ -242,6 +244,13 @@ def handle_event("dt:filter", params, socket) do
   {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
 end
 
+# one value's × in a stacked chip; put this clause before the one for the whole filter
+def handle_event("dt:unfilter", %{"key" => key, "value" => value}, socket),
+  do: {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(State.remove_value(socket.assigns.state, key, value, @opts), @opts)}")}
+
+def handle_event("dt:unfilter", %{"key" => key}, socket),  # a chip's ×: the whole filter
+  do: {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(State.put_filters(socket.assigns.state, %{key => ""}, [key], @opts), @opts)}")}
+
 def handle_event("dt:select", %{"id" => id} = p, socket),  # ticks: on the page, never in the URL
   do: {:noreply, update(socket, :state, &State.select(&1, id, p["shift"] == true, Enum.map(socket.assigns.rows, fn r -> r.id end)))}
 ```
@@ -252,10 +261,13 @@ def handle_event("dt:select", %{"id" => id} = p, socket),  # ticks: on the page,
   `dt:select_all` (`State.select_all/2`), `dt:select_matching` (set your own
   `all_matching`), `dt:clear` (`State.clear/1`), `dt:more` (load the next page;
   `more` while there is one), `dt:filter` (the toolbar form: `q`, each filter,
-  `sort`), `dt:unfilter` `%{"key"}`, `dt:reset`.
+  `sort`), `dt:unfilter` `%{"key"}` (a chip's ×) or `%{"key", "value"}` (one value's
+  × in a stack: `State.remove_value/4`, back to the filter's default with the last
+  value), `dt:reset`.
 - `State.run(rows, state, spec)` searches, filters and sorts in memory (small
   tables); a database-backed table does the same in its query. `State.chips/3`
-  gives the toolbar's chips; `State.keep_visible/2` drops ticks a filter hid.
+  gives the toolbar's chips (`{key, label}` for one value, `{key, [{value, label}, …]}`
+  for several); `State.keep_visible/2` drops ticks a filter hid.
 - Columns: give each a width class (`w-32`; the table is `table-fixed`, cells
   truncate), `hide_below` the less important ones on phones, and leave alignment
   alone - the rightmost column shown is right-aligned at every width.
@@ -523,6 +535,8 @@ Browse the full gallery (100 components) in the docs site (`demo/`) or
   destructive `text-destructive` / `text-error`.
 - Action colors: `btn-primary`, `btn-secondary`, `badge-error`, etc. - daisyUI semantic
   modifiers, all mapped to the theme.
+- Chips: a secondary chip's fill is `--chip-background` (a token of its own, so it
+  reads on the page), not `--secondary`; brand themes can override it.
 - Status colors: `info`, `success`, `warning`, `error` exist (`alert-success`,
   `text-warning`, …) - use them rather than green/yellow/red utilities.
 - Radius comes from the theme (`rounded-md` fields, `rounded-lg` boxes, `rounded-xl`

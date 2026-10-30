@@ -2800,10 +2800,16 @@ function disclosure(root, sel, { flipTo, horizontal, pick }) {
     t.setAttribute("aria-expanded", String(isOpen))
     p.hidden = !isOpen
     if (!isOpen) return
-    // keep the panel on screen: flip its alignment when it would overflow
+    // keep the panel on screen: flip its alignment when it would overflow, and
+    // shift it back in when it's too wide for either (a phone)
     p.removeAttribute("data-align")
-    const r = p.getBoundingClientRect()
-    if (r.left < 8 || r.right > document.documentElement.clientWidth - 8) p.setAttribute("data-align", flipTo)
+    p.style.translate = ""
+    const vw = document.documentElement.clientWidth
+    let r = p.getBoundingClientRect()
+    if (r.left < 8 || r.right > vw - 8) p.setAttribute("data-align", flipTo)
+    r = p.getBoundingClientRect()
+    const shift = r.left < 8 ? 8 - r.left : r.right > vw - 8 ? vw - 8 - r.right : 0
+    if (shift) p.style.translate = shift + "px 0"
   }
   const set = (open, focus) => {
     isOpen = open
@@ -2962,7 +2968,18 @@ function layoutW(el) {
   return s > 0 ? w / s : w
 }
 
-// <.chip_row>: removable chips; the ones that don't fit collapse into "+N".
+// A stacked chip's values leaving and rejoining it: 180ms, opacity and transform.
+// Hover opens after a short pause, so a pointer crossing the row doesn't make it
+// ripple, and closes 150ms after the pointer leaves. Only one stack is open on
+// the page (openChipRow holds its row).
+const STACK_MS = 180
+const STACK_OPEN_DELAY = 120
+const STACK_CLOSE_DELAY = 150
+let openChipRow = null
+
+// <.chip_row>: removable chips; the ones that don't fit collapse into "+N". A
+// chip with several values is a stack: its values open inline in the row on
+// hover, keyboard focus or a tap, and the chips after it slide over to make room.
 function initChipRow(root) {
   if (root.__sdChipRow) return root.__sdChipRow
   const q = (s) => root.querySelector(s)
@@ -2976,7 +2993,7 @@ function initChipRow(root) {
   // where focus goes after a removal: { copy, pos } (position among the visible chips)
   let refocus = null
 
-  const MOVERS = "[data-chip], [data-chip-copy], [data-chip-row-more], [data-chip-row-actions]"
+  const MOVERS = "[data-chip], [data-chip-copy], [data-chip-value], [data-chip-row-more], [data-chip-row-actions]"
   const known = new WeakSet() // nodes already rendered (no enter animation)
   const pos = new WeakMap() // node -> { x, y, shown }: its layout box at the last sync
   const slides = new WeakMap() // node -> its running FLIP animation
@@ -2984,6 +3001,7 @@ function initChipRow(root) {
   let holdTimer = null
   let scheduled = false
   let ready = false
+  let foldedValues = new Set() // an open stack's values that went into +N
 
   const setCount = (trigger, n) => {
     trigger.setAttribute("data-count", "+" + n)
@@ -2993,26 +3011,55 @@ function initChipRow(root) {
   const live = (sel) => qa(sel).filter((el) => !leaving(el))
   const visible = (sel) => live(sel).filter((el) => !el.closest("[hidden]"))
 
+  // With a stack open its values take the room first: the chips after it fold
+  // into +N as needed, and only then, when the values alone are too wide, the
+  // last values follow them (flat in +N). The chips before it never move.
   function fit() {
     const more = q("[data-chip-row-more]")
     const trigger = q("[data-chip-row-trigger]")
     if (!more || !trigger || !root.offsetWidth) return
     const chips = live("[data-chip]")
     const actions = live("[data-chip-row-actions]")[0]
+    const openLi = stackId ? chips.find((el) => el.id === stackId) : null
+    const values = openLi ? stackValues(openLi) : []
+    const list = openLi && openLi.querySelector("[data-chip-stack-list]")
     root.removeAttribute("data-squeezed")
     chips.forEach((el) => { el.hidden = false })
+    if (list) list.hidden = false
+    values.forEach((el) => { el.hidden = false })
     more.hidden = false
-    setCount(trigger, chips.length) // the widest label this row can need
+    setCount(trigger, chips.length + values.length) // the widest label this row can need
     const gap = rowGap(root)
     const avail = contentW(root) - (actions ? layoutW(actions) + gap : 0)
     const widths = chips.map(layoutW)
     const moreW = outerW(more)
-    const vis = fitRow({ widths, avail, gap, moreW, moreAlways: false, pinned: -1 })
+    let vis = fitRow({ widths, avail, gap, moreW, moreAlways: false, pinned: -1 })
+    let folded = []
+    const open = chips.indexOf(openLi)
+    if (open >= 0 && !vis.includes(open)) {
+      // keep what's before the stack; as many values as fit beside +N
+      const before = open ? widths.slice(0, open).reduce((sum, w) => sum + w + gap, 0) : 0
+      const valueWs = values.map(layoutW)
+      const stackW = (k) => widths[open] - valueWs.slice(k).reduce((sum, w) => sum + w + gap, 0)
+      let k = values.length
+      while (k > 0 && before + stackW(k) + gap + moreW > avail + 0.5) k--
+      if (before + stackW(0) + gap + moreW > avail + 0.5) {
+        // the stack itself no longer fits: it goes into +N, closed
+        closeStack(false, false)
+        fit()
+        return
+      }
+      vis = [...Array(open + 1).keys()]
+      widths[open] = stackW(k)
+      folded = values.slice(k)
+      folded.forEach((el) => { el.hidden = true })
+      if (k === 0) list.hidden = true
+    }
     const shown = new Set(vis)
     chips.forEach((el, i) => { el.hidden = !shown.has(i) })
-    const visibleIdx = new Set(vis.map((i) => chips[i].dataset.index))
-    live("[data-chip-copy]").forEach((el) => { el.hidden = visibleIdx.has(el.dataset.index) })
-    const rest = chips.length - vis.length
+    foldedValues = new Set(folded.map((el) => el.dataset.value))
+    showCopies()
+    const rest = chips.length - vis.length + folded.length
     setCount(trigger, rest)
     more.hidden = rest === 0
     const used = vis.reduce((s, i) => s + widths[i], 0) + gap * Math.max(0, vis.length - 1) +
@@ -3023,18 +3070,46 @@ function initChipRow(root) {
     pop.sync()
   }
 
+  // +N lists the chips the row hid, and an open stack's values that didn't fit.
+  function showCopies() {
+    const inRow = new Set(live("[data-chip]").filter((el) => !el.hidden).map((el) => el.dataset.index))
+    const li = stackId && document.getElementById(stackId)
+    const openIndex = li && li.dataset.index
+    live("[data-chip-copy]").forEach((el) => {
+      el.hidden = el.dataset.index === openIndex ? !foldedValues.has(el.dataset.value) : inRow.has(el.dataset.index)
+    })
+  }
+
+  // A chip's own × (a stack's values have theirs in its list).
+  const chipBtn = (el) =>
+    [...el.querySelectorAll("[data-chip-remove]")].find((b) => !b.closest("[data-chip-stack-list]"))
+
   // After a removal, focus the chip that took the removed one's place (or the
-  // one before it), else +N, else the last chip, else the first action.
+  // one before it), else +N, else the last chip, else the first action. A
+  // value removed from an open stack: the next ×, or, with one value left, that
+  // chip's ×.
   function restoreFocus() {
     if (!refocus) return
     const a = document.activeElement
     if (a && a !== document.body && root.contains(a) && !a.closest("[data-chip-exiting]")) { refocus = null; return }
-    const { copy, pos: at } = refocus
+    const { copy, pos: at, stack: fromStack, pointer } = refocus
     refocus = null
     const pick = (list) => list[Math.min(at, list.length - 1)]
-    const rowBtns = visible("[data-chip]").map((el) => el.querySelector("[data-chip-remove]")).filter(Boolean)
+    // focus moved after a click isn't keyboard focus: it opens no other stack
+    const move = (el) => {
+      quiet = pointer
+      el.focus()
+      quiet = false
+    }
+    const stack = fromStack && document.getElementById(fromStack)
+    if (stack && !leaving(stack) && !stack.closest("[hidden]")) {
+      const btns = stackValues(stack).filter((el) => !el.hidden).map((el) => el.querySelector("[data-chip-remove]")).filter(Boolean)
+      const target = pick(btns) || chipBtn(stack) || stack.querySelector("[data-chip-stack-open]")
+      if (target) { move(target); return }
+    }
+    const rowBtns = visible("[data-chip]").map(chipBtn).filter(Boolean)
     const copyBtns = pop.isOpen()
-      ? visible("[data-chip-copy]").map((el) => el.querySelector("[data-chip-remove]")).filter(Boolean)
+      ? visible("[data-chip-copy]").map(chipBtn).filter(Boolean)
       : []
     const trigger = q("[data-chip-row-trigger]")
     const actions = live("[data-chip-row-actions]")[0]
@@ -3042,7 +3117,7 @@ function initChipRow(root) {
       (trigger && !trigger.closest("[hidden]") && trigger) ||
       rowBtns[rowBtns.length - 1] ||
       (actions && actions.querySelector("button, a[href], input, select"))
-    if (target) target.focus()
+    if (target) move(target)
   }
 
   // Remember where every chip, +N and the actions sit (offset box: layout,
@@ -3079,6 +3154,7 @@ function initChipRow(root) {
   // (dead views); otherwise LiveView does, after its phx-remove transition.
   function exit(el, own) {
     if (leaving(el)) return
+    if (el.id && el.id === stackId) closeStack(false, false)
     el.setAttribute("data-chip-exiting", "")
     el.inert = true // out of the tab order and the a11y tree right away
     if (el.closest("[hidden]") || !canAnimate()) {
@@ -3133,7 +3209,11 @@ function initChipRow(root) {
   // what moved or arrived since the last measure.
   function sync(animate) {
     scheduled = false
+    syncStack()
+    // while chips fade out the row isn't re-fit, but a new copy (a stack that
+    // just became a normal chip) still shows if its chip is in +N
     if (!exiting.size) fit()
+    else showCopies()
     restoreFocus()
     if (animate && ready && canAnimate()) {
       qa(MOVERS).forEach((el) => {
@@ -3152,7 +3232,312 @@ function initChipRow(root) {
     queueMicrotask(() => { if (scheduled) sync(true) })
   }
 
+  // ---- Stacks: the open one, and why it is open ------------------------------
+  // It stays open while any reason holds: the pointer is on the stack or its
+  // values, keyboard focus is in them, or a tap opened it. The attributes it sets
+  // are kept across patches (keep_client_attrs); syncStack() re-applies them and
+  // follows the server: a stack that is gone or is now a normal chip is closed.
+  let stackId = null
+  let via = { hover: false, focus: false, tap: false }
+  // Esc closed it: it stays closed until the pointer and focus have left
+  let dismissed = null
+  // the chips just moved (it opened, or a value left) with the pointer at rest:
+  // what's under it changed, so only a real pointer move can say it left
+  let stuck = false
+  let stackTimer = null
+  let openTimer = null
+  let lastPointer = "mouse"
+  let quiet = false // moving focus ourselves: this focus opens nothing
+  // the chips moved: another stack may have slid under a pointer that stayed
+  // put. It opens only once the pointer really moves.
+  let settled = true
+  let poppedOpen = false // the stack opened +N because no value fit in the row
+  const stackAnims = new WeakMap()
+
+  const STACK = "[data-chip-stack]"
+  const stackEl = () => (stackId && document.getElementById(stackId)) || null
+  const stackOf = (target) => (target instanceof Element ? target.closest(STACK) : null)
+  // +N holds the open stack's values that didn't fit: going there isn't leaving
+  const holdsValues = (target) =>
+    foldedValues.size > 0 && target instanceof Element && !!target.closest("[data-chip-row-more]")
+  const canHover = () => typeof matchMedia !== "function" || matchMedia("(hover: hover)").matches
+  const stackValues = (li) => [...li.querySelectorAll("[data-chip-value]")].filter((el) => !leaving(el))
+
+  // Each value travels between the stack's face and its place in the row.
+  // Transform and opacity only.
+  function unstack(li, closing) {
+    const from = li.querySelector("[data-chip-stack-front]").getBoundingClientRect()
+    const timing = { duration: STACK_MS, easing: "ease-out", fill: closing ? "forwards" : "none" }
+    return stackValues(li).filter((el) => !el.closest("[hidden]")).map((chip) => {
+      const r = chip.getBoundingClientRect()
+      const stacked = { translate: `${from.left - r.left}px ${from.top - r.top}px`, scale: 0.9, opacity: 0 }
+      const frames = [stacked, { translate: "0px 0px", scale: 1, opacity: 1 }]
+      return chip.animate(closing ? frames.reverse() : frames, timing)
+    })
+  }
+
+  function cancelClosing(list) {
+    const running = stackAnims.get(list)
+    if (running) { running.forEach((a) => a.cancel()); stackAnims.delete(list) }
+    list.style.position = ""
+    list.style.left = ""
+    list.style.top = ""
+    list.inert = false
+  }
+
+  function showStack(li) {
+    const list = li.querySelector("[data-chip-stack-list]")
+    cancelClosing(list)
+    li.querySelector("[data-chip-stack-open]").setAttribute("aria-expanded", "true")
+    list.hidden = false
+  }
+
+  // The values leave the flow where they stand and travel back while the chips
+  // after them slide home.
+  function hideValues(li, list) {
+    const done = () => {
+      cancelClosing(list)
+      list.hidden = true
+    }
+    if (list.hidden || !canAnimate() || leaving(li)) { done(); return }
+    const [x, y] = [list.offsetLeft, list.offsetTop]
+    list.inert = true
+    Object.assign(list.style, { position: "absolute", left: x + "px", top: y + "px" })
+    const anims = unstack(li, true)
+    if (!anims.length) { done(); return }
+    stackAnims.set(list, anims)
+    anims[0].onfinish = () => { if (stackAnims.get(list) === anims) done() }
+  }
+
+  function openStack(li, why) {
+    clearTimeout(stackTimer)
+    clearTimeout(openTimer)
+    if (stackId !== li.id) {
+      measure()
+      closeStack(false, false)
+      if (openChipRow && openChipRow !== api) openChipRow.closeStack()
+      if (pop.isOpen()) pop.set(false)
+      stackId = li.id
+      openChipRow = api
+      listen(true)
+      showStack(li)
+      if (why === "hover") { stuck = true; unsettle() }
+      sync(true)
+      if (stackId === li.id && canAnimate()) unstack(li, false)
+      // no room for any value in the row: they are all in +N, so show it. After
+      // this event, whose click would count as outside the popover.
+      setTimeout(() => {
+        const list = stackId === li.id && li.querySelector("[data-chip-stack-list]")
+        if (list && list.hidden && !pop.isOpen()) { pop.set(true); poppedOpen = true }
+      })
+    }
+    via[why] = true
+  }
+
+  // `focus`: put focus on the stack (Esc). Values about to hide never keep it.
+  // `resync` false: the caller re-fits the row.
+  function closeStack(focus, resync = true) {
+    clearTimeout(stackTimer)
+    clearTimeout(openTimer)
+    if (!stackId) return
+    if (resync) measure()
+    const li = stackEl()
+    stackId = null
+    foldedValues = new Set()
+    via = { hover: false, focus: false, tap: false }
+    stuck = false
+    listen(false)
+    if (openChipRow === api) openChipRow = null
+    if (poppedOpen) {
+      poppedOpen = false
+      if (pop.isOpen()) pop.set(false)
+    }
+    if (li) {
+      const opener = li.querySelector("[data-chip-stack-open]")
+      const list = li.querySelector("[data-chip-stack-list]")
+      if (opener) opener.setAttribute("aria-expanded", "false")
+      if (opener && (focus || (list && list.contains(document.activeElement)))) {
+        quiet = true
+        opener.focus({ preventScroll: true })
+        quiet = false
+      }
+      if (list) hideValues(li, list)
+    }
+    if (resync) {
+      unsettle()
+      sync(true)
+    }
+  }
+
+  const closeSoon = () => {
+    clearTimeout(stackTimer)
+    stackTimer = setTimeout(() => {
+      if (!via.hover && !via.focus && !via.tap) closeStack()
+    }, STACK_CLOSE_DELAY)
+  }
+
+  // What the patch left: closed if the stack went away or is a normal chip now,
+  // otherwise still showing.
+  function syncStack() {
+    if (!stackId) return
+    const li = stackEl()
+    if (!li || !li.isConnected || !li.matches(STACK) || leaving(li)) { closeStack(false, false); return }
+    showStack(li)
+  }
+
+  // Only while one is open: outside clicks, Esc wherever focus is, the window
+  // losing focus, the pointer moving.
+  const onOutside = (e) => {
+    const li = stackEl()
+    const more = q("[data-chip-row-more]")
+    if (li && !e.composedPath().includes(li) && !(foldedValues.size && e.composedPath().includes(more))) closeStack()
+  }
+  const onEsc = (e) => {
+    if (e.key !== "Escape") return
+    const li = stackEl()
+    if (!li) return
+    // stopPropagation: don't also close a surrounding sheet / dialog, or go back
+    e.preventDefault()
+    e.stopPropagation()
+    const a = document.activeElement
+    dismissed = li.id
+    closeStack(!a || a === document.body || li.contains(a))
+  }
+  const onWindowBlur = () => {
+    via.focus = false
+    if (!via.hover && !via.tap) closeStack()
+  }
+  const onPointerMove = (e) => {
+    if (!stuck || e.pointerType === "touch") return
+    stuck = false
+    const li = stackEl()
+    if (li && !(e.target instanceof Node && li.contains(e.target)) && !holdsValues(e.target)) { via.hover = false; closeSoon() }
+  }
+  function listen(on) {
+    const method = on ? "addEventListener" : "removeEventListener"
+    document[method]("click", onOutside)
+    document[method]("keydown", onEsc, true)
+    document[method]("pointermove", onPointerMove)
+    window[method]("blur", onWindowBlur)
+  }
+
+  const hoverOpen = (e) => {
+    if (e.pointerType === "touch" || !canHover()) return
+    const li = stackOf(e.target)
+    if (!li || !root.contains(li) || leaving(li) || li.closest("[hidden]") || dismissed === li.id) return
+    if (stackId === li.id) { openStack(li, "hover"); return }
+    clearTimeout(openTimer)
+    openTimer = setTimeout(() => {
+      if (li.isConnected && !leaving(li) && dismissed !== li.id && li.matches(STACK)) openStack(li, "hover")
+    }, STACK_OPEN_DELAY)
+  }
+  const onSettle = (e) => {
+    settled = true
+    hoverOpen(e)
+  }
+  function unsettle() {
+    if (!settled) return
+    settled = false
+    document.addEventListener("pointermove", onSettle, { once: true })
+  }
+
+  root.addEventListener("pointerdown", (e) => { lastPointer = e.pointerType || "mouse" })
+  root.addEventListener("pointerover", (e) => {
+    if (stackId && e.pointerType !== "touch" && holdsValues(e.target)) {
+      clearTimeout(stackTimer)
+      via.hover = true
+      return
+    }
+    if (settled) hoverOpen(e)
+  })
+  root.addEventListener("pointerout", (e) => {
+    if (e.pointerType === "touch") return
+    if (stackId && holdsValues(e.target) && !holdsValues(e.relatedTarget)) {
+      const open = stackEl()
+      if (open && e.relatedTarget instanceof Node && open.contains(e.relatedTarget)) return
+      via.hover = false
+      if (!via.focus && !via.tap) closeSoon()
+      return
+    }
+    const li = stackOf(e.target)
+    if (!li || (e.relatedTarget instanceof Node && li.contains(e.relatedTarget))) return
+    clearTimeout(openTimer)
+    if (dismissed === li.id) dismissed = null
+    if (li.id !== stackId || stuck) return
+    via.hover = false
+    if (!via.focus && !via.tap) closeSoon()
+  })
+  root.addEventListener("focusin", (e) => {
+    const li = stackOf(e.target)
+    if (quiet || !li || leaving(li) || dismissed === li.id) return
+    if (e.target.matches(":focus-visible")) openStack(li, "focus")
+  })
+  root.addEventListener("focusout", (e) => {
+    const to = e.relatedTarget
+    // no relatedTarget: a × that was removed, or another window; not leaving
+    if (!(to instanceof Node)) return
+    const open = stackEl()
+    if (open && holdsValues(e.target)) {
+      if (holdsValues(to) || open.contains(to)) return
+      via.focus = false
+      if (!via.hover && !via.tap) closeStack()
+      return
+    }
+    const li = stackOf(e.target)
+    if (!li || li.contains(to)) return
+    if (dismissed === li.id) dismissed = null
+    if (li.id !== stackId || holdsValues(to)) return
+    via.focus = false
+    if (!via.hover && !via.tap) closeStack()
+  })
+
+  // Without a server: one value leaves, and the stack follows what is left.
+  function refreshStack(li, values) {
+    const labels = values.map((el) => el.querySelector(".chip-label").textContent)
+    li.querySelector("[data-chip-stack-name]").textContent = labels[0]
+    li.querySelector("[data-chip-stack-count]").textContent = "+" + (labels.length - 1)
+    li.querySelector("[data-chip-stack-values]").textContent = labels.join(", ")
+    li.setAttribute("data-edges", String(Math.min(labels.length - 1, 2)))
+  }
+  function stackToChip(li, value) {
+    const front = li.querySelector("[data-chip-stack-front]")
+    const parts = [value.querySelector(".chip-label"), value.querySelector("[data-chip-remove]")].filter(Boolean)
+    closeStack(false, false)
+    li.removeAttribute("data-chip-stack")
+    li.removeAttribute("data-edges")
+    li.className = [...front.classList].filter((c) => c !== "chip-stack-front").join(" ")
+    li.replaceChildren(...parts)
+  }
+  function removeValue(index, item) {
+    measure()
+    const here = (el) => el.dataset.index === index
+    live("[data-chip-value]").filter((el) => here(el) && el.dataset.value === item).forEach((el) => exit(el, true))
+    const stack = live(STACK).find(here)
+    const left = stack ? stackValues(stack) : []
+    if (left.length > 1) refreshStack(stack, left)
+    else if (left.length === 1) stackToChip(stack, left[0])
+    else live("[data-chip], [data-chip-copy]").filter(here).forEach((el) => exit(el, true))
+    sync(true)
+  }
+
   root.addEventListener("click", (e) => {
+    // a mouse click on a stack hover opened changes nothing; Enter / Space
+    // (e.detail === 0) and a tap toggle it
+    const opener = e.target.closest("[data-chip-stack-open]")
+    if (opener) {
+      clearTimeout(openTimer)
+      const li = opener.closest(STACK)
+      const keyboard = e.detail === 0
+      const touch = lastPointer === "touch" || !canHover()
+      if (stackId !== li.id) {
+        dismissed = null
+        openStack(li, keyboard ? "focus" : touch ? "tap" : "hover")
+      } else if (keyboard || touch) {
+        dismissed = li.id
+        closeStack(keyboard)
+      }
+      return
+    }
     // data-chip-row-clear (e.g. a "Clear all" action): cancelable chip-clear
     const clear = e.target.closest("[data-chip-row-clear]")
     if (clear) {
@@ -3165,19 +3550,28 @@ function initChipRow(root) {
     }
     const btn = e.target.closest("[data-chip-remove]")
     if (!btn) return
-    const chip = btn.closest("[data-chip], [data-chip-copy]")
+    // a value of a stack: in its panel, or flat in the +N popover
+    const value = btn.closest("[data-chip-value]")
+    const chip = value || btn.closest("[data-chip], [data-chip-copy]")
     if (leaving(chip)) return
     const copy = chip.hasAttribute("data-chip-copy")
-    refocus = { copy, pos: visible(copy ? "[data-chip-copy]" : "[data-chip]").indexOf(chip) }
-    const ev = new CustomEvent("chip-remove", {
-      bubbles: true,
-      cancelable: true,
-      detail: { value: chip.dataset.value == null ? null : chip.dataset.value, index: Number(chip.dataset.index) },
-    })
-    const allowed = root.dispatchEvent(ev)
+    const stack = value && !copy ? value.closest(STACK) : null
+    const pointer = e.detail > 0
+    if (pointer && lastPointer !== "touch") unsettle()
+    if (stack) {
+      refocus = { stack: stack.id, pos: stackValues(stack).filter((el) => !el.hidden).indexOf(value), pointer }
+      stuck = via.hover
+    } else {
+      refocus = { copy, pos: visible(copy ? "[data-chip-copy]" : "[data-chip]").indexOf(chip), pointer }
+    }
+    const of = value ? value.dataset.chipOf : chip.dataset.value
+    const detail = { value: of == null ? null : of, index: Number(chip.dataset.index) }
+    if (value) detail.item = value.dataset.value == null ? null : value.dataset.value
+    const allowed = root.dispatchEvent(new CustomEvent("chip-remove", { bubbles: true, cancelable: true, detail }))
     // LiveView (phx-click) removes it on the server; its phx-remove starts the exit
     if (btn.hasAttribute("phx-click")) return
-    if (!allowed) { refocus = null; return }
+    if (!allowed) { refocus = null; stuck = false; return }
+    if (value) { removeValue(chip.dataset.index, value.dataset.value); return }
     measure()
     live("[data-chip], [data-chip-copy]")
       .filter((el) => el.dataset.index === chip.dataset.index)
@@ -3188,7 +3582,7 @@ function initChipRow(root) {
   // LiveView: a chip (or the actions) the patch removed runs its phx-remove,
   // which dispatches chip-exit right after the hook's updated()
   root.addEventListener("chip-exit", (e) => {
-    const el = e.target.closest && e.target.closest("[data-chip], [data-chip-copy], [data-chip-row-actions]")
+    const el = e.target.closest && e.target.closest("[data-chip-value], [data-chip], [data-chip-copy], [data-chip-row-actions]")
     if (!el || !root.contains(el)) return
     exit(el, false)
     schedule()
@@ -3200,18 +3594,21 @@ function initChipRow(root) {
   const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => sync(false)) : null
   if (ro) ro.observe(root)
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => sync(false))
-  sync(false)
-  ready = true
   const api = {
     refresh: () => sync(true),
     beforeUpdate: measure,
     updated: schedule,
+    closeStack: () => closeStack(),
     destroy() {
       if (ro) ro.disconnect()
       if (mo) mo.disconnect()
       clearTimeout(holdTimer)
+      document.removeEventListener("pointermove", onSettle)
+      closeStack(false, false)
     },
   }
+  sync(false)
+  ready = true
   root.__sdChipRow = api
   return api
 }

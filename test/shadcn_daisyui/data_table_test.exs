@@ -365,6 +365,13 @@ defmodule ShadcnDaisyui.Components.DataTableTest do
       """
     end
 
+    # what a button's phx-click pushes (JS.push's JSON)
+    defp stack_push(html, id) do
+      [_, json] = Regex.run(~r/id="#{id}"[^>]*?phx-click="([^"]*)"/s, html)
+      [["push", %{"value" => value}]] = json |> String.replace("&quot;", "\"") |> JSON.decode!()
+      value
+    end
+
     defp tb(overrides \\ %{}) do
       %{search: "", shown: 40, views: [], chips: [], sort: ""}
       |> Map.merge(overrides)
@@ -437,6 +444,74 @@ defmodule ShadcnDaisyui.Components.DataTableTest do
       refute html =~ "tb-chips-chip-v-view-remove"
       # save, then Clear all (dt:reset)
       assert html =~ ~r/<button id="save-view">Save view<\/button>\s*<button[^>]*dt:reset/
+    end
+
+    test "chips: several values are a stack; the × sends key, a value's × key and value" do
+      html = tb(%{chips: [{"status", [{"open", "Open"}, {"paid", "Paid"}, {"late", "Late"}]}]})
+
+      assert html =~ ~s(id="tb-chips-chip-v-status")
+      assert html =~ "data-chip-stack"
+      assert html =~ ~r/data-chip-stack-name[^>]*>Open</
+      assert html =~ ~r/data-chip-stack-count[^>]*>\+2</
+      assert html =~ ~s(aria-label="Remove filter: Status")
+      assert html =~ "Status</span>: <span data-chip-stack-values>Open, Paid, Late"
+      # the stack's ×: the key alone, as today
+      assert stack_push(html, "tb-chips-chip-v-status-remove") == %{
+               "key" => "status",
+               "table" => "tb"
+             }
+
+      # a value's ×: key and value
+      assert stack_push(html, "tb-chips-chip-v-status-value-v-paid-remove") ==
+               %{"key" => "status", "value" => "paid", "table" => "tb"}
+
+      # counts as one filter
+      assert html =~ ~r/table-toolbar-filters-count">\s*1<span/
+    end
+
+    test "chips: a stack is named after its filter, else its key" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.table_toolbar id="n" chips={[{"brand_id", [{1, "A"}, {2, "B"}]}, {"plan", [{"x", "X"}, {"y", "Y"}]}]}>
+          <:filter key="plan" label="Plans"><span>select</span></:filter>
+        </.table_toolbar>
+        """)
+
+      assert html =~ ~s(aria-label="Remove filter: Brand")
+      assert html =~ ~s(aria-label="Remove filter: Plans")
+      assert html =~ "Plans</span>: <span data-chip-stack-values>X, Y"
+      # values can be any term
+      assert stack_push(html, "n-chips-chip-v-brand_id-value-v-2-remove")["value"] == "2"
+    end
+
+    test "chips: a one-item list is a normal chip, an empty one no chip" do
+      html = tb(%{chips: [{"status", [{"open", "Open"}]}, {"owner", []}]})
+
+      refute html =~ "data-chip-stack"
+      assert html =~ ~s(aria-label="Remove filter: Open")
+      refute html =~ "tb-chips-chip-v-owner"
+
+      assert stack_push(html, "tb-chips-chip-v-status-remove") == %{
+               "key" => "status",
+               "table" => "tb"
+             }
+
+      assert html =~ ~r/table-toolbar-filters-count">\s*1<span/
+    end
+
+    test "chips: a fixed stack can't lose the filter or a value" do
+      html =
+        tb(%{chips: [{"view", [{"a", "A"}, {"b", "B"}], :fixed}, {"one", [{"c", "C"}], :fixed}]})
+
+      assert html =~ "data-chip-stack"
+      assert html =~ ~s(id="tb-chips-chip-v-view-value-v-a-label")
+      refute html =~ "tb-chips-chip-v-view-remove"
+      refute html =~ "tb-chips-chip-v-view-value-v-a-remove"
+      refute html =~ "tb-chips-copy-v-view-v-a-remove"
+      refute html =~ "tb-chips-chip-v-one-remove"
+      refute html =~ "table-toolbar-filters-count"
     end
 
     test "no filters on: the chips row is closed but rendered, no Clear all in it" do

@@ -663,6 +663,118 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
     end
   end
 
+  describe "chip_row/1 stacks" do
+    defp stack_row(assigns \\ %{}) do
+      render(~H"""
+      <.chip_row id="f">
+        <:chip
+          value="brands"
+          on_remove="clear_brands"
+          removable={assigns[:removable] != false}
+          items={[
+            %{value: "acme", label: "Acme sandbox", on_remove: "rm_acme"},
+            %{value: "northwind", label: "Northwind", on_remove: "rm_northwind"},
+            %{value: "ps", label: "Northwind sandbox", on_remove: "rm_ps", removable: assigns[:last] != false}
+          ]}
+        >
+          Brands
+        </:chip>
+        <:chip value="plan" on_remove="clear_plan" items={[%{value: "a", label: "A"}, %{value: "b", label: "B"}]}>
+          Plan
+        </:chip>
+        <:chip value="one" on_remove="clear_one" items={[%{value: "x", label: "Only one", on_remove: "rm_x"}]}>
+          Ignored
+        </:chip>
+        <:chip value="plain" on_remove="clear_plain">Plain</:chip>
+      </.chip_row>
+      """)
+    end
+
+    test "two or more items: the first name, a count, an edge per extra value (at most two)" do
+      html = stack_row()
+
+      assert count(html, "data-chip-stack") == count(html, "data-chip-stack-") + 2
+      assert html =~ ~r/data-edges="2"[^>]*data-chip /s
+      assert html =~ ~r/data-edges="1"[^>]*data-chip /s
+      assert html =~ ~r/data-chip-stack-name[^>]*>Acme sandbox</
+      assert html =~ ~r/data-chip-stack-count[^>]*>\+2</
+      assert html =~ ~r/data-chip-stack-count[^>]*>\+1</
+    end
+
+    test "the opener is a real button named with the filter and its values" do
+      html = stack_row()
+
+      assert html =~
+               ~r/<button[^>]*type="button"[^>]*id="f-chip-v-brands-open"[^>]*aria-expanded="false"[^>]*aria-controls="f-chip-v-brands-values"/s
+
+      assert html =~
+               ~r/id="f-chip-v-brands-name">Brands<\/span>: <span data-chip-stack-values>Acme sandbox, Northwind, Northwind sandbox</
+
+      # the values are in the row, hidden, and keep what the hook sets
+      assert html =~ ~r/<ul[^>]*id="f-chip-v-brands-values"[^>]*hidden/s
+      refute html =~ "popover="
+      assert html =~ "&quot;aria-expanded&quot;"
+      assert html =~ "&quot;inert&quot;"
+    end
+
+    test "the stack's × clears the filter; each value's × removes that value" do
+      html = stack_row()
+
+      assert html =~
+               ~r/id="f-chip-v-brands-remove"[^>]*aria-labelledby="f-chip-v-brands-remove f-chip-v-brands-name"[^>]*phx-click="clear_brands"/s
+
+      assert html =~
+               ~r/id="f-chip-v-brands-value-v-acme-remove"[^>]*aria-labelledby="f-chip-v-brands-value-v-acme-remove f-chip-v-brands-value-v-acme-label"[^>]*phx-click="rm_acme"/s
+
+      assert html =~
+               ~s(id="f-chip-v-brands-value-v-acme-label" class="chip-label">Acme sandbox<)
+    end
+
+    test "removable={false} hides only the stack's ×; an item's removable: false hides its own" do
+      html = stack_row(%{removable: false, last: false})
+
+      refute html =~ ~s(id="f-chip-v-brands-remove")
+      assert html =~ ~s(id="f-chip-v-brands-value-v-acme-remove")
+      refute html =~ ~s(id="f-chip-v-brands-value-v-ps-remove")
+    end
+
+    test "one item is a normal chip showing that item; no items is as before" do
+      html = stack_row()
+
+      assert html =~ ~s(id="f-chip-v-one-label" class="chip-label">Only one<)
+      refute html =~ "Ignored"
+      assert html =~ ~r/id="f-chip-v-one-remove"[^>]*phx-click="clear_one"/s
+      assert html =~ ~s(id="f-chip-v-plain-label" class="chip-label">Plain<)
+      refute html =~ "f-chip-v-one-open"
+      refute html =~ "f-chip-v-plain-open"
+    end
+
+    test "in the +N popover a stack's values show flat, keyed by value, no popover inside" do
+      html = stack_row()
+      overflow = html |> String.split(~s(id="f-overflow")) |> Enum.at(1)
+
+      assert overflow =~ ~r/id="f-copy-v-brands-v-acme"[^>]*data-chip-value[^>]*data-chip-copy/s
+      assert overflow =~ ~r/id="f-copy-v-brands-v-ps-remove"[^>]*phx-click="rm_ps"/s
+      assert overflow =~ ~s(id="f-copy-v-one")
+      refute overflow =~ "data-chip-stack"
+      refute overflow =~ "popover="
+    end
+
+    test "duplicate item values render once" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.chip_row id="d">
+          <:chip value="a" items={[%{value: 1, label: "One"}, %{value: 1, label: "One"}, %{value: 2, label: "Two"}]}>A</:chip>
+        </.chip_row>
+        """)
+
+      assert count(html, ~s(id="d-chip-v-a-value-v-1")) == 1
+      assert html =~ ~r/data-chip-stack-count[^>]*>\+1</
+    end
+  end
+
   describe "reveal/1" do
     test "closed by default, data-open when open, content in the track" do
       assigns = %{}

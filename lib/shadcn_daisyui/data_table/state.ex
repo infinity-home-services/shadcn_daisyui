@@ -30,6 +30,18 @@ defmodule ShadcnDaisyui.DataTable.State do
         {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
       end
 
+      # one value's × in a stacked chip
+      def handle_event("dt:unfilter", %{"key" => key, "value" => value}, socket) do
+        state = State.remove_value(socket.assigns.state, key, value, @opts)
+        {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
+      end
+
+      # a chip's ×: the whole filter
+      def handle_event("dt:unfilter", %{"key" => key}, socket) do
+        state = State.put_filters(socket.assigns.state, %{key => ""}, [key], @opts)
+        {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
+      end
+
       def handle_event("dt:select", %{"id" => id} = params, socket) do
         ids = Enum.map(socket.assigns.rows, & &1.id)
         {:noreply, update(socket, :state, &State.select(&1, id, params["shift"] == true, ids))}
@@ -47,7 +59,7 @@ defmodule ShadcnDaisyui.DataTable.State do
 
   A filter holds one value, or several as a comma list (`"open,paid"`).
   `"any"`, `""` and nil mean none. `values/1` splits a value, `any_of?/2`
-  tests a row's value against it.
+  tests a row's value against it, `remove_value/4` takes one off.
 
   ## Ids
 
@@ -218,24 +230,65 @@ defmodule ShadcnDaisyui.DataTable.State do
   end
 
   @doc """
-  The active filters as chips for `<.table_toolbar chips>`: `{key, "A or B"}`
-  for each of `fields` (in that order) that has a value, labelled from
+  Takes one value off a filter (a value's × in a stacked chip, `dt:unfilter`
+  with `"value"`). Taking off the last one goes back to the filter's default:
+  from `opts` when given, otherwise the filter is dropped, which `to_params/2`
+  and `from_params/2` read as its default. A value the filter doesn't hold
+  changes nothing.
+
+      iex> State.remove_value(%State{filters: %{"status" => "open,paid"}}, "status", "paid").filters
+      %{"status" => "open"}
+
+      iex> State.remove_value(%State{filters: %{"status" => "open"}}, "status", "open",
+      ...>   filters: %{"status" => "any"}).filters
+      %{"status" => "any"}
+  """
+  @spec remove_value(t(), String.t() | atom(), term(), keyword() | map()) :: t()
+  def remove_value(%__MODULE__{} = state, key, value, opts \\ []) do
+    key = to_string(key)
+    picked = values(Map.get(state.filters, key))
+    value = value |> to_string() |> String.trim()
+
+    case {value in picked, List.delete(Enum.uniq(picked), value)} do
+      {false, _} ->
+        state
+
+      {true, []} ->
+        case Map.get(defaults(opts), key) do
+          nil -> %{state | filters: Map.delete(state.filters, key)}
+          default -> %{state | filters: Map.put(state.filters, key, default)}
+        end
+
+      {true, left} ->
+        %{state | filters: Map.put(state.filters, key, Enum.join(left, ","))}
+    end
+  end
+
+  @doc """
+  The active filters as chips for `<.table_toolbar chips>`, for each of
+  `fields` (in that order) that has a value: `{key, label}` for one value,
+  `{key, [{value, label}, ...]}` for two or more (a stacked chip), labelled from
   `options`. `options` maps a key to its choices, as `[{label, value}]`, a
   `%{value => label}` map or plain values; a value without a label shows as
-  itself.
+  itself. A value's × sends `dt:unfilter` with `"value"`: `remove_value/4`.
 
-      iex> State.chips(%State{filters: %{"status" => "open,paid"}}, ["status"],
+      iex> State.chips(%State{filters: %{"status" => "open,paid", "owner" => "pat"}}, ["status", "owner"],
       ...>   %{"status" => [{"Open", "open"}, {"Paid", "paid"}]})
-      [{"status", "Open or Paid"}]
+      [{"status", [{"open", "Open"}, {"paid", "Paid"}]}, {"owner", "pat"}]
   """
-  @spec chips(t(), [String.t() | atom()], map()) :: [{String.t(), String.t()}]
+  @spec chips(t(), [String.t() | atom()], map()) ::
+          [{String.t(), String.t() | [{String.t(), String.t()}]}]
   def chips(%__MODULE__{} = state, fields, options \\ %{}) do
     for field <- fields,
         key = to_string(field),
-        picked = values(Map.get(state.filters, key)),
+        picked = state.filters |> Map.get(key) |> values() |> Enum.uniq(),
         picked != [] do
       choices = Map.get(options, key) || Map.get(options, field) || []
-      {key, Enum.map_join(picked, " or ", &label(choices, &1))}
+
+      case picked do
+        [value] -> {key, label(choices, value)}
+        _ -> {key, Enum.map(picked, &{&1, label(choices, &1)})}
+      end
     end
   end
 

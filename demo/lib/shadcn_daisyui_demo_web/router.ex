@@ -45,6 +45,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
   # <.dropzone> on real uploads. /lab/chat is an AI chat page: a made-up
   # assistant streams its replies with trace steps. /lab/charts is the chart
   # kit: clicks reach the server (and a LiveComponent), data moves in place.
+  # /lab/chip-stacks is stacked filter chips in a pinned page header.
   scope "/lab", ShadcnDaisyuiDemoWeb do
     pipe_through [:browser, :strict_csp]
 
@@ -53,6 +54,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     live "/dropzone", DropzoneLive
     live "/chat", ChatLive
     live "/charts", ChartsLive
+    live "/chip-stacks", ChipStacksLive
 
     live_session :lab_orders do
       live "/data-table", OrdersLive

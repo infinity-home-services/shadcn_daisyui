@@ -108,6 +108,11 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
     {:noreply, patch(socket, State.parse_sort(params["sort"], state, LabOrders.opts()))}
   end
 
+  def handle_event("dt:unfilter", %{"key" => key, "value" => value}, socket) do
+    {:noreply,
+     patch(socket, State.remove_value(socket.assigns.state, key, value, LabOrders.opts()))}
+  end
+
   def handle_event("dt:unfilter", %{"key" => key}, socket) do
     state = State.put_filters(socket.assigns.state, %{key => ""}, [key], LabOrders.opts())
     {:noreply, patch(socket, state)}
@@ -200,9 +205,9 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
     assigns =
       assign(assigns,
         chips:
-          (fixed_chip(assigns.view) ++
-             State.chips(assigns.state, ["status", "owner"], LabOrders.options()))
-          |> Enum.map(fn {key, label} -> {key, chip_label(key) <> ": " <> label} end),
+          fixed_chip(assigns.view) ++
+            (State.chips(assigns.state, ["status", "owner"], LabOrders.options())
+             |> Enum.map(&chip_with_label/1)),
         views:
           for v <- LabOrders.views() do
             %{
@@ -324,6 +329,10 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
     do: [{"view", "Status: " <> LabOrders.status_label(s), :fixed}]
 
   defp fixed_chip(%{filter: {"owner", o}}), do: [{"view", "Owner: " <> o, :fixed}]
+
+  # one value reads "Status: Open"; several are a stack named after the filter
+  defp chip_with_label({_key, values} = chip) when is_list(values), do: chip
+  defp chip_with_label({key, label}), do: {key, chip_label(key) <> ": " <> label}
 
   defp chip_label("status"), do: "Status"
   defp chip_label("owner"), do: "Owner"

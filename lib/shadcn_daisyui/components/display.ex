@@ -828,6 +828,38 @@ defmodule ShadcnDaisyui.Components.Display do
       <.reveal open={@filters != []}>
         <.chip_row id="active-filters">…</.chip_row>
       </.reveal>
+
+  ## Stacked chips
+
+  A filter with several values is one chip: give it `items`. With two or more
+  it renders as a stack, the first value's name and a count ("Acme sandbox
+  +2") with card edges behind it, and the inner block is the filter's name for
+  screen readers. With one item it is a normal chip showing that item.
+
+      <:chip
+        value="brands"
+        items={for b <- @brands, do: %{value: b.id, label: b.name, on_remove: JS.push("remove_brand", value: %{id: b.id})}}
+        on_remove="clear_brands"
+      >
+        Brands
+      </:chip>
+
+  Its values open inline in the row, sliding out of the stack, each with its own
+  ×, and the chips after it slide over to make room: on hover (under
+  `@media (hover: hover)`, after a short pause, closing about 150ms after the
+  pointer leaves the stack and values), on keyboard focus (closing when focus
+  leaves them, or on Esc, which puts focus on the stack) and on a tap (a tap
+  outside closes it). One stack is open at a time. The row stays on one line:
+  chips after the stack fold into "+N" when there is no room, then the last
+  values do, and "+N" opens by itself when no value fits (a phone). The stack's face and × never move. The stack's `on_remove` clears
+  the whole filter; `removable={false}` hides only that ×, and an item's
+  `removable: false` hides its own. A closed stack counts as one chip when the
+  row fits, and in the "+N" popover its values show flat.
+
+  After a value is removed focus moves to the next ×, or, once one value is
+  left, to that chip's ×. Without `on_remove` the hook removes the value itself
+  after a cancelable `chip-remove` event (`detail: { value, item, index }`).
+  Give every item a `value`: the DOM id follows it.
   """
   attr(:id, :string, required: true)
   attr(:aria_label, :string, default: "Chips", doc: "names the group of chips")
@@ -846,6 +878,11 @@ defmodule ShadcnDaisyui.Components.Display do
     attr(:on_remove, :any, doc: "phx-click for the remove button: an event name or a JS command")
     attr(:remove_label, :string, doc: "accessible name of the remove button")
     attr(:removable, :boolean, doc: "false hides the remove button")
+
+    attr(:items, :list,
+      doc:
+        "[%{value, label, on_remove}] (optional removable, remove_label): two or more make a stack, and the inner block names the filter"
+    )
   end
 
   slot(:action, doc: "trailing content that always stays visible, e.g. a Clear all button")
@@ -853,7 +890,7 @@ defmodule ShadcnDaisyui.Components.Display do
   def chip_row(assigns) do
     assigns =
       assigns
-      |> assign(:chips, Enum.with_index(assigns.chip))
+      |> assign(:chips, assigns.chip |> Enum.map(&unique_items/1) |> Enum.with_index())
       |> assign(:vclass, @chip_variants[assigns.variant])
 
     ~H"""
@@ -868,13 +905,12 @@ defmodule ShadcnDaisyui.Components.Display do
       {@rest}
     >
       <ul class="chip-row-chips" data-chip-row-chips>
-        <.chip
+        <.row_chip
           :for={{chip, i} <- @chips}
           chip={chip}
           id={"#{@id}-chip-#{chip_key(chip, i)}"}
           index={i}
           vclass={@vclass}
-          data-chip
         />
       </ul>
       <div class="chip-row-more" data-chip-row-more hidden phx-mounted={keep_client_attrs(["hidden"])}>
@@ -893,17 +929,15 @@ defmodule ShadcnDaisyui.Components.Display do
           class="popover-panel chip-row-panel"
           data-chip-row-panel
           hidden
-          phx-mounted={keep_client_attrs(["hidden"])}
+          phx-mounted={keep_client_attrs(["hidden", "style"])}
         >
           <ul class="flex flex-wrap gap-2" aria-label={@aria_label}>
-            <.chip
+            <.chip_copies
               :for={{chip, i} <- @chips}
               chip={chip}
               id={"#{@id}-copy-#{chip_key(chip, i)}"}
               index={i}
               vclass={@vclass}
-              hidden
-              data-chip-copy
             />
           </ul>
         </div>
@@ -921,6 +955,37 @@ defmodule ShadcnDaisyui.Components.Display do
     """
   end
 
+  defp row_chip(%{chip: %{items: [_, _ | _]}} = assigns), do: chip_stack(assigns)
+
+  defp row_chip(assigns) do
+    ~H"""
+    <.chip chip={@chip} id={@id} index={@index} vclass={@vclass} data-chip />
+    """
+  end
+
+  # The +N popover's copy of a chip: a stack's values show flat, each its own
+  # copy with the chip's index, so fitting shows or hides them together.
+  defp chip_copies(%{chip: %{items: [_, _ | _]}} = assigns) do
+    ~H"""
+    <.chip_value
+      :for={{item, j} <- Enum.with_index(@chip.items)}
+      chip={@chip}
+      item={item}
+      id={"#{@id}-#{chip_key(item, j)}"}
+      index={@index}
+      vclass={@vclass}
+      hidden
+      data-chip-copy
+    />
+    """
+  end
+
+  defp chip_copies(assigns) do
+    ~H"""
+    <.chip chip={@chip} id={@id} index={@index} vclass={@vclass} hidden data-chip-copy />
+    """
+  end
+
   attr(:chip, :map, required: true)
   attr(:id, :string, required: true)
   attr(:index, :integer, required: true)
@@ -928,7 +993,10 @@ defmodule ShadcnDaisyui.Components.Display do
   attr(:hidden, :boolean, default: false)
   attr(:rest, :global, include: ~w(data-chip data-chip-copy))
 
+  # One item is a normal chip showing that item.
   defp chip(assigns) do
+    assigns = assign(assigns, :only, List.first(assigns.chip[:items] || []))
+
     ~H"""
     <li
       id={@id}
@@ -940,15 +1008,126 @@ defmodule ShadcnDaisyui.Components.Display do
       phx-remove={chip_exit()}
       {@rest}
     >
-      <span id={"#{@id}-label"} class="chip-label">{render_slot(@chip)}</span>
+      <span id={"#{@id}-label"} class="chip-label">{if @only, do: @only.label, else: render_slot(@chip)}</span>
       <button
-        :if={@chip[:removable] != false}
+        :if={@chip[:removable] != false && (@only || %{})[:removable] != false}
         type="button"
         id={"#{@id}-remove"}
         class="chip-remove"
         aria-label={@chip[:remove_label] || "Remove"}
         aria-labelledby={!@chip[:remove_label] && "#{@id}-remove #{@id}-label"}
-        phx-click={@chip[:on_remove]}
+        phx-click={@chip[:on_remove] || (@only && @only[:on_remove])}
+        data-chip-remove
+      >
+        <span class="hero-x-mark size-3" aria-hidden="true"></span>
+      </button>
+    </li>
+    """
+  end
+
+  attr(:chip, :map, required: true)
+  attr(:id, :string, required: true)
+  attr(:index, :integer, required: true)
+  attr(:vclass, :string, required: true)
+
+  # The opener and the × are separate tab stops; the values follow them in the
+  # row, so Tab reaches those next.
+  defp chip_stack(assigns) do
+    assigns = assign(assigns, :count, length(assigns.chip.items))
+
+    ~H"""
+    <li
+      id={@id}
+      class="chip-stack"
+      data-index={@index}
+      data-value={@chip[:value]}
+      data-edges={min(@count - 1, 2)}
+      phx-mounted={keep_client_attrs(["hidden"])}
+      phx-remove={chip_exit()}
+      data-chip
+      data-chip-stack
+    >
+      <div class={["badge chip chip-stack-front", @vclass]} data-chip-stack-front>
+        <button
+          type="button"
+          id={"#{@id}-open"}
+          class="chip-stack-open"
+          aria-expanded="false"
+          aria-controls={"#{@id}-values"}
+          phx-mounted={keep_client_attrs(["aria-expanded"])}
+          data-chip-stack-open
+        >
+          <span class="chip-label chip-stack-name" aria-hidden="true" data-chip-stack-name>{hd(@chip.items).label}</span>
+          <span class="chip-stack-count" aria-hidden="true" data-chip-stack-count>+{@count - 1}</span>
+          <span class="sr-only"><span id={"#{@id}-name"}>{slot_text(render_slot(@chip))}</span>: <span data-chip-stack-values>{Enum.map_join(@chip.items, ", ", & &1.label)}</span></span>
+        </button>
+        <button
+          :if={@chip[:removable] != false}
+          type="button"
+          id={"#{@id}-remove"}
+          class="chip-remove"
+          aria-label={@chip[:remove_label] || "Remove"}
+          aria-labelledby={!@chip[:remove_label] && "#{@id}-remove #{@id}-name"}
+          phx-click={@chip[:on_remove]}
+          data-chip-remove
+        >
+          <span class="hero-x-mark size-3" aria-hidden="true"></span>
+        </button>
+      </div>
+      <ul
+        id={"#{@id}-values"}
+        class="chip-stack-values"
+        aria-labelledby={"#{@id}-name"}
+        hidden
+        phx-mounted={keep_client_attrs(["hidden", "inert", "style"])}
+        data-chip-stack-list
+      >
+        <.chip_value
+          :for={{item, j} <- Enum.with_index(@chip.items)}
+          chip={@chip}
+          item={item}
+          id={"#{@id}-value-#{chip_key(item, j)}"}
+          index={@index}
+          vclass={@vclass}
+        />
+      </ul>
+    </li>
+    """
+  end
+
+  attr(:chip, :map, required: true)
+  attr(:item, :map, required: true)
+  attr(:id, :string, required: true)
+  attr(:index, :integer, required: true)
+  attr(:vclass, :string, required: true)
+  attr(:hidden, :boolean, default: false)
+  attr(:rest, :global, include: ~w(data-chip-copy))
+
+  # One value of a stack, in the row or flat in the +N popover: its × removes
+  # only this value.
+  defp chip_value(assigns) do
+    ~H"""
+    <li
+      id={@id}
+      class={["badge chip", @vclass]}
+      data-index={@index}
+      data-value={@item[:value]}
+      data-chip-of={@chip[:value]}
+      hidden={@hidden}
+      phx-mounted={keep_client_attrs(["hidden"])}
+      phx-remove={chip_exit()}
+      data-chip-value
+      {@rest}
+    >
+      <span id={"#{@id}-label"} class="chip-label">{@item.label}</span>
+      <button
+        :if={@item[:removable] != false}
+        type="button"
+        id={"#{@id}-remove"}
+        class="chip-remove"
+        aria-label={@item[:remove_label] || "Remove"}
+        aria-labelledby={!@item[:remove_label] && "#{@id}-remove #{@id}-label"}
+        phx-click={@item[:on_remove]}
         data-chip-remove
       >
         <span class="hero-x-mark size-3" aria-hidden="true"></span>
@@ -1039,6 +1218,21 @@ defmodule ShadcnDaisyui.Components.Display do
   end
 
   defp chip_key(_chip, i), do: Integer.to_string(i)
+
+  # An inner block's text without the whitespace around it, for a name that goes
+  # straight before a colon ("Brands: …"); already escaped by the slot.
+  defp slot_text(rendered) do
+    rendered
+    |> Phoenix.HTML.Safe.to_iodata()
+    |> IO.iodata_to_binary()
+    |> String.trim()
+    |> Phoenix.HTML.raw()
+  end
+
+  defp unique_items(%{items: items} = chip) when is_list(items),
+    do: %{chip | items: Enum.uniq_by(items, & &1[:value])}
+
+  defp unique_items(chip), do: chip
 
   # phx-remove for a chip, its popover copy and the actions: tell the hook to
   # animate the exit, and keep the node for the length of a <.reveal> collapse

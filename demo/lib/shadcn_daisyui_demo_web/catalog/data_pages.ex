@@ -642,7 +642,12 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
           type: "[%{key, label, group, icon, active, path | click}]",
           default: "[]"
         },
-        %{name: "chips", type: "[{key, label} | {key, label, :fixed}]", default: "[]"},
+        %{
+          name: "chips",
+          type:
+            "[{key, label} | {key, label, :fixed} | {key, [{value, label}]} | {key, [{value, label}], :fixed}]",
+          default: "[]"
+        },
         %{
           name: "sort / sorts",
           type: "\"key:dir\" / [{label, \"key:dir\"}]",
@@ -687,7 +692,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.DataPages do
           %{
             part: "Chips row",
             description:
-              "A <.chip_row> in a <.reveal>: removable chips, fixed chips, then :save and Clear all."
+              "A <.chip_row> in a <.reveal>: removable chips, fixed chips, a stack for a filter with several values (named after its :filter), then :save and Clear all."
           },
           %{
             part: "Filters sheet",

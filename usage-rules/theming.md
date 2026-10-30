@@ -37,6 +37,9 @@ Rules:
   it drives `.input`/`.select`/`.textarea`/`.file-input` and the custom
   `<.select>`/`<.combobox>` triggers together. A one-off `bg-*` utility on a single
   control still needs the `!` modifier (the base rule lives in `@layer utilities`).
+- To tint chips, override `--chip-background` (light defaults to `oklch(0.922 0 0)`,
+  a `*-dark` theme to its `--secondary`); it fills secondary chips only. Keep their
+  text at 4.5:1 on it.
 - Outline buttons and tab triggers derive their light/dark fills (`--outline-*`,
   `--tab-*`) from the bridge vars and the theme name (`*-dark`); a brand theme
   doesn't restate them.
