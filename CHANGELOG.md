@@ -8,6 +8,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-10-30
+
+A filter with several values is now one stacked chip whose values open inline in
+the row, each with its own ×, and chips read clearly against the page in light
+mode through their own `--chip-background` token. `State.chips/3` changes its output
+for those filters, so check your `dt:unfilter` handler when upgrading (see Changed).
+
+### Changed
+
+- **Breaking: `State.chips/3` returns `{key, [{value, label}, ...]}` for a filter
+  with two or more values** (`{key, label}` for one, as before; it used to be
+  `{key, "A or B"}`). Two things to check when upgrading:
+  - An app whose `dt:unfilter` handler ignores `"value"` clears the whole filter
+    when someone clicks one value's ×. Add this clause before the existing one:
+
+    ```elixir
+    def handle_event("dt:unfilter", %{"key" => key, "value" => value}, socket) do
+      state = State.remove_value(socket.assigns.state, key, value, @opts)
+      {:noreply, push_patch(socket, to: ~p"/orders?#{State.to_params(state, @opts)}")}
+    end
+    ```
+
+  - Code that treats the second element as text (`"Status: " <> label`) raises on
+    the list. Leave list chips as they are; the stack is named after the
+    `:filter`'s `label`.
+- **A chip's fill has its own token, `--chip-background`**: `oklch(0.922 0 0)` in
+  light (about 1.26:1 on white; `--secondary` was about 1.09:1, so chips nearly
+  disappeared) and `--secondary` in dark. It applies to the `secondary` chip variant
+  only: `--secondary` and `badge-secondary` don't change, and "+N" stays outlined.
+  Brand themes can override it.
+
+### Added
+
+- **Stacked filter chips in `<.chip_row>` and `<.table_toolbar>`.** A filter with
+  several values no longer shows as one long chip whose × clears everything: it is
+  one stacked chip, the first value's name and a count ("Acme sandbox +2") with
+  card edges behind it. Its values slide out of the stack and open inline in the
+  row, each with its own ×, while the chips after it slide over to make room: on
+  hover (under `@media (hover: hover)`, after a short pause), keyboard focus or a
+  tap. One stack is open at a time and the stack's face and × never move. The row
+  stays on one line: chips after the stack fold into "+N" when there is no room,
+  then the last values do, and "+N" opens by itself when no value fits (a phone).
+  A closed stack counts as one chip when the row fits, and
+  its values show flat in "+N".
+  - `<.chip_row>`: `<:chip items={[%{value, label, on_remove}]}>`. Two or more make
+    a stack, and the inner block names the filter for screen readers; one is a normal
+    chip. The chip's `on_remove` clears the filter; `removable={false}` hides only
+    that ×, and an item's `removable: false` hides its own.
+  - `<.table_toolbar chips>`: also `{key, [{value, label}, ...]}` and
+    `{key, [{value, label}, ...], :fixed}`. A value's × sends `dt:unfilter` with
+    `%{"key" => key, "value" => value}`; the stack's × sends `%{"key" => key}`.
+  - `State.remove_value/3,4` takes one value off a filter, and goes back to the
+    filter's default when none are left.
+
+### Fixed
+
+- The "+N" popover shifts back into the window when it is too wide for either
+  alignment (a phone) instead of running off the edge.
+
 ## [0.30.0] - 2026-10-29
 
 A progress row can give each part's count in its legend without numbers on
