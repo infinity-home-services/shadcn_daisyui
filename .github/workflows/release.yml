@@ -1,17 +1,17 @@
 name: Release
 
-# Every version gets a tag and a GitHub release - no gaps. On each push to
-# main, scripts/github_release.sh reads @version from mix.exs: a version with
-# no vX.Y.Z tag yet is tagged at the commit that set it, and a tag with no
-# GitHub release gets one (titled from "Release X.Y.Z - summary", notes from
-# CHANGELOG.md's "## [X.Y.Z]" section). It fails if that section is missing.
-# A pushed tag runs it too. Run it by hand with "backfill" to create releases
-# for older tags that never got one.
+# Every version gets a tag and a GitHub release - no gaps. Changes reach main
+# through a pull request with green checks, so a release only ever comes from
+# a tested commit. On each push to main, scripts/github_release.sh reads
+# @version from mix.exs: a version with no vX.Y.Z tag yet is tagged at the
+# commit that set it, and a tag with no GitHub release gets one (titled from
+# "Release X.Y.Z - summary", notes from CHANGELOG.md's "## [X.Y.Z]" section).
+# It fails if that section is missing. Run it by hand with "backfill" to create
+# releases for older tags that never got one.
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       backfill:
@@ -22,13 +22,15 @@ on:
 permissions:
   contents: write
 
-# one at a time, so a push to main and its tag push don't both create the release
+# one at a time, so two merges in quick succession don't both create the release
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
   release:
+    # a run by hand on another branch must not release that branch's version
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -40,6 +42,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           args=()
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then args+=("$GITHUB_REF_NAME"); fi
           if [ "${{ inputs.backfill }}" = "true" ]; then args+=(--backfill); fi
           scripts/github_release.sh "${args[@]}"

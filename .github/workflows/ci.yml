@@ -31,11 +31,12 @@ jobs:
           key: mix-${{ runner.os }}-${{ hashFiles('mix.lock', 'demo/mix.lock') }}
           restore-keys: mix-${{ runner.os }}-
 
-      - name: Package - deps, format, test
+      - name: Package - deps, format, test, build
         run: |
           mix deps.get
           mix format --check-formatted
           mix test
+          mix hex.build
 
       - name: Demo - deps, format, test
         working-directory: demo
@@ -43,3 +44,19 @@ jobs:
           mix deps.get
           mix format --check-formatted
           mix test
+
+  # A merge to main releases a new version on its own, so a version that can't
+  # be released (no CHANGELOG section, mix.exs and package.json disagree) has to
+  # fail here, before the merge.
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # all history and tags
+
+      - name: Dry-run the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: "1"
+        run: scripts/github_release.sh
