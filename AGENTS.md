@@ -86,18 +86,34 @@ cd demo && mix phx.server        # docs site at localhost:4000
 mix hex.build                     # package dry-run
 ```
 
+## Changing main
+
+Nothing goes straight to `main`. Every change, a release included, is a branch
+from the latest `origin/main`, a pull request, and a squash merge once its
+checks are green (`gh pr merge --squash --delete-branch`). A red check gets
+fixed on the branch; nothing merges around it. There's no staging: the checks
+are the gate.
+
+- `test`: format, tests and `mix hex.build` for the package, format and tests
+  for the demo.
+- `release-check`: dry-runs `scripts/github_release.sh`, so a version that
+  couldn't be released fails before it reaches `main`.
+
+A merge to `main` deploys the docs site and, when the version in `mix.exs` is
+new, tags it and creates its GitHub release.
+
 ## Releasing
 
 Every version gets a `vX.Y.Z` tag **and** a GitHub release - no gaps (v0.20.0
 to v0.23.0 once shipped with tags only). Release with the `/release` skill
-(`.claude/skills/release/SKILL.md`): checks, the version in `mix.exs` and
-`package.json`, the `## [X.Y.Z] - date` CHANGELOG section, a
-`Release X.Y.Z - summary` commit, then `git tag vX.Y.Z` and push `main` and
-the tag. The Release workflow (`.github/workflows/release.yml`) runs
-`scripts/github_release.sh` on every push to `main`: it tags the version in
-`mix.exs` if the tag is missing and creates the GitHub release from the
-CHANGELOG section if that's missing, and it fails when the section isn't
-there. Confirm with `gh release view vX.Y.Z`.
+(`.claude/skills/release/SKILL.md`): a `release/X.Y.Z` branch with the checks,
+the version in `mix.exs` and `package.json`, the `## [X.Y.Z] - date` CHANGELOG
+section and a `Release X.Y.Z - summary` commit, then a pull request, merged
+once green. Never tag by hand. The Release workflow
+(`.github/workflows/release.yml`) runs `scripts/github_release.sh` on every
+push to `main`: it tags the version in `mix.exs` if the tag is missing and
+creates the GitHub release from the CHANGELOG section if that's missing, and
+it fails when the section isn't there. Confirm with `gh release view vX.Y.Z`.
 
 ```bash
 DRY_RUN=1 scripts/github_release.sh   # what it would tag and release
