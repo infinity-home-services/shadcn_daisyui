@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="I0RGETBkA2EZCmsqVx4IID0OGzoICigAdt5uj4f4_lFM-lmHZXOrGUnC">
+    <title data-default="ShadcnDaisyuiDemo" data-suffix=" · Phoenix Framework">App shell preview · Phoenix Framework</title>
+    <link phx-track-static rel="stylesheet" href="/shadcn_daisyui/assets/css/app-31a23df84cc2ac6c500a9f56481e4fd0.css?vsn=d">
+    <script defer phx-track-static type="text/javascript" src="/shadcn_daisyui/assets/js/app-8e7df07adaaba3df1250613285e74efd.js?vsn=d">
+    </script>
+    <script>
+      (() => {
+        const setTheme = (theme) => {
+          // Disable transitions for the swap so light↔dark doesn't fade-flicker,
+          // then re-enable on the next frame (mirrors setTheme/0 in shadcn-daisyui.js).
+          const el = document.documentElement;
+          el.classList.add("theme-transition");
+          if (theme === "system") {
+            localStorage.removeItem("phx:theme");
+            el.removeAttribute("data-theme");
+          } else {
+            localStorage.setItem("phx:theme", theme);
+            el.setAttribute("data-theme", theme);
+          }
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => el.classList.remove("theme-transition"))
+          );
+        };
+        if (!document.documentElement.hasAttribute("data-theme")) {
+          setTheme(localStorage.getItem("phx:theme") || "shadcn");
+        }
+        // <.app_shell>: the sidebar's collapsed or open state, before first paint
+        document.documentElement.dataset.sidebar =
+          localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="shell" class="app-shell ">
+  <aside id="sidebar" class="app-shell-sidebar">
+    <button type="button" id="sidebar-rail" class="app-shell-rail" tabindex="-1" title="Collapse or expand the sidebar (Ctrl+B)" aria-label="Collapse or expand the sidebar" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;shadcn:toggle-sidebar&quot;}]]">
+    </button>
+    <div class="app-shell-top">
+      
+    <div class="app-shell-heading tooltip tooltip-right" data-tip="Acme · Operations" id="app-heading">
+  <span class="app-shell-tile"><span class="hero-cube size-4" aria-hidden="true"></span></span>
+  <span class="app-shell-label app-shell-heading-text">
+    <span class="app-shell-heading-title">Acme</span>
+    <span class="app-shell-heading-subtitle">Operations</span>
+  </span>
+  
+</div>
+  
+      <button type="button" id="search-open" class="btn btn-outline btn-sm tooltip tooltip-right app-shell-search" data-tip="Search (⌘K)" aria-label="Search" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#search&quot;,&quot;event&quot;:&quot;shadcn:show-dialog&quot;}]]">
+        <span class="hero-magnifying-glass size-4 shrink-0" aria-hidden="true"></span>
+        <span class="app-shell-label app-shell-grow">Search</span>
+        <kbd class="kbd kbd-sm app-shell-label">⌘K</kbd>
+      </button>
+    </div>
+
+    <nav id="main-nav" aria-label="Main" class="app-shell-nav">
+      <div>
+        
+        <ul>
+          <li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/home" data-phx-link="redirect" data-phx-link-state="push" id="nav-home" class="tooltip tooltip-right app-shell-item" data-tip="Home">
+              <span class="hero-home size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Home</span>
+            </a>
+          </li>
+        </ul>
+      </div><div>
+        <div class="app-shell-group-label">Sales</div>
+        <ul>
+          <li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/orders" data-phx-link="redirect" data-phx-link-state="push" id="nav-orders" class="tooltip tooltip-right app-shell-item" data-tip="Orders">
+              <span class="hero-shopping-cart size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Orders</span>
+            </a>
+          </li><li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/customers" data-phx-link="redirect" data-phx-link-state="push" id="nav-customers" class="tooltip tooltip-right app-shell-item" data-tip="Customers">
+              <span class="hero-users size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Customers</span>
+            </a>
+          </li><li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/quotes" data-phx-link="redirect" data-phx-link-state="push" id="nav-quotes" class="tooltip tooltip-right app-shell-item" data-tip="Quotes">
+              <span class="hero-document-text size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Quotes</span>
+            </a>
+          </li>
+        </ul>
+      </div><div>
+        <div class="app-shell-group-label">Catalog</div>
+        <ul>
+          <li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/products" data-phx-link="redirect" data-phx-link-state="push" id="nav-products" class="tooltip tooltip-right app-shell-item" data-tip="Products">
+              <span class="hero-cube size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Products</span>
+            </a>
+          </li><li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/price-lists" data-phx-link="redirect" data-phx-link-state="push" id="nav-price-lists" class="tooltip tooltip-right app-shell-item" aria-current="page" data-tip="Price lists">
+              <span class="hero-currency-dollar size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Price lists</span>
+            </a>
+          </li>
+        </ul>
+      </div><div>
+        <div class="app-shell-group-label">Settings</div>
+        <ul>
+          <li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/team" data-phx-link="redirect" data-phx-link-state="push" id="nav-team" class="tooltip tooltip-right app-shell-item" data-tip="Team">
+              <span class="hero-user-group size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Team</span>
+            </a>
+          </li><li>
+            <a href="/shadcn_daisyui/docs/app-shell/preview/billing" data-phx-link="redirect" data-phx-link-state="push" id="nav-billing" class="tooltip tooltip-right app-shell-item" data-tip="Billing">
+              <span class="hero-credit-card size-4 shrink-0" aria-hidden="true"></span>
+              <span class="app-shell-label">Billing</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="app-shell-footer">
+      
+<button type="button" id="whats-new-open" class="tooltip tooltip-right app-shell-item" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#whats-new&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]" data-tip="What&#39;s new">
+  
+        <span class="hero-megaphone size-4 shrink-0" aria-hidden="true"></span>
+        <span class="app-shell-label">What&#39;s new</span>
+      
+</button>
+      <button type="button" id="sidebar-toggle" data-tip="Expand sidebar (⌘B)" class="tooltip tooltip-right app-shell-item" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;shadcn:toggle-sidebar&quot;}]]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-4 shrink-0">
+  <rect x="3" y="4.5" width="18" height="15" rx="2.25"></rect>
+  <path d="M9 4.5v15"></path>
+</svg>
+        <span class="app-shell-label app-shell-grow">Collapse sidebar</span>
+        <kbd class="kbd kbd-sm app-shell-label">⌘B</kbd>
+      </button>
+      <span id="environment-badge" class="badge badge-secondary app-shell-label app-shell-badge">
+        Preview
+      </span>
+      <div id="user-menu" class="dropdown dropdown-right dropdown-end app-shell-account">
+        <div tabindex="0" role="button" aria-label="Account menu" class="app-shell-account-trigger">
+          <span class="app-shell-avatar">PL</span>
+          <span class="app-shell-person app-shell-label">
+  <span class="app-shell-name">Pat Lee</span>
+  <span class="app-shell-email">pat@acme.test</span>
+</span>
+          <span class="hero-chevron-up-down size-4 shrink-0 app-shell-label app-shell-muted" aria-hidden="true">
+          </span>
+        </div>
+        <div tabindex="0" class="dropdown-content app-shell-menu">
+          <div class="app-shell-person-heading">
+            <span class="app-shell-avatar">PL</span>
+            <span class="app-shell-person ">
+  <span class="app-shell-name">Pat Lee</span>
+  <span class="app-shell-email">pat@acme.test</span>
+</span>
+          </div>
+          <div class="app-shell-sep"></div>
+          <a href="/shadcn_daisyui/docs/app-shell/preview/team" data-phx-link="redirect" data-phx-link-state="push" id="user-menu-account" class="app-shell-menu-row">
+  
+  <span class="hero-user-circle size-4 shrink-0" aria-hidden="true"></span>
+  
+    Account
+  
+
+</a>
+<div id="user-menu-notifications" class="app-shell-menu-row" data-soon>
+  <span class="hero-bell size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Notifications</span>
+  <span class="badge badge-outline">Soon</span>
+</div>
+<div class="app-shell-menu-row app-shell-theme-row">
+  <span class="app-shell-theme-label">
+    <span class="hero-swatch size-4" aria-hidden="true"></span> Theme
+  </span>
+  <div class="theme-toggle " role="group" aria-label="Theme">
+  <span class="theme-toggle-thumb" aria-hidden="true"></span>
+  <button type="button" data-phx-theme="system" aria-label="System theme" title="System theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-computer-desktop-micro size-4" aria-hidden="true"></span>
+  </button><button type="button" data-phx-theme="shadcn" aria-label="Light theme" title="Light theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-sun-micro size-4" aria-hidden="true"></span>
+  </button><button type="button" data-phx-theme="shadcn-dark" aria-label="Dark theme" title="Dark theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-moon-micro size-4" aria-hidden="true"></span>
+  </button>
+</div>
+</div>
+
+  <div class="app-shell-sep"></div>
+  <div id="user-menu-support" class="app-shell-menu-row" data-soon>
+  <span class="hero-lifebuoy size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Support</span>
+  <span class="badge badge-outline">Soon</span>
+</div><div id="user-menu-feedback" class="app-shell-menu-row" data-soon>
+  <span class="hero-chat-bubble-left-ellipsis size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Feedback</span>
+  <span class="badge badge-outline">Soon</span>
+</div>
+
+  <div class="app-shell-sep"></div>
+  <a href="/shadcn_daisyui/docs/app-shell" id="user-menu-sign-out" class="app-shell-menu-row" data-variant="destructive">
+  
+  <span class="hero-arrow-right-start-on-rectangle size-4 shrink-0" aria-hidden="true"></span>
+  
+    Sign out
+  
+
+</a>
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="app-shell-content">
+    <main id="main" class="app-shell-main">
+      <div id="phone-header" class="app-shell-phone-header">
+        
+    <span class="app-shell-tile"><span class="hero-cube size-4" aria-hidden="true"></span></span>
+    <span class="text-sm font-semibold">Acme</span>
+  
+        <button type="button" id="search-open-phone" aria-label="Search" class="btn btn-outline btn-sm btn-circle app-shell-phone-search" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#search&quot;,&quot;event&quot;:&quot;shadcn:show-dialog&quot;}]]">
+          <span class="hero-magnifying-glass size-4" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="app-shell-page">
+        
+  
+      <div id="page-header" phx-hook="ShadcnStickyTop" phx-mounted="[[&quot;ignore_attrs&quot;,{&quot;attrs&quot;:[&quot;data-stuck&quot;]}]]" data-sticky-top class="sticky-top ">
+  
+  <div class="page-header">
+    <nav id="page-header-crumbs" aria-label="Breadcrumb" phx-hook="ShadcnPageBack" data-page-back data-esc-back="true" class="breadcrumbs page-header-crumbs">
+      <ul>
+        <li>
+          
+              <span>Catalog</span>
+          
+        </li><li>
+          
+              <span aria-current="page">Price lists</span>
+          
+        </li>
+      </ul>
+    </nav>
+    <header class="page-header-row">
+      <div class="page-header-heading">
+        <h1 class="page-header-title">Price lists</h1>
+        
+      </div>
+      
+    </header>
+  </div>
+  
+
+</div>
+      <div class="card">
+        <div class="card-body items-center py-12 text-center">
+          <span class="grid size-10 place-items-center rounded-full bg-muted">
+            <span class="hero-inbox size-5 text-muted-foreground" aria-hidden="true"></span>
+          </span>
+          <h2 class="mt-2 text-sm font-medium">Nothing here yet</h2>
+          <p class="text-sm text-muted-foreground">
+            A preview page. Try ⌘K, ⌘B, the account menu, or a phone-width window.
+          </p>
+        </div>
+      </div>
+
+
+      </div>
+    </main>
+  </div>
+
+  <nav id="bottom-bar" aria-label="Main" class="dock app-shell-dock">
+    <a href="/shadcn_daisyui/docs/app-shell/preview/home" data-phx-link="redirect" data-phx-link-state="push" id="bar-home">
+      <span class="hero-home size-5" aria-hidden="true"></span>
+      <span class="dock-label">Home</span>
+    </a><a href="/shadcn_daisyui/docs/app-shell/preview/orders" data-phx-link="redirect" data-phx-link-state="push" id="bar-orders">
+      <span class="hero-shopping-cart size-5" aria-hidden="true"></span>
+      <span class="dock-label">Orders</span>
+    </a><a href="/shadcn_daisyui/docs/app-shell/preview/customers" data-phx-link="redirect" data-phx-link-state="push" id="bar-customers">
+      <span class="hero-users size-5" aria-hidden="true"></span>
+      <span class="dock-label">People</span>
+    </a><a href="/shadcn_daisyui/docs/app-shell/preview/quotes" data-phx-link="redirect" data-phx-link-state="push" id="bar-quotes">
+      <span class="hero-document-text size-5" aria-hidden="true"></span>
+      <span class="dock-label">Quotes</span>
+    </a>
+    <button type="button" id="bar-more" aria-haspopup="dialog" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#more-nav&quot;,&quot;event&quot;:&quot;shadcn:show-dialog&quot;}]]">
+      <span class="hero-ellipsis-horizontal size-5" aria-hidden="true"></span>
+      <span class="dock-label">More</span>
+    </button>
+  </nav>
+
+  <dialog id="more-nav" class="drawer-bottom app-shell-more" aria-label="More" phx-mounted="[[&quot;ignore_attrs&quot;,{&quot;attrs&quot;:[&quot;open&quot;]}]]">
+    <div class="app-shell-handle" aria-hidden="true"></div>
+    <div class="app-shell-more-body">
+      <div>
+        
+        <a href="/shadcn_daisyui/docs/app-shell/preview/home" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-home size-5" aria-hidden="true"></span> Home
+        </a>
+      </div><div>
+        <div class="app-shell-more-label">Sales</div>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/orders" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-shopping-cart size-5" aria-hidden="true"></span> Orders
+        </a><a href="/shadcn_daisyui/docs/app-shell/preview/customers" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-users size-5" aria-hidden="true"></span> Customers
+        </a><a href="/shadcn_daisyui/docs/app-shell/preview/quotes" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-document-text size-5" aria-hidden="true"></span> Quotes
+        </a>
+      </div><div>
+        <div class="app-shell-more-label">Catalog</div>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/products" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-cube size-5" aria-hidden="true"></span> Products
+        </a><a href="/shadcn_daisyui/docs/app-shell/preview/price-lists" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row" aria-current="page">
+          <span class="hero-currency-dollar size-5" aria-hidden="true"></span> Price lists
+        </a>
+      </div><div>
+        <div class="app-shell-more-label">Settings</div>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/team" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-user-group size-5" aria-hidden="true"></span> Team
+        </a><a href="/shadcn_daisyui/docs/app-shell/preview/billing" data-phx-link="redirect" data-phx-link-state="push" class="app-shell-sheet-row">
+          <span class="hero-credit-card size-5" aria-hidden="true"></span> Billing
+        </a>
+      </div>
+      
+<button type="button" id="whats-new-open-phone" class="app-shell-sheet-row" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#whats-new&quot;,&quot;event&quot;:&quot;shadcn:show-modal&quot;}]]">
+  
+        <span class="hero-megaphone size-5" aria-hidden="true"></span> What&#39;s new
+      
+</button>
+      <div id="account-phone" class="app-shell-more-account">
+        <div class="app-shell-person-heading">
+          <span class="app-shell-avatar">PL</span>
+          <span class="app-shell-person ">
+  <span class="app-shell-name">Pat Lee</span>
+  <span class="app-shell-email">pat@acme.test</span>
+</span>
+        </div>
+        <div class="app-shell-sep"></div>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/team" data-phx-link="redirect" data-phx-link-state="push" id="account-phone-account" class="app-shell-menu-row">
+  
+  <span class="hero-user-circle size-4 shrink-0" aria-hidden="true"></span>
+  
+    Account
+  
+
+</a>
+<div id="account-phone-notifications" class="app-shell-menu-row" data-soon>
+  <span class="hero-bell size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Notifications</span>
+  <span class="badge badge-outline">Soon</span>
+</div>
+<div class="app-shell-menu-row app-shell-theme-row">
+  <span class="app-shell-theme-label">
+    <span class="hero-swatch size-4" aria-hidden="true"></span> Theme
+  </span>
+  <div class="theme-toggle " role="group" aria-label="Theme">
+  <span class="theme-toggle-thumb" aria-hidden="true"></span>
+  <button type="button" data-phx-theme="system" aria-label="System theme" title="System theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-computer-desktop-micro size-4" aria-hidden="true"></span>
+  </button><button type="button" data-phx-theme="shadcn" aria-label="Light theme" title="Light theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-sun-micro size-4" aria-hidden="true"></span>
+  </button><button type="button" data-phx-theme="shadcn-dark" aria-label="Dark theme" title="Dark theme" phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;phx:set-theme&quot;}]]">
+    <span class="hero-moon-micro size-4" aria-hidden="true"></span>
+  </button>
+</div>
+</div>
+
+  <div class="app-shell-sep"></div>
+  <div id="account-phone-support" class="app-shell-menu-row" data-soon>
+  <span class="hero-lifebuoy size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Support</span>
+  <span class="badge badge-outline">Soon</span>
+</div><div id="account-phone-feedback" class="app-shell-menu-row" data-soon>
+  <span class="hero-chat-bubble-left-ellipsis size-4 shrink-0" aria-hidden="true"></span>
+  <span class="app-shell-grow">Feedback</span>
+  <span class="badge badge-outline">Soon</span>
+</div>
+
+  <div class="app-shell-sep"></div>
+  <a href="/shadcn_daisyui/docs/app-shell" id="account-phone-sign-out" class="app-shell-menu-row" data-variant="destructive">
+  
+  <span class="hero-arrow-right-start-on-rectangle size-4 shrink-0" aria-hidden="true"></span>
+  
+    Sign out
+  
+
+</a>
+
+
+      </div>
+    </div>
+  </dialog>
+</div>
+
+
+<dialog id="search" phx-hook="ShadcnCommand" phx-mounted="[[&quot;ignore_attrs&quot;,{&quot;attrs&quot;:[&quot;open&quot;]}]]" data-command data-shortcut="k" aria-label="Search" class="command-dialog ">
+  
+  <div class="flex items-center gap-2 border-b border-base-300 px-3">
+    <span class="hero-magnifying-glass size-4 opacity-50" aria-hidden="true">
+    </span>
+    <input id="search-search" data-command-search autocomplete="off" aria-label="Search pages and teams" class="h-11 w-full bg-transparent text-sm outline-none" placeholder="Search pages and teams">
+    
+  </div>
+  <ul id="search-list" data-command-list class="max-h-80 overflow-auto p-1">
+    
+      <li class="command-group-label" data-group>Pages</li>
+      <li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/home" id="search-page-home" class="command-item" data-command-item>
+  <span class="hero-home size-4" aria-hidden="true"></span>
+
+    Home
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/orders" id="search-page-orders" class="command-item" data-command-item>
+  <span class="hero-shopping-cart size-4" aria-hidden="true"></span>
+
+    Orders
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/customers" id="search-page-customers" class="command-item" data-command-item>
+  <span class="hero-users size-4" aria-hidden="true"></span>
+
+    Customers
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/quotes" id="search-page-quotes" class="command-item" data-command-item>
+  <span class="hero-document-text size-4" aria-hidden="true"></span>
+
+    Quotes
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/products" id="search-page-products" class="command-item" data-command-item>
+  <span class="hero-cube size-4" aria-hidden="true"></span>
+
+    Products
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/price-lists" id="search-page-price-lists" class="command-item" data-command-item>
+  <span class="hero-currency-dollar size-4" aria-hidden="true"></span>
+
+    Price lists
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/team" id="search-page-team" class="command-item" data-command-item>
+  <span class="hero-user-group size-4" aria-hidden="true"></span>
+
+    Team
+  
+
+</a>
+
+
+      </li><li>
+        <a href="/shadcn_daisyui/docs/app-shell/preview/billing" id="search-page-billing" class="command-item" data-command-item>
+  <span class="hero-credit-card size-4" aria-hidden="true"></span>
+
+    Billing
+  
+
+</a>
+
+
+      </li>
+    
+      <li class="command-group-label" data-group>Teams</li>
+      <li>
+        
+<button type="submit" form="team-form" name="team" value="Operations" class="command-item" data-command-item>
+  <span class="hero-user-group size-4" aria-hidden="true"></span>
+
+    Operations
+  
+
+</button>
+
+      </li><li>
+        
+<button type="submit" form="team-form" name="team" value="Field" class="command-item" data-command-item>
+  <span class="hero-user-group size-4" aria-hidden="true"></span>
+
+    Field
+  
+
+</button>
+
+      </li><li>
+        
+<button type="submit" form="team-form" name="team" value="Finance" class="command-item" data-command-item>
+  <span class="hero-user-group size-4" aria-hidden="true"></span>
+
+    Finance
+  
+
+</button>
+
+      </li>
+    
+      <li class="command-group-label" data-group>Actions</li>
+      <li>
+        
+
+<button type="button" class="command-item" data-command-item phx-click="[[&quot;dispatch&quot;,{&quot;event&quot;:&quot;shadcn:toggle-sidebar&quot;}]]">
+  <span class="hero-view-columns size-4" aria-hidden="true"></span>
+
+    Toggle sidebar
+  
+<span class="ml-auto text-xs text-muted-foreground">
+  ⌘B
+</span>
+</button>
+      </li>
+    
+  </ul>
+  
+  <p data-command-empty class="hidden p-6 text-center text-sm text-muted-foreground">
+    No results found.
+  </p>
+  
+  <div id="search-toasts" data-toast-host phx-update="ignore"></div>
+</dialog>
+<form id="team-form" action="/shadcn_daisyui/docs/app-shell/preview/home" method="get"></form>
+
+<dialog id="whats-new" class="modal" aria-labelledby="whats-new-title">
+  <div class="modal-box max-w-lg">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="whats-new-title" class="text-lg font-semibold">What's new</h2>
+        <p class="text-sm text-muted-foreground">Changes to Acme, newest first.</p>
+      </div>
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm btn-square" aria-label="Close">
+          <span class="hero-x-mark size-4" aria-hidden="true"></span>
+        </button>
+      </form>
+    </div>
+    <div class="mt-6 rounded-lg border border-border p-6 text-center">
+      <span class="hero-megaphone size-5 text-muted-foreground" aria-hidden="true"></span>
+      <p class="mt-2 text-sm font-medium">Nothing yet</p>
+      <p class="text-sm text-muted-foreground">Changes show here after launch.</p>
+    </div>
+  </div>
+</dialog>
+
+    
+    <section id="toaster" phx-hook="ShadcnToaster" phx-update="ignore" data-sonner-section data-position="bottom-right" data-toast-theme="auto" data-expand="false" data-rich-colors="false" data-close-button="false" data-invert="false" data-duration="4000" data-visible-toasts="3" data-gap="14" data-hotkey="altKey,KeyT" data-dir="auto" data-pause-when-page-is-hidden="true" data-container-aria-label="Notifications" data-close-button-aria-label="Close toast" hidden>
+  
+</section>
+  </body>
+</html>
