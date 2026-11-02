@@ -104,9 +104,10 @@ defmodule ShadcnDaisyui.CoreComponents do
   With `shadcn-daisyui.js` loaded the notice shows in the toast layer (the
   browser's top layer), so it stays visible and clickable above an open sheet,
   dialog, drawer or command palette. `:info` shows a success check and clears
-  after `duration` ms (paused on hover or focus); `:error` stays until closed.
-  Closing or timing out pushes `lv:clear-flash`. On compact screens a bottom
-  toast sits above the page's `dock`. Without the JS it renders in place.
+  after `duration` ms (paused on hover or focus), with no close button unless
+  the toaster has `close_button`; `:error` stays until closed with its close
+  button. Closing or timing out pushes `lv:clear-flash`. On compact screens a
+  bottom toast sits above the page's `dock`. Without the JS it renders in place.
   """
   attr(:id, :string, doc: "the optional id of flash container")
   attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")

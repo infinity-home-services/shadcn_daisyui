@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `<.flash>`: only error flashes show a close button. Info flashes clear themselves
+  after their duration, so they no longer have one, unless the toaster has
+  `close_button`. Errors never time out and keep theirs.
+
+### Fixed
+
+- Toasts: a toast's stored height now follows its width. It was measured only when
+  the toast was created or updated, so after the window was widened or rotated,
+  hovering the stack set the toast to its old height (a flash shown in a 40px wide
+  window grew from 54px to 639px). Toasts are now re-measured and the stack laid out
+  again whenever a toast's width changes.
+
 ## [0.31.1] - 2026-10-30
 
 A number card's trend now runs edge to edge when its data starts late or stops

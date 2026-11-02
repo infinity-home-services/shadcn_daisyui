@@ -90,7 +90,7 @@ defmodule ShadcnDaisyui.JS.ToastLayerBrowserTest do
 
     // flashes: shown as toasts (server elements hidden), role on each toast
     out.flashToasts = [...document.querySelectorAll("[data-sonner-toast]")]
-      .map((t) => [t.dataset.type, t.getAttribute("role"), t.dataset.yPosition + "-" + t.dataset.xPosition])
+      .map((t) => [t.dataset.type, t.getAttribute("role"), t.dataset.yPosition + "-" + t.dataset.xPosition, !!t.querySelector("[data-close-button]")])
       .sort()
     out.flashSourceHidden = getComputedStyle(document.getElementById("flash-info")).display === "none"
     out.layerRole = layer().getAttribute("role")
@@ -158,10 +158,11 @@ defmodule ShadcnDaisyui.JS.ToastLayerBrowserTest do
 
     assert r["errors"] == []
 
-    # flashes render as toasts: info -> success check (status), error -> alert
+    # flashes render as toasts: info -> success check (status) that clears itself,
+    # error -> alert that stays, so only it has a close button
     assert r["flashToasts"] == [
-             ["error", "alert", "top-center"],
-             ["success", "status", "bottom-right"]
+             ["error", "alert", "top-center", true],
+             ["success", "status", "bottom-right", false]
            ]
 
     assert r["flashSourceHidden"]

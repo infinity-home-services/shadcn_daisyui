@@ -145,7 +145,8 @@ toast.promise(save(), { loading: "Saving…", success: "Saved", error: "Could no
 
 Toasts and Phoenix flashes (`put_flash`) show above an open sheet, dialog,
 drawer or command palette and stay clickable there. Flashes render as Sonner
-toasts too: info clears itself after 5 seconds, errors stay until closed.
+toasts too: info clears itself after 5 seconds with no close button, errors
+stay until closed with theirs.
 
 Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
 `<.attachment>`:
