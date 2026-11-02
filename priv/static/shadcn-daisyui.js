@@ -800,11 +800,45 @@ function layoutToasts(ol) {
 function measureToast(t) {
   const el = t.el
   const scale = el.dataset.expanded === "true" ? 1 : 1 - Number(el.dataset.index || 0) * SCALE_MULTIPLIER
+  t.width = toastWidth(el) // before the auto height: read after it, the new height would animate
   el.style.setProperty("height", "auto")
   const offsetHeight = el.offsetHeight
   const rect = Math.round((el.getBoundingClientRect().height / scale + Number.EPSILON) * 100) / 100
   el.style.removeProperty("height")
   t.height = Math.abs(rect - offsetHeight) < 1 ? rect : offsetHeight
+}
+
+// Layout width, untouched by the stack's scale; NaN while it isn't rendered.
+function toastWidth(el) {
+  return parseFloat(getComputedStyle(el).width)
+}
+
+// A toast's height follows its width, so a new width means new heights. This
+// watches the toasts rather than the viewport or the list, which catches every
+// cause (rotation too) and the case the list's width misses: under the 600px
+// breakpoint a 356px list holds a 324px toast, over it a 356px list holds a
+// 356px one. Measured on the next frame: changing a watched toast's height
+// inside the callback is a ResizeObserver loop error.
+const staleToastLists = new Set()
+const toastResizes = typeof ResizeObserver !== "undefined"
+  ? new ResizeObserver((entries) => {
+      entries.forEach(({ target }) => {
+        const t = sonner.toasts.find((x) => x.el === target)
+        const width = t && !t.removed ? toastWidth(target) : NaN
+        if (!width || width === t.width) return
+        if (!staleToastLists.size) requestAnimationFrame(measureStaleToasts)
+        staleToastLists.add(t.ol)
+      })
+    })
+  : null
+
+function measureStaleToasts() {
+  staleToastLists.forEach((ol) => {
+    if (!ol.isConnected) return
+    listToasts(ol).forEach((t) => { if (!t.removed) measureToast(t) })
+    layoutToasts(ol)
+  })
+  staleToastLists.clear()
 }
 
 // Timers run unless the stack is expanded (hovered / focused), pressed, or
@@ -1087,6 +1121,7 @@ function createToast(message, data) {
   ol.prepend(el) // newest first, in reading and tab order too
   measureToast(t)
   layoutToasts(ol)
+  if (toastResizes) toastResizes.observe(el)
   bindSwipe(t)
   // next frame: flip data-mounted so the enter transition runs
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1120,6 +1155,7 @@ function unmountToast(t) {
   const ol = t.ol
   const s = listState(ol)
   const hadFocus = t.el.contains(document.activeElement)
+  if (toastResizes) toastResizes.unobserve(t.el)
   t.el.remove()
   sonner.toasts = sonner.toasts.filter((x) => x !== t)
   const left = listToasts(ol)
@@ -1263,8 +1299,9 @@ function toastFromServer(payload) {
 // modal. While this module is loaded it is hidden (html[data-sonner-flash])
 // and shown as a toast instead - in the toast layer, so it sits above sheets
 // and dialogs and stays clickable. Info flashes clear after their duration
-// (paused on hover/focus), errors stay. Closing or timing out clicks the
-// flash's own close button, whose phx-click pushes lv:clear-flash.
+// (paused on hover/focus) and have no close button unless the toaster gives
+// every toast one; errors stay and always have one. Closing or timing out
+// clicks the flash's own close button, whose phx-click pushes lv:clear-flash.
 const flashes = new Map() // el -> { key, observer }
 
 function flashVisible(el) {
@@ -1300,7 +1337,7 @@ function syncFlash(el) {
     description: title ? message : undefined,
     duration: type === "error" ? Infinity : Number(el.dataset.duration) || 5000,
     position: el.dataset.position,
-    closeButton: true,
+    closeButton: type === "error" ? true : undefined,
     onDismiss: close,
     onAutoClose: close,
   })
