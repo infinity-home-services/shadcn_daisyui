@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.2] - 2026-11-02
+
+A toast's stored height now follows its width, so hovering a stack after the window
+was widened or rotated no longer sets a toast to its old height. Only error flashes
+show a close button now, since info flashes clear themselves.
+
 ### Changed
 
 - `<.flash>`: only error flashes show a close button. Info flashes clear themselves
