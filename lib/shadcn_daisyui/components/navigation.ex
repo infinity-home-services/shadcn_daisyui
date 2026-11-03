@@ -57,8 +57,9 @@ defmodule ShadcnDaisyui.Components.Navigation do
   active `:menu_item` is in the menu the More trigger shows its name. When
   even the active tab and More don't fit side by side, every tab folds into
   the menu (the active one checked) and the trigger names the active tab with
-  its count, truncating the label, never the count. The row re-fits on resize
-  and after LiveView patches.
+  its count, truncating the label, never the count. The menu opens in the
+  browser's top layer, so nothing clips it. The row re-fits on resize and
+  after LiveView patches.
 
       <.tab_nav id="views" aria-label="Views">
         <:tab patch={~p"/issues"} active={@view == "all"} count={@counts.all}>All issues</:tab>
@@ -169,8 +170,10 @@ defmodule ShadcnDaisyui.Components.Navigation do
             id={"#{@id}-menu"}
             class="popover-panel tab-nav-menu"
             data-tab-nav-menu
+            popover="manual"
+            tabindex="-1"
             hidden
-            phx-mounted={keep_client_attrs(["hidden"])}
+            phx-mounted={keep_client_attrs(["hidden", "style"])}
           >
             <div data-tab-nav-overflow hidden phx-mounted={keep_client_attrs(["hidden"])}>
               <.link

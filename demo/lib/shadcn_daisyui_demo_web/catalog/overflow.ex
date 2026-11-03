@@ -88,7 +88,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           %{
             part: "Menu",
             description:
-              "Floating panel: overflowed tabs first (in order), a separator, then the :menu_item sections with group labels."
+              "Floating panel in the browser's top layer (popover=\"manual\"), so nothing clips it: overflowed tabs first (in order), a separator, then the :menu_item sections with group labels."
           }
         ],
         measurements: [
@@ -214,7 +214,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   <span class="tab-nav-label" data-tab-nav-current>All issues</span><span class="tab-count" data-tab-nav-current>128</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
-                <div id="issue-views-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+                <div id="issue-views-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu popover="manual" tabindex="-1" hidden>
                   <div data-tab-nav-overflow hidden>
                     <a href="#all" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All issues</span><span class="ml-auto font-mono text-xs text-muted-foreground">128</span><span class="hero-check size-4" aria-hidden="true"></span></a>
                     <a href="#active" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Active</span><span class="ml-auto font-mono text-xs text-muted-foreground">24</span></a>
@@ -273,7 +273,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   <span class="sr-only" data-tab-nav-default>More: </span><span class="tab-nav-label" data-tab-nav-default>Open bugs</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
-                <div id="issue-views-shared-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+                <div id="issue-views-shared-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu popover="manual" tabindex="-1" hidden>
                   <div data-tab-nav-overflow hidden>
                     <a href="#all" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All issues</span><span class="ml-auto font-mono text-xs text-muted-foreground">128</span></a>
                     <a href="#active" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Active</span><span class="ml-auto font-mono text-xs text-muted-foreground">24</span></a>
@@ -331,7 +331,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   <span class="tab-nav-label" data-tab-nav-current>Billing</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
-                <div id="settings-nav-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+                <div id="settings-nav-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu popover="manual" tabindex="-1" hidden>
                   <div data-tab-nav-overflow hidden>
                     <a href="#overview" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">Overview</span></a>
                     <a href="#analytics" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Analytics</span></a>
@@ -381,7 +381,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   <span class="tab-nav-label" data-tab-nav-current>Needs a call</span><span class="tab-count" data-tab-nav-current>17</span>
                   <span class="hero-chevron-down size-4 opacity-50" aria-hidden="true"></span>
                 </button>
-                <div id="call-queue-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu hidden>
+                <div id="call-queue-menu" class="popover-panel tab-nav-menu" data-tab-nav-menu popover="manual" tabindex="-1" hidden>
                   <div data-tab-nav-overflow hidden>
                     <a href="#all" class="combo-item" tabindex="-1" data-tab-nav-copy data-index="0" hidden><span class="truncate">All calls</span><span class="ml-auto font-mono text-xs text-muted-foreground">240</span></a>
                     <a href="#needs-call" class="combo-item" aria-current="page" tabindex="-1" data-tab-nav-copy data-index="1" hidden><span class="truncate">Needs a call</span><span class="ml-auto font-mono text-xs text-muted-foreground">17</span><span class="hero-check size-4" aria-hidden="true"></span></a>
@@ -463,7 +463,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
           },
           %{
             part: "Popover",
-            description: "Floating panel of the collapsed chips (wrapping), each removable."
+            description:
+              "Floating panel of the collapsed chips (wrapping), each removable. It opens in the browser's top layer (popover=\"manual\"), so a table cell or a scrolling card doesn't clip it; it follows +N as the page scrolls and closes when +N scrolls out of view."
           },
           %{
             part: "Stack",
@@ -587,7 +588,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
             </ul>
             <div class="chip-row-more" data-chip-row-more hidden>
               <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="active-filters-overflow" data-chip-row-trigger data-more-label="Show {count} more"></button>
-              <div id="active-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+              <div id="active-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel popover="manual" tabindex="-1" hidden>
                 <ul class="flex flex-wrap gap-2" aria-label="Active filters">
                   <li class="badge chip badge-secondary" data-index="0" data-value="status:todo" hidden data-chip-copy><span id="active-filters-copy-0-label" class="chip-label">Status: Todo</span><button type="button" id="active-filters-copy-0-remove" class="chip-remove" aria-label="Remove" aria-labelledby="active-filters-copy-0-remove active-filters-copy-0-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
                   <li class="badge chip badge-secondary" data-index="1" data-value="status:in-progress" hidden data-chip-copy><span id="active-filters-copy-1-label" class="chip-label">Status: In progress</span><button type="button" id="active-filters-copy-1-remove" class="chip-remove" aria-label="Remove" aria-labelledby="active-filters-copy-1-remove active-filters-copy-1-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
@@ -683,7 +684,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   </ul>
                   <div class="chip-row-more" data-chip-row-more hidden>
                     <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="live-filters-overflow" data-chip-row-trigger data-more-label="Show {count} more"></button>
-                    <div id="live-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+                    <div id="live-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel popover="manual" tabindex="-1" hidden>
                       <ul class="flex flex-wrap gap-2" aria-label="Active filters">
                           <li id="live-filters-copy-v-todo" class="badge chip badge-secondary" data-index="0" data-value="todo" hidden data-chip-copy><span id="live-filters-copy-v-todo-label" class="chip-label">Status: Todo</span><button type="button" id="live-filters-copy-v-todo-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-copy-v-todo-remove live-filters-copy-v-todo-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
                           <li id="live-filters-copy-v-high" class="badge chip badge-secondary" data-index="1" data-value="high" hidden data-chip-copy><span id="live-filters-copy-v-high-label" class="chip-label">Priority: High</span><button type="button" id="live-filters-copy-v-high-remove" class="chip-remove" aria-label="Remove" aria-labelledby="live-filters-copy-v-high-remove live-filters-copy-v-high-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
@@ -722,7 +723,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
             </ul>
             <div class="chip-row-more" data-chip-row-more hidden>
               <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="recipients-overflow" data-chip-row-trigger data-more-label="Show {count} more"></button>
-              <div id="recipients-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+              <div id="recipients-overflow" class="popover-panel chip-row-panel" data-chip-row-panel popover="manual" tabindex="-1" hidden>
                 <ul class="flex flex-wrap gap-2" aria-label="Recipients">
                   <li class="badge chip badge-outline" data-index="0" data-value="olivia@example.com" hidden data-chip-copy><span id="recipients-copy-0-label" class="chip-label">olivia@example.com</span><button type="button" id="recipients-copy-0-remove" class="chip-remove" aria-label="Remove" aria-labelledby="recipients-copy-0-remove recipients-copy-0-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
                   <li class="badge chip badge-outline" data-index="1" data-value="jackson@example.com" hidden data-chip-copy><span id="recipients-copy-1-label" class="chip-label">jackson@example.com</span><button type="button" id="recipients-copy-1-remove" class="chip-remove" aria-label="Remove" aria-labelledby="recipients-copy-1-remove recipients-copy-1-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
@@ -900,7 +901,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Overflow do
                   </ul>
                   <div class="chip-row-more" data-chip-row-more hidden>
                     <button type="button" class="badge badge-outline chip chip-more" aria-expanded="false" aria-controls="reveal-filters-overflow" data-chip-row-trigger data-more-label="Show {count} more"></button>
-                    <div id="reveal-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel hidden>
+                    <div id="reveal-filters-overflow" class="popover-panel chip-row-panel" data-chip-row-panel popover="manual" tabindex="-1" hidden>
                       <ul class="flex flex-wrap gap-2" aria-label="Active filters">
                         <li class="badge chip badge-secondary" data-index="0" data-value="status:todo" hidden data-chip-copy><span id="reveal-filters-copy-0-label" class="chip-label">Status: Todo</span><button type="button" id="reveal-filters-copy-0-remove" class="chip-remove" aria-label="Remove" aria-labelledby="reveal-filters-copy-0-remove reveal-filters-copy-0-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>
                         <li class="badge chip badge-secondary" data-index="1" data-value="status:in-progress" hidden data-chip-copy><span id="reveal-filters-copy-1-label" class="chip-label">Status: In progress</span><button type="button" id="reveal-filters-copy-1-remove" class="chip-remove" aria-label="Remove" aria-labelledby="reveal-filters-copy-1-remove reveal-filters-copy-1-label" data-chip-remove><span class="hero-x-mark size-3" aria-hidden="true"></span></button></li>

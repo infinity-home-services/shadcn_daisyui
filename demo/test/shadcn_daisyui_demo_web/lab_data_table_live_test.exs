@@ -26,6 +26,21 @@ defmodule ShadcnDaisyuiDemoWeb.LabDataTableLiveTest do
       assert has_element?(view, "#orders[data-more]")
     end
 
+    test "each row's tags are a chip row in a cell; a tag's × in +N removes it", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/lab/data-table")
+
+      assert has_element?(view, ~s(#orders-row-239 td #order-239-tags[phx-hook="ShadcnChipRow"]))
+      # +N's panel opens in the top layer, so the cell doesn't clip it
+      assert has_element?(view, ~s(#order-239-tags-overflow[popover="manual"]))
+
+      view
+      |> element(~s(#order-239-tags-overflow [aria-label="Remove Rush"]))
+      |> render_click()
+
+      refute has_element?(view, ~s(#order-239-tags [aria-label="Remove Rush"]))
+      assert has_element?(view, ~s(#order-239-tags [aria-label="Remove Fragile"]))
+    end
+
     test "a header sort goes in the URL, ascending then descending then default", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/lab/data-table")
 

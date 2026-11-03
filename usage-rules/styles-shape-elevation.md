@@ -22,12 +22,13 @@ the separation work, shadows are garnish.
 - Stacking (z-index) has three layers, so floating content never hides behind
   sticky chrome: [web] **in-page sticky layers** (sticky table headers,
   toolbars, sticky footers / bottom bars) `z-10`; **floating content** (menus,
-  popovers, select / combobox / date panels, the context menu, the tab-nav and
-  chip-row panels) `z-50`; **modals** (dialog, sheet, drawer, command) are
-  native `<dialog>`s in the browser's top layer, above every z-index;
-  **toasts and flashes** sit in the top layer above any open modal (the JS
-  moves them into the topmost one, since everything outside a modal is
-  inert). The
+  popovers, select / combobox / date panels, the context menu) `z-50`;
+  **modals** (dialog, sheet, drawer, command) are native `<dialog>`s in the
+  browser's top layer, above every z-index; the **tab-nav More menu and the
+  chip-row "+N" panel** open in the top layer too (`popover="manual"`), placed
+  under their trigger and following it as the page scrolls; **toasts and
+  flashes** sit in the top layer above any open modal (the JS moves them into
+  the topmost one, since everything outside a modal is inert). The
   components already use these; in your own markup use only `z-10` and
   `z-50`, never an arbitrary value (`z-[999]`) to win a fight. z-index only
   competes inside one stacking context: don't give an ancestor of a menu
@@ -37,6 +38,9 @@ the separation work, shadows are garnish.
   menu off at its edge: `<.table_card>` doesn't clip, so a row's ⋯ menu opens
   in full; `<.table>`, the static table recipe and `<.data_table>` do, so
   their rows' actions are inline (`<:action>` links) or on the record page.
+  The top-layer panels are the exception: nothing clips them, so a
+  `<.chip_row>` in a `<.data_table>` cell (or a `<.tab_nav>` in a card) shows
+  its whole panel, and a click in the panel doesn't open the row.
 - Every modal surface (dialog, sheet, drawer, command) uses the same backdrop:
   `bg-black/50`. Don't add blur or a second dim.
 - Borders are 1px `border-border` (web) / `sdBorder` (iOS). Don't fake depth

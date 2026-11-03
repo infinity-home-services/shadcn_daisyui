@@ -793,9 +793,11 @@ defmodule ShadcnDaisyui.Components.Display do
   width. Needs the `ShadcnChipRow` hook.
 
   Chips that don't fit collapse into a trailing "+N" chip that opens a popover
-  listing them, each still removable. `:action` content (e.g. "Clear all")
-  always stays visible at the end of the row. The row re-fits on resize and
-  after LiveView patches.
+  listing them, each still removable. The popover opens in the browser's top
+  layer, so nothing clips it (a `<.data_table>` cell, a scrolling card); it
+  follows "+N" while anything scrolls and closes once "+N" scrolls out of
+  view. `:action` content (e.g. "Clear all") always stays visible at the end
+  of the row. The row re-fits on resize and after LiveView patches.
 
       <.chip_row id="active-filters" aria-label="Active filters">
         <:chip :for={f <- @filters} value={f.id} on_remove={JS.push("remove_filter", value: %{id: f.id})}>
@@ -928,6 +930,8 @@ defmodule ShadcnDaisyui.Components.Display do
           id={"#{@id}-overflow"}
           class="popover-panel chip-row-panel"
           data-chip-row-panel
+          popover="manual"
+          tabindex="-1"
           hidden
           phx-mounted={keep_client_attrs(["hidden", "style"])}
         >

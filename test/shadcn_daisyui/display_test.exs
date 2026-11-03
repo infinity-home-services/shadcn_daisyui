@@ -710,9 +710,11 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       assert html =~
                ~r/id="f-chip-v-brands-name">Brands<\/span>: <span data-chip-stack-values>Acme sandbox, Northwind, Northwind sandbox</
 
-      # the values are in the row, hidden, and keep what the hook sets
+      # the values are in the row, hidden, and keep what the hook sets; the
+      # row's one popover is +N's panel
       assert html =~ ~r/<ul[^>]*id="f-chip-v-brands-values"[^>]*hidden/s
-      refute html =~ "popover="
+      assert count(html, "popover=") == 1
+      assert html =~ ~r/id="f-overflow"[^>]*popover="manual"/s
       assert html =~ "&quot;aria-expanded&quot;"
       assert html =~ "&quot;inert&quot;"
     end
@@ -751,7 +753,13 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
 
     test "in the +N popover a stack's values show flat, keyed by value, no popover inside" do
       html = stack_row()
-      overflow = html |> String.split(~s(id="f-overflow")) |> Enum.at(1)
+      # what the panel (itself a popover) holds
+      overflow =
+        html
+        |> String.split(~s(id="f-overflow"))
+        |> Enum.at(1)
+        |> String.split(">", parts: 2)
+        |> Enum.at(1)
 
       assert overflow =~ ~r/id="f-copy-v-brands-v-acme"[^>]*data-chip-value[^>]*data-chip-copy/s
       assert overflow =~ ~r/id="f-copy-v-brands-v-ps-remove"[^>]*phx-click="rm_ps"/s

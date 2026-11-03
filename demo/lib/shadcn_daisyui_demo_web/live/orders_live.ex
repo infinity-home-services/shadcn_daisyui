@@ -5,7 +5,8 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
   search, a filters sheet, chips) over a `<.data_table>` that fills the
   window: sortable columns, rows that open the record, ticked rows with bulk
   actions, 40 rows at a time as the end comes into view, and the scroll
-  position kept when you come back. Sort, search and filters live in the URL
+  position kept when you come back. Each row's tags are a `<.chip_row>` in a
+  cell: its "+N" panel opens over the table, and a tag's × removes it. Sort, search and filters live in the URL
   (`ShadcnDaisyui.DataTable.State`), so Back restores a view; the ticks live
   on the page.
   """
@@ -13,7 +14,7 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
 
   import ShadcnDaisyui.Components, only: [select: 1, combobox: 1]
   import ShadcnDaisyui.Components.DataTable
-  import ShadcnDaisyui.Components.Display, only: [push_toast: 3]
+  import ShadcnDaisyui.Components.Display, only: [chip_row: 1, push_toast: 3]
   # the package's button (variants, sizes) over the demo's generated one
   import ShadcnDaisyuiDemoWeb.CoreComponents, only: []
   import ShadcnDaisyui.CoreComponents, only: [page_header: 1, button: 1]
@@ -126,6 +127,16 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
     }
 
     {:noreply, patch(socket, state)}
+  end
+
+  def handle_event("untag", %{"id" => id, "tag" => tag}, socket) do
+    orders =
+      Enum.map(socket.assigns.orders, fn
+        %{id: ^id} = o -> %{o | tags: List.delete(o.tags, tag)}
+        o -> o
+      end)
+
+    {:noreply, socket |> assign(orders: orders) |> assign_rows(socket.assigns.state)}
   end
 
   def handle_event("dt:open", %{"id" => id}, socket) do
@@ -301,6 +312,18 @@ defmodule ShadcnDaisyuiDemoWeb.OrdersLive do
         <:col :let={o} label="Order" sort="number" class="w-24 font-medium">{o.number}</:col>
         <:col :let={o} label="Customer" sort="customer">{o.customer}</:col>
         <:col :let={o} label="Owner" hide_below="lg" class="w-36">{o.owner}</:col>
+        <:col :let={o} label="Tags" hide_below="md" class="w-56">
+          <.chip_row id={"order-#{o.id}-tags"} aria_label={"Tags on order #{o.number}"}>
+            <:chip
+              :for={t <- o.tags}
+              value={t}
+              on_remove={JS.push("untag", value: %{id: o.id, tag: t})}
+              remove_label={"Remove #{t}"}
+            >
+              {t}
+            </:chip>
+          </.chip_row>
+        </:col>
         <:col :let={o} label="Status" hide_below="sm" class="w-28">
           <.status_badge status={o.status} />
         </:col>

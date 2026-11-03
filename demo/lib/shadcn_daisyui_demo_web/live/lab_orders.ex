@@ -30,6 +30,7 @@ defmodule ShadcnDaisyuiDemoWeb.LabOrders do
   ]
 
   @owners ["Pat Lee", "Sam Okafor", "Jordan Diaz", "Riley Chen"]
+  @tags ["Wholesale", "Rush", "Gift wrap", "Net 30", "Repeat customer", "Tax exempt", "Fragile"]
   @statuses [{"Open", "open"}, {"Paid", "paid"}, {"Overdue", "overdue"}, {"Refunded", "refunded"}]
 
   @doc "The table's URL options: its filters (and their defaults) and sort keys."
@@ -77,9 +78,18 @@ defmodule ShadcnDaisyuiDemoWeb.LabOrders do
         status: status(id),
         total: rem(id * 7919, 120_000) / 100 + 25,
         placed: Date.add(~D[2026-10-22], -div((241 - id) * 5, 3)),
-        email: "orders#{id}@example.test"
+        email: "orders#{id}@example.test",
+        tags: tags(id)
       }
     end
+  end
+
+  # 0 to 6 of the tags, a different set per order
+  defp tags(id) do
+    @tags
+    |> Enum.with_index()
+    |> Enum.filter(fn {_tag, i} -> rem(id * (i + 3), 7) < rem(id, 6) end)
+    |> Enum.map(&elem(&1, 0))
   end
 
   defp status(id) do

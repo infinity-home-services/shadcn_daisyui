@@ -2821,32 +2821,110 @@ function fitRow({ widths, avail, gap, moreW, moreAlways, pinned }) {
   return vis
 }
 
+// Is any of `el` on screen: inside the window and every ancestor that clips it
+// (a scrolling table body), and not under something else in its own layer (a
+// sticky table header; a toast or a modal above it doesn't count)?
+function inView(el) {
+  const r = el.getBoundingClientRect()
+  let top = Math.max(r.top, 0)
+  let bottom = Math.min(r.bottom, document.documentElement.clientHeight)
+  let left = Math.max(r.left, 0)
+  let right = Math.min(r.right, document.documentElement.clientWidth)
+  for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+    const cs = getComputedStyle(a)
+    if (cs.overflowX === "visible" && cs.overflowY === "visible") continue
+    const ar = a.getBoundingClientRect()
+    top = Math.max(top, ar.top)
+    bottom = Math.min(bottom, ar.bottom)
+    left = Math.max(left, ar.left)
+    right = Math.min(right, ar.right)
+  }
+  if (bottom <= top || right <= left) return false
+  const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2)
+  const layer = (n) => n.closest("dialog[open], :popover-open")
+  return !hit || el.contains(hit) || layer(hit) !== layer(el)
+}
+
 // A trigger + panel inside `root` (the More menu, the +N popover). Listeners
 // are delegated and nodes are looked up on use, so a patch that replaces them
-// keeps working; sync() re-applies the open state after a patch.
+// keeps working; sync() re-applies the open state after a patch. A panel with
+// the popover attribute (popover="manual") opens in the browser's top layer,
+// so no ancestor clips it - a table cell, a scrolling card. It stays where it
+// is in the DOM (clicks and focus work as before) and is placed from the
+// trigger's box on screen: under it, or above it when the window has more
+// room there. While it's open it follows the trigger as anything scrolls or
+// the window resizes, and it closes once the trigger is out of view. The
+// panel is focusable (tabindex="-1"): pressing on its text or padding focuses
+// it, not a focusable ancestor (a data table row), which would close it.
 function disclosure(root, sel, { flipTo, horizontal, pick }) {
   let isOpen = false
+  let following = false
+  const align = flipTo === "start" ? "end" : "start" // where it opens unflipped
   const get = (s) => root.querySelector(s)
   // the trigger + panel's container (sel.wrap, or the root itself)
   const wrapOf = () => (sel.wrap ? get(sel.wrap) : root)
   const items = () => [...root.querySelectorAll(sel.item)].filter((el) => el.offsetParent !== null)
-  const sync = () => {
-    const t = get(sel.trigger)
-    const p = get(sel.panel)
-    if (!t || !p) return
-    t.setAttribute("aria-expanded", String(isOpen))
-    p.hidden = !isOpen
-    if (!isOpen) return
+  const topLayer = (p) => p.hasAttribute("popover") && typeof p.showPopover === "function"
+  // top layer: fixed at the trigger's container - its start (data-align="end":
+  // its end) edge on the panel's, below it or (no room) above it, the CSS
+  // margin apart
+  const anchor = (p, w) => {
+    const end = (p.getAttribute("data-align") || align) === "end"
+    const cs = getComputedStyle(p)
+    const size = p.getBoundingClientRect()
+    p.style.left = (end !== (cs.direction === "rtl") ? w.right - size.width : w.left) + "px"
+    const vh = document.documentElement.clientHeight
+    const gap = parseFloat(cs.marginTop) || 0
+    const above = w.bottom + gap + size.height > vh - 8 && w.top > vh - w.bottom
+    p.style.top = above ? "auto" : w.bottom + "px"
+    p.style.bottom = above ? vh - w.top + "px" : "auto"
+  }
+  const place = (p) => {
     // keep the panel on screen: flip its alignment when it would overflow, and
     // shift it back in when it's too wide for either (a phone)
     p.removeAttribute("data-align")
     p.style.translate = ""
+    const w = topLayer(p) && (wrapOf() || root).getBoundingClientRect()
+    if (w) anchor(p, w)
     const vw = document.documentElement.clientWidth
     let r = p.getBoundingClientRect()
-    if (r.left < 8 || r.right > vw - 8) p.setAttribute("data-align", flipTo)
+    if (r.left < 8 || r.right > vw - 8) {
+      p.setAttribute("data-align", flipTo)
+      if (w) anchor(p, w)
+    }
     r = p.getBoundingClientRect()
     const shift = r.left < 8 ? 8 - r.left : r.right > vw - 8 ? vw - 8 - r.right : 0
     if (shift) p.style.translate = shift + "px 0"
+  }
+  // scrolling (the page or any scroll region; capture sees them all) and
+  // resizing move the trigger: the panel goes with it, or closes when the
+  // trigger is gone from view (focus in the panel goes back to the trigger)
+  const onMove = (e) => {
+    const t = get(sel.trigger)
+    const p = get(sel.panel)
+    if (!isOpen || !t || !p || (e.type === "scroll" && e.target instanceof Node && p.contains(e.target))) return
+    if (inView(t)) { place(p); return }
+    const back = p.contains(document.activeElement)
+    set(false)
+    if (back) t.focus({ preventScroll: true })
+  }
+  const follow = (on) => {
+    if (on === following) return
+    following = on
+    const method = on ? "addEventListener" : "removeEventListener"
+    window[method]("scroll", onMove, { capture: true, passive: true })
+    window[method]("resize", onMove)
+  }
+  const sync = () => {
+    const t = get(sel.trigger)
+    const p = get(sel.panel)
+    if (!t || !p) { follow(false); return }
+    t.setAttribute("aria-expanded", String(isOpen))
+    p.hidden = !isOpen
+    const top = topLayer(p)
+    if (top && p.matches(":popover-open") !== isOpen) isOpen ? p.showPopover() : p.hidePopover()
+    follow(isOpen && top)
+    if (isOpen) place(p)
   }
   const set = (open, focus) => {
     isOpen = open
@@ -2978,7 +3056,7 @@ function initTabNav(root) {
   if (ro) ro.observe(root)
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit)
   fit()
-  const api = { refresh: fit, destroy() { if (ro) ro.disconnect() } }
+  const api = { refresh: fit, destroy() { if (ro) ro.disconnect(); menu.set(false) } }
   root.__sdTabNav = api
   return api
 }
@@ -3642,6 +3720,7 @@ function initChipRow(root) {
       clearTimeout(holdTimer)
       document.removeEventListener("pointermove", onSettle)
       closeStack(false, false)
+      pop.set(false)
     },
   }
   sync(false)
@@ -3653,11 +3732,12 @@ function initChipRow(root) {
 // ---- Data table (<.data_table>) ---------------------------------------------
 // The server owns what the table shows (rows, sort, ticked rows); this is the
 // browser side. A click on a row, or Enter on it, pushes dt:open with its id -
-// not on links, buttons, inputs, labels or [data-row-ignore], and not a click
-// that ends with text selected; Cmd/Ctrl-click and middle click open its
-// data-href in a new tab. A row's checkbox pushes dt:select with `shift`
-// (Shift-click doesn't select text; a click anywhere in the checkbox cell
-// ticks it). The rows' checkboxes follow the server's data-selected after
+// not on links, buttons, inputs, labels or [data-row-ignore], not in a popover
+// (a chip row's +N panel: in the row's DOM, but in the top layer on screen),
+// and not a click that ends with text selected; Cmd/Ctrl-click and middle
+// click open its data-href in a new tab. A row's checkbox pushes dt:select
+// with `shift` (Shift-click doesn't select text; a click anywhere in the
+// checkbox cell ticks it). The rows' checkboxes follow the server's data-selected after
 // every patch (unless a tick is still on its way), and the header checkbox -
 // its own phx-click pushes dt:select_all - shows ticked or half-ticked from
 // them. With data-more, the end coming within ~200px (an IntersectionObserver
@@ -3667,7 +3747,7 @@ function initChipRow(root) {
 // data-active is scrolled into view when it changes. Without a hook (a
 // dead view) each push is a `shadcn:data-table` event, `{ event, payload }`;
 // dt:more then waits for the page to change the rows before asking again.
-const ROW_IGNORE = "a, button, input, select, textarea, label, summary, [contenteditable], [role=button], [data-row-ignore]"
+const ROW_IGNORE = "a, button, input, select, textarea, label, summary, [contenteditable], [role=button], [data-row-ignore], [popover]"
 function initLiveTable(root, hook) {
   if (root.__sdTable) { if (hook) root.__sdTable.hook = hook; return root.__sdTable }
   const scroller = () => root.querySelector("[data-dt-scroll]")
