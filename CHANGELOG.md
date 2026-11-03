@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.3] - 2026-11-03
+
+A chip row's "+N" panel and a tab nav's More menu now open in the browser's top
+layer, so nothing clips them: a chip row in a `<.data_table>` cell shows its whole
+panel over the table, follows "+N" as the table scrolls and closes once "+N" is out
+of view. A click in the panel never opens the row behind it.
+
 ### Fixed
 
 - `<.chip_row>`: the "+N" panel opens in the browser's top layer
