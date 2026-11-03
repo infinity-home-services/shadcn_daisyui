@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `<.chip_row>`: the "+N" panel opens in the browser's top layer
+  (`popover="manual"`), so an ancestor that clips no longer cuts it off. In a
+  `<.data_table>` cell (cells clip, the body scrolls) only a sliver of it showed;
+  now the whole panel shows over the table. It is placed from where "+N" is on
+  screen: under it, start-aligned, end-aligned near the window's right edge, shifted
+  in on a phone, and above "+N" when the window has more room there. It follows "+N"
+  while the page or any scroll region scrolls and when the window resizes, and closes
+  once "+N" scrolls out of view or under a sticky header (focus in the panel goes
+  back to "+N"). It stays in the row in the DOM, so a click outside, Esc, the
+  keyboard, removing a chip from it and LiveView patches work as before.
+- `<.data_table>`: a click in a popover inside a row (a chip row's "+N" panel) no
+  longer opens the row (`dt:open`). Pressing on the panel's padding or a chip's
+  label focuses the panel (`tabindex="-1"`), not the row, so the panel no longer
+  closes before the click lands and opens the row behind it.
+- `<.tab_nav>`: the More menu opens in the top layer the same way, so a card or a
+  scroll region around the row no longer clips it.
+
+### Changed
+
+- The +N panel and the More menu render `popover="manual" tabindex="-1"`. Plain-HTML
+  markup without them keeps working: the panel opens inside the row, as before.
+
 ## [0.31.2] - 2026-11-02
 
 A toast's stored height now follows its width, so hovering a stack after the window

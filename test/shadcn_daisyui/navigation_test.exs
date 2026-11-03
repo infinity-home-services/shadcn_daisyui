@@ -276,6 +276,9 @@ defmodule ShadcnDaisyui.Components.NavigationTest do
       assert html =~ ~s(data-index="2")
       assert html =~ ~s(aria-controls="views-menu")
       assert html =~ ~s(id="views-menu")
+      # the menu opens in the top layer; the hook places it (style), so a
+      # patch must keep that
+      assert html =~ ~r/id="views-menu"[^>]*popover="manual"[^>]*&quot;style&quot;/s
       # no extra entries: the More slot starts hidden, the separator isn't rendered
       assert html =~ ~r/data-tab-nav-more\s+hidden/
       refute html =~ "data-tab-nav-sep"

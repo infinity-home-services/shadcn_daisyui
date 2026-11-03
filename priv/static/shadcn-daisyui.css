@@ -654,8 +654,9 @@
   }
   /* Layering: in-page sticky layers (table headers, toolbars, bottom bars)
      sit at z-10; every floating surface (menus, popovers, picker panels, the
-     context menu, the tab-nav / chip-row panels) at z-50, above them; modals
-     (<dialog>) render in the browser's top layer, above everything. The
+     context menu) at z-50, above them; modals (<dialog>) render in the
+     browser's top layer, above everything, and so do the tab-nav and
+     chip-row panels (popover="manual", so no ancestor clips them). The
      components and recipes put z-50 in their markup. daisyUI pins
      `.dropdown .dropdown-content` to z-index 999 at a specificity no z-*
      utility beats, so the theme sets that selector to the floating layer
@@ -1393,6 +1394,12 @@
     padding: 0.25rem;
   }
   .tab-nav-menu[data-align="start"] { inset-inline-start: 0; inset-inline-end: auto; }
+  /* in the top layer (popover="manual": nothing clips it): fixed where the
+     hook places it from the trigger's box, the same gap from the row, the
+     UA's popover box cleared */
+  .tab-nav-menu[popover]:popover-open { position: fixed; inset: auto; margin: calc(3px + 0.25rem) 0; }
+  /* focused by a press on its padding (tabindex="-1"): no ring */
+  .tab-nav-menu:focus, .chip-row-panel:focus { outline: none; }
   .tab-nav-menu .combo-item { text-decoration: none; }
   .tab-nav-menu .combo-item:focus-visible { outline: none; background-color: var(--accent); color: var(--accent-foreground); }
   .tab-nav-menu .combo-item[aria-current="page"] { font-weight: 500; }
@@ -1457,6 +1464,9 @@
     padding: 0.75rem;
   }
   .chip-row-panel[data-align="end"] { inset-inline-start: auto; inset-inline-end: 0; }
+  /* in the top layer, as the tab nav's menu (a table cell doesn't clip it);
+     a click in it doesn't open a data table's row, so no row pointer */
+  .chip-row-panel[popover]:popover-open { position: fixed; inset: auto; margin: 0.25rem 0; cursor: default; }
   .chip-row-panel .chip { flex-shrink: 1; min-width: 0; max-width: 100%; }
   .chip-row-actions { display: flex; flex-shrink: 0; align-items: center; gap: 0.5rem; }
   /* touch: 32px chips; the remove button and +N reach 44px through an
