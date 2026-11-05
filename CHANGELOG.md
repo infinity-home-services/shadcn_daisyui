@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.4] - 2026-11-05
+
+A chip that a patch removes and renders again before its exit ends - the same value
+back, as when a filter changes in two quick patches - now cancels its exit and stays,
+instead of disappearing until the page reloads.
+
 ### Fixed
 
 - `<.chip_row>`: a chip removed and rendered again before its 150ms exit ended (the
