@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `<.chip_row>`: a chip removed and rendered again before its 150ms exit ended (the
+  same value back, e.g. a filter changed in two quick patches) no longer disappears
+  until the page reloads. LiveView removes a `phx-remove` element once its
+  transition ends, even when a later patch rendered it again, and the hook had
+  hidden it. A chip that comes back now cancels its exit from where it stands,
+  keeps its node and stays, in the row, in the "+N" popover, and as a stacked
+  chip's value. Removed again later, it goes as usual.
+
 ## [0.31.3] - 2026-11-03
 
 A chip row's "+N" panel and a tab nav's More menu now open in the browser's top

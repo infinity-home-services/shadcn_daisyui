@@ -3113,6 +3113,8 @@ function initChipRow(root) {
   const pos = new WeakMap() // node -> { x, y, shown }: its layout box at the last sync
   const slides = new WeakMap() // node -> its running FLIP animation
   const exiting = new Map() // node -> true when the hook removes it (dead views)
+  const lvLeaving = new Map() // node -> LiveView removals pending (phx-remove runs)
+  const skips = new WeakMap() // node that came back -> LiveView removals it ignores
   let holdTimer = null
   let scheduled = false
   let ready = false
@@ -3266,7 +3268,8 @@ function initChipRow(root) {
     el.animate([{ scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: CHIP_MS, easing: "ease-out" })
 
   // A chip, chip copy or the actions leaving. `own`: the hook removes the node
-  // (dead views); otherwise LiveView does, after its phx-remove transition.
+  // (dead views); otherwise LiveView does, after its phx-remove transition,
+  // unless a patch renders it again first (returned()).
   function exit(el, own) {
     if (leaving(el)) return
     if (el.id && el.id === stackId) closeStack(false, false)
@@ -3310,6 +3313,7 @@ function initChipRow(root) {
   }
   function release() {
     holdTimer = null
+    returned()
     exiting.forEach((own, el) => {
       el.hidden = true
       if (own) el.remove()
@@ -3320,10 +3324,45 @@ function initChipRow(root) {
     sync(true)
   }
 
+  // A node LiveView is removing (its phx-remove ran) that a later patch
+  // rendered again - a chip with the same value back mid-exit. That patch's
+  // morph took data-chip-exiting away. LiveView (1.1, 1.2) still removes a
+  // phx-remove node once its transition ends, so the node lets those removals
+  // pass it by, and its exit is undone from where it stands.
+  function returned() {
+    lvLeaving.forEach((removals, el) => {
+      if (!el.isConnected) lvLeaving.delete(el)
+      else if (!leaving(el)) { lvLeaving.delete(el); revive(el, removals) }
+    })
+  }
+  function revive(el, removals) {
+    exiting.delete(el)
+    const cs = getComputedStyle(el)
+    const from = { scale: cs.scale === "none" ? "1" : cs.scale, opacity: cs.opacity }
+    el.getAnimations().forEach((a) => a.cancel())
+    Object.assign(el.style, { position: "", left: "", top: "", width: "", margin: "" })
+    el.inert = false
+    // fit() and showCopies() say where chips and copies show; a value and the
+    // actions just show again
+    if (!el.matches("[data-chip], [data-chip-copy]")) el.hidden = false
+    if (canAnimate() && Number(from.opacity) < 1) {
+      el.animate([from, { scale: 1, opacity: 1 }], { duration: CHIP_MS, easing: "ease-out" })
+    }
+    // LiveView's pending removals call el.remove(): it ignores that many, then
+    // removes as usual
+    skips.set(el, (skips.get(el) || 0) + removals)
+    el.remove = () => {
+      const left = skips.get(el) - 1
+      if (left > 0) skips.set(el, left)
+      else { skips.delete(el); delete el.remove }
+    }
+  }
+
   // Apply a change: re-fit (unless chips are still fading out), then animate
   // what moved or arrived since the last measure.
   function sync(animate) {
     scheduled = false
+    returned()
     syncStack()
     // while chips fade out the row isn't re-fit, but a new copy (a stack that
     // just became a normal chip) still shows if its chip is in +N
@@ -3695,10 +3734,12 @@ function initChipRow(root) {
   })
 
   // LiveView: a chip (or the actions) the patch removed runs its phx-remove,
-  // which dispatches chip-exit right after the hook's updated()
+  // which dispatches chip-exit right after the hook's updated() - on every
+  // patch that leaves it out until it's gone, each one a removal to come
   root.addEventListener("chip-exit", (e) => {
     const el = e.target.closest && e.target.closest("[data-chip-value], [data-chip], [data-chip-copy], [data-chip-row-actions]")
     if (!el || !root.contains(el)) return
+    lvLeaving.set(el, (lvLeaving.get(el) || 0) + 1)
     exit(el, false)
     schedule()
   })
@@ -3718,6 +3759,7 @@ function initChipRow(root) {
       if (ro) ro.disconnect()
       if (mo) mo.disconnect()
       clearTimeout(holdTimer)
+      lvLeaving.clear()
       document.removeEventListener("pointermove", onSettle)
       closeStack(false, false)
       pop.set(false)
