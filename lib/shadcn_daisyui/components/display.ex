@@ -820,7 +820,9 @@ defmodule ShadcnDaisyui.Components.Display do
   a removed one leaves the flow, scales and fades out where it stood while its
   neighbours slide into its place, and "+N" recounts once it is gone. Give
   every chip a `value` - its DOM id follows the value, so a patch removes
-  that chip (without one, chips are keyed by position).
+  that chip (without one, chips are keyed by position). A chip removed and
+  rendered again before its exit ends (the same value back, e.g. a filter
+  changed in two quick patches) cancels the exit and stays.
 
   Put the row inside `reveal/1` to slide it in and out as chips come and go.
   Keep the row rendered (no `:if`) and let `open` drive the reveal: each chip
