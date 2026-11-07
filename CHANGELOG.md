@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-11-06
+
+The installer now wires up the reload toast after a deploy: `mix
+shadcn_daisyui.install` and `mix shadcn_daisyui.upgrade` add `on_mount
+ShadcnDaisyui.NewVersion` to the app's `live_view` macro, so every LiveView
+offers a reload when its assets are out of date, and they say so when the root
+layout's CSS or JS has no `phx-track-static`. Run `mix shadcn_daisyui.upgrade`
+in an app installed earlier.
+
 ### Added
 
 - `mix shadcn_daisyui.install` and `mix shadcn_daisyui.upgrade` wire up
@@ -20,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   layout's own stylesheet and script keep `phx-track-static` (the hook compares
   them against the cache manifest) and print the tags to add when they don't.
   Run `mix shadcn_daisyui.upgrade` in an app installed earlier.
+
+### Security
+
+- The package's and the docs site's locked dependencies move past their security
+  advisories (phoenix 1.8.9, phoenix_html 4.4.0, phoenix_live_view 1.2.9, plug
+  1.19.5, plug_crypto 2.2.1; the docs site also bandit 1.14.1 and lazy_html
+  0.1.13). Lock files only: no requirement changed, and your app resolves its
+  own versions.
 
 ## [0.32.0] - 2026-11-06
 
