@@ -65,6 +65,16 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.SpecTest do
       end
     end
 
+    test "an example's :about that isn't a list of strings" do
+      for about <- ["one paragraph", [], ["ok", ""], [:atom]] do
+        assert_raise ArgumentError, ~r/:about must be a list of non-empty strings/, fn ->
+          Spec.new!(Map.put(@valid, :examples, [%{title: "X", code: "<p></p>", about: about}]))
+        end
+      end
+
+      assert Spec.new!(Map.put(@valid, :examples, [%{title: "X", code: "<p></p>", about: ["A"]}]))
+    end
+
     test "an unknown guidance key" do
       assert_raise ArgumentError, ~r/unknown guidance key/, fn ->
         Spec.new!(Map.put(@valid, :guidance, %{use_when: ["a"], why: "nope"}))

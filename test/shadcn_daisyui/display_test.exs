@@ -382,6 +382,29 @@ defmodule ShadcnDaisyui.Components.DisplayTest do
       refute Map.has_key?(payload, :cancel)
     end
 
+    test "reload: true makes a button that reloads the page" do
+      {_, payload} =
+        socket()
+        |> push_toast("A new version is available",
+          action: %{label: "Reload", reload: true},
+          cancel: %{label: "Later", reload: false}
+        )
+        |> pushed()
+
+      assert payload.action == %{label: "Reload", reload: true}
+      assert payload.cancel == %{label: "Later"}
+    end
+
+    test "a button with both event and reload raises" do
+      assert_raise ArgumentError, ~r/:event or :reload, not both/, fn ->
+        push_toast(socket(), "Hi", action: %{label: "Reload", event: "reload", reload: true})
+      end
+
+      assert_raise ArgumentError, ~r/cancel button/, fn ->
+        push_toast(socket(), "Hi", cancel: %{label: "Reload", event: "x", reload: true})
+      end
+    end
+
     test "type defaults to default" do
       {_, payload} = socket() |> push_toast("Hello") |> pushed()
       assert payload.type == "default"

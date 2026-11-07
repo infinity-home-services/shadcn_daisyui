@@ -33,6 +33,7 @@
           <h2 :if={length(@spec.examples) > 1} class="text-lg font-medium tracking-tight">
             {ex.title}
           </h2>
+          <.example_about :if={Map.get(ex, :about)} paragraphs={ex.about} />
           <.preview_code
             id={"#{@spec.slug}-#{i}"}
             code={ex.code}

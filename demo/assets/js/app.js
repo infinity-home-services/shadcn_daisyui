@@ -137,7 +137,9 @@ const initPlatformToggle = () => {
 // Toast previews: <button data-toast="Saved" data-toast-type="success"
 // data-toast-description="…" data-toast-position="top-left"
 // data-toast-action="Undo" data-toast-cancel="Dismiss" data-toast-rich
-// data-toast-close data-toast-invert data-toast-icon="hero-…">.
+// data-toast-close data-toast-invert data-toast-icon="hero-…"
+// data-toast-reload="Reload" (an action that reloads the page)
+// data-toast-sticky (no timeout)>.
 // data-toast-promise="Event" runs the promise demo; data-toast-custom="tpl-id"
 // shows that <template>'s first element as a headless toast.
 document.addEventListener("click", (e) => {
@@ -165,6 +167,8 @@ document.addEventListener("click", (e) => {
   if (d.toastPosition) opts.position = d.toastPosition
   if (d.toastAction) opts.action = {label: d.toastAction, onClick: () => {}}
   if (d.toastCancel) opts.cancel = {label: d.toastCancel, onClick: () => {}}
+  if (d.toastReload) opts.action = {label: d.toastReload, reload: true}
+  if (d.toastSticky !== undefined) opts.duration = Infinity
   if (d.toastRich !== undefined) opts.richColors = true
   if (d.toastClose !== undefined) opts.closeButton = true
   if (d.toastInvert !== undefined) opts.invert = true

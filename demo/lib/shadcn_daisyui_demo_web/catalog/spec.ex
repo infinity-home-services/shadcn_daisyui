@@ -110,6 +110,17 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog.Spec do
       heex -> check!(is_binary(heex), "#{ctx}: example #{inspect(title)} :heex must be a string")
     end
 
+    case Map.get(example, :about) do
+      nil ->
+        :ok
+
+      about ->
+        check!(
+          is_list(about) and about != [] and Enum.all?(about, &present_string?/1),
+          "#{ctx}: example #{inspect(title)} :about must be a list of non-empty strings"
+        )
+    end
+
     case Map.get(example, :center) do
       nil -> :ok
       c -> check!(is_boolean(c), "#{ctx}: example #{inspect(title)} :center must be a boolean")

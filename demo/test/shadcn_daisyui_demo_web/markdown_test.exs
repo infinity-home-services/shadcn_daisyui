@@ -38,6 +38,15 @@ defmodule ShadcnDaisyuiDemoWeb.MarkdownTest do
     assert md =~ "```html\n<div></div>\n```"
   end
 
+  test "component_markdown puts an example's :about paragraphs under its heading" do
+    spec =
+      put_in(@spec_fixture.examples, [
+        %{title: "Default", code: "<div></div>", about: ["Uses `x`.", "Second."]}
+      ])
+
+    assert Markdown.component_markdown(spec) =~ "## Default\n\nUses `x`.\n\nSecond.\n\n```html"
+  end
+
   test "component_markdown omits hook note and props when absent" do
     spec = @spec_fixture |> Map.drop([:hook, :props])
     md = Markdown.component_markdown(spec)

@@ -478,6 +478,7 @@ export function initConfirmDialog(defaults) {
 //
 //   import { toast } from "shadcn-daisyui"
 //   toast("Event has been created", { description: "Sunday at 9:00 AM", action: { label: "Undo", onClick: undo } })
+//   toast("A new version is available", { action: { label: "Reload", reload: true } })   // reloads the page
 //   toast.success("Saved")  ·  toast.error("Failed")  ·  toast.info(…)  ·  toast.warning(…)
 //   const id = toast.loading("Uploading…"); toast.success("Uploaded", { id })
 //   toast.promise(fetch("/api"), { loading: "Saving…", success: "Saved", error: "Could not save" })
@@ -984,9 +985,14 @@ function renderToast(t) {
       if (cancel) {
         if (!t.dismissible) return
         if (spec.onClick) spec.onClick(e)
+        if (spec.reload && !e.defaultPrevented) return window.location.reload()
         deleteToast(t)
       } else {
         if (spec.onClick) spec.onClick(e)
+        // reload: true loads the page again in full, here in the browser (no
+        // round trip, so it works while the socket is down); the toast stays
+        // until the page goes
+        if (spec.reload && !e.defaultPrevented) return window.location.reload()
         if (!e.defaultPrevented) deleteToast(t)
       }
     })
@@ -1251,7 +1257,8 @@ toast.promise = (promise, data) => {
 // which LiveView dispatches on window as "phx:shadcn:toast"; one window
 // listener renders it. (The <.toaster> sits in the root layout, outside every
 // LiveView, where LiveView may never mount its hook and a hook's pushEvent has
-// no view to reach.) An action with an `event` is pushed to the main view.
+// no view to reach.) An action with an `event` is pushed to the main view;
+// one with `reload` reloads the page (no round trip: the socket may be down).
 function pushToastEvent(event, value) {
   const main = document.querySelector("[data-phx-main]") || document.querySelector("[data-phx-session]")
   const socket = sonner.liveSocket || window.liveSocket
@@ -1276,6 +1283,7 @@ function toastFromServer(payload) {
   const wrap = (spec) =>
     spec && {
       label: spec.label,
+      reload: spec.reload === true,
       onClick: () => { if (spec.event) pushToastEvent(spec.event, spec.value || {}) },
     }
   const opts = { type: p.type, action: wrap(p.action), cancel: wrap(p.cancel) }

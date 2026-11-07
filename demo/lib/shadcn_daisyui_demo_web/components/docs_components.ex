@@ -493,6 +493,41 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
   end
 
   @doc """
+  An example's short explanation, above its preview: paragraphs of plain
+  text, with `code` in backticks (the .md export keeps them as is).
+  """
+  attr :paragraphs, :list, required: true
+
+  def example_about(assigns) do
+    ~H"""
+    <div class="max-w-prose space-y-2 text-sm text-muted-foreground">
+      <p :for={p <- @paragraphs}>{inline_code(p)}</p>
+    </div>
+    """
+  end
+
+  # "`on_mount`" -> <code>on_mount</code>; built as escaped HTML, not HEEx, so
+  # no whitespace lands around the code
+  defp inline_code(text) do
+    escape = &(&1 |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string())
+
+    html =
+      text
+      |> String.split("`")
+      |> Enum.with_index()
+      |> Enum.map_join(fn
+        {part, i} when rem(i, 2) == 1 ->
+          ~s(<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">) <>
+            escape.(part) <> "</code>"
+
+        {part, _} ->
+          escape.(part)
+      end)
+
+    {:safe, html}
+  end
+
+  @doc """
   Specs panel for a component page: anatomy (labeled parts), measurements
   (expressed as theme tokens, not magic numbers), and the tokens it consumes
   rendered as live swatches. All keys optional.

@@ -289,12 +289,20 @@ defmodule ShadcnDaisyuiDemoWeb.Markdown do
     Enum.map(spec.examples, fn example ->
       [
         "## #{example.title}",
+        about(example),
         heex_block(example),
         code_block("html", Map.get(example, :code, ""))
       ]
       |> Enum.reject(&is_nil/1)
       |> Enum.join("\n\n")
     end)
+  end
+
+  defp about(example) do
+    case Map.get(example, :about) do
+      nil -> nil
+      paragraphs -> Enum.join(paragraphs, "\n\n")
+    end
   end
 
   defp heex_block(example) do

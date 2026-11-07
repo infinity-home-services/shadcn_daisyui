@@ -148,6 +148,18 @@ drawer or command palette and stay clickable there. Flashes render as Sonner
 toasts too: info clears itself after 5 seconds with no close button, errors
 stay until closed with theirs.
 
+After a deploy, a page opened earlier still has the old CSS and JS. Add
+`ShadcnDaisyui.NewVersion` to every live session and those pages show a sticky
+"A new version is available" toast with a Reload button (it never reloads by
+itself). It reads the `phx-track-static` assets in your root layout against
+the production cache manifest:
+
+```elixir
+live_session :default, on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion] do
+  ...
+end
+```
+
 Chat and AI transcripts compose `<.message>`, `<.bubble>`, `<.marker>`, and
 `<.attachment>`:
 
