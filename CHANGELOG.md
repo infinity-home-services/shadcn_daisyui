@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `mix shadcn_daisyui.install` and `mix shadcn_daisyui.upgrade` wire up
+  `ShadcnDaisyui.NewVersion`: they add `on_mount ShadcnDaisyui.NewVersion` to the
+  `live_view` macro in `lib/<app>_web.ex`, right after `use Phoenix.LiveView`, so
+  every LiveView, in a live session or not, offers a reload after a deploy. An app
+  whose web module or router already has the hook is left alone, a second run
+  changes nothing, and when there's no `use Phoenix.LiveView` to add it after, the
+  task prints the line to add by hand. Both tasks also check that the root
+  layout's own stylesheet and script keep `phx-track-static` (the hook compares
+  them against the cache manifest) and print the tags to add when they don't.
+  Run `mix shadcn_daisyui.upgrade` in an app installed earlier.
+
 ## [0.32.0] - 2026-11-06
 
 After a deploy, a page opened earlier now says so: `ShadcnDaisyui.NewVersion`, an

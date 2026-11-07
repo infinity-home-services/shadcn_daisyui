@@ -72,6 +72,7 @@ defmodule ShadcnDaisyuiDemoWeb.ComponentPagesTest do
     assert section, "no After a deploy section"
     about = section |> LazyHTML.query("p") |> LazyHTML.text()
     assert about =~ "ShadcnDaisyui.NewVersion"
+    assert about =~ "mix shadcn_daisyui.install"
     assert about =~ "phx-track-static"
     assert about =~ "cache_static_manifest_latest"
     assert about =~ "never reloads by itself"

@@ -22,7 +22,13 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
     * replace `lib/<app>_web/components/core_components.ex` with a thin module
       delegating to `ShadcnDaisyui.CoreComponents` (original backed up; every
       component stays overridable; your Gettext error translation is preserved)
-    * patch `lib/<app>_web.ex` so templates get `use ShadcnDaisyui.Components`
+    * patch `lib/<app>_web.ex` so templates get `use ShadcnDaisyui.Components`,
+      and every LiveView gets `on_mount ShadcnDaisyui.NewVersion` (in its
+      `live_view` quote, after `use Phoenix.LiveView`): after a deploy, a page
+      opened earlier offers a reload. Skipped when the router's live sessions
+      already list the hook. It also checks the root layout's own CSS and JS
+      keep `phx-track-static` (the hook compares them against the cache
+      manifest) and says so if they don't
     * add the `:translate_error` config
 
   ## Options
@@ -33,7 +39,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
   """
   use Mix.Task
 
-  alias ShadcnDaisyui.Install.Patcher
+  alias ShadcnDaisyui.Install.{Patcher, Steps}
 
   @impl true
   def run(args) do
@@ -49,6 +55,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
     patch_app_js(mode)
     patch_root_layout()
     patch_web_module()
+    Steps.wire_new_version()
 
     core_components_module =
       if Keyword.get(opts, :core_components, true), do: replace_core_components()
@@ -134,6 +141,7 @@ defmodule Mix.Tasks.ShadcnDaisyui.Install do
     case Path.wildcard("lib/*_web/components/layouts/root.html.heex") do
       [path | _] ->
         patch_file(path, &Patcher.patch_root_layout/1)
+        Steps.check_track_static(path)
 
       [] ->
         Mix.shell().info("""

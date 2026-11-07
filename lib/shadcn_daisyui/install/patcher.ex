@@ -269,6 +269,132 @@ defmodule ShadcnDaisyui.Install.Patcher do
     end
   end
 
+  @new_version_lines [
+    "# after a deploy, a page opened earlier offers a reload (no toast in dev)",
+    "on_mount ShadcnDaisyui.NewVersion"
+  ]
+
+  @doc """
+  Adds `on_mount ShadcnDaisyui.NewVersion` to the `live_view` quote of
+  `my_app_web.ex`, right after its `use Phoenix.LiveView` (so every LiveView,
+  in a live session or not, checks for a new version when it connects).
+
+  Returns `{:ok, source}` (unchanged when the module already mentions the
+  hook) or `{:error, :live_view_not_found}` when there's no `use
+  Phoenix.LiveView` in a `live_view` function to add it after (the caller
+  prints manual instructions).
+  """
+  def patch_new_version(source) do
+    cond do
+      new_version?(source) ->
+        {:ok, source}
+
+      position = live_view_use(source) ->
+        {line_end, indent} = position
+        patched = insert_new_version(source, line_end, indent)
+
+        # a statement this didn't read right would break the module: leave it
+        case Code.string_to_quoted(patched) do
+          {:ok, _} -> {:ok, patched}
+          _ -> {:error, :live_view_not_found}
+        end
+
+      true ->
+        {:error, :live_view_not_found}
+    end
+  end
+
+  @doc """
+  True when `source` (the web module or a router) mentions
+  `ShadcnDaisyui.NewVersion` outside a comment, e.g. in a `live_session`'s
+  `on_mount`.
+  """
+  def new_version?(source), do: Regex.match?(~r/^[^#\n]*ShadcnDaisyui\.NewVersion\b/m, source)
+
+  # {byte index of the newline that ends `use Phoenix.LiveView ...`, its indent}
+  # - the first one in the body of `def live_view`, before the next def
+  defp live_view_use(source) do
+    with [{def_start, def_len}] <- Regex.run(~r/^[ \t]*def live_view\b/m, source, return: :index),
+         body_start = def_start + def_len,
+         body = source |> binary_part(body_start, byte_size(source) - body_start) |> def_body(),
+         [{use_start, _}, {ind_start, ind_len}] <-
+           Regex.run(~r/^([ \t]*)use Phoenix\.LiveView(?![\w.])/m, body, return: :index) do
+      indent = binary_part(body, ind_start, ind_len)
+      {body_start + statement_end(body, use_start), indent}
+    else
+      _ -> nil
+    end
+  end
+
+  # the text up to the next `def`/`defp` (or the end)
+  defp def_body(rest) do
+    case Regex.run(~r/^[ \t]*defp?\s/m, rest, return: :index) do
+      [{next, _}] -> binary_part(rest, 0, next)
+      _ -> rest
+    end
+  end
+
+  # Byte index of the newline ending the statement that starts at `start`: a
+  # line ending in `,` or with brackets still open continues it.
+  defp statement_end(string, start, depth \\ 0) do
+    line_end =
+      case :binary.match(string, "\n", scope: {start, byte_size(string) - start}) do
+        {i, 1} -> i
+        :nomatch -> byte_size(string)
+      end
+
+    line = binary_part(string, start, line_end - start)
+    depth = depth + bracket_depth(line)
+    continues? = depth > 0 or String.ends_with?(String.trim_trailing(line), ",")
+
+    if continues? and line_end < byte_size(string),
+      do: statement_end(string, line_end + 1, depth),
+      else: line_end
+  end
+
+  defp bracket_depth(line) do
+    for <<c <- line>>, reduce: 0 do
+      depth when c in ~c"([{" -> depth + 1
+      depth when c in ~c")]}" -> depth - 1
+      depth -> depth
+    end
+  end
+
+  # a blank line, the comment and the call after the `use`, and a blank line
+  # before whatever follows unless it's blank already
+  defp insert_new_version(source, line_end, indent) do
+    rest = binary_part(source, line_end, byte_size(source) - line_end)
+    blank_after? = Regex.match?(~r/\A\n[ \t]*(\n|\z)/, rest) or rest == ""
+
+    lines = ["" | Enum.map(@new_version_lines, &(indent <> &1))]
+    lines = if blank_after?, do: lines, else: lines ++ [""]
+
+    binary_part(source, 0, line_end) <> Enum.map_join(lines, &("\n" <> &1)) <> rest
+  end
+
+  @doc """
+  Which of the root layout's own assets (`:css`, `:js`) no tag tracks with
+  `phx-track-static`: `ShadcnDaisyui.NewVersion` compares those URLs against
+  the cache manifest. Stylesheets and scripts from another host don't count.
+  """
+  def untracked_assets(heex) do
+    tags = fn tag, keep? ->
+      ~r/<#{tag}\b[^>]*>/
+      |> Regex.scan(heex)
+      |> List.flatten()
+      |> Enum.filter(
+        &(keep?.(&1) and not Regex.match?(~r/(href|src)=\{?["']?(https?:)?\/\//, &1))
+      )
+    end
+
+    css = tags.("link", &Regex.match?(~r/rel=["']stylesheet["']/, &1))
+    js = tags.("script", &Regex.match?(~r/\ssrc=/, &1))
+
+    for {kind, found} <- [css: css, js: js],
+        not Enum.any?(found, &(&1 =~ "phx-track-static")),
+        do: kind
+  end
+
   @doc """
   Builds the thin CoreComponents module that replaces the Phoenix-generated
   one. Preserves the app's Gettext-backed `translate_error/1` when a backend

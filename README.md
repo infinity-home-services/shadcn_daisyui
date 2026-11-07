@@ -51,7 +51,10 @@ The installer wires everything automatically:
 - `core_components.ex` - replaced with a thin module delegating to
   `ShadcnDaisyui.CoreComponents` (original backed up; every component overridable;
   your Gettext error translation preserved)
-- `lib/<app>_web.ex` - templates get `use ShadcnDaisyui.Components`
+- `lib/<app>_web.ex` - templates get `use ShadcnDaisyui.Components`, and every
+  LiveView gets `on_mount ShadcnDaisyui.NewVersion` (a Reload toast after a
+  deploy; skipped when your router's live sessions already list it). It also
+  checks the root layout's CSS and JS keep `phx-track-static`
 
 Because assets are imported from `deps/`, upgrading is just
 `mix deps.update shadcn_daisyui`. Prefer owning the files? `mix shadcn_daisyui.install --copy`
@@ -148,11 +151,14 @@ drawer or command palette and stay clickable there. Flashes render as Sonner
 toasts too: info clears itself after 5 seconds with no close button, errors
 stay until closed with theirs.
 
-After a deploy, a page opened earlier still has the old CSS and JS. Add
-`ShadcnDaisyui.NewVersion` to every live session and those pages show a sticky
-"A new version is available" toast with a Reload button (it never reloads by
-itself). It reads the `phx-track-static` assets in your root layout against
-the production cache manifest:
+After a deploy, a page opened earlier still has the old CSS and JS. With
+`ShadcnDaisyui.NewVersion` on every LiveView, those pages show a sticky "A new
+version is available" toast with a Reload button (it never reloads by itself).
+It reads the `phx-track-static` assets in your root layout against the
+production cache manifest. `mix shadcn_daisyui.install` adds it to your app's
+`live_view` macro (an app installed earlier: `mix shadcn_daisyui.upgrade`);
+by hand, that's `on_mount ShadcnDaisyui.NewVersion` after `use Phoenix.LiveView`,
+or the hook in every live session:
 
 ```elixir
 live_session :default, on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion] do

@@ -263,6 +263,185 @@ defmodule ShadcnDaisyui.Install.PatcherTest do
     end
   end
 
+  # lib/my_app_web.ex as Phoenix 1.8 generates it, trimmed
+  @web_module """
+  defmodule MyAppWeb do
+    def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+
+    def live_view do
+      quote do
+        use Phoenix.LiveView
+
+        unquote(html_helpers())
+      end
+    end
+
+    def live_component do
+      quote do
+        use Phoenix.LiveComponent
+
+        unquote(html_helpers())
+      end
+    end
+
+    defp html_helpers do
+      quote do
+        import MyAppWeb.CoreComponents
+      end
+    end
+
+    defmacro __using__(which) when is_atom(which) do
+      apply(__MODULE__, which, [])
+    end
+  end
+  """
+
+  describe "patch_new_version/1" do
+    test "adds on_mount ShadcnDaisyui.NewVersion after use Phoenix.LiveView" do
+      assert {:ok, patched} = Patcher.patch_new_version(@web_module)
+
+      assert patched =~ """
+               def live_view do
+                 quote do
+                   use Phoenix.LiveView
+
+                   # after a deploy, a page opened earlier offers a reload (no toast in dev)
+                   on_mount ShadcnDaisyui.NewVersion
+
+                   unquote(html_helpers())
+                 end
+               end
+
+               def live_component do
+                 quote do
+                   use Phoenix.LiveComponent
+
+                   unquote(html_helpers())
+             """
+
+      # only the live_view quote gets it, and the module still compiles
+      assert length(String.split(patched, "on_mount")) == 2
+      assert {:ok, _} = Code.string_to_quoted(patched)
+    end
+
+    test "is unchanged on a second run" do
+      {:ok, once} = Patcher.patch_new_version(@web_module)
+      assert {:ok, ^once} = Patcher.patch_new_version(once)
+    end
+
+    test "leaves a web module that already has it alone (e.g. the demo's)" do
+      source = File.read!("demo/lib/shadcn_daisyui_demo_web.ex")
+      assert source =~ "on_mount ShadcnDaisyui.NewVersion"
+      assert {:ok, ^source} = Patcher.patch_new_version(source)
+    end
+
+    test "goes after a use Phoenix.LiveView with options over several lines" do
+      source =
+        String.replace(
+          @web_module,
+          "use Phoenix.LiveView\n",
+          "use Phoenix.LiveView,\n        layout: {MyAppWeb.Layouts, :app}\n"
+        )
+
+      assert {:ok, patched} = Patcher.patch_new_version(source)
+
+      assert patched =~ """
+                   use Phoenix.LiveView,
+                     layout: {MyAppWeb.Layouts, :app}
+
+                   # after a deploy, a page opened earlier offers a reload (no toast in dev)
+                   on_mount ShadcnDaisyui.NewVersion
+
+                   unquote(html_helpers())
+             """
+
+      assert {:ok, _} = Code.string_to_quoted(patched)
+    end
+
+    test "keeps a blank line before the next line when there wasn't one" do
+      source = String.replace(@web_module, "use Phoenix.LiveView\n\n", "use Phoenix.LiveView\n")
+      assert {:ok, patched} = Patcher.patch_new_version(source)
+      assert patched =~ "on_mount ShadcnDaisyui.NewVersion\n\n      unquote(html_helpers())"
+    end
+
+    test "a comment that names it doesn't count" do
+      source =
+        String.replace(
+          @web_module,
+          "def live_view do\n",
+          "# see ShadcnDaisyui.NewVersion\n  def live_view do\n"
+        )
+
+      assert {:ok, patched} = Patcher.patch_new_version(source)
+      assert patched =~ "on_mount ShadcnDaisyui.NewVersion"
+    end
+
+    test "errors without a use Phoenix.LiveView in live_view" do
+      no_use = String.replace(@web_module, "use Phoenix.LiveView\n", "use MyAppWeb.BaseLive\n")
+      assert {:error, :live_view_not_found} = Patcher.patch_new_version(no_use)
+
+      # a later function's use doesn't count
+      later =
+        String.replace(no_use, "use Phoenix.LiveComponent\n", "use Phoenix.LiveView\n")
+
+      assert {:error, :live_view_not_found} = Patcher.patch_new_version(later)
+
+      assert {:error, :live_view_not_found} =
+               Patcher.patch_new_version("defmodule MyAppWeb do\nend\n")
+    end
+  end
+
+  describe "new_version?/1" do
+    test "finds the hook in a live session's on_mount, not in a comment" do
+      assert Patcher.new_version?("""
+             live_session :default, on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion] do
+             """)
+
+      assert Patcher.new_version?("on_mount: [{ShadcnDaisyui.NewVersion, title: \"New\"}]")
+      refute Patcher.new_version?("# TODO: add ShadcnDaisyui.NewVersion\n")
+      refute Patcher.new_version?("live_session :default do\n")
+    end
+  end
+
+  describe "untracked_assets/1" do
+    @head """
+    <head>
+      <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+      <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+      </script>
+      <script nonce={assigns[:csp_nonce]}>
+        (() => document.documentElement.dataset.sidebar = "open")();
+      </script>
+    </head>
+    """
+
+    test "a layout as Phoenix generates it tracks both" do
+      assert Patcher.untracked_assets(@head) == []
+
+      assert Patcher.untracked_assets(
+               File.read!("demo/lib/shadcn_daisyui_demo_web/components/layouts/root.html.heex")
+             ) == []
+    end
+
+    test "names what lost phx-track-static" do
+      assert Patcher.untracked_assets(String.replace(@head, "phx-track-static ", "")) ==
+               [:css, :js]
+
+      assert Patcher.untracked_assets(String.replace(@head, "defer phx-track-static ", "defer ")) ==
+               [:js]
+    end
+
+    test "stylesheets and scripts from another host don't count" do
+      external = """
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter" />
+      <script src="https://cdn.example.com/lib.js"></script>
+      """
+
+      assert Patcher.untracked_assets(@head <> external) == []
+      assert Patcher.untracked_assets(external) == [:css, :js]
+    end
+  end
+
   describe "core_components_source/1" do
     @original """
     defmodule MyAppWeb.CoreComponents do
