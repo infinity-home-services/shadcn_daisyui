@@ -191,10 +191,12 @@ menu already has one.
   row (`<:phone_header>` + search), a bottom dock of four destinations plus More,
   and the More sheet (everything, the footer items, the account). Never a
   hamburger.
-- Every `live_session` lists `ShadcnDaisyui.NewVersion` in its `on_mount`
-  (`on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion]`; a LiveView outside a
-  live session gets `on_mount ShadcnDaisyui.NewVersion` from the app's
-  `live_view` macro). After a deploy, a page opened earlier shows one sticky
+- Every LiveView runs `ShadcnDaisyui.NewVersion` on mount: `mix
+  shadcn_daisyui.install` (and `mix shadcn_daisyui.upgrade`) put `on_mount
+  ShadcnDaisyui.NewVersion` in the app's `live_view` macro, which covers
+  LiveViews in a live session and outside one. Keep it there; without it, every
+  `live_session` lists it in its `on_mount` (`on_mount: [MyAppWeb.Auth,
+  ShadcnDaisyui.NewVersion]`). After a deploy, a page opened earlier shows one sticky
   "A new version is available" toast with a Reload button; word it with
   `{ShadcnDaisyui.NewVersion, title: "…", description: "…", action: "…"}`.
   Never reload a page automatically after a deploy (someone may be partway
@@ -617,8 +619,12 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
 - The root layout keeps `phx-track-static` on its own CSS and JS (`<link>` and
   `<script>`; never on a script from another host), production keeps its cache
   manifest (`cache_static_manifest` on the endpoint, from `mix phx.digest`), and
-  every live session's `on_mount` keeps `ShadcnDaisyui.NewVersion`: together
-  they tell a page opened before a deploy to reload. In development there's no
-  manifest, so no toast shows (see `ShadcnDaisyui.NewVersion` to try it).
+  every LiveView keeps `ShadcnDaisyui.NewVersion` on mount (`mix
+  shadcn_daisyui.install` / `mix shadcn_daisyui.upgrade` add `on_mount
+  ShadcnDaisyui.NewVersion` to the app's `live_view` macro, unless the router's
+  live sessions list it, and say so if the root layout's CSS or JS lost
+  `phx-track-static`): together they tell a page opened before a deploy to
+  reload. In development there's no manifest, so no toast shows (see
+  `ShadcnDaisyui.NewVersion` to try it).
 - The app's `CoreComponents` module delegates to `ShadcnDaisyui.CoreComponents`;
   override individual functions there if the app needs to, don't fork wholesale.

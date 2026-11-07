@@ -3,6 +3,8 @@
 erl_crash.dump
 *.beam
 /doc/
+# ExUnit's @tag :tmp_dir
+/tmp/
 *.tar
 # local Claude Code state; the project skills are shared
 /.claude/*

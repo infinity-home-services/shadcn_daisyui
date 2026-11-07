@@ -13,8 +13,14 @@ defmodule ShadcnDaisyui.NewVersion do
         ...
       end
 
-  (A LiveView outside a live session gets it from the app's `live_view`
-  macro: `on_mount ShadcnDaisyui.NewVersion`.)
+  Or once for every LiveView, in a live session or not, in the app's
+  `live_view` macro, after `use Phoenix.LiveView`:
+
+      on_mount ShadcnDaisyui.NewVersion
+
+  `mix shadcn_daisyui.install` and `mix shadcn_daisyui.upgrade` add that line
+  (unless the router's live sessions already list the hook), and say so if the
+  root layout's CSS or JS has no `phx-track-static`.
 
   After a deploy, a tab opened earlier keeps its old stylesheet and script.
   LiveView reconnects and sends the new markup, but the old stylesheet has no
