@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-11-06
+
+After a deploy, a page opened earlier now says so: `ShadcnDaisyui.NewVersion`, an
+`on_mount` hook for every live session, shows one sticky "A new version is
+available" toast with a Reload button when the page's tracked assets are out of
+date. It never reloads by itself. Toast buttons take `reload: true` to reload the
+page in the browser, from LiveView or JS.
+
 ### Added
 
 - `ShadcnDaisyui.NewVersion`, an `on_mount` hook for every live session
