@@ -5,7 +5,8 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   Every entry is a component page: a `slug`, `title`, one-line `description`, an
   optional `notes` string (usage/props hints), and a list of `examples`. Each
   example carries a single raw HTML string that is rendered both as a live
-  preview and as an escaped code block (see `DocsComponents.preview_code/1`).
+  preview and as an escaped code block (see `DocsComponents.preview_code/1`),
+  and optionally `about`: short paragraphs above it (`code` in backticks).
 
   Heroicons are written as `<span class="hero-name ..." aria-hidden="true">` - that is exactly what
   the `<.icon>` helper expands to, so the code shown is real, copy-pasteable
@@ -1791,7 +1792,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
           }
         ],
         notes:
-          "A port of svelte-sonner, set up as shadcn-svelte ships it: same markup, timings and stylesheet, with the popover colours and lucide icons. Render one <.toaster /> in the root layout. From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success() / info / warning / error / loading, toast.promise(), toast.custom(), toast.dismiss(), toast.getActiveToasts(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}). Toasts live in the browser's top layer and follow into an open sheet, dialog, drawer or command palette, so they show above it and stay clickable without taking focus; Esc still closes the modal. Phoenix flashes (<.flash> / put_flash) render through the same toaster: info shows a success check and clears after 5 seconds with no close button, errors stay until closed with theirs.",
+          "A port of svelte-sonner, set up as shadcn-svelte ships it: same markup, timings and stylesheet, with the popover colours and lucide icons. Render one <.toaster /> in the root layout. From JS: import { toast } from \"shadcn_daisyui\" and call toast(), toast.success() / info / warning / error / loading, toast.promise(), toast.custom(), toast.dismiss(), toast.getActiveToasts(). From a LiveView: push_toast(socket, \"Saved\", type: :success, action: %{label: \"Undo\", event: \"undo\"}); a button with reload: true (action: %{label: \"Reload\", reload: true}, or { label, reload: true } in JS) reloads the page in the browser. After a deploy, ShadcnDaisyui.NewVersion in every live session's on_mount shows a sticky Reload toast on pages opened earlier. Toasts live in the browser's top layer and follow into an open sheet, dialog, drawer or command palette, so they show above it and stay clickable without taking focus; Esc still closes the modal. Phoenix flashes (<.flash> / put_flash) render through the same toaster: info shows a success check and clears after 5 seconds with no close button, errors stay until closed with theirs.",
         examples: [
           %{
             title: "Default",
@@ -2029,6 +2030,45 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
                 <button class="btn btn-outline" data-toast="Could not save the profile" data-toast-type="error">Show error</button>
               </div>
             </dialog>
+            """
+          },
+          %{
+            title: "After a deploy",
+            about: [
+              "A page opened before a deploy keeps its old CSS and JS, and looks broken once LiveView sends it the new markup. Add `ShadcnDaisyui.NewVersion` to every live session's `on_mount`: when a page connects with old assets, it shows this toast, and Reload loads the page again in full. It never reloads by itself, because someone may be partway through a form.",
+              "It checks the `phx-track-static` assets in the root layout against the cache manifest production has (`mix phx.digest`, `cache_static_manifest` on the endpoint), so in development no toast shows. To see it locally, set `cache_static_manifest_latest` on the endpoint in `config/dev.exs` and add a tracked `<link>` with an old name (HEEx tab). Elsewhere, a toast button reloads the page with `reload: true`."
+            ],
+            heex: ~S"""
+            # router.ex: every live session
+            live_session :default, on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion] do
+              live "/orders", OrderLive.Index
+            end
+
+            # or with the app's name in the title
+            live_session :default,
+              on_mount: [{ShadcnDaisyui.NewVersion, title: "Acme was updated"}] do
+
+            <%!-- root.html.heex: the assets it checks (Phoenix generates them) --%>
+            <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+            <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}></script>
+
+            # to try it locally: config/dev.exs (remove afterwards) …
+            config :my_app, MyAppWeb.Endpoint,
+              cache_static_manifest_latest: %{
+                "assets/css/app.css" => "assets/css/app-new.css",
+                "assets/js/app.js" => "assets/js/app-new.js"
+              }
+
+            <%!-- … and a tracked asset with an old name in root.html.heex --%>
+            <link phx-track-static rel="stylesheet" href="/assets/css/app-old.css" />
+
+            # a Reload button on any toast (JS: action: { label: "Reload", reload: true })
+            push_toast(socket, "Settings changed", action: %{label: "Reload", reload: true})
+            """,
+            code: ~S"""
+            <!-- docs site only: a delegated listener turns data-toast* into toast() calls.
+                 In your app the hook sends it (HEEx tab); Reload here reloads this page. -->
+            <button class="btn btn-outline" data-toast="A new version is available" data-toast-description="Reload the page to get it." data-toast-reload="Reload" data-toast-close data-toast-sticky>Show Toast</button>
             """
           }
         ]

@@ -57,6 +57,35 @@ defmodule ShadcnDaisyuiDemoWeb.ComponentPagesTest do
              "No members yet."
   end
 
+  test "the sonner page explains the new-version toast and shows its Reload action",
+       %{conn: conn} do
+    html = conn |> get(~p"/docs/components/sonner") |> html_response(200)
+    doc = LazyHTML.from_document(html)
+
+    section =
+      doc
+      |> LazyHTML.query("section")
+      |> Enum.find(
+        &(LazyHTML.query(&1, "h2") |> LazyHTML.text() |> String.trim() == "After a deploy")
+      )
+
+    assert section, "no After a deploy section"
+    about = section |> LazyHTML.query("p") |> LazyHTML.text()
+    assert about =~ "ShadcnDaisyui.NewVersion"
+    assert about =~ "phx-track-static"
+    assert about =~ "cache_static_manifest_latest"
+    assert about =~ "never reloads by itself"
+    assert LazyHTML.query(section, "code") |> Enum.count() > 3
+
+    button = LazyHTML.query(section, "button[data-toast-reload]")
+    assert LazyHTML.attribute(button, "data-toast-reload") == ["Reload"]
+    assert LazyHTML.attribute(button, "data-toast-sticky") == [""]
+
+    md = conn |> get("/docs/components/sonner.md") |> response(200)
+    assert md =~ "## After a deploy\n\nA page opened before a deploy"
+    assert md =~ "on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion]"
+  end
+
   test "the tokens reference page renders with swatches", %{conn: conn} do
     html = conn |> get(~p"/docs/tokens") |> html_response(200)
     assert html =~ "Tokens"

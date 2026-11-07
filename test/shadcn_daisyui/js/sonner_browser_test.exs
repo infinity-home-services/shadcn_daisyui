@@ -3,8 +3,8 @@ defmodule ShadcnDaisyui.JS.SonnerBrowserTest do
   # shadcn-daisyui.js and .css (same harness as toast_layer_browser_test.exs):
   # sonner's metrics and colours, the stack, merged updates, promise toasts,
   # which actions call onDismiss, directional swipe, the light/dark sonner
-  # theme following the page, named toasters, headless toasts, icon slots and
-  # the Alt+T hotkey.
+  # theme following the page, named toasters, headless toasts, icon slots,
+  # the Alt+T hotkey and reload actions.
   # Skipped when Node or Chrome/Chromium is missing (set CHROME to point at one).
   use ExUnit.Case, async: true
 
@@ -186,6 +186,33 @@ defmodule ShadcnDaisyui.JS.SonnerBrowserTest do
     document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }))
     await wait(0)
     out.escape = [document.activeElement.id, byId("hot one").dataset.expanded]
+    await clear()
+
+    // reload: true reloads the page in the browser. location.reload can't be
+    // replaced in Chrome, so the stub is the Navigation API: each reload fires
+    // a cancelable "navigate" event, cancelled here
+    const reloads = []
+    const stopReload = (e) => { if (e.navigationType === "reload") { reloads.push(e.cancelable); e.preventDefault() } }
+    navigation.addEventListener("navigate", stopReload)
+    const clickIn = (title, sel) => byId(title).querySelector(sel).click()
+    toast("New version", { action: { label: "Reload", reload: true } })
+    clickIn("New version", "[data-button]:not([data-cancel])")
+    await wait(50)
+    // the toast stays until the page goes
+    out.reloadAction = [reloads.slice(), !!byId("New version") && byId("New version").dataset.removed]
+    toast("Cancel reloads", { cancel: { label: "Reload", reload: true } })
+    clickIn("Cancel reloads", "[data-cancel]")
+    toast("Prevented", { action: { label: "Reload", reload: true, onClick: (e) => e.preventDefault() } })
+    clickIn("Prevented", "[data-button]")
+    toast("Plain", { action: { label: "Undo" } })
+    clickIn("Plain", "[data-button]")
+    // push_toast's payload, as LiveView dispatches it
+    window.dispatchEvent(new CustomEvent("phx:shadcn:toast", { detail: { message: "From the server", type: "default", action: { label: "Reload", reload: true } } }))
+    await until(() => byId("From the server"))
+    clickIn("From the server", "[data-button]")
+    await wait(50)
+    navigation.removeEventListener("navigate", stopReload)
+    out.reloads = reloads.length
 
     out.errors = errors
     window.__result = JSON.stringify(out)
@@ -259,5 +286,10 @@ defmodule ShadcnDaisyui.JS.SonnerBrowserTest do
 
     assert r["hotkey"] == [true, "true"]
     assert r["escape"] == ["field", "false"]
+
+    # a reload action reloads (cancelled by the test) and leaves the toast;
+    # cancel and push_toast's reload do too; preventDefault and plain don't
+    assert r["reloadAction"] == [[true], "false"]
+    assert r["reloads"] == 3
   end
 end

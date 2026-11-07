@@ -132,7 +132,7 @@ Decision order:
 | `<.accordion>` | `id` req., `<:section title="..." open>` slots, `multiple`; opt in to a section card: `<:header>` (content above the rows in the same card: `card_title`, `card_description`, an action) and `flush` (rows edge to edge, 24px inset inside each row, 1px line under the header and between rows) |
 | `<.avatar>` / `<.avatar_group>` | `src` or `fallback="JD"`, `shape`, size via `class` |
 | `<.progress>` / `<.skeleton>` / `<.spinner>` | sized via `class` |
-| `<.toaster>` | Sonner, as shadcn ships it; once in root layout (`position`, `rich_colors`, `close_button`, `expand`, `invert`, `duration`, `offset`, `toast_options`, `<:success_icon>`…`<:close_icon>` slots); toasts via JS `toast()` / `toast.success()` / `toast.loading()` / `toast.promise()` / `toast.custom()` / `toast.dismiss()` or LiveView `push_toast(socket, msg, type: :success)` (`id` to update one in place, `action`/`cancel`, `icon: "hero-…"`, `rich_colors`, `invert`, `duration: :infinity`); toasts render in the top layer and follow into an open sheet/dialog/drawer/command, so they show above it and stay clickable - never raise them with z-index or restyle them with your own classes |
+| `<.toaster>` | Sonner, as shadcn ships it; once in root layout (`position`, `rich_colors`, `close_button`, `expand`, `invert`, `duration`, `offset`, `toast_options`, `<:success_icon>`…`<:close_icon>` slots); toasts via JS `toast()` / `toast.success()` / `toast.loading()` / `toast.promise()` / `toast.custom()` / `toast.dismiss()` or LiveView `push_toast(socket, msg, type: :success)` (`id` to update one in place, `action`/`cancel` (`%{label, event, value}`, or `%{label: "Reload", reload: true}`: reloads the page in the browser, no round trip; JS `{ label, reload: true }`), `icon: "hero-…"`, `rich_colors`, `invert`, `duration: :infinity`); toasts render in the top layer and follow into an open sheet/dialog/drawer/command, so they show above it and stay clickable - never raise them with z-index or restyle them with your own classes |
 | `<.flash>` / `<.flash_group>` | CoreComponents; renders as a Sonner toast (info = success check, clears after 5s, paused on hover/focus, no close button unless the toaster has `close_button`; error stays until closed with its close button), above open modals; `position` same values as `<.toaster>` (default `bottom-right`); keep Phoenix's `Layouts.flash_group`, don't override `flash/1` |
 | `<.calendar>` | `id` required (hook) |
 | `<.date_picker>` | `id` required (hook), `placeholder` |
@@ -191,6 +191,15 @@ menu already has one.
   row (`<:phone_header>` + search), a bottom dock of four destinations plus More,
   and the More sheet (everything, the footer items, the account). Never a
   hamburger.
+- Every `live_session` lists `ShadcnDaisyui.NewVersion` in its `on_mount`
+  (`on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion]`; a LiveView outside a
+  live session gets `on_mount ShadcnDaisyui.NewVersion` from the app's
+  `live_view` macro). After a deploy, a page opened earlier shows one sticky
+  "A new version is available" toast with a Reload button; word it with
+  `{ShadcnDaisyui.NewVersion, title: "…", description: "…", action: "…"}`.
+  Never reload a page automatically after a deploy (someone may be partway
+  through a form), and never hand-roll the check (`static_changed?/1`, a
+  banner or toast of your own).
 - `nav` is the navigation as your `Navigation` module returns it, already filtered
   by what the person may open: `[%{label: "Sales" | nil, items: [%{id: "orders",
   label: "Orders", short: "Orders", path: ~p"/orders", icon: "hero-shopping-cart"}]}]`
@@ -605,5 +614,11 @@ Full rules (each file: terse `## Rules` + reference tables, `[web]`/`[ios]` tags
   (`"collapsed"` or `"open"`), so the first paint already has the right theme and
   sidebar. `mix shadcn_daisyui.install` / `mix shadcn_daisyui.upgrade` add the
   sidebar line.
+- The root layout keeps `phx-track-static` on its own CSS and JS (`<link>` and
+  `<script>`; never on a script from another host), production keeps its cache
+  manifest (`cache_static_manifest` on the endpoint, from `mix phx.digest`), and
+  every live session's `on_mount` keeps `ShadcnDaisyui.NewVersion`: together
+  they tell a page opened before a deploy to reload. In development there's no
+  manifest, so no toast shows (see `ShadcnDaisyui.NewVersion` to try it).
 - The app's `CoreComponents` module delegates to `ShadcnDaisyui.CoreComponents`;
   override individual functions there if the app needs to, don't fork wholesale.

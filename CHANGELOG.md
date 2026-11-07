@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ShadcnDaisyui.NewVersion`, an `on_mount` hook for every live session
+  (`on_mount: [MyAppWeb.Auth, ShadcnDaisyui.NewVersion]`). After a deploy, a page
+  opened earlier keeps its old stylesheet and script, and looks broken once
+  LiveView sends it the new markup. When a root LiveView connects and
+  `Phoenix.LiveView.static_changed?/1` says its `phx-track-static` assets aren't
+  the latest, the hook shows a sticky toast, "A new version is available - Reload
+  the page to get it.", with a Reload button and a close button. Every page
+  mounted before the reload updates the same toast (`id: "new-version"`). It never
+  reloads by itself, since someone may be partway through a form. `title:`,
+  `description:` and `action:` word it (`{ShadcnDaisyui.NewVersion, title: "…"}`).
+  Dead renders and child LiveViews are skipped. In development there's no cache
+  manifest, so no toast shows; the module docs say how to try it locally.
+- Toast buttons that reload the page: `push_toast(socket, msg, action: %{label:
+  "Reload", reload: true})` (and `cancel:`), and `toast(msg, { action: { label:
+  "Reload", reload: true } })` from JS. The browser calls
+  `window.location.reload()` itself, with no round trip, so it works while the
+  socket is down. A button takes `event` or `reload`, not both (`push_toast/3`
+  raises).
+- The docs site's Sonner page has an "After a deploy" example with a Reload
+  action.
+
 ## [0.31.4] - 2026-11-05
 
 A chip that a patch removes and renders again before its exit ends - the same value

@@ -63,8 +63,9 @@ A Hex package that makes daisyUI v5 look and behave like shadcn/ui in Phoenix:
 - **Every interactive component needs `id`** and renders the exact markup its JS
   hook expects (`data-*` attributes). Keep component HEEx and JS in sync.
 - **Public API**: `ShadcnDaisyui.Components`, `ShadcnDaisyui.FormComponents`,
-  `ShadcnDaisyui.CoreComponents`, the Mix tasks, the two static assets, and the
-  charts entry (`shadcn_daisyui/charts`).
+  `ShadcnDaisyui.CoreComponents`, `ShadcnDaisyui.NewVersion` (the `on_mount`
+  hook), the Mix tasks, the two static assets, and the charts entry
+  (`shadcn_daisyui/charts`).
   Anything else is internal.
 
 ## Conventions

@@ -52,6 +52,9 @@ defmodule ShadcnDaisyuiDemoWeb do
     quote do
       use Phoenix.LiveView
 
+      # after a deploy, a page opened earlier offers a reload (no toast in dev)
+      on_mount ShadcnDaisyui.NewVersion
+
       unquote(html_helpers())
     end
   end

@@ -403,8 +403,19 @@ defmodule ShadcnDaisyui.Components.Display do
   `false` for none), `:class`, `:description_class`, `:classes` (as the
   toaster's `toast_options`), `:unstyled`, `:toaster_id`, `:test_id`, `:action` /
   `:cancel` (`%{label: ..., event: ..., value: %{...}}` - clicking pushes `event`
-  back to the LiveView). `push_toast(socket, nil, dismiss: id)` dismisses one
-  (or all, with `dismiss: true`).
+  back to the LiveView, or `%{label: "Reload", reload: true}` - clicking loads
+  the current page again in full, in the browser, with no round trip, so it
+  works while the socket is down; a button takes `event` or `reload`, not
+  both). `push_toast(socket, nil, dismiss: id)` dismisses one (or all, with
+  `dismiss: true`).
+
+      push_toast(socket, "A new version is available",
+        id: "new-version",
+        duration: :infinity,
+        close_button: true,
+        action: %{label: "Reload", reload: true})
+
+  (`ShadcnDaisyui.NewVersion` sends that toast after a deploy.)
   """
   @push_toast_keys [
     :id,
@@ -457,7 +468,18 @@ defmodule ShadcnDaisyui.Components.Display do
   defp put_button(payload, _key, nil), do: payload
 
   defp put_button(payload, key, button) when is_map(button) do
-    Map.put(payload, key, Map.take(button, [:label, :event, :value]))
+    if button[:reload] && button[:event] do
+      raise ArgumentError,
+            "push_toast/3: the #{key} button takes :event or :reload, not both; got: " <>
+              inspect(button)
+    end
+
+    button =
+      button
+      |> Map.take([:label, :event, :value, :reload])
+      |> Map.reject(fn {k, v} -> k == :reload and v != true end)
+
+    Map.put(payload, key, button)
   end
 
   # ----------------------------------------------------------------------------
