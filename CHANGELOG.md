@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A self-closing `<:alert title="…" />` on `<.sign_in_page>` (a title with no
+  description) no longer crashes the page.
+
 ## [0.35.0] - 2026-11-12
 
 The sign-in page takes its colours from the theme. A brand theme's

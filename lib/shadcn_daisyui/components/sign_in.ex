@@ -212,7 +212,8 @@ defmodule ShadcnDaisyui.Components.SignIn do
           >
             <:icon><span class={icon_for(alert[:variant] || "default")}></span></:icon>
             <:title>{alert.title}</:title>
-            {render_slot(alert)}
+            <%!-- a self-closing <:alert … /> has no inner block: a title alone --%>
+            {alert[:inner_block] && render_slot(alert)}
           </.alert>
 
           <.alert

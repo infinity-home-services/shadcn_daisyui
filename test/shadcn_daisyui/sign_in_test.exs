@@ -167,6 +167,21 @@ defmodule ShadcnDaisyui.Components.SignInTest do
       refute page(notice: 42) =~ "sign-in-notice"
     end
 
+    test "an alert of the app's own can be self-closing: a title alone" do
+      assigns = %{}
+
+      html =
+        render(~H"""
+        <.sign_in_page app_name="Acme">
+          <:alert title="Enter a name and an email." variant="destructive" />
+        </.sign_in_page>
+        """)
+
+      assert html =~ ~s(data-notice="custom")
+      assert html =~ "Enter a name and an email."
+      assert html =~ "alert-error"
+    end
+
     test "not set up: the button is disabled and the notice says why, whatever else came" do
       html = page(configured: false, notice: "no_access")
 
