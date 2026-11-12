@@ -21,7 +21,8 @@ defmodule ShadcnDaisyuiDemoWeb.SignInPageTest do
 
       assert html =~ "&lt;.sign_in_page"
       assert html =~ "put_flash(:sign_in"
-      assert html =~ "--sign-in-title-fill"
+      assert html =~ "--sign-in-accent"
+      assert html =~ ~s(data-brand=&quot;acme&quot;)
       # the notices table comes from the component, so it can't drift
       assert html =~ "You don&#39;t have access to Atlas yet. Your manager gives access."
       # listed with the other guides in the sidebar

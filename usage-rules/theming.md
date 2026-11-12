@@ -43,6 +43,14 @@ Rules:
 - Outline buttons and tab triggers derive their light/dark fills (`--outline-*`,
   `--tab-*`) from the bridge vars and the theme name (`*-dark`); a brand theme
   doesn't restate them.
+- The sign-in page's application name takes `--sign-in-accent` over its picture
+  (`<.sign_in_page image>`): set it to the brand colour (`--sign-in-accent:
+  var(--primary);`) in both blocks. Unset, the name stays neutral. To brand just
+  the sign-in page in an app that runs the neutral theme, give the brand a scope
+  of its own, e.g. `[data-brand="acme"]`, restating `--primary`,
+  `--primary-foreground`, `--color-primary`, `--color-primary-content`, `--ring`,
+  `--ring-shadow`, the radius scale and `--sign-in-accent`, and render
+  `<.sign_in_page data-brand="acme">`.
 - Always provide BOTH light and dark blocks; unset vars inherit from the base theme.
 - The dark `@custom-variant` in `app.css` must list every `*-dark` theme name.
 - A brand shared by several apps belongs in one theme package they all depend on -

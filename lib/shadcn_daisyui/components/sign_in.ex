@@ -21,9 +21,11 @@ defmodule ShadcnDaisyui.Components.SignIn do
   `image`) and the form.
 
   **The app's look**: `image` (the picture behind the panel and the tablet
-  card), `--sign-in-title-fill` in the app's CSS (the application name's
-  gradient or colour), `<:panel>` (the panel's centre) and `<:logo>` (the
-  mark over the form).
+  card), the theme's colours (a brand theme's `--sign-in-accent` colours the
+  application's name over the picture; `--sign-in-title-fill` replaces that
+  fill outright), `<:panel>` (the panel's centre) and `<:logo>` (the mark
+  over the form). A brand theme with a scope of its own
+  (`data-brand="acme"` in `{@rest}`) brands just this page.
 
   **Notices**: what happened, above the button. The controller that refuses
   a sign-in, or signs someone out, puts the notice's key in the flash under

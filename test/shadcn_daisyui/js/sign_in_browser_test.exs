@@ -51,10 +51,10 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
   defp js_string(html), do: html |> JSON.encode!() |> String.replace("</", "<\\/")
 
   # the page one iframe shows: the theme, the markup, the package's JS
-  defp frame(markup, css, js) do
+  defp frame(markup, css, js, extra_css \\ "") do
     """
     <!doctype html><html data-theme="shadcn"><head><meta charset="utf-8">
-    <style>#{css} body { margin: 0 }</style></head><body>#{markup}
+    <style>#{css} body { margin: 0 } #{extra_css}</style></head><body>#{markup}
     <script type="module">#{js}</script></body></html>
     """
   end
@@ -64,6 +64,10 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     js = File.read!(Path.join(@root, "priv/static/shadcn-daisyui.js"))
     plain = frame(markup(nil), css, js)
     pictured = frame(markup(@pixel), css, js)
+    # a brand theme's accent
+    accent = ".sign-in { --sign-in-accent: rgb(44, 178, 223) }"
+    accented = frame(markup(@pixel), css, js, accent)
+    accented_plain = frame(markup(nil), css, js, accent)
 
     page = """
     <!doctype html>
@@ -72,7 +76,10 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     <script type="module">
     const errors = []
     window.addEventListener("error", (e) => errors.push(String(e.message)))
-    const docs = { plain: #{js_string(plain)}, pictured: #{js_string(pictured)} }
+    const docs = {
+      plain: #{js_string(plain)}, pictured: #{js_string(pictured)},
+      accented: #{js_string(accented)}, accentedPlain: #{js_string(accented_plain)}
+    }
     const wait = (ms) => new Promise((r) => setTimeout(r, ms))
     const load = (doc, w, h) => new Promise((resolve) => {
       const f = document.createElement("iframe")
@@ -101,6 +108,7 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
         footerOrg: cs(".sign-in-footer-org").display,
         button: Math.round(box("#sign-in-microsoft").height),
         nameFill: cs(".sign-in-app-name").color,
+        nameGradient: cs(".sign-in-app-name").backgroundImage,
         finePointer: w.matchMedia("(pointer: fine)").matches,
       }
     }
@@ -111,6 +119,8 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     out.tablet = look(await load("plain", 820, 1180))
     out.tabletPictured = look(await load("pictured", 820, 1180))
     out.desktop = look(await load("pictured", 1440, 900))
+    out.accented = look(await load("accented", 1440, 900))
+    out.accentedPlain = look(await load("accentedPlain", 1440, 900))
 
     // hide a section, then the page loads again: still hidden, the rest open
     const f = await load("plain", 390, 844)
@@ -184,6 +194,12 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     assert r["desktop"]["footerOrg"] == "none"
     assert r["desktop"]["nameFill"] == "rgba(0, 0, 0, 0)"
     assert r["desktop"]["button"] == if(r["desktop"]["finePointer"], do: 40, else: 44)
+
+    # the application's name takes the theme's accent over the picture, and
+    # only there (without one the panel is the brand colour itself)
+    assert r["accented"]["nameGradient"] =~ "rgb(44, 178, 223)"
+    refute r["desktop"]["nameGradient"] =~ "rgb(44, 178, 223)"
+    refute r["accentedPlain"]["nameGradient"] =~ "rgb(44, 178, 223)"
 
     # remembered in this browser
     assert r["storedAfterHide"] == ~s(["sign-in-as-a-role"])

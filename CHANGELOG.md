@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The sign-in page takes its colours from the theme: a brand theme's
+  `--sign-in-accent` runs through the application's name over the picture
+  (tinted towards it at the ends), as its primary already colours the button
+  and the mark. Unset, the name stays neutral. A brand theme can give itself a
+  scope (`[data-brand="acme"]`) to brand just the sign-in page in an app that
+  runs the neutral theme: `<.sign_in_page data-brand="acme">`. The theming
+  rules say which tokens such a scope restates.
+
 ## [0.34.0] - 2026-11-12
 
 A sign-in page for every app that signs people in with Microsoft:
