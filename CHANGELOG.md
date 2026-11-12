@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.35.1] - 2026-11-12
+
+A fix for the sign-in page: an app's own notice written self-closing no longer
+crashes it.
+
 ### Fixed
 
 - A self-closing `<:alert title="…" />` on `<.sign_in_page>` (a title with no
