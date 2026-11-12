@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-12
+
+A sign-in page for every app that signs people in with Microsoft:
+`<.sign_in_page>` takes the app's name, picture and routes and gives the same
+page at every size. Phones get the form edge to edge, tablets a card, and
+desktops a panel naming the application beside the form. The page words what
+happened last (signed out, no access, access ended, Microsoft unavailable)
+from a flash key, so every app says it the same way, and holds the
+development sign-in for development and test builds.
+
 ### Added
 
 - `<.sign_in_page>`: one sign-in page for every app that signs people in with
