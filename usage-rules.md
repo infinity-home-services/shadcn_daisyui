@@ -223,10 +223,12 @@ menu already has one.
   development and test builds (`:if`), as its route is. Each entry with a
   `label` folds away, and the whole development sign-in does too; the browser
   remembers what's hidden.
-- The app's look: `image`, `--sign-in-title-fill` (the application name's
-  gradient or colour, in the app's CSS) and `<:panel>` (the panel's centre:
-  `sign-in-app-name`, `sign-in-rule`, `sign-in-tagline`). Never restyle the page
-  with classes of your own.
+- The app's look: `image`, the brand theme's colours (its `--sign-in-accent`
+  colours the application's name over the picture; `data-brand="…"` on the page
+  when only the sign-in page wears the brand, see `usage-rules/theming.md`) and
+  `<:panel>` (the panel's centre: `sign-in-app-name`, `sign-in-rule`,
+  `sign-in-tagline`). Never put colours of the app's own on the page (hex,
+  `--sign-in-title-fill` in app CSS) or restyle it with classes of your own.
 
 ### App shell
 

@@ -176,9 +176,12 @@
         The package stays neutral, and the app brings its look.
         <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">image</code>
         fills the desktop panel and the page behind the tablet card, darkened so the text on it
-        reads. The application's name takes
-        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">--sign-in-title-fill</code>
-        (a gradient or a colour) from the app's CSS.
+        reads. The colours come from the theme: a brand theme's
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">--sign-in-accent</code>
+        runs through the application's name over the picture, and its primary colours the button
+        and the mark. A brand scope
+        (<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">data-brand</code>)
+        brands just the sign-in page in an app that runs the neutral theme.
         <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:panel&gt;</code>
         replaces the panel's centre, and
         <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:logo&gt;</code>
@@ -188,8 +191,15 @@
         language="css"
         code={
           ~S'''
-          /* app.css */
-          .sign-in { --sign-in-title-fill: linear-gradient(90deg, #dfeaf1 10%, #4f8db0 55%, #c3d7e3 90%); }
+          /* the brand theme's CSS: the whole app, or just the sign-in page */
+          [data-theme="acme"], [data-theme="acme-dark"] { --sign-in-accent: var(--primary); }
+          [data-brand="acme"] {
+            --primary: oklch(0.62 0.19 260);
+            --primary-foreground: oklch(0.985 0 0);
+            --color-primary: var(--primary);
+            --color-primary-content: var(--primary-foreground);
+            --sign-in-accent: var(--primary);
+          }
           '''
         }
       />
@@ -197,11 +207,13 @@
         language="heex"
         code={
           ~S'''
-          <:panel>
-            <p class="sign-in-app-name">Atlas</p>
-            <span class="sign-in-rule"></span>
-            <p class="sign-in-tagline">Reporting for every store<br /><strong>in one place</strong></p>
-          </:panel>
+          <.sign_in_page app_name="Atlas" image={~p"/images/sign-in.jpg"} data-brand="acme" …>
+            <:panel>
+              <p class="sign-in-app-name">Atlas</p>
+              <span class="sign-in-rule"></span>
+              <p class="sign-in-tagline">Reporting for every store<br /><strong>in one place</strong></p>
+            </:panel>
+          </.sign_in_page>
           '''
         }
       />

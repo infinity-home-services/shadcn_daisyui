@@ -3265,12 +3265,21 @@
     line-height: 1.05;
     font-weight: 700;
     letter-spacing: -0.035em;
-    /* unset: the panel's text colour fading to 70%; a brand sets a gradient or a colour */
-    background: var(--sign-in-title-fill, linear-gradient(to bottom, var(--sign-in-aside-foreground) 35%, color-mix(in oklab, var(--sign-in-aside-foreground) 70%, transparent)));
+    /* the panel's text colour, with the theme's --sign-in-accent in the middle
+       (a brand theme sets it: its brand colour), tinted towards it at the
+       ends; unset, the middle is the text colour at 75%. --sign-in-title-fill
+       replaces the whole fill. */
+    background: var(--sign-in-title-fill, linear-gradient(90deg,
+      color-mix(in oklab, var(--sign-in-accent, var(--sign-in-aside-foreground)) 25%, var(--sign-in-aside-foreground)) 10%,
+      var(--sign-in-accent, color-mix(in oklab, var(--sign-in-aside-foreground) 75%, transparent)) 55%,
+      color-mix(in oklab, var(--sign-in-accent, var(--sign-in-aside-foreground)) 35%, var(--sign-in-aside-foreground)) 90%));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+  /* the accent is for the picture: without one the panel is the theme's
+     primary (a brand colour) and the accent would vanish into it */
+  .sign-in-aside:not([data-image]) .sign-in-app-name { --sign-in-accent: initial; }
   .sign-in-rule {
     width: 4rem;
     height: 2px;
