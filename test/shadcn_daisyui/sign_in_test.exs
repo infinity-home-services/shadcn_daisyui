@@ -74,10 +74,10 @@ defmodule ShadcnDaisyui.Components.SignInTest do
     end
 
     test "description and id override the defaults" do
-      html = page(id: "login", description: "With your IHS account.")
+      html = page(id: "login", description: "With your Acme account.")
 
       assert html =~ ~s(<main id="login")
-      assert html =~ "With your IHS account."
+      assert html =~ "With your Acme account."
       refute html =~ "With your Microsoft work account."
     end
 
