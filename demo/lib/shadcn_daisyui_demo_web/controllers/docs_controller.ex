@@ -138,6 +138,35 @@ defmodule ShadcnDaisyuiDemoWeb.DocsController do
     end
   end
 
+  def sign_in(conn, _params) do
+    conn
+    |> assign(:page_title, "Sign-in page")
+    |> render(:sign_in_guide)
+  end
+
+  # The pretend app's sign-in page in one state, shown in the iframes on
+  # /docs/sign-in. `?theme=shadcn-dark` pins a theme for screenshots without
+  # touching the theme the docs site remembers.
+  def sign_in_preview(conn, %{"state" => slug} = params) do
+    case ShadcnDaisyuiDemoWeb.SignInPreview.state(slug) do
+      nil ->
+        not_found(conn)
+
+      state ->
+        conn
+        |> assign(:page_title, "Sign in")
+        |> assign(:shell_preview, true)
+        |> assign(:preview_theme, preview_theme(params["theme"]))
+        |> assign(:state, state)
+        |> assign(:app, ShadcnDaisyuiDemoWeb.SignInPreview.app())
+        |> assign(:development_form, Phoenix.Component.to_form(%{}, as: :development))
+        |> render(:sign_in_preview)
+    end
+  end
+
+  defp preview_theme(theme) when theme in ["shadcn", "shadcn-dark"], do: theme
+  defp preview_theme(_theme), do: nil
+
   def tokens(conn, _params) do
     conn
     |> assign(:page_title, "Tokens")

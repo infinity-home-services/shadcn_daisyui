@@ -31,6 +31,8 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
     get "/docs/dark-mode", DocsController, :dark_mode
     get "/docs/app-shell", DocsController, :app_shell
     get "/docs/app-shell/preview/:page", DocsController, :app_shell_preview
+    get "/docs/sign-in", DocsController, :sign_in
+    get "/docs/sign-in/preview/:state", DocsController, :sign_in_preview
     get "/docs/foundations/:guide", DocsController, :guide
     get "/docs/styles/:guide", DocsController, :guide
     get "/docs/components/:component", DocsController, :component

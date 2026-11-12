@@ -42,6 +42,7 @@ defmodule ShadcnDaisyui.Components do
       import(ShadcnDaisyui.Components.Record)
       import(ShadcnDaisyui.Components.CodeBlock)
       import(ShadcnDaisyui.Components.Chart)
+      import(ShadcnDaisyui.Components.SignIn)
       import(ShadcnDaisyui.FormComponents)
     end
   end

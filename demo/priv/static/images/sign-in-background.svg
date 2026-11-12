@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" preserveAspectRatio="xMidYMid slice">
+  <!-- The docs site's stand-in for an app's sign-in picture: soft grey waves
+       and fine strands on black, light from the top right. Drawn here, no
+       outside artwork. -->
+  <defs>
+    <radialGradient id="light" cx="1" cy="0" r="1.1">
+      <stop offset="0" stop-color="#3a3a3a"/>
+      <stop offset="0.45" stop-color="#121212"/>
+      <stop offset="1" stop-color="#030303"/>
+    </radialGradient>
+    <radialGradient id="tint" cx="1" cy="1" r="0.8">
+      <stop offset="0" stop-color="#1d4a5a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#1d4a5a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.09"/>
+      <stop offset="0.35" stop-color="#fff" stop-opacity="0.025"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="band2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.05"/>
+      <stop offset="0.6" stop-color="#fff" stop-opacity="0.015"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.07"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+  <rect width="1200" height="1500" fill="url(#light)"/>
+  <rect width="1200" height="1500" fill="url(#tint)"/>
+  <path d="M-50 640 C 250 600, 420 820, 640 820 S 980 560, 1260 540 L1260 1500 L-50 1500 Z" fill="url(#band)" filter="url(#soft)"/>
+  <path d="M-50 640 C 250 600, 420 820, 640 820 S 980 560, 1260 540" stroke="#fff" stroke-opacity="0.16" stroke-width="2" fill="none" filter="url(#glow)"/>
+  <path d="M-50 980 C 260 900, 560 1300, 860 1180 S 1150 980, 1260 1000 L1260 1500 L-50 1500 Z" fill="url(#band2)" filter="url(#soft)"/>
+  <path d="M-50 980 C 260 900, 560 1300, 860 1180 S 1150 980, 1260 1000" stroke="#fff" stroke-opacity="0.1" stroke-width="2" fill="none" filter="url(#glow)"/>
+  <path d="M-50 1260 C 300 1180, 650 1420, 1000 1300 S 1200 1240, 1260 1250" stroke="#fff" stroke-opacity="0.07" stroke-width="2" fill="none" filter="url(#glow)"/>
+  <g><path d="M-50 1010 C 300 960, 620 1230, 900 1020 S 1180 800, 1260 790" stroke="#fff" stroke-opacity="0.050" stroke-width="1" fill="none"/>
+    <path d="M-50 1015 C 300 963, 620 1223, 900 1018 S 1180 804, 1260 795" stroke="#fff" stroke-opacity="0.065" stroke-width="1" fill="none"/>
+    <path d="M-50 1020 C 300 966, 620 1216, 900 1016 S 1180 808, 1260 800" stroke="#fff" stroke-opacity="0.078" stroke-width="1" fill="none"/>
+    <path d="M-50 1025 C 300 969, 620 1209, 900 1014 S 1180 812, 1260 805" stroke="#fff" stroke-opacity="0.091" stroke-width="1" fill="none"/>
+    <path d="M-50 1030 C 300 972, 620 1202, 900 1012 S 1180 816, 1260 810" stroke="#fff" stroke-opacity="0.102" stroke-width="1" fill="none"/>
+    <path d="M-50 1035 C 300 975, 620 1195, 900 1010 S 1180 820, 1260 815" stroke="#fff" stroke-opacity="0.111" stroke-width="1" fill="none"/>
+    <path d="M-50 1040 C 300 978, 620 1188, 900 1008 S 1180 824, 1260 820" stroke="#fff" stroke-opacity="0.117" stroke-width="1" fill="none"/>
+    <path d="M-50 1045 C 300 981, 620 1181, 900 1006 S 1180 828, 1260 825" stroke="#fff" stroke-opacity="0.120" stroke-width="1" fill="none"/>
+    <path d="M-50 1050 C 300 984, 620 1174, 900 1004 S 1180 832, 1260 830" stroke="#fff" stroke-opacity="0.120" stroke-width="1" fill="none"/>
+    <path d="M-50 1055 C 300 987, 620 1167, 900 1002 S 1180 836, 1260 835" stroke="#fff" stroke-opacity="0.117" stroke-width="1" fill="none"/>
+    <path d="M-50 1060 C 300 990, 620 1160, 900 1000 S 1180 840, 1260 840" stroke="#fff" stroke-opacity="0.111" stroke-width="1" fill="none"/>
+    <path d="M-50 1065 C 300 993, 620 1153, 900 998 S 1180 844, 1260 845" stroke="#fff" stroke-opacity="0.102" stroke-width="1" fill="none"/>
+    <path d="M-50 1070 C 300 996, 620 1146, 900 996 S 1180 848, 1260 850" stroke="#fff" stroke-opacity="0.091" stroke-width="1" fill="none"/>
+    <path d="M-50 1075 C 300 999, 620 1139, 900 994 S 1180 852, 1260 855" stroke="#fff" stroke-opacity="0.078" stroke-width="1" fill="none"/>
+    <path d="M-50 1080 C 300 1002, 620 1132, 900 992 S 1180 856, 1260 860" stroke="#fff" stroke-opacity="0.065" stroke-width="1" fill="none"/>
+    <path d="M-50 1085 C 300 1005, 620 1125, 900 990 S 1180 860, 1260 865" stroke="#fff" stroke-opacity="0.050" stroke-width="1" fill="none"/>
+    <path d="M-50 760 C 260 700, 520 860, 820 880 S 1120 840, 1260 700" stroke="#fff" stroke-opacity="0.035" stroke-width="1" fill="none"/>
+    <path d="M-50 766 C 260 706, 520 863, 820 878.2 S 1120 834, 1260 704.2" stroke="#fff" stroke-opacity="0.052" stroke-width="1" fill="none"/>
+    <path d="M-50 772 C 260 712, 520 866, 820 876.4 S 1120 828, 1260 708.4" stroke="#fff" stroke-opacity="0.067" stroke-width="1" fill="none"/>
+    <path d="M-50 778 C 260 718, 520 869, 820 874.6 S 1120 822, 1260 712.6" stroke="#fff" stroke-opacity="0.078" stroke-width="1" fill="none"/>
+    <path d="M-50 784 C 260 724, 520 872, 820 872.8 S 1120 816, 1260 716.8" stroke="#fff" stroke-opacity="0.084" stroke-width="1" fill="none"/>
+    <path d="M-50 790 C 260 730, 520 875, 820 871 S 1120 810, 1260 721" stroke="#fff" stroke-opacity="0.084" stroke-width="1" fill="none"/>
+    <path d="M-50 796 C 260 736, 520 878, 820 869.2 S 1120 804, 1260 725.2" stroke="#fff" stroke-opacity="0.078" stroke-width="1" fill="none"/>
+    <path d="M-50 802 C 260 742, 520 881, 820 867.4 S 1120 798, 1260 729.4" stroke="#fff" stroke-opacity="0.067" stroke-width="1" fill="none"/>
+    <path d="M-50 808 C 260 748, 520 884, 820 865.6 S 1120 792, 1260 733.6" stroke="#fff" stroke-opacity="0.052" stroke-width="1" fill="none"/>
+    <path d="M-50 814 C 260 754, 520 887, 820 863.8 S 1120 786, 1260 737.8" stroke="#fff" stroke-opacity="0.035" stroke-width="1" fill="none"/></g>
+</svg>

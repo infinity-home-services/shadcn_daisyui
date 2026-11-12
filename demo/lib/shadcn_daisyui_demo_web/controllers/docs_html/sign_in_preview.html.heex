@@ -1,0 +1,51 @@
+<%!-- The pretend app's sign-in page, shown in the iframes on /docs/sign-in.
+     Everything here is the package's own <.sign_in_page>; the development
+     sign-in in its slot is the kind an app writes itself. --%>
+<.sign_in_page
+  app_name={@app.app_name}
+  org={@app.org}
+  tagline={@app.tagline}
+  image={@app.image}
+  href="#"
+  configured={@state.configured}
+  notice={@state.notice}
+>
+  <:development :if={@state.development} label="Sign in as a role">
+    <.form for={@development_form} id="development-roles" action="#" class="space-y-4">
+      <div
+        :for={{group, roles} <- ShadcnDaisyuiDemoWeb.SignInPreview.development_roles()}
+        class="space-y-2"
+      >
+        <p class="text-xs font-medium text-muted-foreground">{group}</p>
+        <div class="grid grid-cols-2 gap-2">
+          <ShadcnDaisyui.CoreComponents.button
+            :for={role <- roles}
+            type="button"
+            name="development[role]"
+            value={role}
+            variant="outline"
+            size="sm"
+            class="w-full"
+          >
+            {role}
+          </ShadcnDaisyui.CoreComponents.button>
+        </div>
+      </div>
+    </.form>
+  </:development>
+  <:development :if={@state.development} label="Sign in as someone already here">
+    <.form for={@development_form} id="development-person" action="#" class="space-y-4">
+      <ShadcnDaisyui.CoreComponents.input
+        field={@development_form[:person_id]}
+        type="select"
+        label="Person"
+        prompt="Choose a person"
+        options={ShadcnDaisyuiDemoWeb.SignInPreview.development_people()}
+      />
+      <ShadcnDaisyui.CoreComponents.button type="button" variant="outline" class="w-full">
+        Sign in
+      </ShadcnDaisyui.CoreComponents.button>
+    </.form>
+  </:development>
+  <:footer><a href="#">Privacy</a></:footer>
+</.sign_in_page>

@@ -33,6 +33,11 @@ like shadcn/ui. **Every UI decision goes through this package.**
   with `<.reveal open={…}>`. Never hand-animate `height` / `max-height`, and
   never `:if` the chip row inside the reveal - `open` drives it, and the chips
   animate in and out on their own.
+- The sign-in page is `<.sign_in_page>` (see Sign-in page), rendered on its own
+  outside `Layouts.app`. A refusal or a sign-out reaches it as a flash key
+  (`put_flash(conn, :sign_in, "no_access")`), never as wording of the app's own or
+  an error toast. Never hand-roll a sign-in card, a "Sign in with Microsoft"
+  button or a development sign-in that production builds render.
 - A signed-in app's layout is `<.app_shell>` (see App shell). Never hand-roll a
   sidebar, bottom bar, account menu or page header.
 - A list page is `<.table_toolbar>` over `<.data_table>` in an `<.app_shell fill>`
@@ -121,6 +126,7 @@ Decision order:
 | `<.popover>` | `<:trigger>` + content |
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"`; opt-in item attrs (items without them render as before): `variant="destructive"`, `confirm="Remove Acme Marketing from Pat?"` (`data-confirm`, name the object), `values={%{user_id: …}}` (one `phx-value-<key>` each, wins over `phx-value-id` for its own keys), `id`, `disabled` (`aria-disabled`, no click, 50%); opt-in menu attr `close_on_select` closes it after a choice |
+| `<.sign_in_page>` | the sign-in page (see Sign-in page): `app_name` (req.), `org`, `tagline`, `image` (desktop panel + behind the tablet card), `icon`, `href` (`~p"/auth/entra"`), `configured`, `notice` (`Phoenix.Flash.get(@flash, :sign_in)`), `description`; slots `<:logo>`, `<:panel>`, `<:alert title variant>`, `<:development label id>` (dev and test builds only), `<:footer>` |
 | `<.app_shell>` | a signed-in app's whole shell (see App shell): `nav` groups, `active`, `search` (a `<.command>` id), `person`, `environment`, `bar`/`more`, `wide`/`fill`; slots `<:header>` (`<.app_shell_heading icon title subtitle tip chevron>`), `<:phone_header>`, `<:footer_item id icon label navigate\|href\|phx-click>`, `<:account_item id icon navigate\|href method soon divider destructive>` |
 | `<.command>` | `id` req. (hook), `label` (accessible name), `placeholder`, `<:trigger_label>`, `<:item id group icon shortcut>` that runs `phx-click`, or goes somewhere: `navigate`/`patch`/`href`, or `form` + `name` + `value` (submits that form); `shortcut="k"` (default, ⌘K toggles it; opening closes other dialogs) or `shortcut={nil}` (none - every palette but the search); `icon="hero-user-plus"` (the search row's heroicon, any `<.icon name>` class written out in full; default `hero-magnifying-glass`, `icon={nil}` none); `<:empty>` (default "No results found."); opt-in item attrs (items without them render as before): `description` (muted second line), `confirm` (`data-confirm`, closes only once accepted), `values={%{id: …}}`, `disabled` |
 | `<.command on_search>` | search only the server can run (a directory, a remote API, a big table): `on_search="event"` pushes `%{"id" => id, "query" => text}` (trimmed, `search_debounce={250}`), the hook stops filtering; render the results as `<:item>`s and echo the text they answer as `query={@query}` (required; nil before the first search; assign it with the results, so with `start_async` when the answer lands); `<:hint>` before typing, a spinner while pending, `<:empty>` once answered; opening pushes `""` (drop the last results); `phx-target={@myself}` for a LiveComponent (items' `phx-click` go there too). Never hand-roll a search dialog (a `phx-change` input over a result list) |
@@ -179,6 +185,48 @@ in the shell starts with it), `<.sticky_top id>` (a pinned block of your own).
 Not imported (Phoenix's `Layouts` defines its own): `<ShadcnDaisyui.Components.theme_toggle
 light="shadcn" dark="shadcn-dark">` - system / light / dark; `<.app_shell>`'s account
 menu already has one.
+
+### Sign-in page
+
+- One page for every app that signs people in with Microsoft. Phones (below
+  40rem): the form edge to edge, a 44px button. Tablets (40rem to 64rem): the
+  form in a card, over the `image` when there is one. Desktops (from 64rem):
+  the panel (the org, the application's name large, a rule, the tagline, over
+  the `image`) beside the form.
+- The sign-in template renders it alone (no `Layouts.app`), with
+  `<.flash_group flash={@flash} />` beside it:
+
+```heex
+<.sign_in_page
+  app_name="Atlas"
+  org="Acme Inc."
+  tagline="Sales and service reporting for every Acme store."
+  image={~p"/images/sign-in.jpg"}
+  href={~p"/auth/entra"}
+  configured={@entra_configured}
+  notice={Phoenix.Flash.get(@flash, :sign_in)}
+>
+  <:development :if={@development?} label="Sign in as a role">…</:development>
+</.sign_in_page>
+<.flash_group flash={@flash} />
+```
+
+- Notices: the controller that refuses a sign-in or signs someone out puts a
+  key in the flash under `:sign_in` and redirects to the page, which words it:
+  `signed_out`, `unavailable` (Microsoft can't be reached), `canceled`,
+  `failed` (a reply that can't be checked), `no_access` (no brand, no app role,
+  not set up: one key, so the page never says whether an account exists),
+  `ended` (removed), `not_configured`. `configured={false}` disables the button
+  and shows `not_configured`. Anything else is `<:alert title="…"
+  variant="destructive">`. Never write the wording into the app or toast it.
+- The development sign-in is the `<:development>` slot, rendered only in
+  development and test builds (`:if`), as its route is. Each entry with a
+  `label` folds away, and the whole development sign-in does too; the browser
+  remembers what's hidden.
+- The app's look: `image`, `--sign-in-title-fill` (the application name's
+  gradient or colour, in the app's CSS) and `<:panel>` (the panel's centre:
+  `sign-in-app-name`, `sign-in-rule`, `sign-in-tagline`). Never restyle the page
+  with classes of your own.
 
 ### App shell
 

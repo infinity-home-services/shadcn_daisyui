@@ -28,6 +28,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
   import ShadcnDaisyui.Components.Record, only: [record_tabs: 1, table_card: 1, section_nav: 1]
   # the charts guide's live examples
   import ShadcnDaisyui.Components.Chart, only: [chart: 1, number_card: 1]
+  # the sign-in page and its previews
+  import ShadcnDaisyui.Components.SignIn, only: [sign_in_page: 1]
   alias ShadcnDaisyuiDemoWeb.Catalog.ChartPages
 
   embed_templates "docs_html/*"
@@ -45,6 +47,14 @@ defmodule ShadcnDaisyuiDemoWeb.DocsHTML do
       %{label: "Border", token: "--border", class: "bg-base-300"},
       %{label: "Destructive", token: "--destructive", class: "bg-destructive"}
     ]
+  end
+
+  @doc "The sign-in page's notices as the guide's table shows them: `[{key, wording}]`."
+  def sign_in_notices do
+    for key <- ShadcnDaisyui.Components.SignIn.notices() do
+      notice = ShadcnDaisyui.Components.SignIn.notice(key, "Atlas")
+      {key, Enum.join(Enum.reject([notice.title, notice.description], &is_nil/1), " ")}
+    end
   end
 
   @doc false
