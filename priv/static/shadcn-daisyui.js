@@ -190,6 +190,37 @@ if (typeof window !== "undefined" && !window.__shadcnShell) {
   }
 }
 
+// Sign-in page (<.sign_in_page>): the development sign-in and its sections are
+// <details data-sign-in-section="key">. Hiding one is remembered in this
+// browser (localStorage "shadcn:sign-in-hidden", the hidden keys), so a
+// developer can keep the page as production shows it. Restored when the page
+// loads; dead views and LiveView alike, no hook.
+const SIGN_IN_HIDDEN_KEY = "shadcn:sign-in-hidden"
+function signInHidden() {
+  try { return JSON.parse(localStorage.getItem(SIGN_IN_HIDDEN_KEY)) || [] } catch (_e) { return [] }
+}
+if (typeof window !== "undefined" && !window.__shadcnSignIn) {
+  window.__shadcnSignIn = true
+  const restore = () => {
+    const hidden = signInHidden()
+    if (hidden.length === 0) return
+    document.querySelectorAll("details[data-sign-in-section]").forEach((d) => {
+      if (hidden.includes(d.dataset.signInSection)) d.open = false
+    })
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", restore)
+  else restore()
+  // toggle doesn't bubble: listen in the capture phase
+  document.addEventListener("toggle", (e) => {
+    const d = e.target
+    if (!(d instanceof HTMLDetailsElement) || !d.dataset.signInSection) return
+    const key = d.dataset.signInSection
+    const hidden = signInHidden().filter((k) => k !== key)
+    if (!d.open) hidden.push(key)
+    try { localStorage.setItem(SIGN_IN_HIDDEN_KEY, JSON.stringify(hidden)) } catch (_e) { /* private mode */ }
+  }, true)
+}
+
 // <.sticky_top> (and <.page_header>): data-stuck once its scroller has scrolled
 // (the shell's #main, else the document), for the theme's bottom border and
 // shadow. The component keeps the attribute across patches.

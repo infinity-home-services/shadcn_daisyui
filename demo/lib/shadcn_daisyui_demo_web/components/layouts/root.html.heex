@@ -2,7 +2,7 @@
 <%!-- No data-theme here: the inline head script sets it from localStorage
      before first paint. A hardcoded value made that script skip the stored
      choice, so every full page load reverted to light. --%>
-<html lang="en">
+<html lang="en" data-theme={assigns[:preview_theme]}>
   <head>
     <meta charset="utf-8" />
     <meta

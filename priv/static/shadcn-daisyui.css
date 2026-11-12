@@ -220,6 +220,10 @@
   --tab-active-border: transparent;
   --menu-destructive-hover: color-mix(in oklab, var(--destructive) 10%, transparent); /* focus:bg-destructive/10 */
   --shell-sidebar-background: var(--color-base-200);                     /* <.app_shell> sidebar: bg-base-200 */
+  --sign-in-background: var(--color-base-200);                          /* <.sign_in_page> tablet page: bg-muted */
+  --sign-in-aside-background: var(--primary);                            /* desktop panel: bg-primary (shadcn's zinc-900) */
+  --sign-in-aside-foreground: var(--primary-foreground);
+  --sign-in-aside-border: transparent;
 }
 [data-theme*="dark"],
 .dark {
@@ -231,6 +235,10 @@
   --tab-active-border: var(--input);                                          /* dark:data-active:border-input */
   --menu-destructive-hover: color-mix(in oklab, var(--destructive) 20%, transparent); /* dark:focus:bg-destructive/20 */
   --shell-sidebar-background: var(--card);                                    /* dark:bg-card */
+  --sign-in-background: var(--background);                                   /* a card reads lighter than the page in dark */
+  --sign-in-aside-background: var(--card);                                    /* dark:bg-card dark:border-r */
+  --sign-in-aside-foreground: var(--card-foreground);
+  --sign-in-aside-border: var(--border-color);
   --chip-background: var(--secondary);                                        /* a brand's *-dark theme doesn't inherit :root's light fill */
 }
 /* A light theme inside a dark page. No specificity: a brand's own value wins. */
@@ -3115,6 +3123,239 @@
   .empty-state-description a { text-decoration: underline; text-underline-offset: 4px; }
   .empty-state-description a:hover { color: var(--foreground); }
   .empty-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+  /* ---- Sign-in page (<.sign_in_page>) -------------------------------------
+     One page at the three size classes. Phones (below 40rem): edge to edge on
+     the page colour, the form centred, the organisation at the foot. Tablets
+     (40rem to 64rem): the form in a card on a muted page. Desktops (from
+     64rem): two halves, the app's panel (primary in light, a bordered card
+     in dark, as shadcn's authentication example) and the form. The button is
+     44px wherever touch is likely, 40px on a desktop with a mouse. */
+  .sign-in {
+    display: flex;
+    min-height: 100dvh;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  .sign-in-aside { box-sizing: border-box; display: none; }
+  .sign-in-main {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: max(3rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .sign-in-panel {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    max-width: 24rem;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-block: auto;
+  }
+  .sign-in-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .sign-in-header > .sign-in-mark { margin-bottom: 0.5rem; }
+  .sign-in-title { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.025em; }
+  .sign-in-description { font-size: 0.875rem; line-height: 1.25rem; color: var(--muted-foreground); }
+  .sign-in-mark {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+  }
+  .sign-in-mark > :where(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+  .sign-in-tile { background-color: var(--primary); color: var(--primary-foreground); }
+  .sign-in-tile > [class*="hero-"] { width: 1.5rem; height: 1.5rem; }
+  .sign-in-notice { text-align: start; }
+  .sign-in-microsoft { width: 100%; height: 2.75rem; min-height: 2.75rem; }
+  .sign-in-microsoft-logo { width: 1rem; height: 1rem; flex-shrink: 0; }
+  /* The development sign-in and its sections: <details>, open unless someone
+     hid them (remembered in this browser by shadcn-daisyui.js). */
+  .sign-in-development > summary,
+  .sign-in-section > summary { list-style: none; cursor: pointer; }
+  .sign-in-development > summary::-webkit-details-marker,
+  .sign-in-section > summary::-webkit-details-marker { display: none; }
+  .sign-in-development > summary:focus-visible,
+  .sign-in-section > summary:focus-visible { outline: none; border-radius: var(--radius-sm); box-shadow: var(--ring-shadow); }
+  .sign-in-divider {
+    display: flex;
+    min-height: 1.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .sign-in-divider::before,
+  .sign-in-divider::after { content: ""; height: 1px; flex: 1 1 0%; background-color: var(--border-color); }
+  .sign-in-divider::before { margin-inline-end: 0.25rem; }
+  .sign-in-divider::after { order: 9; margin-inline-start: 0.25rem; }
+  .sign-in-divider:hover { color: var(--foreground); }
+  .sign-in-chevron { width: 0.875rem; height: 0.875rem; flex-shrink: 0; transition: transform 150ms ease-out; }
+  details:not([open]) > summary > .sign-in-chevron { transform: rotate(-90deg); }
+  @media (prefers-reduced-motion: reduce) { .sign-in-chevron { transition: none; } }
+  .sign-in-development-body { display: flex; flex-direction: column; gap: 1rem; padding-top: 0.5rem; }
+  .sign-in-development-note {
+    text-align: center;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--muted-foreground);
+  }
+  .sign-in-section-summary {
+    display: flex;
+    min-height: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+  .sign-in-section-summary > .sign-in-chevron { color: var(--muted-foreground); }
+  .sign-in-section-body { padding-top: 0.75rem; }
+  .sign-in-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+  .sign-in-footer a { text-underline-offset: 4px; }
+  .sign-in-footer a:hover { color: var(--foreground); text-decoration: underline; }
+  /* The desktop panel's centre: the organisation, the app's name large (its
+     fill is --sign-in-title-fill, a gradient or a colour a brand sets), a
+     short rule and the tagline in spaced capitals. */
+  .sign-in-aside-content {
+    position: relative;
+    display: flex;
+    max-width: 32rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .sign-in-org {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    color: color-mix(in oklab, var(--sign-in-aside-foreground) 80%, transparent);
+  }
+  .sign-in-app-name {
+    margin-top: -0.75rem;
+    padding-bottom: 0.1em;            /* room for descenders under background-clip: text */
+    font-size: clamp(3rem, 2rem + 2.5vw, 4.5rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    /* unset: the panel's text colour fading to 70%; a brand sets a gradient or a colour */
+    background: var(--sign-in-title-fill, linear-gradient(to bottom, var(--sign-in-aside-foreground) 35%, color-mix(in oklab, var(--sign-in-aside-foreground) 70%, transparent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sign-in-rule {
+    width: 4rem;
+    height: 2px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, transparent, var(--sign-in-aside-foreground), transparent);
+    opacity: 0.6;
+  }
+  .sign-in-tagline {
+    max-width: 26rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--sign-in-aside-foreground) 85%, transparent);
+  }
+  .sign-in-tagline strong { font-weight: 600; color: var(--sign-in-aside-foreground); }
+  /* A picture behind the panel (`image`, from 64rem) and behind the tablet
+     card (40rem to 64rem): it covers the space, and a scrim darkens it so
+     the text on it reads, in either theme. */
+  .sign-in-aside-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .sign-in-aside[data-image] {
+    --sign-in-aside-foreground: oklch(0.985 0 0);
+    --sign-in-aside-background: oklch(0.145 0 0);
+    border-color: transparent;
+    background-color: oklch(0.145 0 0);
+  }
+  .sign-in-aside[data-image]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, oklch(0 0 0 / 0.35), oklch(0 0 0 / 0.1) 75%);
+  }
+  @media (width >= 40rem) and (width < 64rem) {
+    .sign-in-aside[data-image] { position: fixed; inset: 0; display: block; }
+    .sign-in-aside[data-image] > .sign-in-aside-content { display: none; }
+    .sign-in:has(> .sign-in-aside[data-image]) > .sign-in-main { position: relative; }
+    .sign-in:has(> .sign-in-aside[data-image]) .sign-in-footer { color: oklch(0.985 0 0 / 0.75); }
+    .sign-in:has(> .sign-in-aside[data-image]) .sign-in-footer a:hover { color: oklch(0.985 0 0); }
+    .sign-in:has(> .sign-in-aside[data-image]) .sign-in-panel { box-shadow: var(--shadow-lg); }
+  }
+  @media (width >= 40rem) {
+    .sign-in { background-color: var(--sign-in-background); }
+    .sign-in-main { padding: 3rem 1.5rem; }
+    .sign-in-panel {
+      max-width: 28rem;
+      padding: 2rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      background-color: var(--card);
+      color: var(--card-foreground);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+  @media (width >= 64rem) {
+    .sign-in { background-color: var(--background); }
+    .sign-in-aside {
+      position: sticky;
+      top: 0;
+      display: flex;
+      width: 50%;
+      height: 100dvh;
+      flex-shrink: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+      border-inline-end: 1px solid var(--sign-in-aside-border);
+      background-color: var(--sign-in-aside-background);
+      color: var(--sign-in-aside-foreground);
+    }
+    .sign-in-main { padding: 2.5rem 2rem; }
+    .sign-in-panel {
+      max-width: 24rem;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background-color: transparent;
+      box-shadow: none;
+    }
+    .sign-in-header > .sign-in-mark,
+    .sign-in-footer-org { display: none; }
+  }
+  @media (width >= 64rem) and (pointer: fine) {
+    .sign-in-microsoft { height: 2.5rem; min-height: 2.5rem; }
+  }
 
   /* ---- Code block (<.code_block>) -----------------------------------------
      shadcn's Code Block: an optional header (title + actions), the <pre>

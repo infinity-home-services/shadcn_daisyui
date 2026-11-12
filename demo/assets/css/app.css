@@ -48,3 +48,40 @@
 [data-token-grid] input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 [data-token-grid] input[type="color"]::-webkit-color-swatch { border: none; border-radius: inherit; }
 [data-token-grid] input[type="color"]::-moz-color-swatch { border: none; border-radius: inherit; }
+
+/* /docs/sign-in: the sign-in page's previews, each an iframe at a real
+   device width scaled down to fit (desktop 1280x800, tablet 768x1024, phone
+   390x844), and the States grid showing the size its tabs pick. */
+.preview-frame {
+  --frame-scale: 0.5;
+  width: calc(var(--frame-w) * var(--frame-scale));
+  height: calc(var(--frame-h) * var(--frame-scale));
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+.preview-frame iframe {
+  display: block;
+  width: var(--frame-w);
+  height: var(--frame-h);
+  transform: scale(var(--frame-scale));
+  transform-origin: 0 0;
+}
+.preview-frame[data-size="desktop"] { --frame-w: 1280px; --frame-h: 800px; }
+.preview-frame[data-size="tablet"] { --frame-w: 768px; --frame-h: 1024px; --frame-scale: 0.6; }
+.preview-frame[data-size="phone"] { --frame-w: 390px; --frame-h: 844px; --frame-scale: 0.6; }
+@media (width >= 80rem) { .preview-frame[data-size="desktop"] { --frame-scale: 0.7; } }
+.preview-frame[data-scale="small"][data-size="desktop"] { --frame-scale: 0.35; }
+.preview-frame[data-scale="small"][data-size="tablet"] { --frame-scale: 0.35; }
+.preview-frame[data-scale="small"][data-size="phone"] { --frame-scale: 0.5; }
+.preview-scroll { max-width: 100%; overflow-x: auto; }
+
+.sign-in-states [data-size] { display: none; }
+.sign-in-states { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+section:has(input[value="phone"]:checked) .sign-in-states [data-size="phone"],
+section:has(input[value="tablet"]:checked) .sign-in-states [data-size="tablet"],
+section:has(input[value="desktop"]:checked) .sign-in-states [data-size="desktop"] { display: block; }
+section:has(input[value="tablet"]:checked) .sign-in-states { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+section:has(input[value="desktop"]:checked) .sign-in-states { grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); }

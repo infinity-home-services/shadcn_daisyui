@@ -1,0 +1,210 @@
+<.docs_layout active_guide="sign-in">
+  <.doc_heading
+    title="Sign-in page"
+    description="One sign-in page for every app that signs people in with Microsoft. It shows the application's name, Sign in with Microsoft, and what happened last. Development builds add a development sign-in. Phones get the form edge to edge, tablets a card, desktops a picture panel beside the form."
+  />
+
+  <div class="mt-10 space-y-12">
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Desktop</h2>
+      <p class="text-sm text-muted-foreground">
+        From 64rem. The left half names the application over the app's picture (or the primary
+        colour in light, a card in dark, without one). The form is on the right.
+      </p>
+      <.preview_frame size="desktop" slug="signed-out" />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Tablet and phone</h2>
+      <p class="text-sm text-muted-foreground">
+        Tablets (40rem to 64rem) get the form in a card, over the picture when there is one.
+        Phones (below 40rem) get it edge to edge. The button is 44px tall wherever touch is likely.
+      </p>
+      <div class="flex flex-wrap items-start gap-6">
+        <.preview_frame size="tablet" slug="signed-out" />
+        <.preview_frame size="phone" slug="signed-out" />
+      </div>
+    </section>
+
+    <section class="space-y-4">
+      <h2 class="text-xl font-semibold tracking-tight">States</h2>
+      <p class="text-sm text-muted-foreground">
+        What happened last shows above the button. A refusal or a failure is red, anything else
+        a plain notice. Pick a size to see every state at it.
+      </p>
+      <div role="tablist" class="tabs tabs-box w-fit">
+        <input
+          type="radio"
+          name="sign-in-size"
+          class="tab"
+          aria-label="Phone"
+          value="phone"
+          checked
+        />
+        <input type="radio" name="sign-in-size" class="tab" aria-label="Tablet" value="tablet" />
+        <input type="radio" name="sign-in-size" class="tab" aria-label="Desktop" value="desktop" />
+      </div>
+      <div id="sign-in-states" class="sign-in-states grid gap-6">
+        <div :for={state <- ShadcnDaisyuiDemoWeb.SignInPreview.states()} class="space-y-2">
+          <div class="flex items-baseline justify-between gap-2">
+            <h3 class="text-sm font-medium">{state.title}</h3>
+            <a
+              href={ShadcnDaisyuiDemoWeb.SignInPreview.path(state.slug)}
+              class="text-xs text-muted-foreground underline-offset-4 hover:underline"
+              target="_blank"
+            >
+              Open
+            </a>
+          </div>
+          <div data-size="phone">
+            <.preview_frame size="phone" slug={state.slug} scale="small" />
+          </div>
+          <div data-size="tablet">
+            <.preview_frame size="tablet" slug={state.slug} scale="small" />
+          </div>
+          <div data-size="desktop">
+            <.preview_frame size="desktop" slug={state.slug} scale="small" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Usage</h2>
+      <p class="text-sm text-muted-foreground">
+        The page is the whole screen, so the sign-in template renders it on its own, outside <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">Layouts.app/1</code>,
+        with the flash group beside it. The app passes its own name, picture and routes.
+      </p>
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <.sign_in_page
+            app_name="Atlas"
+            org="Acme Inc."
+            tagline="Sales and service reporting for every Acme store."
+            image={~p"/images/sign-in.jpg"}
+            href={~p"/auth/entra"}
+            configured={@entra_configured}
+            notice={Phoenix.Flash.get(@flash, :sign_in)}
+          >
+            <:development :if={@development?} label="Sign in as a role">
+              <.form for={@form} action={~p"/sign-in/development"}>…</.form>
+            </:development>
+            <:footer><.link href={~p"/privacy"}>Privacy</.link></:footer>
+          </.sign_in_page>
+          <.flash_group flash={@flash} />
+          '''
+        }
+      />
+      <p class="text-sm text-muted-foreground">
+        A controller that refuses a sign-in, or signs someone out, puts the notice's key in the
+        flash under <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">:sign_in</code>
+        and redirects to the sign-in page. The page words it, so every app says it the same way.
+      </p>
+      <.code_block
+        language="elixir"
+        code={
+          ~S'''
+          defp refuse(conn, reason) do
+            conn |> put_flash(:sign_in, notice(reason)) |> redirect(to: ~p"/sign-in")
+          end
+
+          defp notice(reason) when reason in [:not_set_up, :no_app_role, :no_brand], do: "no_access"
+          defp notice(:removed), do: "ended"
+          defp notice(:entra_unavailable), do: "unavailable"
+          defp notice(:canceled), do: "canceled"
+          defp notice(:not_configured), do: "not_configured"
+          defp notice(_bad_state_or_reply), do: "failed"
+
+          def delete(conn, _params) do
+            conn |> Auth.sign_out() |> put_flash(:sign_in, "signed_out") |> redirect(to: ~p"/sign-in")
+          end
+          '''
+        }
+      />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Notices</h2>
+      <div class="card w-full overflow-hidden">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="w-36">Key</th>
+              <th>Says</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={{key, says} <- sign_in_notices()}>
+              <td><code class="font-mono text-xs">{key}</code></td>
+              <td class="text-sm">{says}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-muted-foreground">
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          configured=&lbrace;false&rbrace;
+        </code>
+        shows the not-set-up notice and disables the button. A key the page doesn't know shows
+        nothing. Anything else is an
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          &lt;:alert title="…"&gt;
+        </code>
+        of the app's own.
+      </p>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Development sign-in</h2>
+      <p class="text-sm text-muted-foreground">
+        The
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:development&gt;</code>
+        slot sits under a divider. The app renders it only in development and test builds, as it
+        does the route behind it. Each entry with a
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">label</code>
+        is a section that folds away, and the whole development sign-in folds away too. The
+        browser remembers what's hidden, so a developer can keep the page as production shows it.
+      </p>
+      <.preview_frame size="desktop" slug="development" />
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">The app's look</h2>
+      <p class="text-sm text-muted-foreground">
+        The package stays neutral, and the app brings its look.
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">image</code>
+        fills the desktop panel and the page behind the tablet card, darkened so the text on it
+        reads. The application's name takes
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">--sign-in-title-fill</code>
+        (a gradient or a colour) from the app's CSS.
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:panel&gt;</code>
+        replaces the panel's centre, and
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">&lt;:logo&gt;</code>
+        the icon tile over the form.
+      </p>
+      <.code_block
+        language="css"
+        code={
+          ~S'''
+          /* app.css */
+          .sign-in { --sign-in-title-fill: linear-gradient(90deg, #dfeaf1 10%, #4f8db0 55%, #c3d7e3 90%); }
+          '''
+        }
+      />
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <:panel>
+            <p class="sign-in-app-name">Atlas</p>
+            <span class="sign-in-rule"></span>
+            <p class="sign-in-tagline">Reporting for every store<br /><strong>in one place</strong></p>
+          </:panel>
+          '''
+        }
+      />
+    </section>
+  </div>
+</.docs_layout>

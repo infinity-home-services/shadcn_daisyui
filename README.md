@@ -12,7 +12,8 @@ It bundles:
   tab nav, chip row, page header, data table, section nav, dropzone, message scroller,
   prompt input, …), plus the app shell's behaviour.
 - **Function components** - `ShadcnDaisyui.Components` (`<.app_shell>` - a signed-in
-  app's whole shell - `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
+  app's whole shell - `<.sign_in_page>` - the Microsoft sign-in page at every size -
+  `<.badge>`, `<.card>`, `<.dialog>`, `<.combobox>`, `<.tabs>`, …),
   `ShadcnDaisyui.FormComponents` (`<.field>`, `<.checkbox>`, `<.switch>`,
   `<.radio_group>`, `<.dropzone>`, …), and `ShadcnDaisyui.CoreComponents` - a **drop-in replacement
   for Phoenix 1.8's generated core components** (`<.input field={@form[:email]}>`,

@@ -256,7 +256,8 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
       %{slug: "themes", title: "Themes"},
       %{slug: "tokens", title: "Tokens"},
       %{slug: "dark-mode", title: "Dark mode & CSP"},
-      %{slug: "app-shell", title: "App shell"}
+      %{slug: "app-shell", title: "App shell"},
+      %{slug: "sign-in", title: "Sign-in page"}
     ]
   end
 
@@ -368,6 +369,29 @@ defmodule ShadcnDaisyuiDemoWeb.DocsComponents do
     <div class="space-y-2 border-b border-base-300 pb-6">
       <h1 class="text-3xl font-bold tracking-tight">{@title}</h1>
       <p :if={@description} class="text-lg text-muted-foreground">{@description}</p>
+    </div>
+    """
+  end
+
+  @doc """
+  A sign-in page preview at a real device width, scaled to fit (/docs/sign-in).
+  """
+  attr :size, :string, required: true, values: ~w(desktop tablet phone)
+  attr :slug, :string, required: true
+  attr :scale, :string, default: nil
+
+  def preview_frame(assigns) do
+    ~H"""
+    <div class="preview-scroll">
+      <div class="preview-frame" data-size={@size} data-scale={@scale}>
+        <iframe
+          src={ShadcnDaisyuiDemoWeb.SignInPreview.path(@slug)}
+          title={"Sign-in page, #{@slug}, on a #{@size}"}
+          loading="lazy"
+          tabindex="-1"
+        >
+        </iframe>
+      </div>
     </div>
     """
   end

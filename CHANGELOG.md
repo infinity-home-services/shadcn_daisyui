@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `<.sign_in_page>`: one sign-in page for every app that signs people in with
+  Microsoft, so apps' sign-in pages match at every size. Phones get the form edge
+  to edge with a 44px button, tablets a card, and desktops a panel naming the
+  application (the org, the name large, a rule and the tagline) beside the form.
+  `image` puts the app's picture behind the panel and the tablet card,
+  `--sign-in-title-fill` colours the application's name, and `<:panel>` replaces
+  the panel's centre. What happened last shows above the button, worded by the
+  page from a flash key (`put_flash(conn, :sign_in, "no_access")`): `signed_out`,
+  `unavailable`, `canceled`, `failed`, `no_access`, `ended` and `not_configured`,
+  red for a refusal or a failure. `configured={false}` disables the button.
+  `<:development>` holds the development sign-in, for development and test
+  builds; its labelled sections fold away, and the browser remembers what's
+  hidden. `ShadcnDaisyui.Components.SignIn.notice/2` gives a notice's wording.
+  The docs site's Sign-in page guide shows it at each size and in every state.
+
 ## [0.33.0] - 2026-11-06
 
 The installer now wires up the reload toast after a deploy: `mix
