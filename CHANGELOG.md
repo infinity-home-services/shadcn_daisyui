@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-12
+
+The sign-in page takes its colours from the theme. A brand theme's
+`--sign-in-accent` runs through the application's name over the picture, and
+a brand theme can scope itself (`data-brand="acme"`) to brand just the
+sign-in page in an app that keeps the neutral theme.
+
 ### Added
 
 - The sign-in page takes its colours from the theme: a brand theme's
