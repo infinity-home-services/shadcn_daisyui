@@ -224,8 +224,9 @@ menu already has one.
   `label` folds away, and the whole development sign-in does too; the browser
   remembers what's hidden.
 - The app's look: `image`, the brand theme's colours (its `--sign-in-accent`
-  colours the application's name over the picture; `data-brand="…"` on the page
-  when only the sign-in page wears the brand, see `usage-rules/theming.md`) and
+  colours the application's name over the picture and its `--app-icon` the
+  app's icon; `data-brand="…"` on the page when only the sign-in page wears the
+  brand, see `usage-rules/theming.md`) and
   `<:panel>` (the panel's centre: `sign-in-app-name`, `sign-in-rule`,
   `sign-in-tagline`). Never put colours of the app's own on the page (hex,
   `--sign-in-title-fill` in app CSS) or restyle it with classes of your own.

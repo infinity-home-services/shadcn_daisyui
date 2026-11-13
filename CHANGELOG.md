@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Sign in with Microsoft on `<.sign_in_page>` is neutral in every brand: black
+  with white text in light, white with black text in dark (the theme's text and
+  page colours), as Microsoft's own buttons are. A brand's primary no longer
+  colours it.
+
+### Added
+
+- `--app-icon` and `--app-icon-foreground`: the app's icon (`<.app_shell>`'s
+  sidebar tile and the mark over the sign-in form) takes them when a brand sets
+  them, else the theme's primary as before. A brand can put its icon in the
+  brand colour while the app keeps the neutral theme.
+
 ## [0.35.1] - 2026-11-12
 
 A fix for the sign-in page: an app's own notice written self-closing no longer

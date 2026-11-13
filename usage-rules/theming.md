@@ -51,6 +51,11 @@ Rules:
   `--primary-foreground`, `--color-primary`, `--color-primary-content`, `--ring`,
   `--ring-shadow`, the radius scale and `--sign-in-accent`, and render
   `<.sign_in_page data-brand="acme">`.
+- The app's icon (`<.app_shell>`'s `.app-shell-tile`, the mark over the sign-in
+  form) takes `--app-icon` and `--app-icon-foreground`, falling back to the
+  primary. A brand that wants its icon in the brand colour while the app runs
+  the neutral theme sets them on `:root`. Sign in with Microsoft stays neutral
+  (the theme's foreground and background) in every brand: never recolour it.
 - Always provide BOTH light and dark blocks; unset vars inherit from the base theme.
 - The dark `@custom-variant` in `app.css` must list every `*-dark` theme name.
 - A brand shared by several apps belongs in one theme package they all depend on -

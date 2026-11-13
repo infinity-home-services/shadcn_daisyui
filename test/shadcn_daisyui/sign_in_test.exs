@@ -27,7 +27,7 @@ defmodule ShadcnDaisyui.Components.SignInTest do
       assert html =~ "With your Microsoft work account."
 
       assert html =~
-               ~r/<a id="sign-in-microsoft" href="\/auth\/entra" class="btn btn-primary sign-in-microsoft">/
+               ~r/<a id="sign-in-microsoft" href="\/auth\/entra" class="btn sign-in-microsoft">/
 
       assert html =~ "Sign in with Microsoft"
       assert html =~ ~s(class="sign-in-microsoft-logo")
@@ -189,7 +189,7 @@ defmodule ShadcnDaisyui.Components.SignInTest do
       refute html =~ "You don&#39;t have access"
 
       assert html =~
-               ~r/<button id="sign-in-microsoft" type="button" class="btn btn-primary sign-in-microsoft" disabled>/
+               ~r/<button id="sign-in-microsoft" type="button" class="btn sign-in-microsoft" disabled>/
 
       refute html =~ ~s(<a id="sign-in-microsoft")
     end
