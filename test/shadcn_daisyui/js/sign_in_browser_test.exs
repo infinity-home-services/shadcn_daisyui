@@ -68,6 +68,9 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     accent = ".sign-in { --sign-in-accent: rgb(44, 178, 223) }"
     accented = frame(markup(@pixel), css, js, accent)
     accented_plain = frame(markup(nil), css, js, accent)
+    # a brand scope's primary (data-brand), and a brand's app icon colour
+    branded = frame(markup(nil), css, js, ".sign-in { --primary: rgb(44, 178, 223) }")
+    iconed = frame(markup(nil), css, js, ":root { --app-icon: rgb(1, 2, 3) }")
 
     page = """
     <!doctype html>
@@ -78,7 +81,8 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     window.addEventListener("error", (e) => errors.push(String(e.message)))
     const docs = {
       plain: #{js_string(plain)}, pictured: #{js_string(pictured)},
-      accented: #{js_string(accented)}, accentedPlain: #{js_string(accented_plain)}
+      accented: #{js_string(accented)}, accentedPlain: #{js_string(accented_plain)},
+      branded: #{js_string(branded)}, iconed: #{js_string(iconed)}
     }
     const wait = (ms) => new Promise((r) => setTimeout(r, ms))
     const load = (doc, w, h) => new Promise((resolve) => {
@@ -109,6 +113,10 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
         button: Math.round(box("#sign-in-microsoft").height),
         nameFill: cs(".sign-in-app-name").color,
         nameGradient: cs(".sign-in-app-name").backgroundImage,
+        buttonFill: cs("#sign-in-microsoft").backgroundColor,
+        buttonText: cs("#sign-in-microsoft").color,
+        pageText: cs(".sign-in-main").color,
+        tileFill: cs(".sign-in-header > .sign-in-mark").backgroundColor,
         finePointer: w.matchMedia("(pointer: fine)").matches,
       }
     }
@@ -121,6 +129,8 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     out.desktop = look(await load("pictured", 1440, 900))
     out.accented = look(await load("accented", 1440, 900))
     out.accentedPlain = look(await load("accentedPlain", 1440, 900))
+    out.branded = look(await load("branded", 390, 844))
+    out.iconed = look(await load("iconed", 390, 844))
 
     // hide a section, then the page loads again: still hidden, the rest open
     const f = await load("plain", 390, 844)
@@ -200,6 +210,14 @@ defmodule ShadcnDaisyui.JS.SignInBrowserTest do
     assert r["accented"]["nameGradient"] =~ "rgb(44, 178, 223)"
     refute r["desktop"]["nameGradient"] =~ "rgb(44, 178, 223)"
     refute r["accentedPlain"]["nameGradient"] =~ "rgb(44, 178, 223)"
+
+    # Sign in with Microsoft is neutral whatever the brand: the page's text
+    # colour with the page colour on it; the brand colours the app's icon
+    assert r["phone"]["buttonFill"] == r["phone"]["pageText"]
+    assert r["branded"]["buttonFill"] == r["branded"]["pageText"]
+    refute r["branded"]["buttonFill"] == "rgb(44, 178, 223)"
+    assert r["branded"]["tileFill"] == "rgb(44, 178, 223)"
+    assert r["iconed"]["tileFill"] == "rgb(1, 2, 3)"
 
     # remembered in this browser
     assert r["storedAfterHide"] == ~s(["sign-in-as-a-role"])

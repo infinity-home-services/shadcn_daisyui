@@ -22,9 +22,12 @@ defmodule ShadcnDaisyui.Components.SignIn do
 
   **The app's look**: `image` (the picture behind the panel and the tablet
   card), the theme's colours (a brand theme's `--sign-in-accent` colours the
-  application's name over the picture; `--sign-in-title-fill` replaces that
-  fill outright), `<:panel>` (the panel's centre) and `<:logo>` (the mark
-  over the form). A brand theme with a scope of its own
+  application's name over the picture, `--sign-in-title-fill` replaces that
+  fill outright, and `--app-icon` / `--app-icon-foreground`, else its
+  primary, colour the app's icon), `<:panel>` (the panel's centre) and
+  `<:logo>` (the mark over the form). Sign in with Microsoft is neutral in
+  every brand: the theme's text colour with its page colour on it, black in
+  light and white in dark. A brand theme with a scope of its own
   (`data-brand="acme"` in `{@rest}`) brands just this page.
 
   **Notices**: what happened, above the button. The controller that refuses
@@ -232,7 +235,7 @@ defmodule ShadcnDaisyui.Components.SignIn do
             :if={@configured}
             id="sign-in-microsoft"
             href={@href}
-            class="btn btn-primary sign-in-microsoft"
+            class="btn sign-in-microsoft"
           >
             <.microsoft_logo /> Sign in with Microsoft
           </a>
@@ -240,7 +243,7 @@ defmodule ShadcnDaisyui.Components.SignIn do
             :if={!@configured}
             id="sign-in-microsoft"
             type="button"
-            class="btn btn-primary sign-in-microsoft"
+            class="btn sign-in-microsoft"
             disabled
           >
             <.microsoft_logo /> Sign in with Microsoft
