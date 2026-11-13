@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="OGoWQDkKBDsWGANdKxpnHDgCQRN5EAdqUGA1SY7YGHg7aM5SWw2jJhr0">
+    <title data-default="ShadcnDaisyuiDemo" data-suffix=" · Phoenix Framework">Sign in · Phoenix Framework</title>
+    <link phx-track-static rel="stylesheet" href="/shadcn_daisyui/assets/css/app-b80af07169dbde8855a46cb7911fec5f.css?vsn=d">
+    <script defer phx-track-static type="text/javascript" src="/shadcn_daisyui/assets/js/app-32365c6dfa6bfb04a3fd2d7896e2ed14.js?vsn=d">
+    </script>
+    <script>
+      (() => {
+        const setTheme = (theme) => {
+          // Disable transitions for the swap so light↔dark doesn't fade-flicker,
+          // then re-enable on the next frame (mirrors setTheme/0 in shadcn-daisyui.js).
+          const el = document.documentElement;
+          el.classList.add("theme-transition");
+          if (theme === "system") {
+            localStorage.removeItem("phx:theme");
+            el.removeAttribute("data-theme");
+          } else {
+            localStorage.setItem("phx:theme", theme);
+            el.setAttribute("data-theme", theme);
+          }
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => el.classList.remove("theme-transition"))
+          );
+        };
+        if (!document.documentElement.hasAttribute("data-theme")) {
+          setTheme(localStorage.getItem("phx:theme") || "shadcn");
+        }
+        // <.app_shell>: the sidebar's collapsed or open state, before first paint
+        document.documentElement.dataset.sidebar =
+          localStorage.getItem("shadcn:sidebar") === "collapsed" ? "collapsed" : "open";
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+      })();
+    </script>
+  </head>
+  <body>
+    <main id="sign-in" class="sign-in ">
+  <aside class="sign-in-aside" data-image="true">
+    <img class="sign-in-aside-image" src="/shadcn_daisyui/images/sign-in-background.svg" alt="">
+    <div class="sign-in-aside-content">
+      
+        <p class="sign-in-org">Acme Inc.</p>
+        <p class="sign-in-app-name">Atlas</p>
+        <span class="sign-in-rule" aria-hidden="true"></span>
+        <p class="sign-in-tagline">Sales and service reporting for every Acme store.</p>
+      
+    </div>
+  </aside>
+
+  <div class="sign-in-main">
+    <div class="sign-in-panel">
+      <header class="sign-in-header">
+        <span class="sign-in-mark sign-in-tile">
+  
+    <span class="hero-cube" aria-hidden="true"></span>
+  
+</span>
+        <h1 class="sign-in-title">Sign in to Atlas</h1>
+        <p class="sign-in-description">With your Microsoft work account.</p>
+      </header>
+
+      
+
+      <div class="alert alert-error sign-in-notice" role="alert" id="sign-in-notice" data-notice="canceled">
+  <span class="alert-icon" aria-hidden="true"><span class="hero-exclamation-circle"></span></span>
+  <div class="alert-content">
+    <h3 class="text-sm font-medium">Microsoft didn&#39;t complete the sign-in.</h3>
+    <div class="text-sm text-muted-foreground">
+        
+      </div>
+  </div>
+  
+</div>
+
+      <a id="sign-in-microsoft" href="#" class="btn sign-in-microsoft">
+        <svg class="sign-in-microsoft-logo" viewBox="0 0 21 21" aria-hidden="true" focusable="false">
+  <rect x="1" y="1" width="9" height="9" fill="#f25022"></rect>
+  <rect x="11" y="1" width="9" height="9" fill="#7fba00"></rect>
+  <rect x="1" y="11" width="9" height="9" fill="#00a4ef"></rect>
+  <rect x="11" y="11" width="9" height="9" fill="#ffb900"></rect>
+</svg> Sign in with Microsoft
+      </a>
+      
+
+      
+    </div>
+
+    <footer class="sign-in-footer">
+      <span class="sign-in-footer-org">Acme Inc.</span>
+      <a href="#">Privacy</a>
+    </footer>
+  </div>
+</main>
+
+    
+    <section id="toaster" phx-hook="ShadcnToaster" phx-update="ignore" data-sonner-section data-position="bottom-right" data-toast-theme="auto" data-expand="false" data-rich-colors="false" data-close-button="false" data-invert="false" data-duration="4000" data-visible-toasts="3" data-gap="14" data-hotkey="altKey,KeyT" data-dir="auto" data-pause-when-page-is-hidden="true" data-container-aria-label="Notifications" data-close-button-aria-label="Close toast" hidden>
+  
+</section>
+  </body>
+</html>
