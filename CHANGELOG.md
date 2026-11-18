@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.1] - 2026-11-18
+
+The app shell's sidebar shows which page you're on in the light theme again,
+its collapsed icon rail scrolls with the footer pinned at the bottom, and a
+line divides the footer from the navigation.
+
 ### Fixed
 
 - App shell: the current page's sidebar item is highlighted again in the light
