@@ -118,9 +118,15 @@ if (typeof window !== "undefined" && typeof MutationObserver !== "undefined" && 
 // a MutationObserver - LiveView swaps and patches the page in one task, so
 // that runs before the new nav's first paint. Then, if the active item
 // ([aria-current="page"]) is out of view, it scrolls just enough to show it.
-// Instantly, whatever the CSS's scroll-behavior. The rail doesn't scroll (its
-// tooltips would be clipped), so expanding it restores the position the same
-// way; on phones the sidebar isn't shown and setting it does nothing.
+// Instantly, whatever the CSS's scroll-behavior. Collapsing or expanding does
+// the same (the rail is shorter: no group labels); on phones the sidebar isn't
+// shown and setting it does nothing.
+//
+// The rail scrolls like the open sidebar, so its tooltips (daisyUI's, on
+// ::before/::after) would be clipped by it: the CSS makes them position: fixed
+// at --shell-tip-x/y on <html> (the hovered row's right edge and middle),
+// which this sets as the pointer enters a row and as the nav scrolls under it.
+// On <html>, not the row, so a LiveView patch of the row can't drop them.
 const SIDEBAR_KEY = "shadcn:sidebar"
 const NAV_SCROLL_KEY = "shadcn:sidebar-scroll"
 const FIELD = "input, textarea, select, [contenteditable]"
@@ -131,11 +137,20 @@ function toggleSidebar() {
   root.dataset.sidebar = next
   try { localStorage.setItem(SIDEBAR_KEY, next) } catch (_e) { /* private mode: not remembered */ }
   const nav = document.getElementById("main-nav")
-  if (next === "open" && nav && nav.__sdNavScroll) restoreNavScroll(nav)
+  if (nav && nav.__sdNavScroll) restoreNavScroll(nav)
+}
+let railTip = null
+function placeRailTip(item) {
+  railTip = item
+  const r = item.getBoundingClientRect()
+  const style = document.documentElement.style
+  style.setProperty("--shell-tip-x", r.right + "px")
+  style.setProperty("--shell-tip-y", r.top + r.height / 2 + "px")
 }
 function keepNavScroll(nav) {
   nav.__sdNavScroll = true
   nav.addEventListener("scroll", () => {
+    if (railTip && nav.contains(railTip)) placeRailTip(railTip)
     navScroll = nav.scrollTop
     try { sessionStorage.setItem(NAV_SCROLL_KEY, String(navScroll)) } catch (_e) { /* private mode */ }
   }, { passive: true })
@@ -165,6 +180,10 @@ if (typeof window !== "undefined" && !window.__shadcnShell) {
     root.dataset.sidebar = saved === "collapsed" ? "collapsed" : "open"
   }
   window.addEventListener("shadcn:toggle-sidebar", toggleSidebar)
+  window.addEventListener("pointerover", (e) => {
+    const item = e.target instanceof Element && e.target.closest(".app-shell-nav .tooltip")
+    if (item) placeRailTip(item)
+  }, { passive: true })
   window.addEventListener("keydown", (e) => {
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || (e.key || "").toLowerCase() !== "b") return
     if (e.target instanceof Element && e.target.closest(FIELD)) return
