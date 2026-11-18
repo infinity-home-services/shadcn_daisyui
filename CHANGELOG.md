@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- App shell: the current page's sidebar item is highlighted again in the light
+  theme, and rows show a hover fill there. Both used `--accent`, which is the
+  light sidebar's own fill (`oklch(0.97 0 0)`), so they didn't show. They now
+  use a new `--shell-sidebar-accent` token, a step darker than the sidebar
+  (`--accent` in dark, as before). Brand themes can override it.
+- App shell: the collapsed sidebar (the icon rail) scrolls when its items don't
+  fit, and its footer (footer items, the collapse row, the account menu) stays
+  pinned at the bottom. Before, the rail turned scrolling off so its tooltips
+  could reach past it, which pushed the footer off the bottom of the window.
+  The rail's tooltips are now positioned against the window, so they still
+  show in full beside a scrolled rail. Collapsing or expanding keeps the
+  current item in view.
+
+### Changed
+
+- App shell: a 1px line (the border colour) separates the sidebar's footer
+  from the navigation, expanded and collapsed.
+
 ## [0.36.0] - 2026-11-12
 
 Sign in with Microsoft is neutral in every brand, and the app's icon takes a

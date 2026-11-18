@@ -151,19 +151,24 @@ defmodule ShadcnDaisyui.JS.AppShellNavScrollBrowserTest do
       out.above = at("p01")
       await frame(); await frame()
 
-      // the rail doesn't scroll; the position comes back when it expands
+      // the rail scrolls too: collapsing shows the active item (p01, above
+      // the fold at 400)
       await scrolled(400)
       window.dispatchEvent(new CustomEvent("shadcn:toggle-sidebar"))
       await frame(); await frame()
       out.rail = { sidebar: document.documentElement.dataset.sidebar, top: $("main-nav").scrollTop, overflow: getComputedStyle($("main-nav")).overflowY }
-      // a page change in the rail, then Cmd/Ctrl+B expands it: p12 is in view at 400
+      // scrolled in the rail, a page change there keeps it; then Cmd/Ctrl+B
+      // expands it at the same position: p12 is in view at 300 both ways
+      await scrolled(300)
       navigate("p12")
       await frame(); await frame()
+      out.railKept = at("p12")
       document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "b", metaKey: true, bubbles: true, cancelable: true }))
       out.expanded = { sidebar: document.documentElement.dataset.sidebar, ...at("p12") }
       await frame()
       out.expandedFrame = at("p12")
-      // collapsed again, a page whose item is out of view at 400: expanding shows it
+      // collapsed again, a page whose item is out of view at 300: the rail
+      // shows it, and so does expanding
       window.dispatchEvent(new CustomEvent("shadcn:toggle-sidebar"))
       navigate("p33")
       await frame(); await frame()
@@ -195,15 +200,70 @@ defmodule ShadcnDaisyui.JS.AppShellNavScrollBrowserTest do
     # p01 starts at 48
     assert r["above"]["top"] == 32 and r["above"]["fromTop"] == 16, msg
 
-    assert r["rail"] == %{"sidebar" => "collapsed", "top" => 0, "overflow" => "visible"}, msg
-    # p12 (group 1, row 4) starts at 488
+    assert r["rail"] == %{"sidebar" => "collapsed", "top" => 0, "overflow" => "auto"}, msg
+    # in the rail (no group labels) p12 starts at 16 + 264 + 4 * 36 = 424;
+    # open, at 488
+    assert r["railKept"]["top"] == 300 and r["railKept"]["fromTop"] == 124, msg
     assert r["expanded"]["sidebar"] == "open", msg
-    assert r["expanded"]["top"] == 400 and r["expanded"]["fromTop"] == 88, msg
-    assert r["expandedFrame"]["top"] == 400, msg
+    assert r["expanded"]["top"] == 300 and r["expanded"]["fromTop"] == 188, msg
+    assert r["expandedFrame"]["top"] == 300, msg
     # p33 (group 4, row 4) ends at 1408
     assert r["expandedReveal"]["toBottom"] == 16, msg
     assert r["expandedReveal"]["top"] == 1408 + 16 - r["first"]["height"], msg
     assert r["storedAfter"] == "#{r["expandedReveal"]["top"]}", msg
+  end
+
+  test "the rail scrolls under a pinned footer, and its tooltips sit beside the hovered item" do
+    r =
+      run_in_chrome(
+        "p03",
+        [],
+        # collapsed before first paint, as the root layout's script does (no
+        # width transition under way when it measures)
+        ~s|document.documentElement.dataset.sidebar = "collapsed"|,
+        ~S"""
+        const nav = $("main-nav")
+        out.rail = { sidebar: document.documentElement.dataset.sidebar, overflow: getComputedStyle(nav).overflowY, max: nav.scrollHeight - nav.clientHeight }
+        out.footer = Math.round($("sidebar").querySelector(".app-shell-footer").getBoundingClientRect().bottom)
+        out.window = innerHeight
+        // the line over the footer
+        out.line = getComputedStyle($("sidebar").querySelector(".app-shell-footer")).borderTopColor
+        await scrolled(300)
+        const item = $("nav-p12")
+        // where the tooltip is told to go, and where the item is
+        const tip = () => {
+          const r = item.getBoundingClientRect()
+          const s = document.documentElement.style
+          const before = getComputedStyle(item, "::before")
+          return {
+            x: s.getPropertyValue("--shell-tip-x"), right: r.right + "px",
+            y: s.getPropertyValue("--shell-tip-y"), middle: r.top + r.height / 2 + "px",
+            position: before.position, left: parseFloat(before.left) - r.right,
+          }
+        }
+        item.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }))
+        out.hovered = tip()
+        // scrolling under the pointer moves it with the item
+        await scrolled(336)
+        out.scrolled = tip()
+        """
+      )
+
+    msg = inspect(r, pretty: true)
+    assert r["rail"]["sidebar"] == "collapsed" and r["rail"]["overflow"] == "auto", msg
+    assert r["rail"]["max"] > 300, msg
+    # the footer stays at the bottom of the window
+    assert r["footer"] == r["window"], msg
+    # with a line over it
+    assert r["line"] == "oklch(0.922 0 0)", msg
+
+    for at <- [r["hovered"], r["scrolled"]] do
+      assert at["x"] == at["right"] and at["y"] == at["middle"], msg
+      # fixed (the scroll box doesn't clip it), 0.5rem right of the item
+      assert at["position"] == "fixed" and at["left"] == 8, msg
+    end
+
+    assert r["hovered"]["y"] != r["scrolled"]["y"], msg
   end
 
   test "a full page load in the same tab gets the stored position back as the package loads" do

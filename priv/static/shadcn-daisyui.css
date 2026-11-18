@@ -224,6 +224,9 @@
   --sign-in-aside-background: var(--primary);                            /* desktop panel: bg-primary (shadcn's zinc-900) */
   --sign-in-aside-foreground: var(--primary-foreground);
   --sign-in-aside-border: transparent;
+  /* the sidebar's hovered and current rows: --accent is the sidebar's own fill
+     in light (both 0.97), so a step darker than whatever the sidebar is */
+  --shell-sidebar-accent: color-mix(in oklab, var(--foreground) 5%, var(--shell-sidebar-background));
 }
 [data-theme*="dark"],
 .dark {
@@ -239,6 +242,7 @@
   --sign-in-aside-background: var(--card);                                    /* dark:bg-card dark:border-r */
   --sign-in-aside-foreground: var(--card-foreground);
   --sign-in-aside-border: var(--border-color);
+  --shell-sidebar-accent: var(--accent);                                      /* sidebar-accent: a step up from the card */
   --chip-background: var(--secondary);                                        /* a brand's *-dark theme doesn't inherit :root's light fill */
 }
 /* A light theme inside a dark page. No specificity: a brand's own value wins. */
@@ -2821,6 +2825,7 @@
     padding: 0.5rem;
   }
   .app-shell-heading:is(a, button, [role="button"]):hover { background-color: var(--accent); }
+  .app-shell-sidebar .app-shell-heading:is(a, button, [role="button"]):hover { background-color: var(--shell-sidebar-accent); }
   [data-sidebar="collapsed"] .app-shell-sidebar .app-shell-heading { border-color: transparent; padding: 0; }
   .app-shell-tile {
     display: grid;
@@ -2851,7 +2856,20 @@
     overflow-y: auto;
     padding: 1rem 0.5rem;
   }
-  [data-sidebar="collapsed"] .app-shell-nav { overflow: visible; }   /* tooltips aren't clipped */
+  /* The rail scrolls too, its scrollbar hidden (it would squeeze the 3rem
+     column; wheel, trackpad and keyboard still scroll it). Its tooltips are
+     position: fixed at the hovered row (--shell-tip-x/y on <html>, set by
+     shadcn-daisyui.js), so the scroll box doesn't clip them. */
+  [data-sidebar="collapsed"] .app-shell-nav { overflow-x: hidden; scrollbar-width: none; }
+  [data-sidebar="collapsed"] .app-shell-nav::-webkit-scrollbar { display: none; }
+  [data-sidebar="collapsed"] .app-shell-nav .tooltip::before {
+    position: fixed;
+    inset: var(--shell-tip-y, -100vh) auto auto calc(var(--shell-tip-x, 0px) + 0.5rem);
+  }
+  [data-sidebar="collapsed"] .app-shell-nav .tooltip::after {
+    position: fixed;
+    inset: var(--shell-tip-y, -100vh) auto auto calc(var(--shell-tip-x, 0px) + 0.25rem + 2px);
+  }
   .app-shell-nav ul { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
   .app-shell-group-label {
     display: flex;
@@ -2878,7 +2896,7 @@
     text-align: start;
   }
   .app-shell-item:hover,
-  .app-shell-item[aria-current="page"] { background-color: var(--accent); }
+  .app-shell-item[aria-current="page"] { background-color: var(--shell-sidebar-accent); }
   .app-shell-item[aria-current="page"] { font-weight: 500; }
   .app-shell-item > .app-shell-label:not(kbd) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .app-shell-item:focus-visible,
@@ -2887,7 +2905,13 @@
   .app-shell-sheet-row:focus-visible { outline: none; box-shadow: var(--ring-shadow); }
 
   /* footer: rows, the environment badge, the account menu */
-  .app-shell-footer { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem; }
+  .app-shell-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border-top: 1px solid var(--border-color);   /* divides it from the navigation */
+  }
   .app-shell-badge.badge { width: 100%; justify-content: center; }
   .app-shell-account { margin-top: 0.25rem; }
   .app-shell-account-trigger {
@@ -2898,7 +2922,7 @@
     border-radius: var(--radius-md);
     padding: 0.25rem;
   }
-  .app-shell-account-trigger:hover { background-color: var(--accent); }
+  .app-shell-account-trigger:hover { background-color: var(--shell-sidebar-accent); }
   [data-sidebar="collapsed"] .app-shell-account-trigger { justify-content: center; padding: 0; }
   .app-shell-avatar {
     display: grid;
