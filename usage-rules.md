@@ -616,6 +616,9 @@ Browse the full gallery (100 components) in the docs site (`demo/`) or
   modifiers, all mapped to the theme.
 - Chips: a secondary chip's fill is `--chip-background` (a token of its own, so it
   reads on the page), not `--secondary`; brand themes can override it.
+- Tab rows: `.tabs-box` (`<.tabs>`, `<.tab_nav>`) is filled with
+  `--tab-list-background` (a step darker than muted in light, so the white active
+  tab stands out; muted in dark), not `--muted`; brand themes can override it.
 - Status colors: `info`, `success`, `warning`, `error` exist (`alert-success`,
   `text-warning`, …) - use them rather than green/yellow/red utilities.
 - Radius comes from the theme (`rounded-md` fields, `rounded-lg` boxes, `rounded-xl`

@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Tabs: in light mode the active tab stands out from its row. The row
+  (`.tabs-box`: `<.tabs>`, `<.tab_nav>`, a list page's views) was `--muted`
+  (`oklch(0.97 0 0)`), so the white active tab sat on it at about 1.09:1,
+  set apart only by its soft shadow. The row now has a token of its own,
+  `--tab-list-background`, a step darker in light (`oklch(0.922 0 0)`, the
+  chips' fill: 1.26:1 against the active tab), with inactive tab text still
+  at 4.87:1. Dark is unchanged (`--muted`; its active tab has a border).
+  Brand themes can override it, as `--chip-background`.
+
 ## [0.38.0] - 2026-11-19
 
 A searchable dropdown for long grouped lists: `<.command_menu>`, shadcn's
