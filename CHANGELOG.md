@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-11-19
+
+A searchable dropdown for long grouped lists: `<.command_menu>`, shadcn's
+Popover + Command combobox. A search box over grouped rows, some nested
+under others (a brand's locations), filtered across every level as you type,
+anchored to its trigger in the top layer and a drawer on phones. The app
+shell's heading can now be its trigger (`<.app_shell_heading as="button">`).
+Nothing changes for existing markup.
+
 ### Added
 
 - `<.command_menu>`: a searchable dropdown for long grouped lists, shadcn's
@@ -33,6 +42,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so it can open a `<.command_menu trigger_id="…">`.
 - Docs: a Command Menu page (Actions), and `/lab/command-menu` in the docs
   app, a few hundred rows in a LiveView.
+
+### Upgrading
+
+- Move the pin to `tag: "v0.38.0"`. The `ShadcnCommandMenu` hook comes with
+  `Hooks` (dead views: `initShadcnDaisyui()`), so `app.js` needs no change.
+  To replace a dropdown that opens a `<.command>` dialog (a brand or location
+  switcher): build the rows in Elixir (each child right after its parent,
+  `parent` = its id), render them with one `:for` in a `<.command_menu>`, and
+  make the trigger its `<:trigger>` or, in the sidebar header,
+  `<.app_shell_heading id="…" as="button" chevron>` with
+  `trigger_id="…" side="right"` on the menu.
 
 ## [0.37.0] - 2026-11-19
 
