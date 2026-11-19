@@ -14,7 +14,8 @@ defmodule ShadcnDaisyui.Components do
 
   `use ShadcnDaisyui.Components` also imports `ShadcnDaisyui.FormComponents`
   (field-aware form controls), the app shell (`app_shell/1`, see
-  `ShadcnDaisyui.Components.Shell`), the list page's `data_table/1` and
+  `ShadcnDaisyui.Components.Shell`), the searchable dropdown
+  `command_menu/1` (`ShadcnDaisyui.Components.CommandMenu`), the list page's `data_table/1` and
   `table_toolbar/1` (`ShadcnDaisyui.Components.DataTable`) and the record
   page's parts (`ShadcnDaisyui.Components.Record`), `code_block/1`
   (`ShadcnDaisyui.Components.CodeBlock`), and the chart kit's `chart/1` and
@@ -34,6 +35,7 @@ defmodule ShadcnDaisyui.Components do
     quote do
       import(ShadcnDaisyui.Components, except: [theme_toggle: 1])
       import(ShadcnDaisyui.Components.Overlay)
+      import(ShadcnDaisyui.Components.CommandMenu)
       import(ShadcnDaisyui.Components.Navigation)
       import(ShadcnDaisyui.Components.Shell)
       import(ShadcnDaisyui.Components.Display)

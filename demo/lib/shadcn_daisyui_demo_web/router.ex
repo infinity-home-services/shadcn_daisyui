@@ -42,7 +42,8 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
   # GitHub Pages export can't host a LiveView, so this isn't exported): the
   # overlays under `script-src 'self' 'nonce-…'`, re-rendered twice a second to
   # show an open dialog survives patches. /lab/command-search is the command
-  # palette's server search, answered by the LiveView. /lab/data-table is a
+  # palette's server search, answered by the LiveView. /lab/command-menu is
+  # <.command_menu> over a few hundred rows. /lab/data-table is a
   # list page (toolbar + data table) and its record page. /lab/dropzone is
   # <.dropzone> on real uploads. /lab/chat is an AI chat page: a made-up
   # assistant streams its replies with trace steps. /lab/charts is the chart
@@ -53,6 +54,7 @@ defmodule ShadcnDaisyuiDemoWeb.Router do
 
     live "/csp", CspLive
     live "/command-search", CommandSearchLive
+    live "/command-menu", CommandMenuLive
     live "/dropzone", DropzoneLive
     live "/chat", ChatLive
     live "/charts", ChartsLive

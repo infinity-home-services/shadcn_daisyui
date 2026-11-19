@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `<.command_menu>`: a searchable dropdown for long grouped lists, shadcn's
+  Popover + Command combobox (a brand and location switcher, a team picker).
+  A search box, focused when it opens, over grouped rows; `parent` nests a row
+  under another (a brand's locations, up to four levels), `current` puts a
+  check on the chosen row (and opens the menu there), `description`,
+  `keywords` and `icon` fill a row, and rows run `phx-click`, go somewhere
+  (`navigate` / `patch` / `href`) or submit a form, with opt-in `confirm` and
+  `disabled`, like `<.command>` items. Typing filters every level: a row
+  shows when each word starts a word of its own text or its parents', so a
+  location's name shows it under its brand (muted, for context) and a
+  brand's name shows it with its locations; accents and case don't matter,
+  and the number of results is announced. It opens in the top layer below
+  its trigger (`side="right"`: beside it), flips above or to the left when
+  there's more room there, stays in the window and follows the trigger as
+  the page scrolls; below 48rem it's a bottom drawer with 44px rows. Keys:
+  Enter / Space / arrows on the trigger, arrows, Page Up / Down, Enter and
+  Esc in the search; ARIA as a dialog with a combobox over a listbox. Quick
+  with several hundred rows. Needs `id` and the new `ShadcnCommandMenu` hook
+  (in `Hooks`; dead views: `initShadcnDaisyui()`).
+- `<.app_shell_heading as="button">` renders the sidebar heading as a button,
+  so it can open a `<.command_menu trigger_id="…">`.
+- Docs: a Command Menu page (Actions), and `/lab/command-menu` in the docs
+  app, a few hundred rows in a LiveView.
+
 ## [0.37.0] - 2026-11-19
 
 An app can keep the sidebar toggle in the account menu instead of the
