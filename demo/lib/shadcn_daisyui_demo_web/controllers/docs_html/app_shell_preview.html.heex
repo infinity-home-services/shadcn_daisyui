@@ -8,6 +8,7 @@
   search="search"
   environment="Preview"
   person={%{name: "Pat Lee", email: "pat@acme.test"}}
+  collapse_row={!@preview[:menu_toggle]}
 >
   <:header>
     <.app_shell_heading
@@ -23,6 +24,7 @@
     <span class="text-sm font-semibold">Acme</span>
   </:phone_header>
   <:footer_item
+    :if={!@preview[:menu_toggle]}
     id="whats-new-open"
     icon="hero-megaphone"
     label="What's new"
@@ -36,6 +38,15 @@
     Account
   </:account_item>
   <:account_item id="notifications" icon="hero-bell" soon>Notifications</:account_item>
+  <:account_item
+    :if={@preview[:menu_toggle]}
+    id="whats-new"
+    icon="hero-megaphone"
+    phx-click={show_modal("whats-new")}
+  >
+    What's new
+  </:account_item>
+  <:account_item :if={@preview[:menu_toggle]} id="sidebar" sidebar_toggle />
   <:account_item id="support" icon="hero-lifebuoy" soon divider>Support</:account_item>
   <:account_item id="feedback" icon="hero-chat-bubble-left-ellipsis" soon>Feedback</:account_item>
   <:account_item

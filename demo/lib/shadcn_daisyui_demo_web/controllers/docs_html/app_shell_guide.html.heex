@@ -127,6 +127,50 @@
     </section>
 
     <section class="space-y-3">
+      <h2 class="text-xl font-semibold tracking-tight">Sidebar toggle in the account menu</h2>
+      <p class="text-sm text-muted-foreground">
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">collapse_row</code>
+        set to false leaves the "Collapse sidebar" row out of the open sidebar, and an account item with
+        <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">sidebar_toggle</code>
+        puts the toggle in the account menu instead: "Collapse sidebar" or "Expand sidebar" as the
+        sidebar is, with its <kbd class="kbd kbd-sm">⌘B</kbd>
+        hint. The collapsed rail keeps its Expand button, so it can always be opened again, and
+        <kbd class="kbd kbd-sm">⌘B</kbd>
+        and the grab strip work as before. The phone's More sheet leaves the toggle out (phones
+        have no sidebar). Here What's new moved into the menu too.
+      </p>
+      <div class="overflow-hidden rounded-xl border border-border shadow-sm">
+        <iframe
+          id="shell-account-menu"
+          src={ShadcnDaisyuiDemoWeb.ShellPreview.path("account-menu")}
+          title="App shell with the sidebar toggle in the account menu"
+          class="block h-[36rem] w-full"
+          loading="lazy"
+        >
+        </iframe>
+      </div>
+      <.code_block
+        language="heex"
+        code={
+          ~S'''
+          <.app_shell nav={@nav} active={@active} person={@person} collapse_row={false}>
+            <:account_item id="account" icon="hero-user-circle" navigate={~p"/account"}>Account</:account_item>
+            <:account_item id="whats-new" icon="hero-megaphone" phx-click={show_modal("whats-new")}>
+              What's new
+            </:account_item>
+            <:account_item id="sidebar" sidebar_toggle />
+            <:account_item id="sign-out" icon="hero-arrow-right-start-on-rectangle"
+              href={~p"/sign-out"} method="delete" destructive divider>
+              Sign out
+            </:account_item>
+            {render_slot(@inner_block)}
+          </.app_shell>
+          '''
+        }
+      />
+    </section>
+
+    <section class="space-y-3">
       <h2 class="text-xl font-semibold tracking-tight">Page header</h2>
       <p class="text-sm text-muted-foreground">
         Every page starts with

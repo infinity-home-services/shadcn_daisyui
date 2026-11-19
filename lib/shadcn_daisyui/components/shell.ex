@@ -106,6 +106,20 @@ defmodule ShadcnDaisyui.Components.Shell do
   dialog, sheet, drawer, command) can sit anywhere in the page: the reading
   width never reaches them, so they open over the whole window.
 
+  **Sidebar toggle in the account menu**: `collapse_row={false}` leaves the
+  "Collapse sidebar" row out of the open sidebar (the collapsed rail keeps
+  its Expand button, so the rail can always be opened again; Cmd/Ctrl+B and
+  the grab strip work as before), and an account item with `sidebar_toggle`
+  is the toggle in the account menu: "Collapse sidebar" or "Expand sidebar"
+  as the sidebar is, with its ⌘B hint, and left out of the phone's More
+  sheet (phones have no sidebar).
+
+      <.app_shell nav={@nav} person={@person} collapse_row={false}>
+        <:account_item id="whats-new" icon="hero-megaphone" phx-click={show_modal("whats-new")}>What's new</:account_item>
+        <:account_item id="sidebar" sidebar_toggle />
+        …
+      </.app_shell>
+
   Ids (one shell per page): `shell`, `sidebar`, `sidebar-rail`,
   `search-open`, `main-nav`, `nav-<id>`, `sidebar-toggle`,
   `environment-badge`, `user-menu` (items `user-menu-<id>`), `main`,
@@ -147,6 +161,12 @@ defmodule ShadcnDaisyui.Components.Shell do
     doc: "badge text in the sidebar footer, e.g. \"Staging\""
   )
 
+  attr(:collapse_row, :boolean,
+    default: true,
+    doc:
+      "false leaves the \"Collapse sidebar\" row out of the open sidebar; the collapsed rail keeps its Expand button"
+  )
+
   attr(:person, :map, required: true, doc: "the signed-in person: %{name, email}")
   attr(:light_theme, :string, default: "shadcn", doc: "the theme toggle's light theme")
   attr(:dark_theme, :string, default: "shadcn-dark", doc: "the theme toggle's dark theme")
@@ -178,6 +198,11 @@ defmodule ShadcnDaisyui.Components.Shell do
     attr(:soon, :boolean, doc: "not built yet: muted, marked Soon, no action")
     attr(:divider, :boolean, doc: "a line above this item")
     attr(:destructive, :boolean, doc: "destructive styling (sign out)")
+
+    attr(:sidebar_toggle, :boolean,
+      doc:
+        "the sidebar's collapse/expand toggle (self-closing: the shell words it); left out of the More sheet"
+    )
   end
 
   slot(:inner_block, required: true)
@@ -194,6 +219,7 @@ defmodule ShadcnDaisyui.Components.Shell do
         more_groups: more,
         bar_items: bar,
         sections: account_sections(assigns.account_item),
+        phone_sections: assigns.account_item |> phone_account_items() |> account_sections(),
         kbd:
           assigns.search_shortcut not in [nil, ""] &&
             "⌘" <> String.upcase(assigns.search_shortcut)
@@ -264,6 +290,7 @@ defmodule ShadcnDaisyui.Components.Shell do
             type="button"
             id="sidebar-toggle"
             data-tip="Expand sidebar (⌘B)"
+            data-rail-only={!@collapse_row}
             class="tooltip tooltip-right app-shell-item"
             phx-click={toggle_sidebar()}
           >
@@ -382,7 +409,7 @@ defmodule ShadcnDaisyui.Components.Shell do
             </div>
             <div class="app-shell-sep"></div>
             <.account_rows
-              sections={@sections}
+              sections={@phone_sections}
               prefix="account-phone-"
               light={@light_theme}
               dark={@dark_theme}
@@ -410,6 +437,21 @@ defmodule ShadcnDaisyui.Components.Shell do
         acc -> {:cont, Enum.reverse(acc), []}
       end
     )
+  end
+
+  # The More sheet's account items: no sidebar toggle (phones have no
+  # sidebar). A divider on a dropped toggle moves to the item after it.
+  defp phone_account_items(items) do
+    {kept, _divider} =
+      Enum.reduce(items, {[], false}, fn item, {acc, divider} ->
+        cond do
+          item[:sidebar_toggle] -> {acc, divider || item[:divider] == true}
+          divider -> {[Map.put(item, :divider, true) | acc], false}
+          true -> {[item | acc], false}
+        end
+      end)
+
+    Enum.reverse(kept)
   end
 
   attr(:sections, :list, required: true)
@@ -450,6 +492,24 @@ defmodule ShadcnDaisyui.Components.Shell do
       <span class="app-shell-grow">{render_slot(@item)}</span>
       <span class="badge badge-outline">Soon</span>
     </div>
+    """
+  end
+
+  defp account_row(%{item: %{sidebar_toggle: true}} = assigns) do
+    ~H"""
+    <button
+      type="button"
+      id={@item[:id] && @prefix <> @item.id}
+      class="app-shell-menu-row"
+      data-sidebar-toggle
+      phx-click={toggle_sidebar()}
+    >
+      <span :if={@item[:icon]} class={[@item.icon, "size-4 shrink-0"]} aria-hidden="true"></span>
+      <.sidebar_icon :if={!@item[:icon]} />
+      <span class="app-shell-grow app-shell-if-open">Collapse sidebar</span>
+      <span class="app-shell-grow app-shell-if-collapsed">Expand sidebar</span>
+      <kbd class="kbd kbd-sm">⌘B</kbd>
+    </button>
     """
   end
 
