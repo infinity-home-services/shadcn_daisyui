@@ -22,6 +22,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
   alias ShadcnDaisyuiDemoWeb.Catalog.Composition
   alias ShadcnDaisyuiDemoWeb.Catalog.DataPages
   alias ShadcnDaisyuiDemoWeb.Catalog.CodeBlockPage
+  alias ShadcnDaisyuiDemoWeb.Catalog.CommandMenuPage
   alias ShadcnDaisyuiDemoWeb.Catalog.Pickers
   alias ShadcnDaisyuiDemoWeb.Catalog.Overflow
   alias ShadcnDaisyuiDemoWeb.Catalog.Overlays
@@ -40,7 +41,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
     },
     %{
       title: "Actions",
-      slugs: ~w(button button-group dropdown-menu command swap)
+      slugs: ~w(button button-group dropdown-menu command command-menu swap)
     },
     %{
       title: "Navigation",
@@ -118,6 +119,7 @@ defmodule ShadcnDaisyuiDemoWeb.Catalog do
         DataPages.all() ++
         Overlays.all() ++
         CodeBlockPage.all() ++
+        CommandMenuPage.all() ++
         ChatPages.all() ++
         ChartPages.all()
 

@@ -633,7 +633,14 @@ defmodule ShadcnDaisyui.Components.Shell do
         <.app_shell_heading id="app-heading" icon="hero-cube" title="Acme" subtitle="Operations" tip="Acme · Operations" />
       </:header>
 
-  As a menu trigger (a switcher), pass `chevron` and the trigger attributes,
+  As the trigger of a searchable `<.command_menu>` (a switcher over a long
+  list), render it as a button and point the menu at its id:
+
+      <.app_shell_heading id="scope-trigger" as="button" icon="hero-building-office-2"
+        title={@scope.name} subtitle={@scope.kind} tip={@scope.name} chevron />
+      <.command_menu id="scope" trigger_id="scope-trigger" side="right" label="Switch location">…</.command_menu>
+
+  As a short menu's trigger, pass `chevron` and the trigger attributes,
   inside your own `dropdown`:
 
       <div class="dropdown dropdown-right w-full">
@@ -647,8 +654,28 @@ defmodule ShadcnDaisyui.Components.Shell do
   attr(:subtitle, :string, default: nil)
   attr(:tip, :string, default: nil, doc: "tooltip in the collapsed rail")
   attr(:chevron, :boolean, default: false, doc: "a trailing up/down chevron (a menu trigger)")
+
+  attr(:as, :string,
+    default: "div",
+    values: ~w(div button),
+    doc: "\"button\": a button, e.g. a `<.command_menu trigger_id>` trigger"
+  )
+
   attr(:class, :any, default: nil)
   attr(:rest, :global, include: ~w(tabindex role))
+
+  def app_shell_heading(%{as: "button"} = assigns) do
+    ~H"""
+    <button
+      type="button"
+      class={["app-shell-heading", @tip && "tooltip tooltip-right", @class]}
+      data-tip={@tip}
+      {@rest}
+    >
+      <.heading_content icon={@icon} title={@title} subtitle={@subtitle} chevron={@chevron} />
+    </button>
+    """
+  end
 
   def app_shell_heading(assigns) do
     ~H"""
@@ -657,6 +684,18 @@ defmodule ShadcnDaisyui.Components.Shell do
       data-tip={@tip}
       {@rest}
     >
+      <.heading_content icon={@icon} title={@title} subtitle={@subtitle} chevron={@chevron} />
+    </div>
+    """
+  end
+
+  attr(:icon, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:subtitle, :string, default: nil)
+  attr(:chevron, :boolean, default: false)
+
+  defp heading_content(assigns) do
+    ~H"""
       <span class="app-shell-tile"><span class={[@icon, "size-4"]} aria-hidden="true"></span></span>
       <span class="app-shell-label app-shell-heading-text">
         <span class="app-shell-heading-title">{@title}</span>
@@ -668,7 +707,6 @@ defmodule ShadcnDaisyui.Components.Shell do
         aria-hidden="true"
       >
       </span>
-    </div>
     """
   end
 end

@@ -2128,6 +2128,406 @@ function initDock(scope) {
     return api
   }
 
+  // <.command_menu>: a searchable dropdown anchored to its trigger (shadcn's
+  // Popover + Command). The panel (popover="manual") opens in the top layer,
+  // so nothing clips it, placed from the trigger's box: below it (side
+  // "right": beside it), flipped above (left) when there's more room there,
+  // kept inside the window, following the trigger as anything scrolls and
+  // closing once it's out of view. Below 48rem it's a bottom drawer instead
+  // (data-mode="drawer", a dimmed backdrop, the page doesn't scroll).
+  //
+  // The trigger is the menu's own [data-command-menu-trigger] button, or the
+  // element whose id is data-trigger (anywhere on the page: the app shell's
+  // heading). Listeners are on the document and look nodes up on use, so a
+  // LiveView patch that replaces them keeps working; refresh() (the hook's
+  // updated()) re-applies the open state, placement, filter and ARIA.
+  //
+  // Rows are read once per refresh into a table: id, parent, the row's own
+  // text (label, description, data-keywords: lower case, accents dropped)
+  // and its path text (its own and every ancestor's). A row shows when every
+  // word typed starts a word of its path ("dal" finds "North Dallas", "2"
+  // doesn't find "1.2"), so a location matches its brand's name too; an
+  // ancestor of a shown row shows for context (data-context, muted; the arrow
+  // keys skip it, a click still chooses it). Rows are
+  // hidden with the hidden attribute (one style recalc for hundreds of rows).
+  const MENU_DRAWER = "(width < 48rem)"
+  let menuConfirmClose = false
+  function closeMenuOnConfirm() {
+    if (menuConfirmClose) return
+    menuConfirmClose = true
+    // after phoenix_html's own window listener, which stops a declined click
+    window.addEventListener("click", (e) => {
+      const it = e.target instanceof Element && e.target.closest("[data-command-menu-item][data-confirm]")
+      const root = it && it.closest("[data-command-menu]")
+      if (root && root.__sdCommandMenu && it.getAttribute("aria-disabled") !== "true") root.__sdCommandMenu.close(true)
+    })
+  }
+  // words: split at spaces and separators, not dots ("1.2", "St.")
+  const MENU_SPLIT = /[\s,;:/|()&·_-]+/
+  const fold = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+
+  function initCommandMenu(root, hook) {
+    if (root.__sdCommandMenu) {
+      if (hook) root.__sdCommandMenu.hook = hook
+      return root.__sdCommandMenu
+    }
+    closeMenuOnConfirm()
+    const panel = () => root.querySelector("[data-command-menu-panel]")
+    const search = () => root.querySelector("[data-command-menu-search]")
+    const list = () => root.querySelector('[role="listbox"]')
+    const trigger = () => root.dataset.trigger
+      ? document.getElementById(root.dataset.trigger)
+      : root.querySelector("[data-command-menu-trigger]")
+    const items = () => [...root.querySelectorAll("[data-command-menu-item]")]
+    let isOpen = false
+    let rows = []          // [{ el, parent, path }] in order
+    let active = null      // the active row element
+    let query = ""
+    let announceTimer = null
+
+    const enabled = (el) => !el.hidden && el.getAttribute("aria-disabled") !== "true"
+    const visible = () => rows.map((r) => r.el).filter(enabled)
+
+    // ---- the row table
+    const read = () => {
+      const byId = new Map()
+      rows = items().map((el) => {
+        const own = fold(el.textContent + " " + (el.getAttribute("data-keywords") || ""))
+        const row = { el, id: el.id, parent: el.getAttribute("data-parent"), own, path: null }
+        if (el.id) byId.set(el.id, row)
+        return row
+      })
+      const pathOf = (row, seen) => {
+        if (row.path !== null) return row.path
+        const up = row.parent && byId.get(row.parent)
+        row.path = up && !seen.has(up) ? pathOf(up, seen.add(row)) + " " + row.own : row.own
+        return row.path
+      }
+      rows.forEach((r) => {
+        r.words = pathOf(r, new Set()).split(MENU_SPLIT).filter(Boolean)
+        r.up = r.parent ? byId.get(r.parent) || null : null
+      })
+    }
+
+    const wire = () => {
+      const t = trigger()
+      const p = panel()
+      if (t && p) {
+        t.setAttribute("aria-haspopup", "dialog")
+        t.setAttribute("aria-controls", p.id)
+        t.setAttribute("aria-expanded", String(isOpen))
+      }
+    }
+
+    const setActive = (el, scroll) => {
+      const input = search()
+      rows.forEach((r) => { r.el.classList.remove("is-active"); r.el.removeAttribute("data-active") })
+      active = el || null
+      if (!active) { input && input.removeAttribute("aria-activedescendant"); return }
+      active.classList.add("is-active")
+      active.setAttribute("data-active", "")
+      input && input.setAttribute("aria-activedescendant", active.id)
+      if (scroll) active.scrollIntoView({ block: scroll === "center" ? "center" : "nearest" })
+    }
+
+    const announce = (n) => {
+      clearTimeout(announceTimer)
+      const status = root.querySelector("[data-command-menu-status]")
+      if (!status) return
+      announceTimer = setTimeout(() => {
+        const empty = root.querySelector("[data-command-menu-empty]")
+        const text = n ? n + (n === 1 ? " result" : " results") : (empty && empty.textContent.trim()) || "No results"
+        // a trailing no-break space alternates, so the same words announce again
+        status.textContent = text + (status.textContent.endsWith(" ") ? "" : " ")
+      }, 400)
+    }
+
+    // filter: words typed -> hidden / data-context; returns the first match
+    const filter = () => {
+      const words = fold(query).split(MENU_SPLIT).filter(Boolean)
+      let first = null
+      let shown = 0
+      if (!words.length) {
+        rows.forEach((r) => { r.el.hidden = false; r.el.removeAttribute("data-context") })
+        shown = rows.length
+      } else {
+        const show = new Set()
+        const match = new Set()
+        rows.forEach((r) => {
+          if (!words.every((w) => r.words.some((t) => t.startsWith(w)))) return
+          match.add(r)
+          for (let a = r; a && !show.has(a); a = a.up) show.add(a)
+        })
+        rows.forEach((r) => {
+          r.el.hidden = !show.has(r)
+          r.el.toggleAttribute("data-context", show.has(r) && !match.has(r))
+          if (!first && match.has(r) && enabled(r.el)) first = r.el
+        })
+        shown = match.size
+      }
+      root.querySelectorAll("[data-command-menu-group]").forEach((g) => {
+        g.hidden = !g.querySelector("[data-command-menu-item]:not([hidden])")
+      })
+      const empty = root.querySelector("[data-command-menu-empty]")
+      if (empty) empty.hidden = shown > 0
+      const l = list()
+      if (l) l.hidden = shown === 0
+      return { first, shown }
+    }
+
+    // ---- placement
+    const drawer = () => window.matchMedia(MENU_DRAWER).matches
+    // sizes from layout (offset*), not the box on screen: the panel is
+    // scaled to 95% while it animates in
+    const place = () => {
+      const p = panel()
+      const t = trigger()
+      if (!p || !t) return
+      if (p.getAttribute("data-mode") === "drawer") {
+        p.style.left = p.style.top = p.style.minWidth = p.style.maxHeight = p.style.translate = ""
+        return
+      }
+      const r = t.getBoundingClientRect()
+      const vw = document.documentElement.clientWidth
+      const vh = document.documentElement.clientHeight
+      const gap = 4
+      const edge = 8
+      const right = root.dataset.side === "right"
+      const end = root.dataset.align === "end"
+      p.style.translate = ""
+      if (right) {
+        p.style.minWidth = ""
+        p.style.maxHeight = Math.max(160, vh - 2 * edge) + "px"
+        const s = { width: p.offsetWidth, height: p.offsetHeight }
+        const roomR = vw - edge - r.right - gap
+        const roomL = r.left - gap - edge
+        const left = s.width <= roomR || roomR >= roomL
+        p.setAttribute("data-placement", left ? "right" : "left")
+        let x = left ? r.right + gap : r.left - gap - s.width
+        x = Math.max(edge, Math.min(x, vw - edge - s.width))
+        let y = end ? r.bottom - s.height : r.top
+        y = Math.max(edge, Math.min(y, vh - edge - s.height))
+        p.style.left = x + "px"
+        p.style.top = y + "px"
+        return
+      }
+      p.style.minWidth = Math.round(r.width) + "px"
+      const below = vh - edge - r.bottom - gap
+      const above = r.top - gap - edge
+      p.style.maxHeight = Math.max(below, above) + "px"
+      let s = { width: p.offsetWidth, height: p.offsetHeight }
+      const down = s.height <= below || below >= above
+      p.style.maxHeight = (down ? below : above) + "px"
+      s = { width: p.offsetWidth, height: p.offsetHeight }
+      p.setAttribute("data-placement", down ? "bottom" : "top")
+      let x = end ? r.right - s.width : r.left
+      if (x < edge || x + s.width > vw - edge) x = end ? r.left : r.right - s.width
+      x = Math.max(edge, Math.min(x, vw - edge - s.width))
+      p.style.left = x + "px"
+      p.style.top = (down ? r.bottom + gap : r.top - gap - s.height) + "px"
+    }
+
+    // scrolling (any scroll region; capture sees them all) and resizing move
+    // the trigger: the panel follows, or closes when the trigger is gone
+    const onMove = (e) => {
+      const p = panel()
+      const t = trigger()
+      if (!isOpen || !p || !t) return
+      if (e.type === "scroll" && e.target instanceof Node && p.contains(e.target)) return
+      if (p.getAttribute("data-mode") === "drawer") {
+        if (e.type === "resize" && !drawer()) close(false)
+        return
+      }
+      if (e.type === "resize" && drawer()) return close(false)
+      if (inView(t)) place()
+      else close(p.contains(document.activeElement))
+    }
+    // a press outside the panel and the trigger closes it (in the drawer, a
+    // press on its backdrop lands on the panel itself, outside its box)
+    const onPress = (e) => {
+      const p = panel()
+      const t = trigger()
+      if (!isOpen || !p) return
+      const target = e.target instanceof Node ? e.target : null
+      if (t && target && t.contains(target)) return
+      if (target && p.contains(target) && target !== p) return
+      if (target === p) {
+        const b = p.getBoundingClientRect()
+        if (e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom) return
+      }
+      close(false)
+    }
+    const listen = (on) => {
+      const m = on ? "addEventListener" : "removeEventListener"
+      window[m]("scroll", onMove, { capture: true, passive: true })
+      window[m]("resize", onMove)
+      document[m]("pointerdown", onPress, true)
+    }
+
+    const sync = () => {
+      const p = panel()
+      wire()
+      if (!p) return
+      const showing = p.matches(":popover-open")
+      if (isOpen && !showing) p.showPopover()
+      if (!isOpen && showing) p.hidePopover()
+      if (isOpen) place()
+    }
+
+    const open = (how) => {
+      const p = panel()
+      if (!p || isOpen) return
+      // one command menu open at a time
+      document.querySelectorAll("[data-command-menu]").forEach((m) => {
+        if (m !== root && m.__sdCommandMenu) m.__sdCommandMenu.close(false)
+      })
+      isOpen = true
+      p.setAttribute("data-mode", drawer() ? "drawer" : "popover")
+      query = ""
+      const input = search()
+      if (input) input.value = ""
+      read()
+      filter()
+      const l = list()
+      if (l) l.scrollTop = 0
+      sync()
+      listen(true)
+      const current = rows.find((r) => r.el.hasAttribute("data-current") && enabled(r.el))
+      const pick = how === "last" ? visible().slice(-1)[0] : (current && current.el) || visible()[0]
+      setActive(pick, current && how !== "last" ? "center" : "nearest")
+      // the drawer doesn't focus the search box: a phone's keyboard would
+      // cover the list until it's tapped
+      if (p.getAttribute("data-mode") === "drawer") p.focus({ preventScroll: true })
+      else if (input) input.focus({ preventScroll: true })
+    }
+
+    const close = (refocus) => {
+      if (!isOpen) return
+      isOpen = false
+      listen(false)
+      clearTimeout(announceTimer)
+      sync()
+      setActive(null)
+      const t = trigger()
+      if (refocus && t && t.isConnected) t.focus({ preventScroll: true })
+    }
+
+    // while searching, the keys step through the matches (context rows are
+    // there to read, and to click)
+    const move = (by) => {
+      const vis = visible().filter((el) => !el.hasAttribute("data-context"))
+      if (!vis.length) return
+      let i = vis.indexOf(active)
+      if (i < 0) i = by > 0 ? -1 : vis.length
+      const step = Math.abs(by) === 1
+      i = step ? (i + by + vis.length) % vis.length : Math.max(0, Math.min(vis.length - 1, i + by))
+      setActive(vis[i], "nearest")
+    }
+
+    // ---- events
+    const onTriggerClick = (e) => {
+      const t = trigger()
+      if (!t || !(e.target instanceof Node) || !t.contains(e.target)) return
+      e.preventDefault()
+      isOpen ? close(false) : open()
+    }
+    const onTriggerKey = (e) => {
+      const t = trigger()
+      if (!t || e.target !== t) return
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault()
+        if (!isOpen) open(e.key === "ArrowUp" ? "last" : null)
+      } else if (e.key === "Escape" && isOpen) {
+        e.preventDefault()
+        close(true)
+      }
+    }
+    document.addEventListener("click", onTriggerClick)
+    document.addEventListener("keydown", onTriggerKey)
+
+    root.addEventListener("input", (e) => {
+      if (!e.target.matches("[data-command-menu-search]")) return
+      query = e.target.value
+      const l = list()
+      if (l) l.scrollTop = 0
+      const { first, shown } = filter()
+      setActive(query.trim() ? first : visible()[0], "nearest")
+      if (query.trim()) announce(shown)
+      if (isOpen) place()
+    })
+    root.addEventListener("keydown", (e) => {
+      const p = panel()
+      if (!p || !p.contains(e.target)) return
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(true); return }
+      if (e.key === "Tab") { close(false); return }
+      // typing on the drawer (focused, not its search box) goes to the search
+      if (e.target === p && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const input = search()
+        if (input) input.focus({ preventScroll: true })
+        return
+      }
+      if (e.key === "ArrowDown") { e.preventDefault(); move(1) }
+      else if (e.key === "ArrowUp") { e.preventDefault(); move(-1) }
+      else if (e.key === "PageDown") { e.preventDefault(); move(10) }
+      else if (e.key === "PageUp") { e.preventDefault(); move(-10) }
+      else if (e.key === "Enter" && !e.isComposing) {
+        e.preventDefault()
+        if (active && enabled(active)) active.click()
+      }
+    })
+    root.addEventListener("mousemove", (e) => {
+      const it = e.target instanceof Element && e.target.closest("[data-command-menu-item]")
+      if (it && it !== active && enabled(it)) setActive(it)
+    })
+    // choosing a row closes the menu; its link, form or phx-click still runs.
+    // A disabled row does nothing; one with data-confirm closes once accepted.
+    root.addEventListener("click", (e) => {
+      const it = e.target instanceof Element && e.target.closest("[data-command-menu-item]")
+      if (!it || !panel() || !panel().contains(it)) return
+      if (it.getAttribute("aria-disabled") === "true") { e.preventDefault(); return }
+      if (it.hasAttribute("data-confirm")) return
+      close(!it.matches("a[href]"))
+    })
+    // focus leaving the panel and the trigger (Tab, a click elsewhere) closes it
+    root.addEventListener("focusout", (e) => {
+      const p = panel()
+      const t = trigger()
+      const to = e.relatedTarget
+      if (!isOpen || !p || !to) return
+      if (p.contains(to) || (t && t.contains(to))) return
+      close(false)
+    })
+
+    const api = {
+      hook: hook || null,
+      open,
+      close,
+      isOpen: () => isOpen,
+      refresh() {
+        // a patch may have replaced rows, dropped hidden / data-active, or
+        // re-rendered the trigger: rebuild and re-apply
+        read()
+        if (!isOpen) { wire(); return }
+        const keep = active && active.id
+        filter()
+        sync()
+        const again = keep && document.getElementById(keep)
+        setActive(again && enabled(again) ? again : visible()[0])
+      },
+      destroy() {
+        listen(false)
+        clearTimeout(announceTimer)
+        document.removeEventListener("click", onTriggerClick)
+        document.removeEventListener("keydown", onTriggerKey)
+        delete root.__sdCommandMenu
+      },
+    }
+    read()
+    wire()
+    root.__sdCommandMenu = api
+    return api
+  }
+
   function initOtp(root) {
     const slots = [...root.querySelectorAll(".otp-slot")]
     if (!root.getAttribute("role")) root.setAttribute("role", "group")
@@ -4960,6 +5360,7 @@ export function initShadcnDaisyui(root, options) {
   root.querySelectorAll("[data-combobox]").forEach((el) => initCombobox(el))
   root.querySelectorAll("[data-select]").forEach(initSelect)
   root.querySelectorAll("[data-command]").forEach((el) => initCommand(el))
+  root.querySelectorAll("[data-command-menu]").forEach((el) => initCommandMenu(el))
   root.querySelectorAll("[data-otp]").forEach(initOtp)
   root.querySelectorAll("[data-datepicker]").forEach(initDatepicker)
   root.querySelectorAll("[data-daterange]").forEach(initDaterange)
@@ -4995,6 +5396,11 @@ export const Hooks = {
   // window listener. The hook pushes `data-on-search`.
   ShadcnCommand: {
     mounted() { this.api = initCommand(this.el, this) },
+    updated() { this.api && this.api.refresh() },
+    destroyed() { this.api && this.api.destroy() },
+  },
+  ShadcnCommandMenu: {
+    mounted() { this.api = initCommandMenu(this.el, this) },
     updated() { this.api && this.api.refresh() },
     destroyed() { this.api && this.api.destroy() },
   },

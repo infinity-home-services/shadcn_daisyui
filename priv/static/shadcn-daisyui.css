@@ -1114,6 +1114,90 @@
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
   }
 
+  /* ---- Command menu (<.command_menu>) ------------------------------------
+     A searchable dropdown in the top layer (popover="manual"), placed by
+     shadcn-daisyui.js from its trigger's box (left / top / min-width /
+     max-height inline); a bottom drawer below 48rem (data-mode="drawer").
+     Floating content: the popover surface and ring + shadow-md, rounded-md,
+     like every dropdown. Rows are .command-item; nested rows step in 1.5rem
+     a level, so a child's icon sits under its parent's label. */
+  .command-menu { display: contents; }
+  .command-menu-panel {
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), var(--shadow-md);
+  }
+  .command-menu-panel:popover-open { display: flex; position: fixed; inset: auto; margin: 0; max-width: calc(100vw - 1rem); }
+  .command-menu-panel:focus { outline: none; }
+  .command-menu-panel [hidden] { display: none !important; }
+  .command-menu-search {
+    display: flex;
+    flex: none;
+    height: 2.25rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .command-menu-search input {
+    min-width: 0;
+    flex: 1 1 0%;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    font-size: 0.875rem;
+    outline: none;
+  }
+  .command-menu-search input::placeholder { color: var(--muted-foreground); }
+  .command-menu-list {
+    min-height: 0;
+    max-height: 18.75rem;          /* shadcn's CommandList, 300px */
+    flex: 0 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 0.25rem;
+    padding: 0.25rem;
+  }
+  .command-menu-item { --depth: 0; padding-inline-start: calc(0.5rem + var(--depth) * 1.5rem); text-decoration: none; }
+  .command-menu-item[data-depth="1"] { --depth: 1; }
+  .command-menu-item[data-depth="2"] { --depth: 2; }
+  .command-menu-item[data-depth="3"] { --depth: 3; }
+  .command-menu-item[data-depth="4"] { --depth: 4; }
+  .command-menu-item .command-item-text { flex: 1 1 0%; }
+  .command-menu-item .command-item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* hover doesn't light a row: the active row (mouse or keys) does, once */
+  .command-menu-item:hover:not(.is-active) { background-color: transparent; color: inherit; }
+  .command-menu-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+  .command-menu-item[data-context]:not(.is-active) { color: var(--muted-foreground); }
+  .command-menu-check { width: 1rem; height: 1rem; flex-shrink: 0; margin-inline-start: auto; }
+  .command-menu-empty { padding: 1.5rem 0.5rem; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
+  .command-menu-handle { display: none; }
+  /* the drawer: full width at the bottom, up to 85% of the screen, the list
+     filling it; 44px rows and a 16px search (no zoom on focus in iOS) */
+  .command-menu-panel[data-mode="drawer"]:popover-open {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: 0 0 0 1px var(--border-color), var(--shadow-lg);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .command-menu-panel[data-mode="drawer"] .command-menu-handle {
+    display: block;
+    flex: none;
+    width: 3rem;
+    height: 0.375rem;
+    margin: 1rem auto 0.5rem;
+    border-radius: calc(infinity * 1px);
+    background-color: var(--muted);
+  }
+  .command-menu-panel[data-mode="drawer"] .command-menu-search { height: 2.75rem; }
+  .command-menu-panel[data-mode="drawer"] .command-menu-search input { font-size: 1rem; }
+  .command-menu-panel[data-mode="drawer"] .command-menu-list { max-height: none; flex: 1 1 auto; padding-bottom: 0.5rem; }
+  .command-menu-panel[data-mode="drawer"] .command-menu-item { min-height: 2.75rem; }
+
   /* ---- Context menu ------------------------------------------------------ */
   .context-menu {
     position: fixed;
@@ -4401,6 +4485,50 @@ dialog.command-dialog::backdrop { background-color: oklch(0 0 0 / 0); transition
 dialog.command-dialog[open]::backdrop { background-color: oklch(0 0 0 / 0.5); }   /* the one overlay value, = .modal */
 @starting-style { dialog.command-dialog[open]::backdrop { background-color: oklch(0 0 0 / 0); } }
 html:has(dialog.command-dialog[open]) { overflow: hidden; }
+
+/* ---------------------------------------------------------------------------
+   Command menu — the dropdown fades and zooms in from 95% toward its trigger
+   (150ms, shadcn's popover), the drawer slides up (300ms); both animate out.
+   --------------------------------------------------------------------------- */
+.command-menu-panel {
+  opacity: 0;
+  scale: 0.95;
+  transition: opacity 0.15s ease, scale 0.15s ease, translate 0.3s ease,
+    overlay 0.15s allow-discrete, display 0.15s allow-discrete;
+}
+.command-menu-panel[data-placement="bottom"] { transform-origin: top left; }
+.command-menu-panel[data-placement="top"] { transform-origin: bottom left; }
+.command-menu-panel[data-placement="right"] { transform-origin: top left; }
+.command-menu-panel[data-placement="left"] { transform-origin: top right; }
+.command-menu-panel:popover-open { opacity: 1; scale: 1; }
+@starting-style { .command-menu-panel:popover-open { opacity: 0; scale: 0.95; } }
+.command-menu-panel[data-mode="drawer"] {
+  opacity: 1;
+  scale: 1;
+  translate: 0 100%;
+  transition: translate 0.3s ease, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+}
+/* the drawer's geometry here, unlayered: the panel's width class (w-72) is
+   the dropdown's, never the drawer's */
+.command-menu-panel[data-mode="drawer"]:popover-open {
+  inset: auto 0 0 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: 85dvh;
+  translate: 0 0;
+}
+@starting-style { .command-menu-panel[data-mode="drawer"]:popover-open { translate: 0 100%; } }
+.command-menu-panel::backdrop { background-color: oklch(0 0 0 / 0); }
+.command-menu-panel[data-mode="drawer"]::backdrop { transition: background-color 0.3s; }
+.command-menu-panel[data-mode="drawer"]:popover-open::backdrop { background-color: oklch(0 0 0 / 0.5); }   /* the one overlay value, = .modal */
+@starting-style { .command-menu-panel[data-mode="drawer"]:popover-open::backdrop { background-color: oklch(0 0 0 / 0); } }
+html:has(.command-menu-panel[data-mode="drawer"]:popover-open) { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .command-menu-panel,
+  .command-menu-panel[data-mode="drawer"],
+  .command-menu-panel[data-mode="drawer"]::backdrop { transition: none; }
+}
 
 /* ---------------------------------------------------------------------------
    Drawer — slides up from the bottom (Vaul-style)

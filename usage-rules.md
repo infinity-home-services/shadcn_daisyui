@@ -79,8 +79,12 @@ like shadcn/ui. **Every UI decision goes through this package.**
   scroller (scrollTop code, a "scroll to bottom" button), a step list (a spinner
   with "Thinking…" lines) or a composer (a textarea with an Enter handler, a
   Send/Stop swap).
+- A long grouped list chosen from a trigger (a brand and location switcher, a
+  team picker: dozens to a few hundred rows, some nested) is `<.command_menu>`.
+  Never hand-roll a searchable dropdown, nest a `<.command>` dialog behind a
+  dropdown, or indent rows yourself.
 - Interactive components (combobox, select, date picker, time picker, time field,
-  calendar, range calendar, OTP, carousel, resizable, command, context-menu,
+  calendar, range calendar, OTP, carousel, resizable, command, command menu, context-menu,
   toaster, tab nav, chip row, page header, data table, section nav, dropzone,
   code block, message scroller, prompt input) REQUIRE a
   unique `id` attribute and the JS hooks
@@ -127,9 +131,10 @@ Decision order:
 | `<.tooltip>` | `tip="..."` `position="top\|bottom\|left\|right"` wraps trigger |
 | `<.dropdown_menu>` | `<:trigger>` `<:label>` `<:item>` slots, `align="start\|end"`; icon-only ⋯ trigger: `trigger_class="btn btn-ghost btn-square btn-sm" chevron={false} aria-label="More actions"`; opt-in item attrs (items without them render as before): `variant="destructive"`, `confirm="Remove Acme Marketing from Pat?"` (`data-confirm`, name the object), `values={%{user_id: …}}` (one `phx-value-<key>` each, wins over `phx-value-id` for its own keys), `id`, `disabled` (`aria-disabled`, no click, 50%); opt-in menu attr `close_on_select` closes it after a choice |
 | `<.sign_in_page>` | the sign-in page (see Sign-in page): `app_name` (req.), `org`, `tagline`, `image` (desktop panel + behind the tablet card), `icon`, `href` (`~p"/auth/entra"`), `configured`, `notice` (`Phoenix.Flash.get(@flash, :sign_in)`), `description`; slots `<:logo>`, `<:panel>`, `<:alert title variant>`, `<:development label id>` (dev and test builds only), `<:footer>` |
-| `<.app_shell>` | a signed-in app's whole shell (see App shell): `nav` groups, `active`, `search` (a `<.command>` id), `person`, `environment`, `bar`/`more`, `wide`/`fill`, `collapse_row={false}` (no "Collapse sidebar" row in the open sidebar; the rail keeps Expand); slots `<:header>` (`<.app_shell_heading icon title subtitle tip chevron>`), `<:phone_header>`, `<:footer_item id icon label navigate\|href\|phx-click>`, `<:account_item id icon navigate\|href method soon divider destructive>` (`<:account_item id="sidebar" sidebar_toggle />`: the collapse/expand toggle in the account menu) |
+| `<.app_shell>` | a signed-in app's whole shell (see App shell): `nav` groups, `active`, `search` (a `<.command>` id), `person`, `environment`, `bar`/`more`, `wide`/`fill`, `collapse_row={false}` (no "Collapse sidebar" row in the open sidebar; the rail keeps Expand); slots `<:header>` (`<.app_shell_heading icon title subtitle tip chevron as="button">`), `<:phone_header>`, `<:footer_item id icon label navigate\|href\|phx-click>`, `<:account_item id icon navigate\|href method soon divider destructive>` (`<:account_item id="sidebar" sidebar_toggle />`: the collapse/expand toggle in the account menu) |
 | `<.command>` | `id` req. (hook), `label` (accessible name), `placeholder`, `<:trigger_label>`, `<:item id group icon shortcut>` that runs `phx-click`, or goes somewhere: `navigate`/`patch`/`href`, or `form` + `name` + `value` (submits that form); `shortcut="k"` (default, ⌘K toggles it; opening closes other dialogs) or `shortcut={nil}` (none - every palette but the search); `icon="hero-user-plus"` (the search row's heroicon, any `<.icon name>` class written out in full; default `hero-magnifying-glass`, `icon={nil}` none); `<:empty>` (default "No results found."); opt-in item attrs (items without them render as before): `description` (muted second line), `confirm` (`data-confirm`, closes only once accepted), `values={%{id: …}}`, `disabled` |
 | `<.command on_search>` | search only the server can run (a directory, a remote API, a big table): `on_search="event"` pushes `%{"id" => id, "query" => text}` (trimmed, `search_debounce={250}`), the hook stops filtering; render the results as `<:item>`s and echo the text they answer as `query={@query}` (required; nil before the first search; assign it with the results, so with `start_async` when the answer lands); `<:hint>` before typing, a spinner while pending, `<:empty>` once answered; opening pushes `""` (drop the last results); `phx-target={@myself}` for a LiveComponent (items' `phx-click` go there too). Never hand-roll a search dialog (a `phx-change` input over a result list) |
+| `<.command_menu>` | a searchable dropdown over a long grouped list (shadcn's Popover + Command): `id` (hook), `label` (req., accessible name), `placeholder`, `<:trigger>` (inside its button, `trigger_class`) or `trigger_id` (an element elsewhere, e.g. `<.app_shell_heading as="button">`), `side="bottom\|right"`, `align="start\|end"`, `class` (panel width, `w-72`), `phx-target`; `<:item id group parent icon description keywords current>` that runs `phx-click` (+ `values`), goes somewhere (`navigate`/`patch`/`href`) or submits (`form` + `name` + `value`), opt-in `confirm`, `disabled`; `parent` nests under another row's `id` (up to 4 levels; build the rows in Elixir, child after parent, one `:for` - a slot entry can't sit in a `for` block); typing filters every level (each word starts a word of the row's or its parents' text; parents show muted for context); `<:empty>`; the top layer below its trigger (flips, follows), a bottom drawer below 48rem; search focused on open (not in the drawer), arrows / Page keys / Enter / Esc |
 | `<.tabs>` | `id` req., `<:tab label="..." checked>` slots with panel content |
 | `<.tab_nav>` | `id` (hook), link tabs `<:tab navigate\|patch active count>`; overflow moves into a More menu (top layer: nothing clips it) that also takes `<:menu_item group icon active navigate\|patch>`; active tab always visible (too narrow for it + More: every tab folds into the menu and More names the active tab + count) |
 | `<.breadcrumb>` | `<:item navigate={...}>` slots; last item without link = current page |
@@ -275,7 +280,11 @@ menu already has one.
   `#main` scrolls. Keep a thin `page_header` in your `CoreComponents` that computes
   `crumbs` from your navigation and calls `ShadcnDaisyui.CoreComponents.page_header/1`.
 - Search is a `<.command id="search">` next to the shell (`search="search"`):
-  pages, then records. Other palettes (a brand switcher) take `shortcut={nil}`.
+  pages, then records. Other palettes take `shortcut={nil}`.
+- A switcher in the sidebar header over a long list (brands and their
+  locations) is `<.app_shell_heading id="…" as="button" chevron>` opening a
+  `<.command_menu trigger_id="…" side="right">` (a drawer on phones). A short
+  menu (a few teams) stays a `dropdown` around the heading.
 - App-specific things (brand pickers, permission checks, routes, copy) go in
   through the slots and attributes: `<:header>` (`<.app_shell_heading>`, or your
   own markup with `app-shell-label` on what the rail hides), `<:footer_item>`
