@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.38.1] - 2026-11-19
+
+In light mode the active tab stands out from its row: tab rows have a fill
+of their own, `--tab-list-background`, a step darker than muted. Dark mode is
+unchanged.
+
 ### Fixed
 
 - Tabs: in light mode the active tab stands out from its row. The row
@@ -18,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chips' fill: 1.26:1 against the active tab), with inactive tab text still
   at 4.87:1. Dark is unchanged (`--muted`; its active tab has a border).
   Brand themes can override it, as `--chip-background`.
+
+### Upgrading
+
+- Move the pin to `tag: "v0.38.1"`. Nothing else to change. A brand theme that
+  wants another row colour sets `--tab-list-background` in its light block;
+  keep the inactive tab text at 4.5:1 on it.
 
 ## [0.38.0] - 2026-11-19
 
