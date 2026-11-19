@@ -67,6 +67,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --chip-background: oklch(0.922 0 0);   /* a secondary chip's fill: --secondary would nearly vanish on the page (1.09:1) */
+  --tab-list-background: oklch(0.922 0 0); /* a tab row (.tabs-box): on --muted the white active tab barely shows (1.09:1) */
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
@@ -158,6 +159,7 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --chip-background: var(--secondary);   /* a secondary chip's fill */
+  --tab-list-background: var(--muted);   /* a tab row: bg-muted (the active tab has a border in dark) */
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
@@ -244,9 +246,13 @@
   --sign-in-aside-border: var(--border-color);
   --shell-sidebar-accent: var(--accent);                                      /* sidebar-accent: a step up from the card */
   --chip-background: var(--secondary);                                        /* a brand's *-dark theme doesn't inherit :root's light fill */
+  --tab-list-background: var(--muted);                                        /* the same for the tab row */
 }
 /* A light theme inside a dark page. No specificity: a brand's own value wins. */
-:where([data-theme]:not([data-theme*="dark"])) { --chip-background: oklch(0.922 0 0); }
+:where([data-theme]:not([data-theme*="dark"])) {
+  --chip-background: oklch(0.922 0 0);
+  --tab-list-background: oklch(0.922 0 0);
+}
 /* The page behind the content (`bg-page`, <.app_shell>'s column and pinned
    headers): base-100 with a 40% base-200 tint, as one solid colour so a pinned
    header (<.sticky_top>) can cover what scrolls under it. Restated on every
@@ -606,10 +612,13 @@
   }
 
   /* ---- Tabs (boxed/segmented, shadcn style) ------------------------------ */
-  /* shadcn TabsList h-9 p-[3px] rounded-lg bg-muted. A list holding its
+  /* shadcn TabsList h-9 p-[3px] rounded-lg bg-muted, but its own fill
+     (--tab-list-background): light mode is a step darker than muted
+     (oklch 0.922), so the white active tab stands out (1.26:1, not 1.09:1)
+     and inactive text keeps 4.87:1; dark is bg-muted. A list holding its
      panels (<.tabs>, daisyUI .tab-content) grows to fit them instead. */
   .tabs-box {
-    background-color: var(--muted);
+    background-color: var(--tab-list-background);
     border-radius: var(--radius-lg);
     padding: 3px;
     color: var(--muted-foreground);

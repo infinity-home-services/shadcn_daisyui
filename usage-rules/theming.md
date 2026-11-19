@@ -40,6 +40,11 @@ Rules:
 - To tint chips, override `--chip-background` (light defaults to `oklch(0.922 0 0)`,
   a `*-dark` theme to its `--secondary`); it fills secondary chips only. Keep their
   text at 4.5:1 on it.
+- To tint tab rows, override `--tab-list-background` (light defaults to
+  `oklch(0.922 0 0)`, a step darker than `--muted` so the white active tab stands
+  out; a `*-dark` theme to its `--muted`, where the active tab has a border); it
+  fills `.tabs-box` only (`<.tabs>`, `<.tab_nav>`, a list page's views). Keep the
+  inactive tab text (`--tab-foreground`, foreground at 60%) at 4.5:1 on it.
 - Outline buttons and tab triggers derive their light/dark fills (`--outline-*`,
   `--tab-*`) from the bridge vars and the theme name (`*-dark`); a brand theme
   doesn't restate them.
