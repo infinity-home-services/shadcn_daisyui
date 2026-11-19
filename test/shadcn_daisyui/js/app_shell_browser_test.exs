@@ -288,6 +288,49 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
     assert r["cmdB"] == "open"
   end
 
+  test "the footer's order on screen: items, the environment badge, Collapse sidebar, account" do
+    shell = fn collapse_row ->
+      assigns = %{nav: @nav, collapse_row: collapse_row}
+
+      render(~H"""
+      <.app_shell
+        nav={@nav}
+        active="orders"
+        person={%{name: "Pat Lee"}}
+        environment="Staging"
+        collapse_row={@collapse_row}
+      >
+        <:footer_item id="help" icon="hero-question-mark-circle" label="Help" href="target.html#help" />
+        <:account_item :if={!@collapse_row} id="sidebar" sidebar_toggle />
+        <p>Page</p>
+      </.app_shell>
+      """)
+    end
+
+    test = ~S"""
+    initShadcnDaisyui()
+    const order = () => ["help", "environment-badge", "sidebar-toggle", "user-menu"]
+      .map((id) => document.getElementById(id))
+      .filter((el) => getComputedStyle(el).display !== "none")
+      .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+      .map((el) => el.id)
+    out.open = order()
+    document.documentElement.dataset.sidebar = "collapsed"
+    await wait(400)
+    out.collapsed = order()
+    window.__result = JSON.stringify(out)
+    """
+
+    r = run_in_chrome(page(shell.(true), test))
+    assert r["open"] == ~w(help environment-badge sidebar-toggle user-menu)
+    # the rail hides the badge; the toggle is its Expand button
+    assert r["collapsed"] == ~w(help sidebar-toggle user-menu)
+
+    r = run_in_chrome(page(shell.(false), test))
+    assert r["open"] == ~w(help environment-badge user-menu)
+    assert r["collapsed"] == ~w(help sidebar-toggle user-menu)
+  end
+
   test "Cmd/Ctrl+K opens the search, which filters, and Enter navigates" do
     # a second ⌘K palette earlier on the page: the last one opens, and ⌘K closes it again
     assigns = %{}

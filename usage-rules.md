@@ -241,7 +241,9 @@ menu already has one.
 - A signed-in app renders `<.app_shell>` in its `Layouts.app/1` (the signed-out
   pages keep a plain centered column). Wide screens (from 48rem): a 16rem sidebar
   that collapses to a 3rem icon rail (`data-sidebar` on `<html>`, Cmd/Ctrl+B, the
-  grab strip and the "Collapse sidebar" row; remembered). Its navigation keeps
+  grab strip and the "Collapse sidebar" row; remembered). The sidebar's footer,
+  top to bottom: the `<:footer_item>`s, the `environment` badge, "Collapse
+  sidebar", the account menu (never reorder it). Its navigation keeps
   its scroll position from page to page and shows the active item - never save
   or restore the sidebar's scroll yourself. Phones: a pinned top
   row (`<:phone_header>` + search), a bottom dock of four destinations plus More,

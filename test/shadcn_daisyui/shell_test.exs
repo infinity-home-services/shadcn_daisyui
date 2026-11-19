@@ -171,6 +171,19 @@ defmodule ShadcnDaisyui.Components.ShellTest do
       refute shell() =~ "environment-badge"
     end
 
+    test "the footer: footer items, the environment badge, Collapse sidebar, then the account menu" do
+      html = shell(%{environment: "Staging"})
+      [_, footer] = String.split(html, ~s(class="app-shell-footer"), parts: 2)
+
+      positions =
+        for id <- ~w(whats-new-open help environment-badge sidebar-toggle user-menu) do
+          {index, _} = :binary.match(footer, ~s(id="#{id}"))
+          index
+        end
+
+      assert positions == Enum.sort(positions)
+    end
+
     test "the account trigger shows initials, name and email" do
       html = sidebar(shell())
 
