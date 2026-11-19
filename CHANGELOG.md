@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.38.2] - 2026-11-19
+
+The app shell's sidebar footer puts the environment badge above the
+"Collapse sidebar" row, in every app.
+
 ### Changed
 
 - App shell: the sidebar's footer puts the `environment` badge above the
@@ -16,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rail is unchanged (it hides the badge; the toggle stays its Expand button),
   and `collapse_row={false}` with the account menu's `sidebar_toggle` works
   as before (the badge sits right above the account menu).
+
+### Upgrading
+
+- Move the pin to `tag: "v0.38.2"`. Nothing else to change.
 
 ## [0.38.1] - 2026-11-19
 
