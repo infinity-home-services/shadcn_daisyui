@@ -2924,6 +2924,12 @@
   }
   .app-shell-account-trigger:hover { background-color: var(--shell-sidebar-accent); }
   [data-sidebar="collapsed"] .app-shell-account-trigger { justify-content: center; padding: 0; }
+  /* collapse_row={false}: the "Collapse sidebar" row shows only in the rail,
+     as its Expand button (the account menu's sidebar_toggle row collapses) */
+  :root:not([data-sidebar="collapsed"]) .app-shell-sidebar [data-rail-only] { display: none; }
+  /* the account menu's sidebar toggle says what it will do */
+  [data-sidebar="collapsed"] .app-shell-if-open,
+  :root:not([data-sidebar="collapsed"]) .app-shell-if-collapsed { display: none; }
   .app-shell-avatar {
     display: grid;
     width: 2rem;

@@ -13,6 +13,7 @@ defmodule ShadcnDaisyuiDemoWeb.AppShellPageTest do
       assert html =~ ~s(src="/docs/app-shell/preview/home")
       assert html =~ ~s(id="shell-phone")
       assert html =~ ~s(src="/docs/app-shell/preview/order")
+      assert html =~ ~s(src="/docs/app-shell/preview/account-menu")
       assert html =~ "&lt;.page_header"
       # a live palette without a shortcut (⌘K on this site is the docs search)
       assert html =~ ~s(id="shell-switcher")
@@ -61,6 +62,19 @@ defmodule ShadcnDaisyuiDemoWeb.AppShellPageTest do
     test "the table page is wide and fills the window", %{conn: conn} do
       html = conn |> get(~p"/docs/app-shell/preview/orders") |> html_response(200)
       assert html =~ ~s(class="app-shell-page" data-wide data-fill)
+    end
+
+    test "the account-menu page moves the sidebar toggle and What's new into the menu",
+         %{conn: conn} do
+      html = conn |> get(~p"/docs/app-shell/preview/account-menu") |> html_response(200)
+      assert html =~ ~r{id="sidebar-toggle"[^>]*data-rail-only}
+      assert html =~ ~s(id="user-menu-sidebar")
+      assert html =~ ~s(id="user-menu-whats-new")
+      refute html =~ ~s(id="whats-new-open")
+
+      home = conn |> get(~p"/docs/app-shell/preview/home") |> html_response(200)
+      refute home =~ "data-rail-only"
+      refute home =~ ~s(id="user-menu-sidebar")
     end
 
     test "an unknown page is a 404", %{conn: conn} do

@@ -375,6 +375,69 @@ defmodule ShadcnDaisyui.Components.ShellTest do
     end
   end
 
+  describe "app_shell/1 collapse_row and sidebar_toggle" do
+    defp menu_shell(collapse_row) do
+      assigns = %{nav: @nav, person: @person, collapse_row: collapse_row}
+
+      render(~H"""
+      <.app_shell nav={@nav} person={@person} collapse_row={@collapse_row}>
+        <:account_item id="account" icon="hero-user-circle" navigate="/account">Account</:account_item>
+        <:account_item id="sidebar" sidebar_toggle divider />
+        <:account_item id="help" icon="hero-lifebuoy" href="/help">Help</:account_item>
+        <:account_item id="out" href="/out" destructive divider>Sign out</:account_item>
+        <p>Page</p>
+      </.app_shell>
+      """)
+    end
+
+    test "by default the collapse row is a normal row" do
+      html = sidebar(shell())
+      assert html =~ ~s(id="sidebar-toggle")
+      refute html =~ "data-rail-only"
+    end
+
+    test "collapse_row={false} keeps the row only as the rail's Expand button" do
+      html = sidebar(menu_shell(false))
+
+      assert html =~
+               ~r{<button type="button" id="sidebar-toggle" data-tip="Expand sidebar \(⌘B\)" data-rail-only}
+
+      # the grab strip still toggles too
+      assert html =~ ~s(id="sidebar-rail")
+      assert html =~ ~s(data-rail-only)
+    end
+
+    test "a sidebar_toggle account item is the toggle in the menu, worded by state" do
+      html = menu_shell(false)
+      menu = section(html, "user-menu", "main")
+
+      assert menu =~
+               ~r{<button type="button" id="user-menu-sidebar" class="app-shell-menu-row" data-sidebar-toggle phx-click="[^"]*shadcn:toggle-sidebar}
+
+      assert menu =~ ~s(<span class="app-shell-grow app-shell-if-open">Collapse sidebar</span>)
+      assert menu =~ ~s(<span class="app-shell-grow app-shell-if-collapsed">Expand sidebar</span>)
+      assert menu =~ ~s(<kbd class="kbd kbd-sm">⌘B</kbd>)
+
+      # person | account + theme | toggle, help | sign out
+      assert count(menu, ~s(class="app-shell-sep")) == 3
+    end
+
+    test "the More sheet leaves the sidebar toggle out and keeps its divider" do
+      sheet = more(menu_shell(false))
+
+      refute sheet =~ "account-phone-sidebar"
+      refute sheet =~ "Collapse sidebar"
+      assert sheet =~ ~s(id="account-phone-help")
+
+      # person line, then account + theme | help | sign out
+      assert count(sheet, ~s(class="app-shell-sep")) == 3
+
+      [_, after_theme] = String.split(sheet, "app-shell-theme-row", parts: 2)
+      [between, _] = String.split(after_theme, ~s(id="account-phone-help"), parts: 2)
+      assert between =~ ~s(class="app-shell-sep")
+    end
+  end
+
   describe "toggle_sidebar/1" do
     test "dispatches shadcn:toggle-sidebar" do
       assert toggle_sidebar() == JS.dispatch("shadcn:toggle-sidebar")

@@ -55,7 +55,7 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
   end
 
   @doc "Every preview page's slug, for the static export."
-  def pages, do: Enum.map(items(), & &1.id) ++ ["order"]
+  def pages, do: Enum.map(items(), & &1.id) ++ ["order", "account-menu"]
 
   @doc "The page with this slug, or nil."
   def page("order") do
@@ -67,6 +67,10 @@ defmodule ShadcnDaisyuiDemoWeb.ShellPreview do
       kind: :record
     }
   end
+
+  # Home with the sidebar toggle and What's new in the account menu
+  # (`collapse_row={false}` and a `sidebar_toggle` account item).
+  def page("account-menu"), do: Map.put(page("home"), :menu_toggle, true)
 
   def page(slug) do
     nav()

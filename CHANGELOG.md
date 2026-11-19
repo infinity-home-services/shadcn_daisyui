@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- App shell: `collapse_row={false}` leaves the "Collapse sidebar" row out of
+  the open sidebar, for an app that keeps the toggle in the account menu. The
+  collapsed rail keeps the row's icon as its Expand button, so the rail can
+  always be opened again; Cmd/Ctrl+B and the grab strip work as before. Apps
+  that don't set it see no change.
+- App shell: an account item with `sidebar_toggle` (self-closing,
+  `<:account_item id="sidebar" sidebar_toggle />`) is the sidebar toggle in the
+  account menu: "Collapse sidebar" or "Expand sidebar" as the sidebar is, with
+  its ⌘B hint. It's left out of the phone's More sheet (phones have no
+  sidebar), and a `divider` on it moves to the item after it there.
+- Docs: the App shell guide shows the toggle and What's new in the account menu.
+
 ## [0.36.1] - 2026-11-18
 
 The app shell's sidebar shows which page you're on in the light theme again,

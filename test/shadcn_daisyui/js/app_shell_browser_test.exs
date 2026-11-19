@@ -222,6 +222,72 @@ defmodule ShadcnDaisyui.JS.AppShellBrowserTest do
     assert r["stored"] == "collapsed"
   end
 
+  test "collapse_row={false}: no row in the open sidebar, the rail's Expand button, and the menu's toggle" do
+    assigns = %{nav: @nav}
+
+    body =
+      render(~H"""
+      <.app_shell nav={@nav} active="orders" person={%{name: "Pat Lee"}} collapse_row={false}>
+        <:account_item id="sidebar" sidebar_toggle />
+        <p>Page</p>
+      </.app_shell>
+      """)
+
+    r =
+      run_in_chrome(
+        page(body, ~S"""
+        initShadcnDaisyui()
+        const root = document.documentElement
+        const shown = (sel) => getComputedStyle(document.querySelector(sel)).display !== "none"
+        const width = () => Math.round(document.getElementById("sidebar").getBoundingClientRect().width)
+        const state = () => ({
+          attr: root.dataset.sidebar,
+          width: width(),
+          row: shown("#sidebar-toggle"),
+          collapse: shown("#user-menu-sidebar .app-shell-if-open"),
+          expand: shown("#user-menu-sidebar .app-shell-if-collapsed")
+        })
+        // phx-click={toggle_sidebar()} dispatches shadcn:toggle-sidebar on the clicked element
+        const click = (id) => document.getElementById(id).dispatchEvent(new CustomEvent("shadcn:toggle-sidebar", { bubbles: true }))
+        out.open = state()
+        click("user-menu-sidebar")
+        await wait(400)
+        out.collapsed = state()
+        // the rail's Expand button opens it again, and so do the grab strip and Cmd+B
+        click("sidebar-toggle")
+        await wait(400)
+        out.expanded = state()
+        click("sidebar-rail")
+        await wait(400)
+        out.rail = state().attr
+        key(document.body, { key: "b", metaKey: true })
+        out.cmdB = root.dataset.sidebar
+        window.__result = JSON.stringify(out)
+        """)
+      )
+
+    assert r["open"] == %{
+             "attr" => "open",
+             "width" => 256,
+             "row" => false,
+             "collapse" => true,
+             "expand" => false
+           }
+
+    assert r["collapsed"] == %{
+             "attr" => "collapsed",
+             "width" => 48,
+             "row" => true,
+             "collapse" => false,
+             "expand" => true
+           }
+
+    assert r["expanded"]["attr"] == "open"
+    assert r["expanded"]["row"] == false
+    assert r["rail"] == "collapsed"
+    assert r["cmdB"] == "open"
+  end
+
   test "Cmd/Ctrl+K opens the search, which filters, and Enter navigates" do
     # a second ⌘K palette earlier on the page: the last one opens, and ⌘K closes it again
     assigns = %{}
