@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- App shell: the sidebar's footer puts the `environment` badge above the
+  "Collapse sidebar" row, so it reads `:footer_item`s, the badge, "Collapse
+  sidebar", then the account menu, in every app. Nothing to opt into. The
+  rail is unchanged (it hides the badge; the toggle stays its Expand button),
+  and `collapse_row={false}` with the account menu's `sidebar_toggle` works
+  as before (the badge sits right above the account menu).
+
 ## [0.38.1] - 2026-11-19
 
 In light mode the active tab stands out from its row: tab rows have a fill

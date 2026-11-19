@@ -84,8 +84,10 @@ defmodule ShadcnDaisyui.Components.Shell do
   `:header` slot (use `app_shell_heading/1`, or the `app-shell-label` class on
   what the rail should hide), the search row when `search` names a command
   dialog, the groups (small muted labels, the active item `aria-current`;
-  they scroll, and keep their position from page to page), then the footer: `:footer_item`s, "Collapse sidebar", the `environment`
-  badge and the account menu (opens right of the sidebar, bottom-aligned).
+  they scroll, and keep their position from page to page), then the footer:
+  `:footer_item`s, the `environment` badge, "Collapse sidebar" and the account
+  menu (opens right of the sidebar, bottom-aligned). The rail hides the badge
+  and keeps the rest in that order, the toggle as its Expand button.
 
   **Phones**: a top row pinned while the page scrolls (`:phone_header`, then
   the search button), a bottom dock with up to four of `bar` plus More, and the
@@ -286,6 +288,13 @@ defmodule ShadcnDaisyui.Components.Shell do
             <span class={[item.icon, "size-4 shrink-0"]} aria-hidden="true"></span>
             <span class="app-shell-label">{item.label}</span>
           </.shell_action>
+          <span
+            :if={@environment}
+            id="environment-badge"
+            class="badge badge-secondary app-shell-label app-shell-badge"
+          >
+            {@environment}
+          </span>
           <button
             type="button"
             id="sidebar-toggle"
@@ -298,13 +307,6 @@ defmodule ShadcnDaisyui.Components.Shell do
             <span class="app-shell-label app-shell-grow">Collapse sidebar</span>
             <kbd class="kbd kbd-sm app-shell-label">⌘B</kbd>
           </button>
-          <span
-            :if={@environment}
-            id="environment-badge"
-            class="badge badge-secondary app-shell-label app-shell-badge"
-          >
-            {@environment}
-          </span>
           <div id="user-menu" class="dropdown dropdown-right dropdown-end app-shell-account">
             <div tabindex="0" role="button" aria-label="Account menu" class="app-shell-account-trigger">
               <.initials name={@person[:name]} />
