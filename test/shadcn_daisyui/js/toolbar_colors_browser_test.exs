@@ -64,7 +64,9 @@ defmodule ShadcnDaisyui.JS.ToolbarColorsBrowserTest do
   # Expected values per theme, as the shadcn recipe expressions.
   @light %{
     foreground: "var(--foreground)",
-    list_bg: "var(--muted)",
+    # not shadcn's bg-muted: a step darker, so the white active tab shows
+    # (--tab-list-background, see tabs_contrast_browser_test.exs)
+    list_bg: "oklch(0.922 0 0)",
     active_bg: "var(--background)",
     active_border: "transparent",
     inactive_fg: "color-mix(in oklab, var(--foreground) 60%, transparent)",
