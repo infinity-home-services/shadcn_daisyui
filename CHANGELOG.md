@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-11-19
+
+An app can keep the sidebar toggle in the account menu instead of the
+sidebar's footer: `collapse_row={false}` on `<.app_shell>` leaves out the
+"Collapse sidebar" row (the collapsed rail keeps its Expand button), and a
+self-closing `<:account_item sidebar_toggle />` is the toggle in the menu.
+Nothing changes for apps that set neither.
+
 ### Added
 
 - App shell: `collapse_row={false}` leaves the "Collapse sidebar" row out of
@@ -21,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its ⌘B hint. It's left out of the phone's More sheet (phones have no
   sidebar), and a `divider` on it moves to the item after it there.
 - Docs: the App shell guide shows the toggle and What's new in the account menu.
+
+### Upgrading
+
+- Move the pin to `tag: "v0.37.0"`. No other change is needed. To move the
+  toggle into the account menu, set `collapse_row={false}` and add
+  `<:account_item id="sidebar" sidebar_toggle />` where it should sit; don't
+  add your own `toggle_sidebar()` item (it would read "Collapse" in the rail
+  and show on phones).
 
 ## [0.36.1] - 2026-11-18
 
